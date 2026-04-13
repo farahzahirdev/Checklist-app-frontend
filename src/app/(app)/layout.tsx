@@ -25,6 +25,18 @@ export default function AppLayout({
               >
                 Dashboard
               </Link>
+              <Link href="/assessment" className="rounded-lg border border-white/20 px-3 py-1.5 hover:bg-white/10">
+                Assessment
+              </Link>
+              <Link href="/reports" className="rounded-lg border border-white/20 px-3 py-1.5 hover:bg-white/10">
+                Reports
+              </Link>
+              <Link href="/resources" className="rounded-lg border border-white/20 px-3 py-1.5 hover:bg-white/10">
+                Resources
+              </Link>
+              <Link href="/admin/checklists" className="rounded-lg border border-white/20 px-3 py-1.5 hover:bg-white/10">
+                Admin
+              </Link>
               <Link href="/health" className="rounded-lg border border-white/20 px-3 py-1.5 hover:bg-white/10">
                 Health
               </Link>
