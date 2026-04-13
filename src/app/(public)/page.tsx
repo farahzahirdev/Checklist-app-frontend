@@ -32,4 +32,4 @@ export default function HomePage() {
       </section>
     </main>
   );
-}export { default } from '../page';
+}
