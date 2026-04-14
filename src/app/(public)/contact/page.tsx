@@ -24,33 +24,33 @@ export default function ContactPage() {
         <div className="mx-auto grid min-h-[calc(100vh-74px)] w-full max-w-[1440px] gap-8 px-4 py-8 sm:px-6 md:px-6 md:py-12 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="space-y-6">
             <div className="space-y-3">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#4d7fd3]">Contact Us</p>
-              <h1 className="text-4xl font-semibold text-[#1a2440] sm:text-5xl">Contact Us</h1>
-              <p className="max-w-lg text-xl leading-8 text-[#334768]">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#4d7fd3] motion-safe:animate-fade-in motion-safe:delay-75">Contact Us</p>
+              <h1 className="text-4xl font-semibold text-[#1a2440] motion-safe:animate-fade-in-up motion-safe:delay-100 sm:text-5xl">Contact Us</h1>
+              <p className="max-w-lg text-xl leading-8 text-[#334768] motion-safe:animate-fade-in-up motion-safe:delay-200">
                 Have a question about audit readiness or the product?
               </p>
             </div>
 
-            <form className="max-w-xl space-y-4 rounded-2xl border border-[#d4dced] bg-white/70 p-4 shadow-sm backdrop-blur sm:p-5">
+            <form className="max-w-xl space-y-4 rounded-2xl border border-[#d4dced] bg-white/70 p-4 shadow-sm backdrop-blur transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:delay-300 motion-safe:hover:shadow-md sm:p-5">
               <label className="block">
                 <span className="text-sm font-medium text-[#2d3f62]">Name</span>
                 <input
                   type="text"
-                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-white/85 px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 focus:ring-2"
+                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-white/85 px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 transition-shadow duration-200 focus:ring-2"
                 />
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-[#2d3f62]">Email</span>
                 <input
                   type="email"
-                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-white/85 px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 focus:ring-2"
+                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-white/85 px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 transition-shadow duration-200 focus:ring-2"
                 />
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-[#2d3f62]">Company (optional)</span>
                 <input
                   type="text"
-                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-white/85 px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 focus:ring-2"
+                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-white/85 px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 transition-shadow duration-200 focus:ring-2"
                 />
               </label>
               <label className="block">
@@ -58,12 +58,12 @@ export default function ContactPage() {
                 <textarea
                   rows={3}
                   placeholder="Describe your situation (e.g., upcoming audit, missing documentation, unclear requirements)"
-                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-white/85 px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 focus:ring-2"
+                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-white/85 px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 transition-shadow duration-200 focus:ring-2"
                 />
               </label>
               <button
                 type="button"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-6 py-3 text-lg font-semibold text-white hover:bg-[#2e87ff]"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-6 py-3 text-lg font-semibold text-white transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform"
               >
                 Send Message
                 <ArrowRightIcon />
@@ -72,7 +72,7 @@ export default function ContactPage() {
           </div>
 
           <div className="flex items-start lg:pt-[86px]">
-            <div className="w-full max-w-xl rounded-2xl border border-[#d4dced] bg-white/72 p-6 shadow-sm backdrop-blur sm:p-8">
+            <div className="w-full max-w-xl rounded-2xl border border-[#d4dced] bg-white/72 p-6 shadow-sm backdrop-blur transition-shadow duration-300 motion-safe:animate-fade-in-right motion-safe:delay-200 motion-safe:hover:shadow-md sm:p-8">
               <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#e8efff] text-[#2f7dff]">
                 <svg viewBox="0 0 24 24" className="h-9 w-9" fill="none" aria-hidden="true">
                   <rect x="3" y="5.5" width="18" height="13" rx="2.4" stroke="currentColor" strokeWidth="1.8" />
@@ -98,21 +98,21 @@ export default function ContactPage() {
 
       <section style={heroStyle}>
         <div className="mx-auto max-w-[1440px] px-4 py-12 text-center sm:px-6 md:px-6 md:py-14">
-          <h2 className="text-3xl font-semibold text-[#1a2440] sm:text-4xl md:text-5xl">Start your assessment today</h2>
-          <p className="mx-auto mt-3 max-w-3xl text-lg text-[#495b7a] md:text-xl">
+          <h2 className="text-3xl font-semibold text-[#1a2440] motion-safe:animate-fade-in-up sm:text-4xl md:text-5xl">Start your assessment today</h2>
+          <p className="mx-auto mt-3 max-w-3xl text-lg text-[#495b7a] motion-safe:animate-fade-in-up motion-safe:delay-100 md:text-xl">
             Get access to our tools and simplify your cybersecurity audit process.
           </p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3 motion-safe:animate-fade-in-up motion-safe:delay-200">
             <Link
               href="/register"
-              className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-8 py-3 text-xl font-semibold text-white hover:bg-[#2e87ff]"
+              className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-8 py-3 text-xl font-semibold text-white transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform"
             >
               Get Access
               <ArrowRightIcon className="h-5 w-5" />
             </Link>
             <Link
               href="/resources"
-              className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl border border-[#cfd8ea] bg-white/85 px-8 py-3 text-xl font-semibold text-[#233553] hover:bg-white"
+              className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl border border-[#cfd8ea] bg-white/85 px-8 py-3 text-xl font-semibold text-[#233553] transition-colors duration-200 hover:bg-white active:scale-[0.98] motion-safe:active:transition-transform"
             >
               View Products
               <ArrowRightIcon className="h-5 w-5" />
@@ -122,7 +122,7 @@ export default function ContactPage() {
       </section>
 
       <section className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 md:px-6 md:py-10">
-        <div className="rounded-2xl border border-[#d7deeb] bg-white p-5 shadow-sm md:p-6">
+        <div className="rounded-2xl border border-[#d7deeb] bg-white p-5 shadow-sm transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-md md:p-6">
           <div className="flex flex-wrap items-center justify-between gap-5">
             <div className="flex items-center gap-4">
               <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-[#d7deeb] bg-[#eef2ff] text-[#2f7dff]">
@@ -139,14 +139,14 @@ export default function ContactPage() {
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-7 py-3 text-base font-semibold text-white hover:bg-[#2e87ff] md:text-lg"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-7 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
               >
                 Get Access
                 <ArrowRightIcon />
               </Link>
               <Link
                 href="/resources"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#cfd8ea] bg-white px-7 py-3 text-base font-semibold text-[#233553] hover:bg-[#f7f9ff] md:text-lg"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#cfd8ea] bg-white px-7 py-3 text-base font-semibold text-[#233553] transition-colors duration-200 hover:bg-[#f7f9ff] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
               >
                 View Products
                 <ArrowRightIcon />

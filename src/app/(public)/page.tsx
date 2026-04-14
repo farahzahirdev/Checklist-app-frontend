@@ -50,34 +50,37 @@ export default function HomePage() {
       <section style={heroStyle}>
         <div className="mx-auto grid min-h-[560px] w-full max-w-[1440px] items-center gap-10 px-4 py-10 text-white sm:px-6 sm:py-12 md:gap-12 md:px-6 md:py-16 lg:grid-cols-2 lg:gap-14">
           <div className="space-y-8">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#5ea2ff]">Cybersecurity Simplified</p>
-            <h1 className="max-w-xl text-4xl font-semibold leading-[1.02] sm:text-5xl md:text-6xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">Cybersecurity Simplified</p>
+            <h1 className="max-w-xl text-4xl font-semibold leading-[1.02] motion-safe:animate-fade-in-up motion-safe:delay-100 sm:text-5xl md:text-6xl">
               Be ready.
               <br />
               Stay confident.
             </h1>
-            <p className="max-w-xl text-lg leading-7 text-[#d4e2f6] sm:text-xl sm:leading-8">
+            <p className="max-w-xl text-lg leading-7 text-[#d4e2f6] motion-safe:animate-fade-in-up motion-safe:delay-200 sm:text-xl sm:leading-8">
               Practical tools that help you prepare for audits, close gaps, and prove security with confidence.
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-4 motion-safe:animate-fade-in-up motion-safe:delay-300">
               <Link
                 href="/resources"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-6 py-3 text-base font-semibold text-white hover:bg-[#2e87ff]"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-6 py-3 text-base font-semibold text-white transition-colors duration-200 ease-out hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform"
               >
                 Explore Products
                 <ArrowRightIcon />
               </Link>
               <Link
                 href="/register"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#365a92] bg-[#0d1d3a]/75 px-6 py-3 text-base font-semibold text-[#e3eeff] hover:bg-[#1a2e56]"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#365a92] bg-[#0d1d3a]/75 px-6 py-3 text-base font-semibold text-[#e3eeff] transition-colors duration-200 ease-out hover:bg-[#1a2e56] active:scale-[0.98] motion-safe:active:transition-transform"
               >
                 See How It Works
                 <ArrowRightIcon />
               </Link>
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-3 motion-safe:animate-fade-in-up motion-safe:delay-[400ms]">
               {highlights.map((item) => (
-                <div key={item.title} className="flex items-start gap-2 rounded-xl border border-[#335687]/75 bg-[#0a1a38]/72 p-3">
+                <div
+                  key={item.title}
+                  className="flex items-start gap-2 rounded-xl border border-[#335687]/75 bg-[#0a1a38]/72 p-3 transition-colors duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:border-[#4a7ece]/80 motion-safe:hover:bg-[#0d1f42]/85"
+                >
                   <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#3a7ce2] text-[#4e90f6]">
                     <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" aria-hidden="true">
                       <path d="M12 3 5 6v5.2c0 4.4 2.8 8 7 9.8 4.2-1.8 7-5.4 7-9.8V6l-7-3Z" stroke="currentColor" strokeWidth="1.8" />
@@ -91,8 +94,8 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-          <div className="relative">
-            <div className="overflow-hidden rounded-2xl border border-[#325a99]/80 bg-[#edf1f9] text-[#152948] shadow-[0_24px_70px_rgba(0,0,0,0.55)]">
+          <div className="relative motion-safe:animate-fade-in-right motion-safe:delay-200">
+            <div className="overflow-hidden rounded-2xl border border-[#325a99]/80 bg-[#edf1f9] text-[#152948] shadow-[0_24px_70px_rgba(0,0,0,0.55)] transition-shadow duration-500 ease-out motion-safe:hover:shadow-[0_28px_80px_rgba(0,0,0,0.5)]">
               <div className="grid md:grid-cols-[180px_1fr]">
                 <aside className="h-full bg-[#0b1a39] p-3 text-[#dce8ff]">
                   <p className="mb-3 text-sm font-semibold">Checklist KB</p>
@@ -179,10 +182,12 @@ export default function HomePage() {
       </section>
 
       <section className="mx-auto max-w-[1440px] px-4 py-12 sm:px-6 sm:py-14 md:px-6 md:py-20">
-        <h2 className="text-3xl font-semibold tracking-tight text-[#202743] sm:text-4xl md:text-5xl">Choose the Right Solution</h2>
-        <p className="mt-3 text-base text-[#6f7893] md:text-lg">Each product is designed to make cybersecurity inconveniences easier.</p>
+        <h2 className="text-3xl font-semibold tracking-tight text-[#202743] motion-safe:animate-fade-in-up sm:text-4xl md:text-5xl">Choose the Right Solution</h2>
+        <p className="mt-3 text-base text-[#6f7893] motion-safe:animate-fade-in-up motion-safe:delay-100 md:text-lg">
+          Each product is designed to make cybersecurity inconveniences easier.
+        </p>
         <div className="mt-8 grid gap-6 sm:mt-10 md:mt-12 md:grid-cols-2 md:gap-8 lg:gap-10">
-          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 text-[#1d2540] shadow-sm sm:p-8 lg:p-10">
+          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 text-[#1d2540] shadow-sm transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg sm:p-8 lg:p-10">
             <div className="flex flex-wrap items-start justify-between gap-4 xl:flex-nowrap">
               <div className="flex min-w-0 items-center gap-3">
                 <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#edf1ff] text-[#2e7cff]">
@@ -209,13 +214,16 @@ export default function HomePage() {
                 </li>
               ))}
             </ul>
-            <Link href="/resources" className="mt-6 inline-flex items-center gap-2 text-lg font-semibold text-[#2f7dff] hover:text-[#2568d6]">
+            <Link
+              href="/resources"
+              className="mt-6 inline-flex items-center gap-2 text-lg font-semibold text-[#2f7dff] transition-colors duration-200 hover:text-[#2568d6]"
+            >
               View Product
               <ArrowRightIcon />
             </Link>
           </article>
 
-          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 text-[#1d2540] shadow-sm sm:p-8 lg:p-10">
+          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 text-[#1d2540] shadow-sm transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:delay-150 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg sm:p-8 lg:p-10">
             <div className="flex flex-wrap items-start justify-between gap-4 xl:flex-nowrap">
               <div className="flex min-w-0 items-center gap-3">
                 <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#edf1ff] text-[#2e7cff]">
@@ -243,7 +251,10 @@ export default function HomePage() {
                 </li>
               ))}
             </ul>
-            <Link href="/resources" className="mt-6 inline-flex items-center gap-2 text-lg font-semibold text-[#2f7dff] hover:text-[#2568d6]">
+            <Link
+              href="/resources"
+              className="mt-6 inline-flex items-center gap-2 text-lg font-semibold text-[#2f7dff] transition-colors duration-200 hover:text-[#2568d6]"
+            >
               Learn More
               <ArrowRightIcon />
             </Link>
@@ -252,12 +263,16 @@ export default function HomePage() {
       </section>
 
       <section className="mx-auto max-w-[1440px] px-4 pb-14 sm:px-6 md:px-6 md:pb-20">
-        <div className="relative rounded-2xl border border-[#d9dfeb] bg-[#f7f9ff] p-6 sm:p-8 lg:p-12">
-          <h3 className="text-center text-2xl font-semibold text-[#202743] sm:text-3xl md:text-5xl">From Uncertainty to Audit-Ready in 3 Steps</h3>
-          <p className="mt-2 text-center text-base text-[#6f7893] md:text-lg">A simple process that gives you clarity and control.</p>
+        <div className="relative rounded-2xl border border-[#d9dfeb] bg-[#f7f9ff] p-6 transition-shadow duration-300 motion-safe:hover:shadow-md sm:p-8 lg:p-12">
+          <h3 className="text-center text-2xl font-semibold text-[#202743] motion-safe:animate-fade-in-up sm:text-3xl md:text-5xl">
+            From Uncertainty to Audit-Ready in 3 Steps
+          </h3>
+          <p className="mt-2 text-center text-base text-[#6f7893] motion-safe:animate-fade-in-up motion-safe:delay-75 md:text-lg">
+            A simple process that gives you clarity and control.
+          </p>
 
           <div className="relative mt-8 grid gap-8 overflow-x-hidden sm:mt-10 md:mt-12 md:grid-cols-3 md:gap-10">
-            <article className="space-y-4">
+            <article className="space-y-4 motion-safe:animate-fade-in-up motion-safe:delay-100 motion-safe:transition-transform motion-safe:hover:-translate-y-0.5">
               <div className="relative flex items-center gap-3">
                 <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#e6edff] text-[#2f7dff]">
                   <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" aria-hidden="true">
@@ -280,7 +295,7 @@ export default function HomePage() {
               <p className="text-base text-[#576486] md:text-lg">Pick the solution that fits your needs.</p>
             </article>
 
-            <article className="space-y-4">
+            <article className="space-y-4 motion-safe:animate-fade-in-up motion-safe:delay-200 motion-safe:transition-transform motion-safe:hover:-translate-y-0.5">
               <div className="relative flex items-center gap-3">
                 <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#e6edff] text-[#2f7dff]">
                   <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" aria-hidden="true">
@@ -313,7 +328,7 @@ export default function HomePage() {
               </ul>
             </article>
 
-            <article className="space-y-4">
+            <article className="space-y-4 motion-safe:animate-fade-in-up motion-safe:delay-300 motion-safe:transition-transform motion-safe:hover:-translate-y-0.5">
               <div className="flex items-center gap-3">
                 <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#e6edff] text-[#2f7dff]">
                   <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" aria-hidden="true">
@@ -340,18 +355,21 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="mt-10 md:mt-12">
+        <div className="mt-10 motion-safe:animate-fade-in-up md:mt-12">
           <h3 className="text-2xl font-semibold text-[#202743] sm:text-3xl md:text-5xl">Built by professionals with real audit and cybersecurity experience</h3>
           <p className="mt-3 max-w-5xl text-base text-[#6f7893] md:text-lg">
             Expertise designed based on years of hands-on cybersecurity and audit knowledge. Trusted by organizations to improve their security and simplify compliance.
           </p>
-          <Link href="/about-us" className="mt-4 inline-flex items-center gap-2 text-lg font-semibold text-[#2f7dff] hover:text-[#2568d6]">
+          <Link
+            href="/about-us"
+            className="mt-4 inline-flex items-center gap-2 text-lg font-semibold text-[#2f7dff] transition-colors duration-200 hover:text-[#2568d6]"
+          >
             Learn more about us
             <ArrowRightIcon />
           </Link>
         </div>
 
-        <div className="mt-10 rounded-2xl border border-[#264579] bg-[linear-gradient(120deg,#091229,#0b1a39_48%,#0e2348)] px-5 py-6 text-white sm:px-8 md:mt-12 md:px-10 md:py-7">
+        <div className="mt-10 rounded-2xl border border-[#264579] bg-[linear-gradient(120deg,#091229,#0b1a39_48%,#0e2348)] px-5 py-6 text-white motion-safe:animate-fade-in-up motion-safe:delay-150 sm:px-8 md:mt-12 md:px-10 md:py-7">
           <div className="flex flex-wrap items-center justify-between gap-5">
             <div className="flex items-center gap-4">
               <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-[#3a7ce2] bg-[#102a57] text-[#77aefc]">
@@ -365,11 +383,17 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              <Link href="/register" className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-6 py-3 text-base font-semibold hover:bg-[#2e87ff] md:px-8 md:text-lg">
+              <Link
+                href="/register"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-6 py-3 text-base font-semibold transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform md:px-8 md:text-lg"
+              >
                 Get Access
                 <ArrowRightIcon />
               </Link>
-              <Link href="/resources" className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#456298] px-6 py-3 text-base font-semibold text-[#e5eeff] hover:bg-[#173160] md:px-8 md:text-lg">
+              <Link
+                href="/resources"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#456298] px-6 py-3 text-base font-semibold text-[#e5eeff] transition-colors duration-200 hover:bg-[#173160] active:scale-[0.98] motion-safe:active:transition-transform md:px-8 md:text-lg"
+              >
                 View Products
                 <ArrowRightIcon />
               </Link>

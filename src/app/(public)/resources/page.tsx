@@ -96,18 +96,21 @@ export default function ResourcesPage() {
     <main className="overflow-x-hidden bg-[#f3f5fb]">
       <section style={heroStyle}>
         <div className="mx-auto max-w-[1440px] px-4 py-7 sm:px-6 md:px-6 md:py-9">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-[#64799d] hover:text-[#3f5376]">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[#64799d] transition-colors duration-200 hover:text-[#3f5376]"
+          >
             <span aria-hidden="true">←</span>
             Back to Products
           </Link>
 
           <div className="mt-5 grid items-center gap-7 lg:grid-cols-[1.02fr_0.98fr]">
             <div className="space-y-5">
-              <span className="inline-flex rounded-full bg-[#dfe8ff] px-4 py-1.5 text-base font-semibold uppercase tracking-[0.12em] text-[#5278be]">
+              <span className="inline-flex rounded-full bg-[#dfe8ff] px-4 py-1.5 text-base font-semibold uppercase tracking-[0.12em] text-[#5278be] motion-safe:animate-fade-in motion-safe:delay-75">
                 Audit
               </span>
 
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-4 motion-safe:animate-fade-in-up motion-safe:delay-100">
                 <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#dfe9ff] text-[#2f7dff]">
                   <svg viewBox="0 0 24 24" className="h-9 w-9" fill="none" aria-hidden="true">
                     <path d="M12 2 4 5v6c0 5.3 3.4 9.6 8 11 4.6-1.4 8-5.7 8-11V5l-8-3Z" fill="currentColor" fillOpacity="0.35" stroke="currentColor" strokeWidth="1.8" />
@@ -121,29 +124,29 @@ export default function ResourcesPage() {
                 </h1>
               </div>
 
-              <p className="max-w-2xl text-2xl leading-9 text-[#4f6282]">
+              <p className="max-w-2xl text-2xl leading-9 text-[#4f6282] motion-safe:animate-fade-in-up motion-safe:delay-150">
                 Prepare for audits with <span className="font-semibold text-[#3864ad]">confidence</span>. Simplify complex compliance requirements into clear, actionable steps. Find gaps, upload evidence, and get a reviewed report to prove your readiness.
               </p>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-3 motion-safe:animate-fade-in-up motion-safe:delay-200">
                 <a
                   href="/register"
-                  className="inline-flex items-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-7 py-3 text-2xl font-semibold text-white hover:bg-[#2e87ff]"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-7 py-3 text-2xl font-semibold text-white transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform"
                 >
                   Get Access
                   <ArrowRightIcon />
                 </a>
                 <Link
                   href="/resources"
-                  className="inline-flex items-center gap-2 rounded-xl border border-[#b5c7e7] bg-white/85 px-7 py-3 text-2xl font-semibold text-[#334a72] hover:bg-white"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#b5c7e7] bg-white/85 px-7 py-3 text-2xl font-semibold text-[#334a72] transition-colors duration-200 hover:bg-white active:scale-[0.98] motion-safe:active:transition-transform"
                 >
                   View Product
                   <ArrowRightIcon />
                 </Link>
               </div>
 
-              <div className="grid gap-3 pt-1 sm:grid-cols-3">
-                <div className="flex items-start gap-2 text-[#3f5375]">
+              <div className="grid gap-3 pt-1 motion-safe:animate-fade-in-up motion-safe:delay-300 sm:grid-cols-3">
+                <div className="flex items-start gap-2 text-[#3f5375] motion-safe:transition-transform motion-safe:hover:-translate-y-0.5">
                   <span className="mt-1 text-[#2f7dff]">
                     <IconByName name="shield" className="h-5 w-5" />
                   </span>
@@ -152,7 +155,7 @@ export default function ResourcesPage() {
                     <p className="text-sm text-[#627796]">Your data stays protected</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-2 text-[#3f5375]">
+                <div className="flex items-start gap-2 text-[#3f5375] motion-safe:transition-transform motion-safe:hover:-translate-y-0.5">
                   <span className="mt-1 text-[#2f7dff]">
                     <IconByName name="clipboard-check" className="h-5 w-5" />
                   </span>
@@ -161,7 +164,7 @@ export default function ResourcesPage() {
                     <p className="text-sm text-[#627796]">Every report is reviewed by our team</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-2 text-[#3f5375]">
+                <div className="flex items-start gap-2 text-[#3f5375] motion-safe:transition-transform motion-safe:hover:-translate-y-0.5">
                   <span className="mt-1 text-[#2f7dff]">
                     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
                       <path d="m13 2-7 11h5l-1 9 8-12h-5l0-8Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -175,8 +178,8 @@ export default function ResourcesPage() {
               </div>
             </div>
 
-            <div className="relative">
-              <div className="overflow-hidden rounded-2xl border border-[#c9d7ef] bg-[#f7f9fe] shadow-[0_16px_45px_rgba(60,85,130,0.2)]">
+            <div className="relative motion-safe:animate-fade-in-right motion-safe:delay-150">
+              <div className="overflow-hidden rounded-2xl border border-[#c9d7ef] bg-[#f7f9fe] shadow-[0_16px_45px_rgba(60,85,130,0.2)] transition-shadow duration-500 ease-out motion-safe:hover:shadow-[0_20px_50px_rgba(60,85,130,0.28)]">
                 <div className="grid md:grid-cols-[165px_1fr]">
                   <aside className="h-full bg-[#0b1a39] p-3 text-[#dce8ff]">
                     <p className="mb-3 text-sm font-semibold">Checklist KB</p>
@@ -277,7 +280,7 @@ export default function ResourcesPage() {
 
       <section className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 md:px-6 md:py-10">
         <div className="grid gap-6 lg:grid-cols-[1.2fr_1.8fr]">
-          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 md:p-8">
+          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
             <p className="text-xl font-semibold text-[#334a72]">Main benefit</p>
             <h2 className="mt-3 text-4xl font-semibold leading-tight text-[#1a2440]">
               Know exactly how prepared you are for an audit — before the auditor arrives.
@@ -287,11 +290,14 @@ export default function ResourcesPage() {
             </p>
           </article>
 
-          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 md:p-8">
+          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:delay-150 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
             <p className="text-xl font-semibold text-[#334a72]">Use Cases</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {useCases.map((item) => (
-                <div key={item.title} className="rounded-xl border border-[#dbe4f4] bg-[#f7f9ff] p-4">
+                <div
+                  key={item.title}
+                  className="rounded-xl border border-[#dbe4f4] bg-[#f7f9ff] p-4 transition-shadow duration-300 motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md"
+                >
                   <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#e7eeff] text-[#2f7dff]">
                     <IconByName name={item.icon} className="h-6 w-6" />
                   </span>
@@ -305,13 +311,16 @@ export default function ResourcesPage() {
       </section>
 
       <section className="mx-auto max-w-[1440px] px-4 pb-8 sm:px-6 md:px-6 md:pb-10">
-        <div className="rounded-2xl border border-[#d7deeb] bg-white p-6 md:p-8">
+        <div className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-md md:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-4xl font-semibold text-[#1a2440]">How it works</h2>
               <p className="mt-2 text-xl text-[#556b8c]">A simple 5-step process to go from uncertainty to audit-ready.</p>
             </div>
-            <Link href="/register" className="inline-flex items-center gap-2 rounded-xl border border-[#b7caea] bg-[#f7f9ff] px-5 py-2.5 text-lg font-semibold text-[#2f7dff]">
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#b7caea] bg-[#f7f9ff] px-5 py-2.5 text-lg font-semibold text-[#2f7dff] transition-colors duration-200 hover:border-[#9eb6e8] hover:bg-[#eef3ff] active:scale-[0.98] motion-safe:active:transition-transform"
+            >
               View Demo
               <ArrowRightIcon />
             </Link>
@@ -319,7 +328,11 @@ export default function ResourcesPage() {
 
           <div className="mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
             {steps.map((step, idx) => (
-              <article key={step.title} className="relative">
+              <article
+                key={step.title}
+                className="relative motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-0.5"
+                style={{ animationDelay: `${idx * 80}ms` }}
+              >
                 <div className="flex items-center gap-3 xl:block">
                   <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#e7eeff] text-[#2f7dff]">
                     <IconByName name={step.icon} className="h-8 w-8" />
@@ -355,11 +368,17 @@ export default function ResourcesPage() {
 
       <section className="mx-auto max-w-[1440px] px-4 pb-8 sm:px-6 md:px-6 md:pb-10">
         <div>
-          <h2 className="text-4xl font-semibold text-[#1a2440]">Who it&apos;s for</h2>
-          <p className="mt-2 text-xl text-[#556b8c]">Built for teams that need to prove security, close gaps, and stay audit-ready.</p>
+          <h2 className="text-4xl font-semibold text-[#1a2440] motion-safe:animate-fade-in-up">Who it&apos;s for</h2>
+          <p className="mt-2 text-xl text-[#556b8c] motion-safe:animate-fade-in-up motion-safe:delay-75">
+            Built for teams that need to prove security, close gaps, and stay audit-ready.
+          </p>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {audiences.map((item) => (
-              <article key={item.title} className="rounded-2xl border border-[#d7deeb] bg-[#f7f9ff] p-5">
+            {audiences.map((item, idx) => (
+              <article
+                key={item.title}
+                className="rounded-2xl border border-[#d7deeb] bg-[#f7f9ff] p-5 transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md"
+                style={{ animationDelay: `${100 + idx * 90}ms` }}
+              >
                 <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#e7eeff] text-[#2f7dff]">
                   <IconByName name={item.icon} className="h-6 w-6" />
                 </span>
@@ -372,7 +391,7 @@ export default function ResourcesPage() {
       </section>
 
       <section className="mx-auto max-w-[1440px] px-4 pb-10 sm:px-6 md:px-6 md:pb-12">
-        <div className="rounded-2xl border border-[#264579] bg-[linear-gradient(120deg,#091229,#0b1a39_48%,#0e2348)] px-5 py-6 text-white sm:px-8 md:px-10 md:py-7">
+        <div className="rounded-2xl border border-[#264579] bg-[linear-gradient(120deg,#091229,#0b1a39_48%,#0e2348)] px-5 py-6 text-white motion-safe:animate-fade-in-up motion-safe:delay-100 sm:px-8 md:px-10 md:py-7">
           <div className="flex flex-wrap items-center justify-between gap-5">
             <div className="flex items-center gap-4">
               <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-[#3a7ce2] bg-[#102a57] text-[#77aefc]">
@@ -386,11 +405,17 @@ export default function ResourcesPage() {
               </div>
             </div>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              <Link href="/register" className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-7 py-3 text-base font-semibold text-white hover:bg-[#2e87ff] md:text-lg">
+              <Link
+                href="/register"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-7 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
+              >
                 Get Access
                 <ArrowRightIcon />
               </Link>
-              <Link href="/resources" className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#456298] px-7 py-3 text-base font-semibold text-[#e5eeff] hover:bg-[#173160] md:text-lg">
+              <Link
+                href="/resources"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#456298] px-7 py-3 text-base font-semibold text-[#e5eeff] transition-colors duration-200 hover:bg-[#173160] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
+              >
                 View Product
                 <ArrowRightIcon />
               </Link>

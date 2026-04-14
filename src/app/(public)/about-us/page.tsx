@@ -23,21 +23,21 @@ export default function AboutUsPage() {
       <section style={heroStyle}>
         <div className="mx-auto grid min-h-[560px] w-full max-w-[1440px] items-center gap-10 px-4 py-10 text-white sm:px-6 sm:py-12 md:gap-12 md:px-6 md:py-16 lg:grid-cols-2 lg:gap-14">
           <div className="space-y-7">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#5ea2ff]">About Us</p>
-            <h1 className="max-w-xl text-4xl font-semibold leading-[1.04] sm:text-5xl md:text-6xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">About Us</p>
+            <h1 className="max-w-xl text-4xl font-semibold leading-[1.04] motion-safe:animate-fade-in-up motion-safe:delay-100 sm:text-5xl md:text-6xl">
               Built by
               <br />
               cybersecurity
               <br />
               <span className="text-[#2f7dff]">professionals.</span>
             </h1>
-            <p className="max-w-xl text-lg leading-8 text-[#d4e2f6]">
+            <p className="max-w-xl text-lg leading-8 text-[#d4e2f6] motion-safe:animate-fade-in-up motion-safe:delay-200">
               We simplify audit preparation for today&apos;s cybersecurity challenges. Our mission is to give security and compliance teams clarity, structure, and confidence — without the complexity.
             </p>
           </div>
 
-          <div className="relative">
-            <div className="overflow-hidden rounded-2xl border border-[#325a99]/80 bg-[#edf1f9] text-[#152948] shadow-[0_24px_70px_rgba(0,0,0,0.55)]">
+          <div className="relative motion-safe:animate-fade-in-right motion-safe:delay-150">
+            <div className="overflow-hidden rounded-2xl border border-[#325a99]/80 bg-[#edf1f9] text-[#152948] shadow-[0_24px_70px_rgba(0,0,0,0.55)] transition-shadow duration-500 ease-out motion-safe:hover:shadow-[0_28px_80px_rgba(0,0,0,0.5)]">
               <div className="grid md:grid-cols-[180px_1fr]">
                 <aside className="h-full bg-[#0b1a39] p-3 text-[#dce8ff]">
                   <p className="mb-3 text-sm font-semibold">Checklist KB</p>
@@ -125,7 +125,7 @@ export default function AboutUsPage() {
 
       <section className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 md:px-6 md:py-12">
         <div className="grid gap-4 lg:grid-cols-2">
-          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 md:p-8">
+          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
             <div className="flex items-start gap-4">
               <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#eef2ff] text-[#2f7dff]">
                 <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" aria-hidden="true">
@@ -143,7 +143,7 @@ export default function AboutUsPage() {
             </div>
           </article>
 
-          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 md:p-8">
+          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:delay-100 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
             <div className="flex items-start gap-4">
               <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#eef2ff] text-[#2f7dff]">
                 <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" aria-hidden="true">
@@ -175,7 +175,7 @@ export default function AboutUsPage() {
             </div>
           </article>
 
-          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 md:p-8">
+          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:delay-200 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
             <div className="flex items-start gap-4">
               <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#eef2ff] text-[#2f7dff]">
                 <svg viewBox="0 0 90 90" className="h-8 w-8 text-[#2f7dff]" fill="none" aria-hidden="true">
@@ -198,7 +198,7 @@ export default function AboutUsPage() {
             </div>
           </article>
 
-          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 md:p-8">
+          <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:delay-300 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
             <div className="flex items-start gap-4">
               <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#eef2ff] text-[#2f7dff]">
                 <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" aria-hidden="true">
@@ -238,13 +238,13 @@ export default function AboutUsPage() {
       </section>
 
       <section className="mx-auto max-w-[1440px] px-4 pb-14 sm:px-6 md:px-6 md:pb-16">
-        <h3 className="text-center text-3xl font-semibold text-[#202743] md:text-4xl">Trust & Credentials</h3>
-        <p className="mt-2 text-center text-base text-[#6f7893] md:text-lg">
+        <h3 className="text-center text-3xl font-semibold text-[#202743] motion-safe:animate-fade-in-up md:text-4xl">Trust & Credentials</h3>
+        <p className="mt-2 text-center text-base text-[#6f7893] motion-safe:animate-fade-in-up motion-safe:delay-75 md:text-lg">
           We combine real-world experience with recognized knowledge and standards.
         </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <article className="rounded-2xl border border-[#d7deeb] bg-white p-5">
+          <article className="rounded-2xl border border-[#d7deeb] bg-white p-5 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md">
             <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef2ff] text-[#2f7dff]">
               <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" aria-hidden="true">
                 <rect x="6" y="4" width="12" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" />
@@ -257,7 +257,7 @@ export default function AboutUsPage() {
             </p>
           </article>
 
-          <article className="rounded-2xl border border-[#d7deeb] bg-white p-5">
+          <article className="rounded-2xl border border-[#d7deeb] bg-white p-5 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:delay-100 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md">
             <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef2ff] text-[#2f7dff]">
               <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" aria-hidden="true">
                 <path d="m4 9 8-5 8 5-8 5-8-5Zm3 2.5v4.5c0 1.6 2.2 3 5 3s5-1.4 5-3v-4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -269,7 +269,7 @@ export default function AboutUsPage() {
             </p>
           </article>
 
-          <article className="rounded-2xl border border-[#d7deeb] bg-white p-5">
+          <article className="rounded-2xl border border-[#d7deeb] bg-white p-5 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:delay-200 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md">
             <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef2ff] text-[#2f7dff]">
               <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" aria-hidden="true">
                 <path d="M12 2 4 5v6c0 5.3 3.4 9.6 8 11 4.6-1.4 8-5.7 8-11V5l-8-3Z" stroke="currentColor" strokeWidth="1.8" />
@@ -281,7 +281,7 @@ export default function AboutUsPage() {
             </p>
           </article>
 
-          <article className="rounded-2xl border border-[#d7deeb] bg-white p-5">
+          <article className="rounded-2xl border border-[#d7deeb] bg-white p-5 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:delay-300 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md">
             <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef2ff] text-[#2f7dff]">
               <svg viewBox="0 0 90 90" className="h-7 w-7 text-[#2f7dff]" fill="none" aria-hidden="true">
                 <path
@@ -300,7 +300,7 @@ export default function AboutUsPage() {
           </article>
         </div>
 
-        <div className="mt-8 rounded-2xl border border-[#264579] bg-[linear-gradient(120deg,#091229,#0b1a39_48%,#0e2348)] px-5 py-6 text-white sm:px-8 md:px-10 md:py-7">
+        <div className="mt-8 rounded-2xl border border-[#264579] bg-[linear-gradient(120deg,#091229,#0b1a39_48%,#0e2348)] px-5 py-6 text-white motion-safe:animate-fade-in-up motion-safe:delay-150 sm:px-8 md:px-10 md:py-7">
           <div className="flex flex-wrap items-center justify-between gap-6">
             <div className="flex min-w-0 items-center gap-5">
               <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[#3a7ce2] bg-[#102a57] text-[#77aefc]">
@@ -316,11 +316,17 @@ export default function AboutUsPage() {
               </div>
             </div>
             <div className="ml-auto flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              <Link href="/contact" className="inline-flex min-w-[180px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-6 py-3 text-base font-semibold hover:bg-[#2e87ff] md:text-lg">
+              <Link
+                href="/contact"
+                className="inline-flex min-w-[180px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-6 py-3 text-base font-semibold transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
+              >
                 Contact Us
                 <ArrowRightIcon />
               </Link>
-              <Link href="/resources" className="inline-flex min-w-[210px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#456298] px-6 py-3 text-base font-semibold text-[#e5eeff] hover:bg-[#173160] md:text-lg">
+              <Link
+                href="/resources"
+                className="inline-flex min-w-[210px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#456298] px-6 py-3 text-base font-semibold text-[#e5eeff] transition-colors duration-200 hover:bg-[#173160] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
+              >
                 Explore Products
                 <ArrowRightIcon />
               </Link>
