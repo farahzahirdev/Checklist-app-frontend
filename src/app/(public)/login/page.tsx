@@ -1,12 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import { useState, type FormEvent } from 'react';
 import type { AuthResponse } from '@/lib/auth';
-import { loginAccount, persistAccessToken } from '@/lib/auth';
+import { getRoleHomePath, loginAccount, persistAccessToken } from '@/lib/auth';
 import authBackground from '@/assets/cybersecurity-background.jpg';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mfaCode, setMfaCode] = useState('');
@@ -32,6 +35,8 @@ export default function LoginPage() {
       if (data.access_token) {
         persistAccessToken(data.access_token);
       }
+      router.push(getRoleHomePath(data.user.role) as Route);
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign in failed');
     } finally {
@@ -46,44 +51,6 @@ export default function LoginPage() {
     backgroundRepeat: 'no-repeat',
   } as const;
 
-  if (result) {
-    return (
-      <main className="flex min-h-screen items-center justify-center px-6 py-8 text-[#ffffff]" style={backgroundStyle}>
-        <div className="mx-auto w-full max-w-lg space-y-6 rounded-2xl border border-[#2f4d82] bg-[#07112a]/85 p-8 backdrop-blur md:p-10">
-          <h1 className="text-2xl font-semibold text-white">Signed in</h1>
-          <p className="text-[#d8e2f2]">
-            Welcome back, <span className="text-[#9dc5ff]">{result.user.email}</span>.
-          </p>
-          <dl className="grid gap-2 text-sm text-[#97a5bb]">
-            <div className="flex justify-between gap-4">
-              <dt>Role</dt>
-              <dd className="text-[#e7efff]">{result.user.role}</dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt>MFA required</dt>
-              <dd className="text-[#e7efff]">{result.mfa_required ? 'Yes' : 'No'}</dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt>MFA enabled</dt>
-              <dd className="text-[#e7efff]">{result.mfa_enabled ? 'Yes' : 'No'}</dd>
-            </div>
-          </dl>
-          <div className="flex flex-wrap gap-3 pt-2">
-            <Link
-              href="/dashboard"
-              className="rounded-lg border border-[#1f7bff] bg-[#1f7bff]/25 px-4 py-2 text-sm text-[#f5f8ff] hover:bg-[#1f7bff]/35"
-            >
-              Go to dashboard
-            </Link>
-            <Link href="/" className="rounded-lg border border-[#345793] px-4 py-2 text-sm hover:bg-[#1f7bff]/20">
-              Home
-            </Link>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="flex min-h-screen items-center justify-center px-6 py-8 text-[#ffffff]" style={backgroundStyle}>
       <div className="mx-auto w-full max-w-lg space-y-8 rounded-2xl border border-[#2f4d82] bg-[#07112a]/85 p-8 backdrop-blur md:p-10">
@@ -91,6 +58,11 @@ export default function LoginPage() {
           <p className="text-xs uppercase tracking-[0.35em] text-[#9dc5ff]">Account</p>
           <h1 className="mt-2 text-3xl font-semibold text-white">Sign in</h1>
           <p className="mt-2 text-sm text-[#97a5bb]">Use your registered account credentials.</p>
+          {result ? (
+            <p className="mt-2 text-sm text-emerald-300">
+              Signed in as {result.user.email}. Redirecting to your workspace...
+            </p>
+          ) : null}
         </div>
 
         <form className="space-y-5" onSubmit={onSubmit}>

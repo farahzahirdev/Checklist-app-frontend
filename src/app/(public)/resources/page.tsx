@@ -95,7 +95,7 @@ export default function ResourcesPage() {
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
       <section style={heroStyle}>
-        <div className="mx-auto max-w-[1440px] px-4 py-7 sm:px-6 md:px-6 md:py-9">
+        <div className="mx-auto min-h-[560px] max-w-[1440px] px-4 py-7 sm:px-6 md:px-6 md:py-9">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-sm font-medium text-[#64799d] transition-colors duration-200 hover:text-[#3f5376]"

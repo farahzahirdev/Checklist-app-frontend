@@ -21,7 +21,7 @@ export default function ContactPage() {
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
       <section style={heroStyle}>
-        <div className="mx-auto grid min-h-[calc(100vh-74px)] w-full max-w-[1440px] gap-8 px-4 py-8 sm:px-6 md:px-6 md:py-12 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="mx-auto grid min-h-[560px] w-full max-w-[1440px] gap-8 px-4 py-8 sm:px-6 md:px-6 md:py-12 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="space-y-6">
             <div className="space-y-3">
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#4d7fd3] motion-safe:animate-fade-in motion-safe:delay-75">Contact Us</p>
