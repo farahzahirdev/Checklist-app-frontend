@@ -1,6 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import bgImage from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { PublicFooter } from '@/components/public-footer';
+import { useLocale, translate } from '@/lib/i18n';
+import { resourcesMessages } from '@/locales/resources';
 
 function ArrowRightIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
@@ -26,65 +30,82 @@ function IconByName({ name, className = 'h-6 w-6' }: { name: string; className?:
   return null;
 }
 
-const useCases = [
+const useCaseDefs = [
   {
-    title: 'Before an Audit',
-    body: 'Assess your readiness, close gaps, and avoid surprises during the audit.',
+    titleKey: 'useCases.beforeAudit.title',
+    bodyKey: 'useCases.beforeAudit.body',
     icon: 'calendar',
   },
   {
-    title: 'Internal Review',
-    body: 'Validate your current security and compliance posture and ensure controls are in place and effective.',
+    titleKey: 'useCases.internalReview.title',
+    bodyKey: 'useCases.internalReview.body',
     icon: 'search',
   },
   {
-    title: 'Gap Analysis',
-    body: 'Compare your environment with regulatory requirements, identify weak areas, and prioritize what to fix first.',
+    titleKey: 'useCases.gapAnalysis.title',
+    bodyKey: 'useCases.gapAnalysis.body',
     icon: 'target',
   },
   {
-    title: 'Documentation Readiness',
-    body: 'Understand what needs to be documented and prepare policies, procedures, and evidence with confidence.',
+    titleKey: 'useCases.documentationReadiness.title',
+    bodyKey: 'useCases.documentationReadiness.body',
     icon: 'doc-stack',
   },
 ];
 
-const steps = [
+const stepDefs = [
   {
-    title: 'Choose a checklist',
-    body: 'Pick the compliance framework or checklist that matches your organization’s needs.',
+    titleKey: 'steps.chooseChecklist.title',
+    bodyKey: 'steps.chooseChecklist.body',
     icon: 'clipboard-check',
   },
   {
-    title: 'Answer guided questions',
-    body: 'We break down requirements into clear, structured questions so you always know what to do.',
+    titleKey: 'steps.answerGuidedQuestions.title',
+    bodyKey: 'steps.answerGuidedQuestions.body',
     icon: 'doc-stack',
   },
   {
-    title: 'Upload evidence (optional)',
-    body: 'Attach documents, screenshots, or files that support your answers. We accept PDF, PNG, and JPG.',
+    titleKey: 'steps.uploadEvidence.title',
+    bodyKey: 'steps.uploadEvidence.body',
     icon: 'cloud-upload',
   },
   {
-    title: 'Admin review & final report',
-    body: 'Our team reviews your assessment, validates the evidence, and publishes your final report.',
+    titleKey: 'steps.adminReview.title',
+    bodyKey: 'steps.adminReview.body',
     icon: 'shield-check',
   },
   {
-    title: 'Assessment data lifecycle',
-    body: 'Your data is securely deleted within 48 hours after completion. You stay in control.',
+    titleKey: 'steps.assessmentDataLifecycle.title',
+    bodyKey: 'steps.assessmentDataLifecycle.body',
     icon: 'trash',
   },
 ];
 
-const audiences = [
-  { title: 'Compliance & GRC Teams', body: 'Stay on top of frameworks and regulatory requirements.', icon: 'shield-check' },
-  { title: 'IT & Security Teams', body: 'Identify gaps and prioritize what matters most.', icon: 'server' },
-  { title: 'Management', body: 'Get clear insights and prove your organization is prepared.', icon: 'chart' },
-  { title: 'Auditors & Consultants', body: 'Save time with structured, consistent assessments.', icon: 'users' },
+const audienceDefs = [
+  { titleKey: 'audiences.complianceTeams.title', bodyKey: 'audiences.complianceTeams.body', icon: 'shield-check' },
+  { titleKey: 'audiences.itSecurityTeams.title', bodyKey: 'audiences.itSecurityTeams.body', icon: 'server' },
+  { titleKey: 'audiences.management.title', bodyKey: 'audiences.management.body', icon: 'chart' },
+  { titleKey: 'audiences.auditorsConsultants.title', bodyKey: 'audiences.auditorsConsultants.body', icon: 'users' },
 ];
 
 export default function ResourcesPage() {
+  const { locale } = useLocale();
+  const t = (key: string, values?: Record<string, string>) => translate(resourcesMessages, locale, key, values);
+  const useCases = useCaseDefs.map((item) => ({
+    ...item,
+    title: t(item.titleKey),
+    body: t(item.bodyKey),
+  }));
+  const steps = stepDefs.map((item) => ({
+    ...item,
+    title: t(item.titleKey),
+    body: t(item.bodyKey),
+  }));
+  const audiences = audienceDefs.map((item) => ({
+    ...item,
+    title: t(item.titleKey),
+    body: t(item.bodyKey),
+  }));
   const heroStyle = {
     backgroundImage: `linear-gradient(rgba(243, 246, 255, 0.88), rgba(243, 246, 255, 0.92)), url(${bgImage.src})`,
     backgroundSize: 'cover',
@@ -101,7 +122,7 @@ export default function ResourcesPage() {
             className="inline-flex items-center gap-2 text-sm font-medium text-[#64799d] transition-colors duration-200 hover:text-[#3f5376]"
           >
             <span aria-hidden="true">←</span>
-            Back to Products
+            {t('hero.backToProducts')}
           </Link>
 
           <div className="mt-5 grid items-center gap-7 lg:grid-cols-[1.02fr_0.98fr]">
@@ -291,7 +312,7 @@ export default function ResourcesPage() {
           </article>
 
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:delay-150 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
-            <p className="text-xl font-semibold text-[#334a72]">Use Cases</p>
+            <p className="text-xl font-semibold text-[#334a72]">{t('sections.useCases')}</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {useCases.map((item) => (
                 <div
@@ -314,14 +335,14 @@ export default function ResourcesPage() {
         <div className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-md md:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-4xl font-semibold text-[#1a2440]">How it works</h2>
-              <p className="mt-2 text-xl text-[#556b8c]">A simple 5-step process to go from uncertainty to audit-ready.</p>
+              <h2 className="text-4xl font-semibold text-[#1a2440]">{t('sections.howItWorks')}</h2>
+              <p className="mt-2 text-xl text-[#556b8c]">{t('sections.howItWorksBody')}</p>
             </div>
             <Link
               href="/register"
               className="inline-flex items-center gap-2 rounded-xl border border-[#b7caea] bg-[#f7f9ff] px-5 py-2.5 text-lg font-semibold text-[#2f7dff] transition-colors duration-200 hover:border-[#9eb6e8] hover:bg-[#eef3ff] active:scale-[0.98] motion-safe:active:transition-transform"
             >
-              View Demo
+              {t('sections.viewDemo')}
               <ArrowRightIcon />
             </Link>
           </div>
@@ -368,9 +389,9 @@ export default function ResourcesPage() {
 
       <section className="mx-auto max-w-[1440px] px-4 pb-8 sm:px-6 md:px-6 md:pb-10">
         <div>
-          <h2 className="text-4xl font-semibold text-[#1a2440] motion-safe:animate-fade-in-up">Who it&apos;s for</h2>
+          <h2 className="text-4xl font-semibold text-[#1a2440] motion-safe:animate-fade-in-up">{t('sections.whoItsFor')}</h2>
           <p className="mt-2 text-xl text-[#556b8c] motion-safe:animate-fade-in-up motion-safe:delay-75">
-            Built for teams that need to prove security, close gaps, and stay audit-ready.
+            {t('sections.whoItsForBody')}
           </p>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {audiences.map((item, idx) => (

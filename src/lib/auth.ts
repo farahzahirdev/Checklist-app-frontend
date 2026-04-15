@@ -5,6 +5,10 @@ export type UserRole = 'admin' | 'auditor' | 'customer';
 export type AuthUser = {
   id: string;
   email: string;
+  name?: string | null;
+  full_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   role: UserRole;
   is_active: boolean;
 };
@@ -50,4 +54,24 @@ export type MessageResponse = {
 
 export async function logoutAccount() {
   return apiPostEmpty<MessageResponse>('/auth/logout');
+}
+
+export function getUserDisplayName(user: AuthUser) {
+  const fullName = user.full_name?.trim();
+  if (fullName) {
+    return fullName;
+  }
+
+  const name = user.name?.trim();
+  if (name) {
+    return name;
+  }
+
+  const firstName = user.first_name?.trim();
+  const lastName = user.last_name?.trim();
+  if (firstName || lastName) {
+    return [firstName, lastName].filter(Boolean).join(' ');
+  }
+
+  return user.email.split('@')[0] ?? user.email;
 }

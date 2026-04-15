@@ -1,6 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { PublicFooter } from '@/components/public-footer';
+import { translate, useLocale } from '@/lib/i18n';
+import { aboutUsMessages } from '@/locales/about-us';
 
 function ArrowRightIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
@@ -11,6 +15,8 @@ function ArrowRightIcon({ className = 'h-4 w-4' }: { className?: string }) {
 }
 
 export default function AboutUsPage() {
+  const { locale } = useLocale();
+  const t = (key: string) => translate(aboutUsMessages, locale, key);
   const heroStyle = {
     backgroundImage: `linear-gradient(rgba(4, 9, 22, 0.56), rgba(4, 9, 22, 0.72)), url(${heroBackground.src})`,
     backgroundSize: 'cover',
@@ -23,16 +29,16 @@ export default function AboutUsPage() {
       <section style={heroStyle}>
         <div className="mx-auto grid min-h-[560px] w-full max-w-[1440px] items-center gap-10 px-4 py-10 text-white sm:px-6 sm:py-12 md:gap-12 md:px-6 md:py-16 lg:grid-cols-2 lg:gap-14">
           <div className="space-y-7">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">About Us</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">{t('hero.kicker')}</p>
             <h1 className="max-w-xl text-4xl font-semibold leading-[1.04] motion-safe:animate-fade-in-up motion-safe:delay-100 sm:text-5xl md:text-6xl">
-              Built by
+              {t('hero.line1')}
               <br />
-              cybersecurity
+              {t('hero.line2')}
               <br />
-              <span className="text-[#2f7dff]">professionals.</span>
+              <span className="text-[#2f7dff]">{t('hero.line3')}</span>
             </h1>
             <p className="max-w-xl text-lg leading-8 text-[#d4e2f6] motion-safe:animate-fade-in-up motion-safe:delay-200">
-              We simplify audit preparation for today&apos;s cybersecurity challenges. Our mission is to give security and compliance teams clarity, structure, and confidence — without the complexity.
+              {t('hero.subtitle')}
             </p>
           </div>
 
@@ -135,9 +141,9 @@ export default function AboutUsPage() {
                 </svg>
               </span>
               <div>
-                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-[40px]">Who We Are</h3>
+                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-[40px]">{t('cards.whoWeAre.title')}</h3>
                 <p className="mt-2 text-base leading-8 text-[#55627e] md:text-[18px]">
-                  We are cybersecurity professionals with hands-on experience in audits, compliance, and incident response. Over the years, we have worked with organizations across different industries, helping them strengthen their security and prepare for audits with confidence.
+                  {t('cards.whoWeAre.body')}
                 </p>
               </div>
             </div>
@@ -152,23 +158,23 @@ export default function AboutUsPage() {
                 </svg>
               </span>
               <div>
-                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-[40px]">Our Experience</h3>
+                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-[40px]">{t('cards.experience.title')}</h3>
                 <ul className="mt-3 space-y-2 text-base text-[#445675] md:text-[18px]">
                   <li className="flex items-center gap-2">
                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    Cybersecurity and audit expertise
+                    {t('cards.experience.point1')}
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    ISO 27001, NIS2 and other security frameworks
+                    {t('cards.experience.point2')}
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    Security assessments and incident response
+                    {t('cards.experience.point3')}
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    Real-world experience across multiple industries
+                    {t('cards.experience.point4')}
                   </li>
                 </ul>
               </div>
@@ -189,11 +195,11 @@ export default function AboutUsPage() {
                 </svg>
               </span>
               <div>
-                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-[40px]">Why This Product Exists</h3>
+                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-[40px]">{t('cards.why.title')}</h3>
                 <p className="mt-2 text-base leading-8 text-[#55627e] md:text-[18px]">
-                  We saw that many organizations were not unprepared because of lack of effort, but because of unclear requirements, missing documentation, and the lack of a structured approach. Existing tools were either too complex or not focused on what really matters during an audit.
+                  {t('cards.why.body')}
                 </p>
-                <p className="mt-4 text-base font-semibold text-[#303f60] md:text-[18px]">Checklist KB was created to change that.</p>
+                <p className="mt-4 text-base font-semibold text-[#303f60] md:text-[18px]">{t('cards.why.highlight')}</p>
               </div>
             </div>
           </article>
@@ -209,26 +215,26 @@ export default function AboutUsPage() {
                 </svg>
               </span>
               <div>
-                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-[40px]">Our Approach</h3>
+                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-[40px]">{t('cards.approach.title')}</h3>
                 <p className="mt-2 text-base leading-8 text-[#55627e] md:text-[18px]">
-                  We believe audit preparation should be practical, clear, and evidence-based. That&apos;s why we built a solution that focuses on what really matters and guides you step by step.
+                  {t('cards.approach.body')}
                 </p>
                 <ul className="mt-3 space-y-2 text-base text-[#445675] md:text-[18px]">
                   <li className="flex items-center gap-2">
                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    Practical, not theoretical
+                    {t('cards.approach.point1')}
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    Focused on real audit readiness
+                    {t('cards.approach.point2')}
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    Evidence-based approach
+                    {t('cards.approach.point3')}
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    Simple and structured workflow
+                    {t('cards.approach.point4')}
                   </li>
                 </ul>
               </div>
@@ -238,9 +244,9 @@ export default function AboutUsPage() {
       </section>
 
       <section className="mx-auto max-w-[1440px] px-4 pb-14 sm:px-6 md:px-6 md:pb-16">
-        <h3 className="text-center text-3xl font-semibold text-[#202743] motion-safe:animate-fade-in-up md:text-4xl">Trust & Credentials</h3>
+        <h3 className="text-center text-3xl font-semibold text-[#202743] motion-safe:animate-fade-in-up md:text-4xl">{t('trust.title')}</h3>
         <p className="mt-2 text-center text-base text-[#6f7893] motion-safe:animate-fade-in-up motion-safe:delay-75 md:text-lg">
-          We combine real-world experience with recognized knowledge and standards.
+          {t('trust.subtitle')}
         </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -251,9 +257,9 @@ export default function AboutUsPage() {
                 <path d="M9 9h6M9 13h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </span>
-            <h4 className="mt-3 text-2xl font-semibold text-[#1f2741]">Real-World Experience</h4>
+            <h4 className="mt-3 text-2xl font-semibold text-[#1f2741]">{t('trust.card1.title')}</h4>
             <p className="mt-2 text-base leading-7 text-[#55627e]">
-              Years of hands-on work with audits, security assessments, and incident response.
+              {t('trust.card1.body')}
             </p>
           </article>
 
@@ -263,9 +269,9 @@ export default function AboutUsPage() {
                 <path d="m4 9 8-5 8 5-8 5-8-5Zm3 2.5v4.5c0 1.6 2.2 3 5 3s5-1.4 5-3v-4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </span>
-            <h4 className="mt-3 text-2xl font-semibold text-[#1f2741]">Certifications</h4>
+            <h4 className="mt-3 text-2xl font-semibold text-[#1f2741]">{t('trust.card2.title')}</h4>
             <p className="mt-2 text-base leading-7 text-[#55627e]">
-              Industry-recognized certifications including CISSP, CySA+, and ISO 27001 Lead Auditor.
+              {t('trust.card2.body')}
             </p>
           </article>
 
@@ -275,9 +281,9 @@ export default function AboutUsPage() {
                 <path d="M12 2 4 5v6c0 5.3 3.4 9.6 8 11 4.6-1.4 8-5.7 8-11V5l-8-3Z" stroke="currentColor" strokeWidth="1.8" />
               </svg>
             </span>
-            <h4 className="mt-3 text-2xl font-semibold text-[#1f2741]">Security Standards</h4>
+            <h4 className="mt-3 text-2xl font-semibold text-[#1f2741]">{t('trust.card3.title')}</h4>
             <p className="mt-2 text-base leading-7 text-[#55627e]">
-              Deep knowledge of frameworks such as NIS2, ISO 27001, and other international standards.
+              {t('trust.card3.body')}
             </p>
           </article>
 
@@ -293,9 +299,9 @@ export default function AboutUsPage() {
                 />
               </svg>
             </span>
-            <h4 className="mt-3 text-2xl font-semibold text-[#1f2741]">Practical Partnerships</h4>
+            <h4 className="mt-3 text-2xl font-semibold text-[#1f2741]">{t('trust.card4.title')}</h4>
             <p className="mt-2 text-base leading-7 text-[#55627e]">
-              Collaboration with organizations to strengthen their security and achieve compliance goals.
+              {t('trust.card4.body')}
             </p>
           </article>
         </div>
@@ -309,9 +315,9 @@ export default function AboutUsPage() {
                 </svg>
               </span>
               <div className="min-w-0">
-                <p className="text-2xl font-semibold md:text-4xl">Want to know more about our work?</p>
+                <p className="text-2xl font-semibold md:text-4xl">{t('bottom.title')}</p>
                 <p className="mt-1 text-sm text-[#c7d8f8] md:text-base">
-                  We&apos;re always open to new conversations about how we can help you and your organization stay secure and audit-ready.
+                  {t('bottom.subtitle')}
                 </p>
               </div>
             </div>
@@ -320,14 +326,14 @@ export default function AboutUsPage() {
                 href="/contact"
                 className="inline-flex min-w-[180px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-6 py-3 text-base font-semibold transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
               >
-                Contact Us
+                {t('bottom.contact')}
                 <ArrowRightIcon />
               </Link>
               <Link
                 href="/resources"
                 className="inline-flex min-w-[210px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#456298] px-6 py-3 text-base font-semibold text-[#e5eeff] transition-colors duration-200 hover:bg-[#173160] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
               >
-                Explore Products
+                {t('bottom.products')}
                 <ArrowRightIcon />
               </Link>
             </div>
@@ -339,3 +345,4 @@ export default function AboutUsPage() {
     </main>
   );
 }
+
