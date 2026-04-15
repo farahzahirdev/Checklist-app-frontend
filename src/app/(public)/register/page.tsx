@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AuthResponse | null>(null);
@@ -74,16 +75,45 @@ export default function RegisterPage() {
           </label>
           <label className="block space-y-2 text-sm">
             <span className="text-[#d8e2f2]">Password</span>
-            <input
-              type="password"
-              name="password"
-              autoComplete="new-password"
-              required
-              minLength={12}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                autoComplete="new-password"
+                required
+                minLength={12}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 pr-10 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute inset-y-0 right-0 inline-flex items-center px-3 text-[#9dc5ff] hover:text-[#c6dcff]"
+              >
+                {showPassword ? (
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                    <path
+                      d="M3 3 21 21M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.3A10 10 0 0 1 12 5c5.5 0 9.5 4.6 10 7-.2 1-1 2.5-2.3 3.9M6.6 6.6C4.3 8.2 2.4 10.4 2 12c.5 2.4 4.5 7 10 7 1.6 0 3-.4 4.2-1"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                    <path
+                      d="M2 12c.5-2.4 4.5-7 10-7s9.5 4.6 10 7c-.5 2.4-4.5 7-10 7s-9.5-4.6-10-7Z"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                    />
+                    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </label>
 
           {error ? (

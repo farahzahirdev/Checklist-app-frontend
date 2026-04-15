@@ -34,41 +34,41 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <section className="space-y-6">
-      <header className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.3em] text-cyan-200/85">Admin</p>
-        <h1 className="text-3xl font-semibold">Users & Roles</h1>
-        <p className="text-sm text-zinc-300">
+    <section className="space-y-4">
+      <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Users</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#1f2d45]">Users & Role Assignment</h1>
+        <p className="mt-1 text-sm text-[#607594]">
           Assign platform roles using the backend admin endpoint. This controls access for admin, auditor, and customer
           experiences.
         </p>
       </header>
 
-      <article className="rounded-2xl border border-white/15 bg-black/25 p-5">
-        <h2 className="text-lg font-semibold">Assign Role</h2>
-        <p className="mt-2 text-sm text-zinc-300">API: `PATCH /auth/admin/users/{'{user_id}'}/role`</p>
+      <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm">
+        <h2 className="text-xl font-semibold text-[#243555]">Assign Role</h2>
+        <p className="mt-1 text-sm text-[#607594]">API: PATCH /auth/admin/users/{'{user_id}'}/role</p>
 
         <form onSubmit={onSubmit} className="mt-4 space-y-3">
           <label className="block space-y-2 text-sm">
-            <span className="text-zinc-200">Target user ID</span>
+            <span className="font-medium text-[#566b8d]">Target user ID</span>
             <input
               type="text"
               value={userId}
               onChange={(event) => setUserId(event.target.value)}
               placeholder="UUID"
-              className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-zinc-100 outline-none ring-cyan-300/50 focus:ring"
+              className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
             />
           </label>
 
           <label className="block space-y-2 text-sm">
-            <span className="text-zinc-200">New role</span>
+            <span className="font-medium text-[#566b8d]">New role</span>
             <select
               value={role}
               onChange={(event) => setRole(event.target.value as UserRole)}
-              className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-zinc-100 outline-none ring-cyan-300/50 focus:ring"
+              className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
             >
               {ROLE_OPTIONS.map((value) => (
-                <option key={value} value={value} className="bg-[#081126]">
+                <option key={value} value={value}>
                   {value}
                 </option>
               ))}
@@ -78,14 +78,14 @@ export default function AdminUsersPage() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 text-sm font-medium text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-xl border border-[#2f7dff] bg-[#2f7dff] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? 'Updating…' : 'Update role'}
           </button>
         </form>
 
-        {message ? <p className="mt-3 text-sm text-emerald-300">{message}</p> : null}
-        {error ? <p className="mt-3 text-sm text-rose-300">{error}</p> : null}
+        {message ? <p className="mt-3 rounded-lg bg-[#e9f8ef] px-3 py-2 text-sm text-[#2f9960]">{message}</p> : null}
+        {error ? <p className="mt-3 rounded-lg bg-[#ffedf0] px-3 py-2 text-sm text-[#cc5163]">{error}</p> : null}
       </article>
     </section>
   );
