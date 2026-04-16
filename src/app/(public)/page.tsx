@@ -1,12 +1,8 @@
-'use client';
-
 import Link from 'next/link';
 import heroBackground from '@/assets/Lq6brmg8jRUNyRnyv5SBxe.jpg';
 import { PublicFooter } from '@/components/public-footer';
-import { translate, useLocale } from '@/lib/i18n';
-import { homeMessages } from '@/locales/home';
 
-const highlightDefs = [
+const highlights = [
   { title: 'Audit Ready', body: 'Know where you stand.' },
   { title: 'Save Time', body: 'Focus on what matters.' },
   { title: 'Secure & Private', body: 'Your data stays protected.' },
@@ -42,14 +38,6 @@ function CheckCircleIcon({ className = 'h-4 w-4' }: { className?: string }) {
 }
 
 export default function HomePage() {
-  const { locale } = useLocale();
-  const t = (key: string) => translate(homeMessages, locale, key);
-  const highlights = highlightDefs.map((item, idx) => ({
-    title: t(`highlights.${idx}.title`),
-    body: t(`highlights.${idx}.body`),
-  }));
-  const checklistBullets = [t('checklist.0'), t('checklist.1'), t('checklist.2')];
-  const docsBullets = [t('docs.0'), t('docs.1'), t('docs.2')];
   const heroStyle = {
     backgroundImage: `linear-gradient(rgba(4, 9, 22, 0.58), rgba(4, 9, 22, 0.74)), url(${heroBackground.src})`,
     backgroundSize: 'cover',
@@ -62,28 +50,28 @@ export default function HomePage() {
       <section style={heroStyle}>
         <div className="mx-auto grid min-h-[560px] w-full max-w-[1440px] items-center gap-10 px-4 py-10 text-white sm:px-6 sm:py-12 md:gap-12 md:px-6 md:py-16 lg:grid-cols-2 lg:gap-14">
           <div className="space-y-8">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">{t('hero.kicker')}</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">Cybersecurity Simplified</p>
             <h1 className="max-w-xl text-4xl font-semibold leading-[1.02] motion-safe:animate-fade-in-up motion-safe:delay-100 sm:text-5xl md:text-6xl">
-              {t('hero.line1')}
+              Be ready.
               <br />
-              {t('hero.line2')}
+              Stay confident.
             </h1>
             <p className="max-w-xl text-lg leading-7 text-[#d4e2f6] motion-safe:animate-fade-in-up motion-safe:delay-200 sm:text-xl sm:leading-8">
-              {t('hero.subtitle')}
+              Practical tools that help you prepare for audits, close gaps, and prove security with confidence.
             </p>
             <div className="flex flex-wrap gap-4 motion-safe:animate-fade-in-up motion-safe:delay-300">
               <Link
-                href="/resources"
+                href="/products"
                 className="inline-flex items-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-6 py-3 text-base font-semibold text-white transition-colors duration-200 ease-out hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform"
               >
-                {t('hero.exploreProducts')}
+                Explore Products
                 <ArrowRightIcon />
               </Link>
               <Link
-                href="/register"
+                href="/how-it-works"
                 className="inline-flex items-center gap-2 rounded-xl border border-[#365a92] bg-[#0d1d3a]/75 px-6 py-3 text-base font-semibold text-[#e3eeff] transition-colors duration-200 ease-out hover:bg-[#1a2e56] active:scale-[0.98] motion-safe:active:transition-transform"
               >
-                {t('hero.seeHowItWorks')}
+                See How It Works
                 <ArrowRightIcon />
               </Link>
             </div>
@@ -127,7 +115,7 @@ export default function HomePage() {
                         <p className="text-2xl font-bold text-[#173a73] sm:text-[26px] xl:text-3xl">72%</p>
                       </div>
                       <div>
-                        <p className="text-[11px] text-[#6f7f98]">Confined</p>
+                        <p className="text-[11px] text-[#6f7f98]">Completed</p>
                         <p className="text-2xl font-bold text-[#173a73] sm:text-[26px] xl:text-3xl">18/25</p>
                       </div>
                       <div>
@@ -194,9 +182,9 @@ export default function HomePage() {
       </section>
 
       <section className="mx-auto max-w-[1440px] px-4 py-12 sm:px-6 sm:py-14 md:px-6 md:py-20">
-        <h2 className="text-3xl font-semibold tracking-tight text-[#202743] motion-safe:animate-fade-in-up sm:text-4xl md:text-5xl">{t('solutions.title')}</h2>
+        <h2 className="text-3xl font-semibold tracking-tight text-[#202743] motion-safe:animate-fade-in-up sm:text-4xl md:text-5xl">Choose the Right Solution</h2>
         <p className="mt-3 text-base text-[#6f7893] motion-safe:animate-fade-in-up motion-safe:delay-100 md:text-lg">
-          {t('solutions.subtitle')}
+          Each product is designed to make cybersecurity inconveniences easier.
         </p>
         <div className="mt-8 grid gap-6 sm:mt-10 md:mt-12 md:grid-cols-2 md:gap-8 lg:gap-10">
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 text-[#1d2540] shadow-sm transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg sm:p-8 lg:p-10">
@@ -213,10 +201,10 @@ export default function HomePage() {
                   <span className="block text-2xl font-normal sm:text-3xl lg:text-[34px] xl:text-[40px]">Checklist</span>
                 </h3>
               </div>
-              <span className="whitespace-nowrap rounded-xl bg-[#d5f4df] px-3 py-1 text-sm font-semibold text-[#2a8a49]">{t('solutions.availableNow')}</span>
+              <span className="whitespace-nowrap rounded-xl bg-[#d5f4df] px-3 py-1 text-sm font-semibold text-[#2a8a49]">Available Now</span>
             </div>
             <p className="mt-6 text-base leading-7 text-[#56617f] md:text-[18px]">
-              Prepare for audits with a guided checklist, identify, gaps, upload evidence, and get a reviewed report.
+              Prepare for audits with a guided checklist, identify gaps, upload evidence, and get a reviewed report.
             </p>
             <ul className="mt-6 space-y-3 text-base text-[#3a4a6d] md:text-[18px]">
               {checklistBullets.map((item) => (
@@ -227,10 +215,10 @@ export default function HomePage() {
               ))}
             </ul>
             <Link
-              href="/resources"
+              href="/products/audit-readiness-checklist"
               className="mt-6 inline-flex items-center gap-2 text-lg font-semibold text-[#2f7dff] transition-colors duration-200 hover:text-[#2568d6]"
             >
-              {t('solutions.viewProduct')}
+              View Product
               <ArrowRightIcon />
             </Link>
           </article>
@@ -250,7 +238,7 @@ export default function HomePage() {
                   <span className="block text-2xl font-normal sm:text-3xl lg:text-[34px] xl:text-[40px]">Packages</span>
                 </h3>
               </div>
-              <span className="whitespace-nowrap rounded-xl bg-[#e3e8ff] px-3 py-1 text-sm font-semibold text-[#5f72d6]">{t('solutions.comingSoon')}</span>
+              <span className="whitespace-nowrap rounded-xl bg-[#e3e8ff] px-3 py-1 text-sm font-semibold text-[#5f72d6]">Coming Soon</span>
             </div>
             <p className="mt-6 text-base leading-7 text-[#56617f] md:text-[18px]">
               Get audit-ready faster with professional documentation tailored to your framework.
@@ -264,10 +252,10 @@ export default function HomePage() {
               ))}
             </ul>
             <Link
-              href="/resources"
+              href="/products"
               className="mt-6 inline-flex items-center gap-2 text-lg font-semibold text-[#2f7dff] transition-colors duration-200 hover:text-[#2568d6]"
             >
-              {t('solutions.learnMore')}
+              Learn More
               <ArrowRightIcon />
             </Link>
           </article>
@@ -277,10 +265,10 @@ export default function HomePage() {
       <section className="mx-auto max-w-[1440px] px-4 pb-14 sm:px-6 md:px-6 md:pb-20">
         <div className="relative rounded-2xl border border-[#d9dfeb] bg-[#f7f9ff] p-6 transition-shadow duration-300 motion-safe:hover:shadow-md sm:p-8 lg:p-12">
           <h3 className="text-center text-2xl font-semibold text-[#202743] motion-safe:animate-fade-in-up sm:text-3xl md:text-5xl">
-            {t('steps.title')}
+            From Uncertainty to Audit-Ready in 3 Steps
           </h3>
           <p className="mt-2 text-center text-base text-[#6f7893] motion-safe:animate-fade-in-up motion-safe:delay-75 md:text-lg">
-            {t('steps.subtitle')}
+            A simple process that gives you clarity and control.
           </p>
 
           <div className="relative mt-8 grid gap-8 overflow-x-hidden sm:mt-10 md:mt-12 md:grid-cols-3 md:gap-10">
@@ -303,8 +291,8 @@ export default function HomePage() {
                   <path d="M2 2 11 7 2 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              <h4 className="text-xl font-semibold text-[#1f2741] sm:text-2xl md:text-3xl lg:text-4xl">{t('steps.one.title')}</h4>
-              <p className="text-base text-[#576486] md:text-lg">{t('steps.one.body')}</p>
+              <h4 className="text-xl font-semibold text-[#1f2741] sm:text-2xl md:text-3xl lg:text-4xl">Choose a Product</h4>
+              <p className="text-base text-[#576486] md:text-lg">Pick the solution that fits your needs.</p>
             </article>
 
             <article className="space-y-4 motion-safe:animate-fade-in-up motion-safe:delay-200 motion-safe:transition-transform motion-safe:hover:-translate-y-0.5">
@@ -327,15 +315,15 @@ export default function HomePage() {
                   <path d="M2 2 11 7 2 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              <h4 className="text-xl font-semibold text-[#1f2741] sm:text-2xl md:text-3xl lg:text-4xl">{t('steps.two.title')}</h4>
+              <h4 className="text-xl font-semibold text-[#1f2741] sm:text-2xl md:text-3xl lg:text-4xl">Assess & Improve</h4>
               <ul className="space-y-1 text-base text-[#576486] md:text-lg">
                 <li className="flex items-center gap-2">
                   <CheckCircleIcon className="h-5 w-5 text-[#2f7dff]" />
-                  {t('steps.two.point1')}
+                  Answer guided questions, identify gaps.
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircleIcon className="h-5 w-5 text-[#2f7dff]" />
-                  {t('steps.two.point2')}
+                  Aligned with NIS2, ISO 27001 and more
                 </li>
               </ul>
             </article>
@@ -352,15 +340,15 @@ export default function HomePage() {
                 </span>
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#2f7dff] text-lg font-semibold text-white">3</span>
               </div>
-              <h4 className="text-xl font-semibold text-[#1f2741] sm:text-2xl md:text-3xl lg:text-4xl">{t('steps.three.title')}</h4>
+              <h4 className="text-xl font-semibold text-[#1f2741] sm:text-2xl md:text-3xl lg:text-4xl">Get Results</h4>
               <ul className="space-y-1 text-base text-[#576486] md:text-lg">
                 <li className="flex items-center gap-2">
                   <CheckCircleIcon className="h-5 w-5 text-[#2f7dff]" />
-                  {t('steps.three.point1')}
+                  Receive a clear report
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircleIcon className="h-5 w-5 text-[#2f7dff]" />
-                  {t('steps.three.point2')}
+                  and know your next steps.
                 </li>
               </ul>
             </article>
@@ -368,15 +356,15 @@ export default function HomePage() {
         </div>
 
         <div className="mt-10 motion-safe:animate-fade-in-up md:mt-12">
-          <h3 className="text-2xl font-semibold text-[#202743] sm:text-3xl md:text-5xl">{t('trust.title')}</h3>
+          <h3 className="text-2xl font-semibold text-[#202743] sm:text-3xl md:text-5xl">Built by professionals with real audit and cybersecurity experience</h3>
           <p className="mt-3 max-w-5xl text-base text-[#6f7893] md:text-lg">
-            {t('trust.subtitle')}
+            Expertise designed based on years of hands-on cybersecurity and audit knowledge. Trusted by organizations to improve their security and simplify compliance.
           </p>
           <Link
             href="/about-us"
             className="mt-4 inline-flex items-center gap-2 text-lg font-semibold text-[#2f7dff] transition-colors duration-200 hover:text-[#2568d6]"
           >
-            {t('trust.learnMore')}
+            Learn more about us
             <ArrowRightIcon />
           </Link>
         </div>
@@ -390,8 +378,8 @@ export default function HomePage() {
                 </svg>
               </span>
               <div>
-                <p className="text-2xl font-semibold md:text-4xl">{t('bottom.title')}</p>
-                <p className="text-sm text-[#c7d8f8] md:text-base">{t('bottom.subtitle')}</p>
+                <p className="text-2xl font-semibold md:text-4xl">Ready to get started?</p>
+                <p className="text-sm text-[#c7d8f8] md:text-base">Explore our process and take the first step to audit readiness.</p>
               </div>
             </div>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
@@ -399,14 +387,14 @@ export default function HomePage() {
                 href="/register"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-6 py-3 text-base font-semibold transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform md:px-8 md:text-lg"
               >
-                {t('bottom.getAccess')}
+                Get Access
                 <ArrowRightIcon />
               </Link>
               <Link
-                href="/resources"
+                href="/products"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#456298] px-6 py-3 text-base font-semibold text-[#e5eeff] transition-colors duration-200 hover:bg-[#173160] active:scale-[0.98] motion-safe:active:transition-transform md:px-8 md:text-lg"
               >
-                {t('bottom.viewProducts')}
+                View Products
                 <ArrowRightIcon />
               </Link>
             </div>
@@ -418,4 +406,3 @@ export default function HomePage() {
     </main>
   );
 }
-

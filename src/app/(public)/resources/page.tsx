@@ -116,7 +116,7 @@ export default function ResourcesPage() {
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
       <section style={heroStyle}>
-        <div className="mx-auto max-w-[1440px] px-4 py-7 sm:px-6 md:px-6 md:py-9">
+        <div className="mx-auto min-h-[560px] max-w-[1440px] px-4 py-7 sm:px-6 md:px-6 md:py-9">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-sm font-medium text-[#64799d] transition-colors duration-200 hover:text-[#3f5376]"
@@ -158,7 +158,7 @@ export default function ResourcesPage() {
                   <ArrowRightIcon />
                 </a>
                 <Link
-                  href="/resources"
+                  href="/products/audit-readiness-checklist"
                   className="inline-flex items-center gap-2 rounded-xl border border-[#b5c7e7] bg-white/85 px-7 py-3 text-2xl font-semibold text-[#334a72] transition-colors duration-200 hover:bg-white active:scale-[0.98] motion-safe:active:transition-transform"
                 >
                   View Product
@@ -434,7 +434,7 @@ export default function ResourcesPage() {
                 <ArrowRightIcon />
               </Link>
               <Link
-                href="/resources"
+                href="/products/audit-readiness-checklist"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#456298] px-7 py-3 text-base font-semibold text-[#e5eeff] transition-colors duration-200 hover:bg-[#173160] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
               >
                 View Product
