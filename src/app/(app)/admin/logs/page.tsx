@@ -27,7 +27,7 @@ export default function AdminAuditLogsPage() {
             <button type="button" className="rounded-xl border border-[#d4dced] px-3 py-2 text-sm font-semibold text-[#425f8f]">
               Date Range
             </button>
-            <button type="button" className="rounded-xl border border-[#2f7dff] bg-[#2f7dff] px-4 py-2 text-sm font-semibold text-white">
+            <button type="button" className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657]">
               Download CSV
             </button>
           </div>

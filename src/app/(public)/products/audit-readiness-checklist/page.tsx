@@ -1,3 +1,3 @@
-import ProductDetailPage from '../../resources-public/page';
+import ProductDetailPage from '../../resources/page';
 
 export default ProductDetailPage;

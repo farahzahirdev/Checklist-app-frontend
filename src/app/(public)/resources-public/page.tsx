@@ -411,6 +411,71 @@ export default function ResourcesPage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-[1440px] px-4 pb-8 sm:px-6 md:px-6 md:pb-10">
+        <div className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-md md:p-8">
+          <div>
+            <h2 className="text-4xl font-semibold text-[#1a2440]">What you get</h2>
+            <p className="mt-2 text-xl text-[#556b8c]">
+              Clear outputs, practical guidance, and audit-ready results you can use right away.
+            </p>
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <article className="rounded-2xl border border-[#d7deeb] bg-[#f2fbf6] p-5 transition-shadow duration-300 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#e8f7ee] text-[#30b271]">
+                <IconByName name="chart" className="h-6 w-6" />
+              </span>
+              <h3 className="mt-3 text-2xl font-semibold text-[#1f355d]">Clear Gap Analysis</h3>
+              <p className="mt-2 text-sm leading-6 text-[#5e7293]">See where you stand and what needs improvement before the audit begins.</p>
+              <ul className="mt-4 space-y-1.5 text-sm text-[#4e6283]">
+                <li>Visual maturity overview</li>
+                <li>Section-by-section scoring</li>
+                <li>Easy-to-understand findings</li>
+              </ul>
+            </article>
+
+            <article className="rounded-2xl border border-[#d7deeb] bg-[#f2f7ff] p-5 transition-shadow duration-300 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#e9f0ff] text-[#3c7df0]">
+                <IconByName name="doc-stack" className="h-6 w-6" />
+              </span>
+              <h3 className="mt-3 text-2xl font-semibold text-[#1f355d]">Structured Report</h3>
+              <p className="mt-2 text-sm leading-6 text-[#5e7293]">A professional report you can review internally and share with confidence.</p>
+              <ul className="mt-4 space-y-1.5 text-sm text-[#4e6283]">
+                <li>Executive summary</li>
+                <li>Detailed findings</li>
+                <li>Maturity score and overview</li>
+              </ul>
+            </article>
+
+            <article className="rounded-2xl border border-[#d7deeb] bg-[#fffaf0] p-5 transition-shadow duration-300 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#fff5df] text-[#f2b535]">
+                <IconByName name="target" className="h-6 w-6" />
+              </span>
+              <h3 className="mt-3 text-2xl font-semibold text-[#1f355d]">Actionable Recommendations</h3>
+              <p className="mt-2 text-sm leading-6 text-[#5e7293]">Know what to fix next, in what order, and where to focus first.</p>
+              <ul className="mt-4 space-y-1.5 text-sm text-[#4e6283]">
+                <li>Prioritized by risk and impact</li>
+                <li>Practical next steps</li>
+                <li>Built-in guidance for follow-up</li>
+              </ul>
+            </article>
+
+            <article className="rounded-2xl border border-[#d7deeb] bg-[#f6f3ff] p-5 transition-shadow duration-300 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#f1ecff] text-[#6c62f7]">
+                <IconByName name="shield-check" className="h-6 w-6" />
+              </span>
+              <h3 className="mt-3 text-2xl font-semibold text-[#1f355d]">Stronger Audit Readiness</h3>
+              <p className="mt-2 text-sm leading-6 text-[#5e7293]">Move into your audit with more confidence, clearer evidence, and less uncertainty.</p>
+              <ul className="mt-4 space-y-1.5 text-sm text-[#4e6283]">
+                <li>Identify gaps early</li>
+                <li>Improve with evidence</li>
+                <li>Save time and reduce stress</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-[1440px] px-4 pb-10 sm:px-6 md:px-6 md:pb-12">
         <div className="rounded-2xl border border-[#264579] bg-[linear-gradient(120deg,#091229,#0b1a39_48%,#0e2348)] px-5 py-6 text-white motion-safe:animate-fade-in-up motion-safe:delay-100 sm:px-8 md:px-10 md:py-7">
           <div className="flex flex-wrap items-center justify-between gap-5">

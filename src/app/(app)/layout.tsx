@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { LogoutButton } from '@/components/logout-button';
-import { ACCESS_TOKEN_STORAGE_KEY, getCurrentUser } from '@/lib/auth';
+import { ACCESS_TOKEN_STORAGE_KEY, getCurrentUser, getRoleKey, type UserRoleKey } from '@/lib/auth';
 
 export default function AppLayout({
   children,
@@ -16,12 +16,15 @@ export default function AppLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [authReady, setAuthReady] = useState(false);
-  const [role, setRole] = useState<string>('');
+  const [role, setRole] = useState<UserRoleKey | ''>('');
   const isAdminPath = pathname?.startsWith('/admin') ?? false;
 
-  function canAccessPath(currentRole: string, currentPath: string): boolean {
+  function canAccessPath(currentRole: UserRoleKey, currentPath: string): boolean {
     if (currentPath.startsWith('/admin')) {
       return currentRole === 'admin';
+    }
+    if (currentPath.startsWith('/auditor')) {
+      return currentRole === 'auditor' || currentRole === 'admin';
     }
     if (currentPath.startsWith('/reports')) {
       return currentRole === 'admin' || currentRole === 'auditor';
@@ -35,12 +38,12 @@ export default function AppLayout({
     return true;
   }
 
-  function defaultPathForRole(currentRole: string): string {
+  function defaultPathForRole(currentRole: UserRoleKey): string {
     if (currentRole === 'admin') {
-      return '/admin/checklists';
+      return '/admin';
     }
     if (currentRole === 'auditor') {
-      return '/reports';
+      return '/auditor';
     }
     return '/dashboard';
   }
@@ -60,7 +63,7 @@ export default function AppLayout({
       try {
         const response = await getCurrentUser();
         if (cancelled) return;
-        setRole(response.user.role);
+        setRole(getRoleKey(response.user.role));
         setAuthReady(true);
       } catch {
         window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
@@ -79,6 +82,7 @@ export default function AppLayout({
   useEffect(() => {
     if (!authReady) return;
     if (!pathname) return;
+    if (!role) return;
     if (!canAccessPath(role, pathname)) {
       router.push(defaultPathForRole(role) as Route);
     }

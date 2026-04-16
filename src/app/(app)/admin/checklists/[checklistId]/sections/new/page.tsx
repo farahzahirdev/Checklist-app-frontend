@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { SectionEditor } from '@/components/checklist/section-editor';
 import { mockSections } from '@/lib/checklist-mocks';
 
@@ -11,7 +12,10 @@ export default function NewSectionPage() {
   return (
     <section className="space-y-5">
       <header>
-        <p className="text-xs uppercase tracking-[0.3em] text-cyan-200/85">Admin</p>
+        <Link href="/admin/checklists" className="inline-flex items-center gap-1 text-sm font-medium text-[#425f8f] hover:text-[#223a63]">
+          <span aria-hidden="true">←</span>
+          Back
+        </Link>
         <h1 className="text-3xl font-semibold">Create Section</h1>
       </header>
       <SectionEditor sections={mockSections} />

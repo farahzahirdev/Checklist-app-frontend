@@ -7,7 +7,6 @@ import { useState } from 'react';
 export function SiteHeader() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [aboutMenuOpen, setAboutMenuOpen] = useState(false);
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
   const navLinkClass = (href: string) =>
     isActive(href) ? 'text-[#62a2ff] hover:text-[#8ebdff]' : 'text-[#b3c2dc] hover:text-[#ffffff]';
@@ -42,45 +41,9 @@ export function SiteHeader() {
             <Link href="/contact" className={navLinkClass('/contact')}>
               Contact
             </Link>
-            <div
-              className="relative"
-              onMouseEnter={() => setAboutMenuOpen(true)}
-              onMouseLeave={() => setAboutMenuOpen(false)}
-            >
-              <button
-                type="button"
-                className={`${navLinkClass('/about-us')} inline-flex items-center gap-1`}
-                aria-haspopup="menu"
-                aria-expanded={aboutMenuOpen}
-                onClick={() => setAboutMenuOpen((prev) => !prev)}
-              >
-                About Us
-                <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" aria-hidden="true">
-                  <path d="m5 7 5 6 5-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-              <div
-                className={`absolute left-0 top-full z-[100] w-52 rounded-xl border border-[#2d4d81] bg-[#08162f] p-2 shadow-xl transition duration-150 ${
-                  aboutMenuOpen ? 'visible opacity-100' : 'invisible opacity-0'
-                }`}
-              >
-                <Link href="/about-us" className="block rounded-lg px-3 py-2 text-sm text-[#d8e2f2] hover:bg-[#1f7bff]/20" onClick={() => setAboutMenuOpen(false)}>
-                  About Us
-                </Link>
-                <Link href="/how-it-works" className="block rounded-lg px-3 py-2 text-sm text-[#d8e2f2] hover:bg-[#1f7bff]/20" onClick={() => setAboutMenuOpen(false)}>
-                  How It Works
-                </Link>
-                <Link href="/what-you-get" className="block rounded-lg px-3 py-2 text-sm text-[#d8e2f2] hover:bg-[#1f7bff]/20" onClick={() => setAboutMenuOpen(false)}>
-                  What You Get
-                </Link>
-                <Link href="/who-its-for" className="block rounded-lg px-3 py-2 text-sm text-[#d8e2f2] hover:bg-[#1f7bff]/20" onClick={() => setAboutMenuOpen(false)}>
-                  Who It&apos;s For
-                </Link>
-                <Link href="/faq" className="block rounded-lg px-3 py-2 text-sm text-[#d8e2f2] hover:bg-[#1f7bff]/20" onClick={() => setAboutMenuOpen(false)}>
-                  FAQ
-                </Link>
-              </div>
-            </div>
+            <Link href="/faq" className={navLinkClass('/faq')}>
+              FAQ
+            </Link>
           </nav>
         </div>
 
@@ -125,24 +88,9 @@ export function SiteHeader() {
             <Link href="/contact" className={mobileNavLinkClass('/contact')} onClick={() => setMobileOpen(false)}>
               Contact
             </Link>
-            <div className="mt-2 rounded-lg border border-[#284776] bg-[#09162f]/70 p-2">
-              <p className="px-2 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#88aee4]">About & Guidance</p>
-              <Link href="/about-us" className={mobileNavLinkClass('/about-us')} onClick={() => setMobileOpen(false)}>
-                About Us
-              </Link>
-              <Link href="/how-it-works" className={mobileNavLinkClass('/how-it-works')} onClick={() => setMobileOpen(false)}>
-                How It Works
-              </Link>
-              <Link href="/what-you-get" className={mobileNavLinkClass('/what-you-get')} onClick={() => setMobileOpen(false)}>
-                What You Get
-              </Link>
-              <Link href="/who-its-for" className={mobileNavLinkClass('/who-its-for')} onClick={() => setMobileOpen(false)}>
-                Who It&apos;s For
-              </Link>
-              <Link href="/faq" className={mobileNavLinkClass('/faq')} onClick={() => setMobileOpen(false)}>
-                FAQ
-              </Link>
-            </div>
+            <Link href="/faq" className={mobileNavLinkClass('/faq')} onClick={() => setMobileOpen(false)}>
+              FAQ
+            </Link>
             <div className="mt-2 flex gap-2">
               <Link
                 href="/login"

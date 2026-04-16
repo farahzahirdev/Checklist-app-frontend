@@ -21,4 +21,7 @@ export const registerMessages: TranslationMessages = {
     'form.alreadyHaveAccount': 'Already have an account?',
     'form.signIn': 'Sign in',
   },
+  es: {},
+  fr: {},
+  de: {},
 };

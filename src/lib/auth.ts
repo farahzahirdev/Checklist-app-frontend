@@ -1,6 +1,7 @@
 import { apiGetWithAuth, apiPatch, apiPost, apiPostEmptyWithAuth } from '@/lib/api';
 
-export type UserRole = 'admin' | 'auditor' | 'customer';
+export type UserRole = 0 | 1 | 2;
+export type UserRoleKey = 'admin' | 'auditor' | 'customer';
 
 export type AuthUser = {
   id: string;
@@ -16,6 +17,7 @@ export type AuthUser = {
 export type AuthResponse = {
   user: AuthUser;
   access_token: string | null;
+  challenge_token: string | null;
   token_type: string;
   mfa_required: boolean;
   mfa_enabled: boolean;
@@ -41,11 +43,14 @@ export async function registerAccount(payload: { email: string; password: string
 export type LoginPayload = {
   email: string;
   password: string;
-  mfa_code?: string;
 };
 
 export async function loginAccount(payload: LoginPayload) {
   return apiPost<AuthResponse, LoginPayload>('/auth/login', payload);
+}
+
+export async function verifyMfaChallenge(payload: { challenge_token: string; code: string }) {
+  return apiPost<AuthResponse, { challenge_token: string; code: string }>('/auth/mfa/challenge/verify', payload);
 }
 
 export type MessageResponse = {
@@ -59,6 +64,7 @@ export async function logoutAccount() {
 export type MfaSetupDetailsResponse = {
   secret: string;
   provisioning_uri: string;
+  svg_qr?: string;
   verified: boolean;
 };
 
@@ -70,8 +76,8 @@ export async function startMfaSetup() {
   return apiPost<MfaSetupDetailsResponse, Record<string, never>>('/auth/mfa/setup', {});
 }
 
-export async function verifyMfaCode(payload: { code: string }) {
-  return apiPost<AuthResponse, { code: string }>('/auth/mfa/verify', payload);
+export async function verifyMfaCode(payload: { code: string; challenge_token?: string }) {
+  return apiPost<AuthResponse, { code: string; challenge_token?: string }>('/auth/mfa/verify', payload);
 }
 
 export async function assignUserRole(payload: { userId: string; role: UserRole }) {
@@ -80,9 +86,15 @@ export async function assignUserRole(payload: { userId: string; role: UserRole }
   });
 }
 
+export function getRoleKey(role: UserRole): UserRoleKey {
+  if (role === 0) return 'admin';
+  if (role === 1) return 'auditor';
+  return 'customer';
+}
+
 export function getRoleHomePath(role: UserRole): string {
-  if (role === 'admin') return '/admin/checklists';
-  if (role === 'auditor') return '/reports';
+  if (role === 0) return '/admin';
+  if (role === 1) return '/auditor';
   return '/dashboard';
 }
 
