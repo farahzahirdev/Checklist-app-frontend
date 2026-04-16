@@ -85,7 +85,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={item.href as any}
                   onClick={() => setMobileNavOpen(false)}
                   className={`flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
                     active ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
