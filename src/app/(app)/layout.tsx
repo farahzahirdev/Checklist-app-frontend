@@ -131,6 +131,9 @@ export default function AppLayout({
                 <Link href="/admin/checklists" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
                   Admin
                 </Link>
+                <Link href="/admin-preview" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
+                  Admin Preview
+                </Link>
                 <Link href="/health" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
                   Health
                 </Link>

@@ -39,8 +39,8 @@ export function SiteHeader() {
             <Link href="/products" className={navLinkClass('/products')}>
               Products
             </Link>
-            <Link href="/resources" className={navLinkClass('/resources')}>
-              Resources
+            <Link href="/contact" className={navLinkClass('/contact')}>
+              Contact
             </Link>
             <div
               className="relative"
@@ -78,9 +78,6 @@ export function SiteHeader() {
                 </Link>
                 <Link href="/faq" className="block rounded-lg px-3 py-2 text-sm text-[#d8e2f2] hover:bg-[#1f7bff]/20" onClick={() => setAboutMenuOpen(false)}>
                   FAQ
-                </Link>
-                <Link href="/contact" className="block rounded-lg px-3 py-2 text-sm text-[#d8e2f2] hover:bg-[#1f7bff]/20" onClick={() => setAboutMenuOpen(false)}>
-                  Contact
                 </Link>
               </div>
             </div>
@@ -125,8 +122,8 @@ export function SiteHeader() {
             <Link href="/products" className={mobileNavLinkClass('/products')} onClick={() => setMobileOpen(false)}>
               Products
             </Link>
-            <Link href="/resources" className={mobileNavLinkClass('/resources')} onClick={() => setMobileOpen(false)}>
-              Resources
+            <Link href="/contact" className={mobileNavLinkClass('/contact')} onClick={() => setMobileOpen(false)}>
+              Contact
             </Link>
             <div className="mt-2 rounded-lg border border-[#284776] bg-[#09162f]/70 p-2">
               <p className="px-2 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#88aee4]">About & Guidance</p>
@@ -144,9 +141,6 @@ export function SiteHeader() {
               </Link>
               <Link href="/faq" className={mobileNavLinkClass('/faq')} onClick={() => setMobileOpen(false)}>
                 FAQ
-              </Link>
-              <Link href="/contact" className={mobileNavLinkClass('/contact')} onClick={() => setMobileOpen(false)}>
-                Contact
               </Link>
             </div>
             <div className="mt-2 flex gap-2">

@@ -1,6 +1,57 @@
 import Link from 'next/link';
+import type { Route } from 'next';
 import { PublicFooter } from '@/components/public-footer';
 import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
+
+type DocumentationCard = {
+  name: string;
+  price: string;
+  checkpoints: string[];
+  href: Route;
+};
+
+const sectionChips = ['All', 'Access & Identity', 'Devices & Endpoints', 'Data Protection', 'Operations', 'Governance', 'Response'] as const;
+
+const documentationCards: DocumentationCard[] = [
+  {
+    name: 'Mobile Device Policy',
+    price: '€149',
+    checkpoints: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
+    href: '/products/audit-readiness-checklist',
+  },
+  {
+    name: 'Remote Work Policy',
+    price: '€149',
+    checkpoints: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
+    href: '/products',
+  },
+  {
+    name: 'Access Control Policy',
+    price: '€179',
+    checkpoints: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
+    href: '/products',
+  },
+  {
+    name: 'Incident Response Policy',
+    price: '€199',
+    checkpoints: ['Policy Document', 'User Guidelines', 'Admin Guidelines', 'Response Playbooks'],
+    href: '/products',
+  },
+  {
+    name: 'Data Classification Policy',
+    price: '€149',
+    checkpoints: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
+    href: '/products',
+  },
+];
+
+const credibilityPoints = [
+  'Written by cybersecurity experts',
+  'Aligned to ISO 27001, NIS2 and best practices',
+  'Ready to customize and use',
+  'Saves weeks of manual work',
+  'Used by auditors and security teams',
+] as const;
 
 export default function ProductsPage() {
   const heroStyle = {
@@ -119,42 +170,51 @@ export default function ProductsPage() {
           <h3 className="text-4xl font-semibold text-[#1a2440]">Browse Documentation Sections</h3>
           <p className="mt-2 text-base text-[#5e7293]">Each section includes a policy, user guidelines, and admin guidelines.</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            {['All', 'Access & Identity', 'Devices & Endpoints', 'Data Protection', 'Operations', 'Governance', 'Response'].map(
-              (chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  className={`rounded-lg border px-3 py-1.5 text-sm font-semibold ${
-                    chip === 'Devices & Endpoints'
-                      ? 'border-[#1f7bff] bg-[#1f7bff] text-white'
-                      : 'border-[#d7deeb] bg-white text-[#5e7293] hover:bg-[#f7f9ff]'
-                  }`}
-                >
-                  {chip}
-                </button>
-              ),
-            )}
+            {sectionChips.map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                className={`rounded-lg border px-3 py-1.5 text-sm font-semibold ${
+                  chip === 'Devices & Endpoints'
+                    ? 'border-[#1f7bff] bg-[#1f7bff] text-white'
+                    : 'border-[#d7deeb] bg-white text-[#5e7293] hover:bg-[#f7f9ff]'
+                }`}
+              >
+                {chip}
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
-          {[
-            { name: 'Mobile Device Policy', price: '€149' },
-            { name: 'Remote Work Policy', price: '€149' },
-            { name: 'Access Control Policy', price: '€179' },
-            { name: 'Incident Response Policy', price: '€199' },
-            { name: 'Data Classification Policy', price: '€149' },
-          ].map((doc) => (
-            <article key={doc.name} className="rounded-2xl border border-[#d7deeb] bg-white p-4 shadow-sm transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md">
+          {documentationCards.map((doc) => (
+            <article
+              key={doc.name}
+              className="flex h-full flex-col rounded-2xl border border-[#d7deeb] bg-white p-4 shadow-sm transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md"
+            >
               <h2 className="text-base font-semibold text-[#1f2741]">{doc.name}</h2>
-              <p className="mt-2 text-sm text-[#5e7293]">Policy document, user guidelines, and admin instructions.</p>
-              <p className="mt-5 text-2xl font-semibold text-[#1f355d]">{doc.price}</p>
-              <button
-                type="button"
-                className="mt-3 w-full rounded-lg border border-[#1f7bff] bg-[#1f7bff]/10 px-3 py-2 text-sm font-semibold text-[#1f7bff] hover:bg-[#1f7bff]/20"
-              >
-                View Details
-              </button>
+              <p className="mt-2 text-sm text-[#5e7293]">Define and apply this section with practical, ready-to-use documentation.</p>
+              <ul className="mt-3 space-y-1.5 text-sm text-[#5e7293]">
+                {doc.checkpoints.map((item) => (
+                  <li key={`${doc.name}-${item}`} className="flex items-center gap-2">
+                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#8eb8f8] text-[#2f7dff]">
+                      <svg viewBox="0 0 20 20" className="h-2.5 w-2.5" fill="none" aria-hidden="true">
+                        <path d="m5.5 10 3 3 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-auto pt-5">
+                <p className="text-2xl font-semibold text-[#1f355d]">{doc.price}</p>
+                <Link
+                  href={doc.href}
+                  className="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-[#1f7bff] bg-[#1f7bff]/10 px-3 py-2 text-sm font-semibold text-[#1f7bff] hover:bg-[#1f7bff]/20"
+                >
+                  View Details
+                </Link>
+              </div>
             </article>
           ))}
         </div>
@@ -164,44 +224,67 @@ export default function ProductsPage() {
             <h3 className="text-3xl font-semibold text-[#1a2440]">Bundle &amp; Save</h3>
             <p className="mt-2 text-sm text-[#5e7293]">Get multiple sections and save up to 25%.</p>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <div className="rounded-xl border border-[#d7deeb] bg-white p-4 text-center">
+              <div className="flex h-full flex-col rounded-xl border border-[#d7deeb] bg-white p-4 text-center">
                 <p className="font-semibold text-[#1f355d]">Essential Bundle</p>
                 <p className="mt-1 text-sm text-[#5e7293]">3 sections of your choice</p>
-                <p className="mt-3 text-3xl font-bold text-[#1f355d]">€399</p>
-                <button type="button" className="mt-3 rounded-lg border border-[#b8c9e8] px-3 py-1.5 text-sm font-semibold text-[#355d99]">
-                  Choose Sections
-                </button>
+                <p className="mt-2 text-sm font-semibold text-[#2a8a49]">Save 10%</p>
+                <div className="mt-2 flex items-end justify-center gap-2">
+                  <p className="text-3xl font-bold text-[#1f355d]">€399</p>
+                  <p className="pb-1 text-sm font-semibold text-[#7c8ba8] line-through">€443</p>
+                </div>
+                <div className="mt-auto pt-3">
+                  <button type="button" className="rounded-lg border border-[#b8c9e8] px-3 py-1.5 text-sm font-semibold text-[#355d99]">
+                    Choose Sections
+                  </button>
+                </div>
               </div>
-              <div className="rounded-xl border-2 border-[#2f7dff] bg-white p-4 text-center">
+              <div className="flex h-full flex-col rounded-xl border-2 border-[#2f7dff] bg-white p-4 text-center">
                 <p className="inline-flex rounded-full bg-[#2f7dff] px-3 py-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-white">
                   Most Popular
                 </p>
                 <p className="mt-2 font-semibold text-[#1f355d]">Professional Bundle</p>
                 <p className="mt-1 text-sm text-[#5e7293]">5 sections of your choice</p>
-                <p className="mt-3 text-3xl font-bold text-[#1f355d]">€599</p>
-                <button type="button" className="mt-3 rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#2e87ff]">
-                  Choose Sections
-                </button>
+                <p className="mt-2 text-sm font-semibold text-[#2a8a49]">Save 20%</p>
+                <div className="mt-2 flex items-end justify-center gap-2">
+                  <p className="text-3xl font-bold text-[#1f355d]">€599</p>
+                  <p className="pb-1 text-sm font-semibold text-[#7c8ba8] line-through">€746</p>
+                </div>
+                <div className="mt-auto pt-3">
+                  <button type="button" className="rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#2e87ff]">
+                    Choose Sections
+                  </button>
+                </div>
               </div>
-              <div className="rounded-xl border border-[#d7deeb] bg-white p-4 text-center">
+              <div className="flex h-full flex-col rounded-xl border border-[#d7deeb] bg-white p-4 text-center">
                 <p className="font-semibold text-[#1f355d]">Complete Bundle</p>
                 <p className="mt-1 text-sm text-[#5e7293]">10 sections of your choice</p>
-                <p className="mt-3 text-3xl font-bold text-[#1f355d]">€999</p>
-                <button type="button" className="mt-3 rounded-lg border border-[#b8c9e8] px-3 py-1.5 text-sm font-semibold text-[#355d99]">
-                  Choose Sections
-                </button>
+                <p className="mt-2 text-sm font-semibold text-[#2a8a49]">Save 25%</p>
+                <div className="mt-2 flex items-end justify-center gap-2">
+                  <p className="text-3xl font-bold text-[#1f355d]">€999</p>
+                  <p className="pb-1 text-sm font-semibold text-[#7c8ba8] line-through">€1,460</p>
+                </div>
+                <div className="mt-auto pt-3">
+                  <button type="button" className="rounded-lg border border-[#b8c9e8] px-3 py-1.5 text-sm font-semibold text-[#355d99]">
+                    Choose Sections
+                  </button>
+                </div>
               </div>
             </div>
           </article>
 
           <article className="rounded-2xl border border-[#d7e7de] bg-[#edf7f0] p-5 transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md md:p-6">
             <h3 className="text-3xl font-semibold text-[#1f3a31]">Why organizations choose our documentation</h3>
-            <ul className="mt-4 space-y-2 text-sm text-[#466357]">
-              <li>• Written by cybersecurity experts</li>
-              <li>• Aligned to ISO 27001, NIS2 and best practices</li>
-              <li>• Ready to customize and use</li>
-              <li>• Saves weeks of manual work</li>
-              <li>• Used by auditors and security teams</li>
+            <ul className="mt-4 space-y-2.5 text-base leading-7 text-[#466357]">
+              {credibilityPoints.map((item) => (
+                <li key={item} className="flex items-center gap-2.5">
+                  <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#8fd0b0] text-[#2a8a49]">
+                    <svg viewBox="0 0 20 20" className="h-2.5 w-2.5" fill="none" aria-hidden="true">
+                      <path d="m5.5 10 3 3 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  {item}
+                </li>
+              ))}
             </ul>
           </article>
         </div>
@@ -213,8 +296,8 @@ export default function ProductsPage() {
               <p className="mt-1 text-sm text-[#d2e2ff]">Get the right documentation section and move forward with confidence.</p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link href="/resources" className="rounded-xl border border-white/35 bg-white px-5 py-2.5 font-semibold text-[#123e8b] transition-colors duration-200 hover:bg-[#e9f1ff] active:scale-[0.98] motion-safe:active:transition-transform">
-                Browse Sections
+              <Link href="/products/audit-readiness-checklist" className="rounded-xl border border-white/35 bg-white px-5 py-2.5 font-semibold text-[#123e8b] transition-colors duration-200 hover:bg-[#e9f1ff] active:scale-[0.98] motion-safe:active:transition-transform">
+                View Audit Product
               </Link>
               <button
                 type="button"

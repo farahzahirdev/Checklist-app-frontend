@@ -111,7 +111,7 @@ export default function ContactPage() {
               <ArrowRightIcon className="h-5 w-5" />
             </Link>
             <Link
-              href="/resources"
+              href="/products"
               className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl border border-[#cfd8ea] bg-white/85 px-8 py-3 text-xl font-semibold text-[#233553] transition-colors duration-200 hover:bg-white active:scale-[0.98] motion-safe:active:transition-transform"
             >
               View Products
@@ -145,7 +145,7 @@ export default function ContactPage() {
                 <ArrowRightIcon />
               </Link>
               <Link
-                href="/resources"
+                href="/products"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#cfd8ea] bg-white px-7 py-3 text-base font-semibold text-[#233553] transition-colors duration-200 hover:bg-[#f7f9ff] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
               >
                 View Products

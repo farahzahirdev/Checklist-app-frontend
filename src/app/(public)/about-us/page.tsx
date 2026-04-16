@@ -155,19 +155,19 @@ export default function AboutUsPage() {
                 <h3 className="text-2xl font-semibold text-[#1f2741] md:text-[40px]">Our Experience</h3>
                 <ul className="mt-3 space-y-2 text-base text-[#445675] md:text-[18px]">
                   <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
                     Cybersecurity and audit expertise
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    ISO 27001, NIS2 and other security frameworks
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
+                    ISO 27001, NIS2, and relevant requirements under the Czech Cybersecurity Act
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
                     Security assessments and incident response
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
                     Real-world experience across multiple industries
                   </li>
                 </ul>
@@ -215,19 +215,19 @@ export default function AboutUsPage() {
                 </p>
                 <ul className="mt-3 space-y-2 text-base text-[#445675] md:text-[18px]">
                   <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
                     Practical, not theoretical
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
                     Focused on real audit readiness
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
                     Evidence-based approach
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
                     Simple and structured workflow
                   </li>
                 </ul>
@@ -324,7 +324,7 @@ export default function AboutUsPage() {
                 <ArrowRightIcon />
               </Link>
               <Link
-                href="/resources"
+                href="/products"
                 className="inline-flex min-w-[210px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#456298] px-6 py-3 text-base font-semibold text-[#e5eeff] transition-colors duration-200 hover:bg-[#173160] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
               >
                 Explore Products

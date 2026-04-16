@@ -61,14 +61,14 @@ export default function HomePage() {
             </p>
             <div className="flex flex-wrap gap-4 motion-safe:animate-fade-in-up motion-safe:delay-300">
               <Link
-                href="/resources"
+                href="/products"
                 className="inline-flex items-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-6 py-3 text-base font-semibold text-white transition-colors duration-200 ease-out hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform"
               >
                 Explore Products
                 <ArrowRightIcon />
               </Link>
               <Link
-                href="/register"
+                href="/how-it-works"
                 className="inline-flex items-center gap-2 rounded-xl border border-[#365a92] bg-[#0d1d3a]/75 px-6 py-3 text-base font-semibold text-[#e3eeff] transition-colors duration-200 ease-out hover:bg-[#1a2e56] active:scale-[0.98] motion-safe:active:transition-transform"
               >
                 See How It Works
@@ -115,7 +115,7 @@ export default function HomePage() {
                         <p className="text-2xl font-bold text-[#173a73] sm:text-[26px] xl:text-3xl">72%</p>
                       </div>
                       <div>
-                        <p className="text-[11px] text-[#6f7f98]">Confined</p>
+                        <p className="text-[11px] text-[#6f7f98]">Completed</p>
                         <p className="text-2xl font-bold text-[#173a73] sm:text-[26px] xl:text-3xl">18/25</p>
                       </div>
                       <div>
@@ -204,7 +204,7 @@ export default function HomePage() {
               <span className="whitespace-nowrap rounded-xl bg-[#d5f4df] px-3 py-1 text-sm font-semibold text-[#2a8a49]">Available Now</span>
             </div>
             <p className="mt-6 text-base leading-7 text-[#56617f] md:text-[18px]">
-              Prepare for audits with a guided checklist, identify, gaps, upload evidence, and get a reviewed report.
+              Prepare for audits with a guided checklist, identify gaps, upload evidence, and get a reviewed report.
             </p>
             <ul className="mt-6 space-y-3 text-base text-[#3a4a6d] md:text-[18px]">
               {checklistBullets.map((item) => (
@@ -215,7 +215,7 @@ export default function HomePage() {
               ))}
             </ul>
             <Link
-              href="/resources"
+              href="/products/audit-readiness-checklist"
               className="mt-6 inline-flex items-center gap-2 text-lg font-semibold text-[#2f7dff] transition-colors duration-200 hover:text-[#2568d6]"
             >
               View Product
@@ -252,7 +252,7 @@ export default function HomePage() {
               ))}
             </ul>
             <Link
-              href="/resources"
+              href="/products"
               className="mt-6 inline-flex items-center gap-2 text-lg font-semibold text-[#2f7dff] transition-colors duration-200 hover:text-[#2568d6]"
             >
               Learn More
@@ -391,7 +391,7 @@ export default function HomePage() {
                 <ArrowRightIcon />
               </Link>
               <Link
-                href="/resources"
+                href="/products"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#456298] px-6 py-3 text-base font-semibold text-[#e5eeff] transition-colors duration-200 hover:bg-[#173160] active:scale-[0.98] motion-safe:active:transition-transform md:px-8 md:text-lg"
               >
                 View Products
