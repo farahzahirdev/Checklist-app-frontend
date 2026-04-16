@@ -1,4 +1,4 @@
-import { apiPost, apiPostEmpty } from '@/lib/api';
+import { apiGetWithAuth, apiPatch, apiPost, apiPostEmptyWithAuth } from '@/lib/api';
 
 export type UserRole = 'admin' | 'auditor' | 'customer';
 
@@ -53,7 +53,37 @@ export type MessageResponse = {
 };
 
 export async function logoutAccount() {
-  return apiPostEmpty<MessageResponse>('/auth/logout');
+  return apiPostEmptyWithAuth<MessageResponse>('/auth/logout');
+}
+
+export type MfaSetupDetailsResponse = {
+  secret: string;
+  provisioning_uri: string;
+  verified: boolean;
+};
+
+export async function getCurrentUser() {
+  return apiGetWithAuth<AuthResponse>('/auth/me');
+}
+
+export async function startMfaSetup() {
+  return apiPost<MfaSetupDetailsResponse, Record<string, never>>('/auth/mfa/setup', {});
+}
+
+export async function verifyMfaCode(payload: { code: string }) {
+  return apiPost<AuthResponse, { code: string }>('/auth/mfa/verify', payload);
+}
+
+export async function assignUserRole(payload: { userId: string; role: UserRole }) {
+  return apiPatch<AuthResponse, { role: UserRole }>(`/auth/admin/users/${payload.userId}/role`, {
+    role: payload.role,
+  });
+}
+
+export function getRoleHomePath(role: UserRole): string {
+  if (role === 'admin') return '/admin/checklists';
+  if (role === 'auditor') return '/reports';
+  return '/dashboard';
 }
 
 export function getUserDisplayName(user: AuthUser) {
