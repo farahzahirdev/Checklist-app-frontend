@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { useState, type FormEvent } from 'react';
 import type { AuthResponse } from '@/lib/auth';
-import { getRoleHomePath, loginAccount, persistAccessToken, verifyLoginMfaChallenge } from '@/lib/auth';
+import { getRoleHomePath, loginAccount, persistAccessToken } from '@/lib/auth';
 import authBackground from '@/assets/cybersecurity-background.jpg';
 
 export default function LoginPage() {
@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [mfaCode, setMfaCode] = useState('');
-  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [mfaRequired, setMfaRequired] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AuthResponse | null>(null);
@@ -26,31 +26,25 @@ export default function LoginPage() {
     setResult(null);
 
     try {
-      let data: AuthResponse;
-      if (challengeToken) {
+      const normalizedEmail = email.trim().toLowerCase();
+      const payload: { email: string; password: string; mfa_code?: string } = {
+        email: normalizedEmail,
+        password,
+      };
+
+      if (mfaRequired) {
         const code = mfaCode.trim();
         if (code.length !== 6) {
           setError('Enter your 6-digit MFA code to continue.');
           return;
         }
-        data = await verifyLoginMfaChallenge({
-          challenge_token: challengeToken,
-          code,
-        });
-      } else {
-        const normalizedEmail = email.trim().toLowerCase();
-        data = await loginAccount({
-          email: normalizedEmail,
-          password,
-        });
+        payload.mfa_code = code;
       }
+
+      const data = await loginAccount(payload);
       setResult(data);
       if (data.mfa_required) {
-        if (!data.challenge_token) {
-          setError('MFA challenge could not be started. Try signing in again.');
-          return;
-        }
-        setChallengeToken(data.challenge_token);
+        setMfaRequired(true);
         setError('');
         return;
       }
@@ -60,7 +54,7 @@ export default function LoginPage() {
         setError('Sign in did not return an access token.');
         return;
       }
-      setChallengeToken(null);
+      setMfaRequired(false);
       router.push(getRoleHomePath(data.user.role) as Route);
       router.refresh();
     } catch (err) {
@@ -84,12 +78,12 @@ export default function LoginPage() {
           <p className="text-xs uppercase tracking-[0.35em] text-[#9dc5ff]">Account</p>
           <h1 className="mt-2 text-3xl font-semibold text-white">Sign in</h1>
           <p className="mt-2 text-sm text-[#97a5bb]">Use your registered account credentials.</p>
-          {result && !challengeToken ? (
+          {result && !mfaRequired ? (
             <p className="mt-2 text-sm text-emerald-300">
               Signed in as {result.user.email}. Redirecting to your workspace...
             </p>
           ) : null}
-          {challengeToken ? (
+          {mfaRequired ? (
             <p className="mt-2 text-sm text-amber-300">
               MFA is enabled for this account. Enter your 6-digit code to complete sign in.
             </p>
@@ -150,7 +144,7 @@ export default function LoginPage() {
               </button>
             </div>
           </label>
-          {challengeToken ? (
+          {mfaRequired ? (
             <label className="block space-y-2 text-sm">
               <span className="text-[#d8e2f2]">MFA code</span>
               <input
@@ -178,7 +172,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full rounded-lg border border-[#1f7bff] bg-[#1f7bff] py-2.5 text-sm font-medium text-white hover:bg-[#2e87ff] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? 'Signing in…' : challengeToken ? 'Verify MFA and sign in' : 'Sign in'}
+            {loading ? 'Signing in…' : mfaRequired ? 'Verify MFA and sign in' : 'Sign in'}
           </button>
         </form>
 
