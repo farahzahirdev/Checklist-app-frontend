@@ -125,14 +125,11 @@ export default function AppLayout({
                 <Link href="/reports" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
                   Reports
                 </Link>
-                <Link href="/resources" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
-                  Resources
+                <Link href="/products/audit-readiness-checklist" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
+                  Product Details
                 </Link>
                 <Link href="/admin/checklists" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
                   Admin
-                </Link>
-                <Link href="/admin-preview" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
-                  Admin Preview
                 </Link>
                 <Link href="/health" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
                   Health

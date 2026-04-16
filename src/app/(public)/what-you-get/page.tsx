@@ -39,7 +39,7 @@ export default function WhatYouGetPage() {
                 Try the Demo
               </Link>
               <Link
-                href="/products/audit-readiness-checklist"
+                href="/reports"
                 className="rounded-xl border border-[#375785] bg-[#0a2246] px-6 py-3 font-semibold text-[#dbe8ff] transition-colors duration-200 hover:bg-[#123162] active:scale-[0.98] motion-safe:active:transition-transform"
               >
                 See Example Report

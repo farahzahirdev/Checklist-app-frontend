@@ -1,57 +1,16 @@
 import Link from 'next/link';
-import type { Route } from 'next';
 import { PublicFooter } from '@/components/public-footer';
 import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 
-type DocumentationCard = {
-  name: string;
-  price: string;
-  checkpoints: string[];
-  href: Route;
-};
-
-const sectionChips = ['All', 'Access & Identity', 'Devices & Endpoints', 'Data Protection', 'Operations', 'Governance', 'Response'] as const;
-
-const documentationCards: DocumentationCard[] = [
-  {
-    name: 'Mobile Device Policy',
-    price: '€149',
-    checkpoints: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
-    href: '/products/audit-readiness-checklist',
-  },
-  {
-    name: 'Remote Work Policy',
-    price: '€149',
-    checkpoints: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
-    href: '/products',
-  },
-  {
-    name: 'Access Control Policy',
-    price: '€179',
-    checkpoints: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
-    href: '/products',
-  },
-  {
-    name: 'Incident Response Policy',
-    price: '€199',
-    checkpoints: ['Policy Document', 'User Guidelines', 'Admin Guidelines', 'Response Playbooks'],
-    href: '/products',
-  },
-  {
-    name: 'Data Classification Policy',
-    price: '€149',
-    checkpoints: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
-    href: '/products',
-  },
-];
-
-const credibilityPoints = [
-  'Written by cybersecurity experts',
-  'Aligned to ISO 27001, NIS2 and best practices',
-  'Ready to customize and use',
-  'Saves weeks of manual work',
-  'Used by auditors and security teams',
-] as const;
+function CheckBadgeIcon() {
+  return (
+    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#ddf5e8] text-[#2f9c65]">
+      <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" aria-hidden="true">
+        <path d="m4.2 8.1 2.2 2.2 5.2-5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
 
 export default function ProductsPage() {
   const heroStyle = {
@@ -170,51 +129,83 @@ export default function ProductsPage() {
           <h3 className="text-4xl font-semibold text-[#1a2440]">Browse Documentation Sections</h3>
           <p className="mt-2 text-base text-[#5e7293]">Each section includes a policy, user guidelines, and admin guidelines.</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            {sectionChips.map((chip) => (
-              <button
-                key={chip}
-                type="button"
-                className={`rounded-lg border px-3 py-1.5 text-sm font-semibold ${
-                  chip === 'Devices & Endpoints'
-                    ? 'border-[#1f7bff] bg-[#1f7bff] text-white'
-                    : 'border-[#d7deeb] bg-white text-[#5e7293] hover:bg-[#f7f9ff]'
-                }`}
-              >
-                {chip}
-              </button>
-            ))}
+            {['All', 'Access & Identity', 'Devices & Endpoints', 'Data Protection', 'Operations', 'Governance', 'Response'].map(
+              (chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  className={`rounded-lg border px-3 py-1.5 text-sm font-semibold ${
+                    chip === 'Devices & Endpoints'
+                      ? 'border-[#1f7bff] bg-[#1f7bff] text-white'
+                      : 'border-[#d7deeb] bg-white text-[#5e7293] hover:bg-[#f7f9ff]'
+                  }`}
+                >
+                  {chip}
+                </button>
+              ),
+            )}
           </div>
         </div>
 
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
-          {documentationCards.map((doc) => (
-            <article
-              key={doc.name}
-              className="flex h-full flex-col rounded-2xl border border-[#d7deeb] bg-white p-4 shadow-sm transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md"
-            >
-              <h2 className="text-base font-semibold text-[#1f2741]">{doc.name}</h2>
-              <p className="mt-2 text-sm text-[#5e7293]">Define and apply this section with practical, ready-to-use documentation.</p>
-              <ul className="mt-3 space-y-1.5 text-sm text-[#5e7293]">
-                {doc.checkpoints.map((item) => (
-                  <li key={`${doc.name}-${item}`} className="flex items-center gap-2">
-                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#8eb8f8] text-[#2f7dff]">
-                      <svg viewBox="0 0 20 20" className="h-2.5 w-2.5" fill="none" aria-hidden="true">
-                        <path d="m5.5 10 3 3 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </span>
-                    {item}
+          {[
+            {
+              name: 'Mobile Device Policy',
+              price: '€149',
+              subtitle: 'Define rules for corporate and personal mobile devices.',
+              badge: 'Popular',
+              points: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
+            },
+            {
+              name: 'Remote Work Policy',
+              price: '€149',
+              subtitle: 'Secure and productive remote work, clearly defined.',
+              points: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
+            },
+            {
+              name: 'Access Control Policy',
+              price: '€179',
+              subtitle: 'Manage who has access to what, and under which conditions.',
+              points: ['Policy Document', 'User Guidelines', 'Admin Guidelines', 'Admin Guidelines (Advanced)'],
+            },
+            {
+              name: 'Incident Response Policy',
+              price: '€199',
+              subtitle: 'Be ready when incidents happen. Act fast. Act right.',
+              points: ['Policy Document', 'User Guidelines', 'Admin Guidelines', 'Response Playbooks'],
+            },
+            {
+              name: 'Data Classification Policy',
+              price: '€149',
+              subtitle: 'Define how data is labeled, handled, and protected.',
+              points: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
+            },
+          ].map((doc) => (
+            <article key={doc.name} className="flex h-full flex-col rounded-2xl border border-[#d7deeb] bg-white p-4 shadow-sm transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-base font-semibold text-[#1f2741]">{doc.name}</h2>
+                {doc.badge ? (
+                  <span className="rounded-full bg-[#dbf8e9] px-2 py-0.5 text-[10px] font-semibold text-[#2f9c65]">
+                    {doc.badge}
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-2 text-sm text-[#5e7293]">{doc.subtitle}</p>
+              <ul className="mt-3 space-y-1.5 text-xs text-[#5f7394]">
+                {doc.points.map((point) => (
+                  <li key={point} className="flex items-center gap-2">
+                    <CheckBadgeIcon />
+                    <span>{point}</span>
                   </li>
                 ))}
               </ul>
-              <div className="mt-auto pt-5">
-                <p className="text-2xl font-semibold text-[#1f355d]">{doc.price}</p>
-                <Link
-                  href={doc.href}
-                  className="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-[#1f7bff] bg-[#1f7bff]/10 px-3 py-2 text-sm font-semibold text-[#1f7bff] hover:bg-[#1f7bff]/20"
-                >
-                  View Details
-                </Link>
-              </div>
+              <p className="mt-auto pt-5 text-2xl font-semibold text-[#1f355d]">{doc.price}</p>
+              <button
+                type="button"
+                className="mt-3 w-full rounded-lg border border-[#1f7bff] bg-[#1f7bff]/10 px-3 py-2 text-sm font-semibold text-[#1f7bff] hover:bg-[#1f7bff]/20"
+              >
+                View Details
+              </button>
             </article>
           ))}
         </div>
@@ -227,16 +218,12 @@ export default function ProductsPage() {
               <div className="flex h-full flex-col rounded-xl border border-[#d7deeb] bg-white p-4 text-center">
                 <p className="font-semibold text-[#1f355d]">Essential Bundle</p>
                 <p className="mt-1 text-sm text-[#5e7293]">3 sections of your choice</p>
-                <p className="mt-2 text-sm font-semibold text-[#2a8a49]">Save 10%</p>
-                <div className="mt-2 flex items-end justify-center gap-2">
-                  <p className="text-3xl font-bold text-[#1f355d]">€399</p>
-                  <p className="pb-1 text-sm font-semibold text-[#7c8ba8] line-through">€443</p>
-                </div>
-                <div className="mt-auto pt-3">
-                  <button type="button" className="rounded-lg border border-[#b8c9e8] px-3 py-1.5 text-sm font-semibold text-[#355d99]">
-                    Choose Sections
-                  </button>
-                </div>
+                <p className="mt-2 text-xs font-semibold text-[#2f9c65]">Save 10%</p>
+                <p className="mt-auto pt-3 text-3xl font-bold text-[#1f355d]">€399</p>
+                <p className="mt-1 text-xs text-[#7e8fa9] line-through">€447</p>
+                <button type="button" className="mt-3 rounded-lg border border-[#b8c9e8] px-3 py-1.5 text-sm font-semibold text-[#355d99]">
+                  Choose Sections
+                </button>
               </div>
               <div className="flex h-full flex-col rounded-xl border-2 border-[#2f7dff] bg-white p-4 text-center">
                 <p className="inline-flex rounded-full bg-[#2f7dff] px-3 py-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-white">
@@ -244,47 +231,34 @@ export default function ProductsPage() {
                 </p>
                 <p className="mt-2 font-semibold text-[#1f355d]">Professional Bundle</p>
                 <p className="mt-1 text-sm text-[#5e7293]">5 sections of your choice</p>
-                <p className="mt-2 text-sm font-semibold text-[#2a8a49]">Save 20%</p>
-                <div className="mt-2 flex items-end justify-center gap-2">
-                  <p className="text-3xl font-bold text-[#1f355d]">€599</p>
-                  <p className="pb-1 text-sm font-semibold text-[#7c8ba8] line-through">€746</p>
-                </div>
-                <div className="mt-auto pt-3">
-                  <button type="button" className="rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#2e87ff]">
-                    Choose Sections
-                  </button>
-                </div>
+                <p className="mt-2 text-xs font-semibold text-[#2f9c65]">Save 20%</p>
+                <p className="mt-auto pt-3 text-3xl font-bold text-[#1f355d]">€599</p>
+                <p className="mt-1 text-xs text-[#7e8fa9] line-through">€745</p>
+                <button type="button" className="mt-3 rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#2e87ff]">
+                  Choose Sections
+                </button>
               </div>
               <div className="flex h-full flex-col rounded-xl border border-[#d7deeb] bg-white p-4 text-center">
                 <p className="font-semibold text-[#1f355d]">Complete Bundle</p>
                 <p className="mt-1 text-sm text-[#5e7293]">10 sections of your choice</p>
-                <p className="mt-2 text-sm font-semibold text-[#2a8a49]">Save 25%</p>
-                <div className="mt-2 flex items-end justify-center gap-2">
-                  <p className="text-3xl font-bold text-[#1f355d]">€999</p>
-                  <p className="pb-1 text-sm font-semibold text-[#7c8ba8] line-through">€1,460</p>
-                </div>
-                <div className="mt-auto pt-3">
-                  <button type="button" className="rounded-lg border border-[#b8c9e8] px-3 py-1.5 text-sm font-semibold text-[#355d99]">
-                    Choose Sections
-                  </button>
-                </div>
+                <p className="mt-2 text-xs font-semibold text-[#2f9c65]">Save 25%</p>
+                <p className="mt-auto pt-3 text-3xl font-bold text-[#1f355d]">€999</p>
+                <p className="mt-1 text-xs text-[#7e8fa9] line-through">€1,490</p>
+                <button type="button" className="mt-3 rounded-lg border border-[#b8c9e8] px-3 py-1.5 text-sm font-semibold text-[#355d99]">
+                  Choose Sections
+                </button>
               </div>
             </div>
           </article>
 
           <article className="rounded-2xl border border-[#d7e7de] bg-[#edf7f0] p-5 transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md md:p-6">
             <h3 className="text-3xl font-semibold text-[#1f3a31]">Why organizations choose our documentation</h3>
-            <ul className="mt-4 space-y-2.5 text-base leading-7 text-[#466357]">
-              {credibilityPoints.map((item) => (
-                <li key={item} className="flex items-center gap-2.5">
-                  <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#8fd0b0] text-[#2a8a49]">
-                    <svg viewBox="0 0 20 20" className="h-2.5 w-2.5" fill="none" aria-hidden="true">
-                      <path d="m5.5 10 3 3 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </span>
-                  {item}
-                </li>
-              ))}
+            <ul className="mt-4 space-y-2.5 text-base leading-7 text-[#2f7f57]">
+              <li className="flex items-center gap-2.5"><CheckBadgeIcon />Written by cybersecurity experts</li>
+              <li className="flex items-center gap-2.5"><CheckBadgeIcon />Aligned to ISO 27001, NIS2 and best practices</li>
+              <li className="flex items-center gap-2.5"><CheckBadgeIcon />Ready to customize and use</li>
+              <li className="flex items-center gap-2.5"><CheckBadgeIcon />Saves weeks of manual work</li>
+              <li className="flex items-center gap-2.5"><CheckBadgeIcon />Used by auditors and security teams</li>
             </ul>
           </article>
         </div>
@@ -297,7 +271,7 @@ export default function ProductsPage() {
             </div>
             <div className="flex flex-wrap gap-3">
               <Link href="/products/audit-readiness-checklist" className="rounded-xl border border-white/35 bg-white px-5 py-2.5 font-semibold text-[#123e8b] transition-colors duration-200 hover:bg-[#e9f1ff] active:scale-[0.98] motion-safe:active:transition-transform">
-                View Audit Product
+                View Product Details
               </Link>
               <button
                 type="button"

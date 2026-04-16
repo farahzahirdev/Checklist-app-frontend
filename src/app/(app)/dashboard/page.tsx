@@ -355,9 +355,9 @@ export default function DashboardPage() {
           <h2 className="text-lg font-semibold">View Reports</h2>
           <p className="mt-2 text-sm text-[#97a5bb]">Read-only report pages for now.</p>
         </Link>
-        <Link href="/resources" className="rounded-2xl border border-[#345793] bg-[#0d1d3a] p-5 hover:bg-[#1a2f56]">
-          <h2 className="text-lg font-semibold">Open Resources</h2>
-          <p className="mt-2 text-sm text-[#97a5bb]">Public guidance and templates.</p>
+        <Link href="/products/audit-readiness-checklist" className="rounded-2xl border border-[#345793] bg-[#0d1d3a] p-5 hover:bg-[#1a2f56]">
+          <h2 className="text-lg font-semibold">Open Product Details</h2>
+          <p className="mt-2 text-sm text-[#97a5bb]">Audit Readiness Checklist product overview.</p>
         </Link>
       </section>
     </section>

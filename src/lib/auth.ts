@@ -1,7 +1,6 @@
 import { apiGetWithAuth, apiPatch, apiPost, apiPostEmptyWithAuth } from '@/lib/api';
 
 export type UserRole = 'admin' | 'auditor' | 'customer';
-type UserRoleCode = 0 | 1 | 2;
 
 export type AuthUser = {
   id: string;
@@ -13,7 +12,6 @@ export type AuthUser = {
 export type AuthResponse = {
   user: AuthUser;
   access_token: string | null;
-  challenge_token?: string | null;
   token_type: string;
   mfa_required: boolean;
   mfa_enabled: boolean;
@@ -33,28 +31,17 @@ export function persistAccessToken(token: string | null) {
 }
 
 export async function registerAccount(payload: { email: string; password: string }) {
-  const response = await apiPost<AuthResponse, typeof payload>('/auth/register', payload);
-  return normalizeAuthResponse(response);
+  return apiPost<AuthResponse, typeof payload>('/auth/register', payload);
 }
 
 export type LoginPayload = {
   email: string;
   password: string;
+  mfa_code?: string;
 };
 
 export async function loginAccount(payload: LoginPayload) {
-  const response = await apiPost<AuthResponse, LoginPayload>('/auth/login', payload);
-  return normalizeAuthResponse(response);
-}
-
-export type LoginMfaChallengePayload = {
-  challenge_token: string;
-  code: string;
-};
-
-export async function verifyLoginMfaChallenge(payload: LoginMfaChallengePayload) {
-  const response = await apiPost<AuthResponse, LoginMfaChallengePayload>('/auth/mfa/challenge/verify', payload);
-  return normalizeAuthResponse(response);
+  return apiPost<AuthResponse, LoginPayload>('/auth/login', payload);
 }
 
 export type MessageResponse = {
@@ -72,8 +59,7 @@ export type MfaSetupDetailsResponse = {
 };
 
 export async function getCurrentUser() {
-  const response = await apiGetWithAuth<AuthResponse>('/auth/me');
-  return normalizeAuthResponse(response);
+  return apiGetWithAuth<AuthResponse>('/auth/me');
 }
 
 export async function startMfaSetup() {
@@ -81,40 +67,17 @@ export async function startMfaSetup() {
 }
 
 export async function verifyMfaCode(payload: { code: string }) {
-  const response = await apiPost<AuthResponse, { code: string }>('/auth/mfa/verify', payload);
-  return normalizeAuthResponse(response);
+  return apiPost<AuthResponse, { code: string }>('/auth/mfa/verify', payload);
 }
 
 export async function assignUserRole(payload: { userId: string; role: UserRole }) {
-  const response = await apiPatch<AuthResponse, { role: UserRole }>(`/auth/admin/users/${payload.userId}/role`, {
+  return apiPatch<AuthResponse, { role: UserRole }>(`/auth/admin/users/${payload.userId}/role`, {
     role: payload.role,
   });
-  return normalizeAuthResponse(response);
 }
 
 export function getRoleHomePath(role: UserRole): string {
   if (role === 'admin') return '/admin/checklists';
   if (role === 'auditor') return '/reports';
   return '/dashboard';
-}
-
-type AuthResponseWithRoleCode = Omit<AuthResponse, 'user'> & {
-  user: Omit<AuthUser, 'role'> & { role: UserRole | UserRoleCode };
-};
-
-function normalizeUserRole(role: UserRole | UserRoleCode): UserRole {
-  if (role === 0) return 'admin';
-  if (role === 1) return 'auditor';
-  if (role === 2) return 'customer';
-  return role;
-}
-
-function normalizeAuthResponse(response: AuthResponseWithRoleCode): AuthResponse {
-  return {
-    ...response,
-    user: {
-      ...response.user,
-      role: normalizeUserRole(response.user.role),
-    },
-  };
 }

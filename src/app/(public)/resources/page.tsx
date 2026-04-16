@@ -84,22 +84,7 @@ const audiences = [
   { title: 'Auditors & Consultants', body: 'Save time with structured, consistent assessments.', icon: 'users' },
 ];
 
-const productDetail = {
-  label: 'Audit Product',
-  name: ['Audit Readiness', 'Checklist'],
-  heroDescription:
-    'Prepare for audits with confidence. Simplify complex compliance requirements into clear, actionable steps.',
-  heroSupport:
-    'Find gaps, upload evidence, and get a reviewed report so your team can prove readiness faster.',
-  mainBenefitHeadline: 'Know exactly how prepared you are for an audit before the auditor arrives.',
-  mainBenefitBody:
-    'Identify gaps, validate controls, and get a clear path to audit readiness with one structured workflow.',
-  howItWorksIntro: 'A simple 5-step process to go from uncertainty to audit-ready.',
-  finalCtaTitle: 'Ready to close your gaps and get audit-ready?',
-  finalCtaBody: 'Start your assessment now and see where you stand.',
-};
-
-export default function ProductDetailPage() {
+export default function ResourcesPage() {
   const heroStyle = {
     backgroundImage: `linear-gradient(rgba(243, 246, 255, 0.88), rgba(243, 246, 255, 0.92)), url(${bgImage.src})`,
     backgroundSize: 'cover',
@@ -112,7 +97,7 @@ export default function ProductDetailPage() {
       <section style={heroStyle}>
         <div className="mx-auto min-h-[560px] max-w-[1440px] px-4 py-7 sm:px-6 md:px-6 md:py-9">
           <Link
-            href="/products"
+            href="/"
             className="inline-flex items-center gap-2 text-sm font-medium text-[#64799d] transition-colors duration-200 hover:text-[#3f5376]"
           >
             <span aria-hidden="true">←</span>
@@ -122,7 +107,7 @@ export default function ProductDetailPage() {
           <div className="mt-5 grid items-center gap-7 lg:grid-cols-[1.02fr_0.98fr]">
             <div className="space-y-5">
               <span className="inline-flex rounded-full bg-[#dfe8ff] px-4 py-1.5 text-base font-semibold uppercase tracking-[0.12em] text-[#5278be] motion-safe:animate-fade-in motion-safe:delay-75">
-                {productDetail.label}
+                Audit
               </span>
 
               <div className="flex items-start gap-4 motion-safe:animate-fade-in-up motion-safe:delay-100">
@@ -133,15 +118,14 @@ export default function ProductDetailPage() {
                   </svg>
                 </span>
                 <h1 className="text-5xl font-semibold leading-[1.02] text-[#1a2440] sm:text-6xl">
-                  {productDetail.name[0]}
+                  Audit Readiness
                   <br />
-                  {productDetail.name[1]}
+                  Checklist
                 </h1>
               </div>
 
               <p className="max-w-2xl text-2xl leading-9 text-[#4f6282] motion-safe:animate-fade-in-up motion-safe:delay-150">
-                {productDetail.heroDescription}{' '}
-                <span className="font-semibold text-[#3864ad]">{productDetail.heroSupport}</span>
+                Prepare for audits with <span className="font-semibold text-[#3864ad]">confidence</span>. Simplify complex compliance requirements into clear, actionable steps. Find gaps, upload evidence, and get a reviewed report to prove your readiness.
               </p>
 
               <div className="flex flex-wrap gap-3 motion-safe:animate-fade-in-up motion-safe:delay-200">
@@ -153,10 +137,10 @@ export default function ProductDetailPage() {
                   <ArrowRightIcon />
                 </a>
                 <Link
-                  href="/how-it-works"
+                  href="/products/audit-readiness-checklist"
                   className="inline-flex items-center gap-2 rounded-xl border border-[#b5c7e7] bg-white/85 px-7 py-3 text-2xl font-semibold text-[#334a72] transition-colors duration-200 hover:bg-white active:scale-[0.98] motion-safe:active:transition-transform"
                 >
-                  View Demo
+                  View Product
                   <ArrowRightIcon />
                 </Link>
               </div>
@@ -299,10 +283,10 @@ export default function ProductDetailPage() {
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
             <p className="text-xl font-semibold text-[#334a72]">Main benefit</p>
             <h2 className="mt-3 text-4xl font-semibold leading-tight text-[#1a2440]">
-              {productDetail.mainBenefitHeadline}
+              Know exactly how prepared you are for an audit — before the auditor arrives.
             </h2>
             <p className="mt-4 text-xl leading-8 text-[#556b8c]">
-              {productDetail.mainBenefitBody}
+              Identify gaps, validate controls, and get a clear path to audit readiness. Reduce risk, save time, and approach your next audit with confidence.
             </p>
           </article>
 
@@ -331,7 +315,7 @@ export default function ProductDetailPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-4xl font-semibold text-[#1a2440]">How it works</h2>
-              <p className="mt-2 text-xl text-[#556b8c]">{productDetail.howItWorksIntro}</p>
+              <p className="mt-2 text-xl text-[#556b8c]">A simple 5-step process to go from uncertainty to audit-ready.</p>
             </div>
             <Link
               href="/register"
@@ -416,8 +400,8 @@ export default function ProductDetailPage() {
                 </svg>
               </span>
               <div>
-                <p className="text-2xl font-semibold md:text-4xl">{productDetail.finalCtaTitle}</p>
-                <p className="text-sm text-[#c7d8f8] md:text-base">{productDetail.finalCtaBody}</p>
+                <p className="text-2xl font-semibold md:text-4xl">Ready to close your gaps and get audit-ready?</p>
+                <p className="text-sm text-[#c7d8f8] md:text-base">Start your assessment now and see where you stand.</p>
               </div>
             </div>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
@@ -429,10 +413,10 @@ export default function ProductDetailPage() {
                 <ArrowRightIcon />
               </Link>
               <Link
-                href="/how-it-works"
+                href="/products/audit-readiness-checklist"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#456298] px-7 py-3 text-base font-semibold text-[#e5eeff] transition-colors duration-200 hover:bg-[#173160] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
               >
-                View Demo
+                View Product
                 <ArrowRightIcon />
               </Link>
             </div>
