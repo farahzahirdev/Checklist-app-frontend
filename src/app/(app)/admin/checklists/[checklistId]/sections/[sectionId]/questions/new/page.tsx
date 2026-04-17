@@ -23,18 +23,27 @@ export default function NewQuestionPage() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
+    const parsedPoints = Number.parseInt(points, 10);
+    if (!questionId.trim() || !legalRequirement.trim() || !explanation.trim() || !expectedImplementation.trim()) {
+      setError('All required fields must be filled.');
+      return;
+    }
+    if (!Number.isInteger(parsedPoints) || parsedPoints < 1) {
+      setError('Points must be a valid integer (1 or greater).');
+      return;
+    }
     setLoading(true);
     try {
-      const created = await createQuestion(checklistId, sectionId, {
-        questionId,
+      await createQuestion(checklistId, sectionId, {
+        questionId: questionId.trim(),
         securityLevel,
-        legalRequirement,
-        explanation,
-        expectedImplementation,
-        points: Number(points),
-        note: note || null,
+        legalRequirement: legalRequirement.trim(),
+        explanation: explanation.trim(),
+        expectedImplementation: expectedImplementation.trim(),
+        points: parsedPoints,
+        note: note.trim() || null,
       });
-      router.push(`/admin/checklists/${checklistId}/sections/${sectionId}/questions/${created.id}`);
+      router.push(`/admin/checklists/${checklistId}/sections/${sectionId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create question');
     } finally {
@@ -55,11 +64,11 @@ export default function NewQuestionPage() {
       </header>
       <form onSubmit={onSubmit} className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm space-y-3">
         <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Question ID / text</span>
+          <span className="font-medium">Question ID / text <span className="text-[#c43e53]">*</span></span>
           <input value={questionId} onChange={(e) => setQuestionId(e.target.value)} placeholder="Question ID / text" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
         </label>
         <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Security level</span>
+          <span className="font-medium">Security level <span className="text-[#c43e53]">*</span></span>
           <select value={securityLevel} onChange={(e) => setSecurityLevel(e.target.value as 'low' | 'medium' | 'high')} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">
             <option value="low">low</option>
             <option value="medium">medium</option>
@@ -67,20 +76,20 @@ export default function NewQuestionPage() {
           </select>
         </label>
         <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Legal requirement</span>
+          <span className="font-medium">Legal requirement <span className="text-[#c43e53]">*</span></span>
           <input value={legalRequirement} onChange={(e) => setLegalRequirement(e.target.value)} placeholder="Legal requirement" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
         </label>
         <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Explanation</span>
+          <span className="font-medium">Explanation <span className="text-[#c43e53]">*</span></span>
           <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} placeholder="Explanation" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
         </label>
         <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Expected implementation</span>
+          <span className="font-medium">Expected implementation <span className="text-[#c43e53]">*</span></span>
           <textarea value={expectedImplementation} onChange={(e) => setExpectedImplementation(e.target.value)} placeholder="Expected implementation" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
         </label>
         <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Points</span>
-          <input value={points} onChange={(e) => setPoints(e.target.value)} type="number" min={1} placeholder="Points" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
+          <span className="font-medium">Points <span className="text-[#c43e53]">*</span></span>
+          <input value={points} onChange={(e) => setPoints(e.target.value.replace(/[^\d]/g, ''))} type="number" min={1} step={1} placeholder="Points" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
         </label>
         <label className="block space-y-2 text-sm text-[#3b4d6c]">
           <span className="font-medium">Note (optional)</span>

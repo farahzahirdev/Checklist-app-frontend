@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
+import { toast } from 'sonner';
 import {
   createSection,
   deleteSection,
@@ -26,12 +27,12 @@ export default function ChecklistDetailPage() {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingSectionTitle, setEditingSectionTitle] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [actionLoading, setActionLoading] = useState<'update-checklist' | 'create-section' | 'save-section' | 'delete-section' | ''>('');
+  const [activeSectionId, setActiveSectionId] = useState('');
+  const [confirmDeleteSectionId, setConfirmDeleteSectionId] = useState<string | null>(null);
 
   async function loadData() {
     setLoading(true);
-    setError('');
     try {
       const [checklistResponse, sectionsResponse] = await Promise.all([
         getChecklistById(checklistId),
@@ -43,7 +44,7 @@ export default function ChecklistDetailPage() {
       setStatus(checklistResponse.status);
       setSections(sectionsResponse);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load checklist.');
+      toast.error(err instanceof Error ? err.message : 'Failed to load checklist.');
     } finally {
       setLoading(false);
     }
@@ -55,55 +56,91 @@ export default function ChecklistDetailPage() {
 
   async function onUpdateChecklist(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
-    setMessage('');
+    setActionLoading('update-checklist');
     try {
-      await updateChecklist(checklistId, { title, lawDecree, status });
-      setMessage('Checklist updated.');
+      const requestedTitle = title.trim();
+      const requestedLawDecree = lawDecree.trim();
+      if (!requestedTitle || !requestedLawDecree) {
+        toast.error('Title and Law/Decree are required.');
+        return;
+      }
+      const requestedStatus = status;
+      const requestedVersion = checklist?.version ?? 'v1.0';
+      const requestedAuditType = checklist?.auditType ?? 'compliance';
+
+      const updated = await updateChecklist(checklistId, {
+        title,
+        auditType: requestedAuditType,
+        lawDecree,
+        version: requestedVersion,
+        status,
+      });
+
+      const persisted =
+        updated.title.trim() === requestedTitle &&
+        updated.lawDecree.trim() === requestedLawDecree &&
+        updated.status === requestedStatus;
+
+      if (!persisted) {
+        toast.error('PATCH succeeded but backend returned unchanged checklist data.');
+      } else {
+        toast.success('Checklist updated.');
+      }
+
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update checklist.');
+      toast.error(err instanceof Error ? err.message : 'Failed to update checklist.');
+    } finally {
+      setActionLoading('');
     }
   }
 
   async function onCreateSection(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
-    setMessage('');
+    setActionLoading('create-section');
     try {
       await createSection(checklistId, { title: newSectionTitle, order: Number(newSectionOrder) });
       setNewSectionTitle('');
       setNewSectionOrder('1');
-      setMessage('Section created.');
+      toast.success('Section created.');
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create section.');
+      toast.error(err instanceof Error ? err.message : 'Failed to create section.');
+    } finally {
+      setActionLoading('');
     }
   }
 
   async function onDeleteSection(sectionId: string) {
-    setError('');
-    setMessage('');
+    setActionLoading('delete-section');
+    setActiveSectionId(sectionId);
     try {
       await deleteSection(checklistId, sectionId);
-      setMessage('Section deleted.');
+      toast.success('Section deleted.');
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete section.');
+      toast.error(err instanceof Error ? err.message : 'Failed to delete section.');
+    } finally {
+      setActionLoading('');
+      setActiveSectionId('');
+      setConfirmDeleteSectionId(null);
     }
   }
 
   async function onSaveSection(section: ChecklistSection) {
-    setError('');
-    setMessage('');
+    setActionLoading('save-section');
+    setActiveSectionId(section.id);
     try {
       await updateSection(checklistId, section.id, { title: editingSectionTitle, order: section.order });
       setEditingSectionId(null);
       setEditingSectionTitle('');
-      setMessage('Section updated.');
+      toast.success('Section updated.');
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update section.');
+      toast.error(err instanceof Error ? err.message : 'Failed to update section.');
+    } finally {
+      setActionLoading('');
+      setActiveSectionId('');
     }
   }
 
@@ -121,42 +158,41 @@ export default function ChecklistDetailPage() {
         </div>
       </header>
 
-      {error ? <p className="rounded-lg bg-[#ffedf0] px-3 py-2 text-sm text-[#cc5163]">{error}</p> : null}
-      {message ? <p className="rounded-lg bg-[#e9f8ef] px-3 py-2 text-sm text-[#2f9960]">{message}</p> : null}
-
       <form onSubmit={onUpdateChecklist} className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm space-y-3">
         <h2 className="text-xl font-semibold text-[#243555]">Checklist Metadata</h2>
         <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Title</span>
+          <span className="font-medium">Title <span className="text-[#c43e53]">*</span></span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" />
         </label>
         <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Law decree</span>
+          <span className="font-medium">Law decree <span className="text-[#c43e53]">*</span></span>
           <input value={lawDecree} onChange={(e) => setLawDecree(e.target.value)} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" />
         </label>
         <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Status</span>
+          <span className="font-medium">Status <span className="text-[#c43e53]">*</span></span>
           <select value={status} onChange={(e) => setStatus(e.target.value as 'draft' | 'published')} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">
             <option value="draft">draft</option>
             <option value="published">published</option>
           </select>
         </label>
-        <button disabled={loading} className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657]">
-          Save checklist
+        <button disabled={loading || Boolean(actionLoading)} className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60">
+          {actionLoading === 'update-checklist' ? 'Saving…' : 'Save checklist'}
         </button>
       </form>
 
       <form onSubmit={onCreateSection} className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm space-y-3">
         <h2 className="text-xl font-semibold text-[#243555]">Create Section</h2>
         <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Section title</span>
+          <span className="font-medium">Section title <span className="text-[#c43e53]">*</span></span>
           <input value={newSectionTitle} onChange={(e) => setNewSectionTitle(e.target.value)} placeholder="Section title" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
         </label>
         <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Display order</span>
+          <span className="font-medium">Display order <span className="text-[#c43e53]">*</span></span>
           <input value={newSectionOrder} onChange={(e) => setNewSectionOrder(e.target.value)} type="number" min={1} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
         </label>
-        <button className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657]">Add section</button>
+        <button disabled={Boolean(actionLoading)} className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60">
+          {actionLoading === 'create-section' ? 'Adding…' : 'Add section'}
+        </button>
       </form>
 
       <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
@@ -188,7 +224,9 @@ export default function ChecklistDetailPage() {
                     <div className="flex items-center gap-2">
                       <Link href={`/admin/checklists/${checklistId}/sections/${section.id}`} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]">View</Link>
                       {editingSectionId === section.id ? (
-                        <button type="button" onClick={() => void onSaveSection(section)} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#2f9960] hover:bg-[#e9f8ef]">Save</button>
+                        <button type="button" disabled={Boolean(actionLoading)} onClick={() => void onSaveSection(section)} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#2f9960] hover:bg-[#e9f8ef] disabled:opacity-60">
+                          {actionLoading === 'save-section' && activeSectionId === section.id ? 'Saving…' : 'Save'}
+                        </button>
                       ) : (
                         <button
                           type="button"
@@ -201,7 +239,9 @@ export default function ChecklistDetailPage() {
                           Edit
                         </button>
                       )}
-                      <button type="button" onClick={() => void onDeleteSection(section.id)} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#c43e53] hover:bg-[#fff3f5]">Delete</button>
+                      <button type="button" disabled={Boolean(actionLoading)} onClick={() => setConfirmDeleteSectionId(section.id)} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#c43e53] hover:bg-[#fff3f5] disabled:opacity-60">
+                        {actionLoading === 'delete-section' && activeSectionId === section.id ? 'Deleting…' : 'Delete'}
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -210,6 +250,32 @@ export default function ChecklistDetailPage() {
           </table>
         </div>
       </article>
+      {confirmDeleteSectionId ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-xl">
+            <h3 className="text-lg font-semibold text-[#243555]">Delete section?</h3>
+            <p className="mt-2 text-sm text-[#607594]">This will also remove its linked questions.</p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteSectionId(null)}
+                disabled={Boolean(actionLoading)}
+                className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm font-semibold text-[#2a3d5f]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void onDeleteSection(confirmDeleteSectionId)}
+                disabled={Boolean(actionLoading)}
+                className="rounded-lg border border-[#d45f6b] bg-[#fff1f3] px-3 py-2 text-sm font-semibold text-[#a73a46]"
+              >
+                {actionLoading === 'delete-section' ? 'Deleting…' : 'Confirm delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

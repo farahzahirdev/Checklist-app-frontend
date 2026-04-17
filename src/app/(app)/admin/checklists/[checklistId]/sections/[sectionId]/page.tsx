@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
+import { toast } from 'sonner';
 import { deleteQuestion, getQuestionsBySection, getSectionsByChecklist, updateSection } from '@/lib/checklist-api';
 import type { ChecklistQuestion } from '@/lib/checklist-types';
 
@@ -15,12 +16,12 @@ export default function SectionDetailPage() {
   const [previousSectionTitle, setPreviousSectionTitle] = useState('');
   const [questions, setQuestions] = useState<ChecklistQuestion[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [actionLoading, setActionLoading] = useState<'save-section' | 'delete-question' | ''>('');
+  const [activeQuestionId, setActiveQuestionId] = useState('');
+  const [confirmDeleteQuestionId, setConfirmDeleteQuestionId] = useState<string | null>(null);
 
   async function loadQuestions() {
     setLoading(true);
-    setError('');
     try {
       const [questionsResponse, sectionsResponse] = await Promise.all([
         getQuestionsBySection(checklistId, sectionId),
@@ -34,7 +35,7 @@ export default function SectionDetailPage() {
         setSectionOrder(String(currentSection.order));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load questions.');
+      toast.error(err instanceof Error ? err.message : 'Failed to load questions.');
     } finally {
       setLoading(false);
     }
@@ -46,25 +47,31 @@ export default function SectionDetailPage() {
 
   async function onUpdateSection(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
-    setMessage('');
+    setActionLoading('save-section');
     try {
       await updateSection(checklistId, sectionId, { title: sectionTitle, order: Number(sectionOrder) });
-      setMessage('Section updated.');
+      toast.success('Section updated.');
+      await loadQuestions();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update section.');
+      toast.error(err instanceof Error ? err.message : 'Failed to update section.');
+    } finally {
+      setActionLoading('');
     }
   }
 
   async function onDeleteQuestion(questionId: string) {
-    setError('');
-    setMessage('');
+    setActionLoading('delete-question');
+    setActiveQuestionId(questionId);
     try {
       await deleteQuestion(checklistId, sectionId, questionId);
-      setMessage('Question deleted.');
+      toast.success('Question deleted.');
       await loadQuestions();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete question.');
+      toast.error(err instanceof Error ? err.message : 'Failed to delete question.');
+    } finally {
+      setActionLoading('');
+      setActiveQuestionId('');
+      setConfirmDeleteQuestionId(null);
     }
   }
 
@@ -88,9 +95,6 @@ export default function SectionDetailPage() {
         </Link>
       </header>
 
-      {error ? <p className="rounded-lg bg-[#ffedf0] px-3 py-2 text-sm text-[#cc5163]">{error}</p> : null}
-      {message ? <p className="rounded-lg bg-[#e9f8ef] px-3 py-2 text-sm text-[#2f9960]">{message}</p> : null}
-
       <form onSubmit={onUpdateSection} className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm space-y-3">
         <h2 className="text-xl font-semibold text-[#243555]">Edit Section</h2>
         {previousSectionTitle ? <p className="text-sm text-[#607594]">Current title: {previousSectionTitle}</p> : null}
@@ -102,7 +106,9 @@ export default function SectionDetailPage() {
           <span className="font-medium">Display order</span>
           <input value={sectionOrder} onChange={(e) => setSectionOrder(e.target.value)} type="number" min={1} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" />
         </label>
-        <button className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657]">Save section</button>
+        <button disabled={Boolean(actionLoading)} className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60">
+          {actionLoading === 'save-section' ? 'Saving…' : 'Save section'}
+        </button>
       </form>
 
       <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
@@ -140,10 +146,11 @@ export default function SectionDetailPage() {
                         </Link>
                         <button
                           type="button"
-                          onClick={() => void onDeleteQuestion(question.id)}
-                          className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#c43e53] hover:bg-[#fff3f5]"
+                          onClick={() => setConfirmDeleteQuestionId(question.id)}
+                          disabled={Boolean(actionLoading)}
+                          className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#c43e53] hover:bg-[#fff3f5] disabled:opacity-60"
                         >
-                          Delete
+                          {actionLoading === 'delete-question' && activeQuestionId === question.id ? 'Deleting…' : 'Delete'}
                         </button>
                       </div>
                     </td>
@@ -153,6 +160,32 @@ export default function SectionDetailPage() {
           </table>
         </div>
       </article>
+      {confirmDeleteQuestionId ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-xl">
+            <h3 className="text-lg font-semibold text-[#243555]">Delete question?</h3>
+            <p className="mt-2 text-sm text-[#607594]">This action cannot be undone.</p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteQuestionId(null)}
+                disabled={Boolean(actionLoading)}
+                className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm font-semibold text-[#2a3d5f]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void onDeleteQuestion(confirmDeleteQuestionId)}
+                disabled={Boolean(actionLoading)}
+                className="rounded-lg border border-[#d45f6b] bg-[#fff1f3] px-3 py-2 text-sm font-semibold text-[#a73a46]"
+              >
+                {actionLoading === 'delete-question' ? 'Deleting…' : 'Confirm delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

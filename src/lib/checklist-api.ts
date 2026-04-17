@@ -95,12 +95,21 @@ export async function getChecklistById(checklistId: string): Promise<Checklist> 
 }
 
 export async function createChecklist(payload: Partial<Checklist>): Promise<Checklist> {
-  const data = await apiPost<ChecklistApiModel, { title: string; law_decree: string; version: number; status: 'draft' | 'published' }>(
+  const parsedVersion = Number.parseInt(String(payload.version ?? '1').replace(/[^\d]/g, ''), 10);
+  const data = await apiPost<
+    ChecklistApiModel,
+    {
+      title: string;
+      law_decree: string;
+      version: number;
+      status: 'draft' | 'published';
+    }
+  >(
     '/admin/checklists',
     {
       title: payload.title ?? '',
       law_decree: payload.lawDecree ?? '',
-      version: Number(payload.version ?? 1),
+      version: Number.isNaN(parsedVersion) ? 1 : parsedVersion,
       status: payload.status ?? 'draft',
     },
   );
@@ -108,7 +117,14 @@ export async function createChecklist(payload: Partial<Checklist>): Promise<Chec
 }
 
 export async function updateChecklist(checklistId: string, payload: Partial<Checklist>): Promise<Checklist> {
-  const data = await apiPatch<ChecklistApiModel, { title?: string; law_decree?: string; status?: 'draft' | 'published' }>(
+  const data = await apiPatch<
+    ChecklistApiModel,
+    {
+      title?: string;
+      law_decree?: string;
+      status?: 'draft' | 'published';
+    }
+  >(
     `/admin/checklists/${checklistId}`,
     {
       title: payload.title,

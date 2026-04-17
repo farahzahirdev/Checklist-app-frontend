@@ -5,7 +5,15 @@ import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { useState, type FormEvent } from 'react';
 import type { AuthResponse } from '@/lib/auth';
-import { getRoleHomePath, getRoleKey, loginAccount, persistAccessToken, startMfaSetup, verifyMfaCode } from '@/lib/auth';
+import {
+  getRoleHomePath,
+  getRoleKey,
+  loginAccount,
+  persistAccessToken,
+  startMfaSetup,
+  verifyMfaChallenge,
+  verifyMfaCode,
+} from '@/lib/auth';
 import authBackground from '@/assets/cybersecurity-background.jpg';
 
 export default function LoginPage() {
@@ -14,8 +22,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [mfaCode, setMfaCode] = useState('');
-  const [mfaSecret, setMfaSecret] = useState('');
-  const [mfaUri, setMfaUri] = useState('');
+  const [mfaChallengeToken, setMfaChallengeToken] = useState('');
   const [mfaQrSvg, setMfaQrSvg] = useState('');
   const [step, setStep] = useState<'credentials' | 'customer-mfa-verify' | 'customer-mfa-setup'>('credentials');
   const [error, setError] = useState('');
@@ -40,23 +47,24 @@ export default function LoginPage() {
       setResult(data);
 
       const role = getRoleKey(data.user.role);
+      const destination = role === 'customer' ? '/payment' : getRoleHomePath(data.user.role);
       if (role === 'admin' || role === 'auditor') {
         if (!data.access_token) {
           setError('Sign in did not return an access token.');
           return;
         }
         persistAccessToken(data.access_token);
-        router.push(getRoleHomePath(data.user.role) as Route);
+        router.push(destination as Route);
         router.refresh();
         return;
       }
 
       if (data.mfa_required && data.mfa_enabled) {
-        if (!data.access_token) {
-          setError('MFA verification requires an access token from login.');
+        if (!data.challenge_token) {
+          setError('MFA verification requires a challenge token from login.');
           return;
         }
-        persistAccessToken(data.access_token);
+        setMfaChallengeToken(data.challenge_token);
         setStep('customer-mfa-verify');
         return;
       }
@@ -77,7 +85,7 @@ export default function LoginPage() {
         return;
       }
       persistAccessToken(data.access_token);
-      router.push(getRoleHomePath(data.user.role) as Route);
+      router.push(destination as Route);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign in failed');
@@ -91,8 +99,6 @@ export default function LoginPage() {
     setError('');
     try {
       const setup = await startMfaSetup();
-      setMfaSecret(setup.secret);
-      setMfaUri(setup.provisioning_uri);
       setMfaQrSvg(setup.svg_qr ?? '');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load MFA setup details.');
@@ -111,13 +117,17 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      const data = await verifyMfaCode({ code });
+      if (!mfaChallengeToken) {
+        setError('Missing MFA challenge token. Please sign in again.');
+        return;
+      }
+      const data = await verifyMfaChallenge({ challenge_token: mfaChallengeToken, code });
       if (!data.access_token) {
         setError('MFA verification succeeded but no access token was returned.');
         return;
       }
       persistAccessToken(data.access_token);
-      router.push(getRoleHomePath(data.user.role) as Route);
+      router.push('/payment');
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to verify OTP code.');
@@ -141,7 +151,7 @@ export default function LoginPage() {
       if (data.access_token) {
         persistAccessToken(data.access_token);
       }
-      router.push(getRoleHomePath(data.user.role) as Route);
+      router.push('/payment');
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to complete MFA setup.');
@@ -286,14 +296,22 @@ export default function LoginPage() {
             <div className="space-y-2 rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-3 text-sm text-[#d8e2f2]">
               <p>Scan this setup in your authenticator app:</p>
               {setupLoading ? <p className="text-[#9dc5ff]">Loading MFA setup details...</p> : null}
-              {mfaSecret ? <p>Secret: {mfaSecret}</p> : null}
-              {mfaUri ? <p className="break-all">URI: {mfaUri}</p> : null}
               {mfaQrSvg ? (
-                <div
-                  className="mt-2 rounded bg-white p-3"
-                  // Backend returns trusted inline SVG for enrollment QR rendering.
-                  dangerouslySetInnerHTML={{ __html: mfaQrSvg }}
-                />
+                mfaQrSvg.startsWith('data:image/') ? (
+                  <div className="mt-2 rounded bg-white p-3">
+                    <img
+                      src={mfaQrSvg}
+                      alt="MFA QR code"
+                      className="mx-auto h-auto max-w-full"
+                    />
+                  </div>
+                ) : (
+                  <div
+                    className="mt-2 rounded bg-white p-3"
+                    // Backend may return inline SVG markup for enrollment QR rendering.
+                    dangerouslySetInnerHTML={{ __html: mfaQrSvg }}
+                  />
+                )
               ) : null}
             </div>
             <label className="block space-y-2 text-sm">

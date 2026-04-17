@@ -2,15 +2,18 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { logoutAccount, persistAccessToken } from '@/lib/auth';
+import { getCurrentUser, getRoleKey, getUserDisplayName, logoutAccount, persistAccessToken, type UserRoleKey } from '@/lib/auth';
+import { AdminAccessProvider } from '@/lib/admin-access';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
+  const [role, setRole] = useState<UserRoleKey | ''>('');
+  const [displayName, setDisplayName] = useState('User');
 
   const navItems = [
     { href: '/admin', label: 'Dashboard', icon: 'home' },
@@ -23,6 +26,29 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { href: '/admin/logs', label: 'Audit Logs', icon: 'shield' },
     { href: '/admin/settings', label: 'Settings', icon: 'settings' },
   ] as const;
+  const isReadOnly = role !== 'admin';
+  const visibleNavItems = isReadOnly
+    ? navItems.filter((item) => ['/admin', '/admin/reports', '/admin/logs'].includes(item.href))
+    : navItems;
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadRole() {
+      try {
+        const response = await getCurrentUser();
+        if (!cancelled) {
+          setRole(getRoleKey(response.user.role));
+          setDisplayName(getUserDisplayName(response.user));
+        }
+      } catch {
+        // Keep default if role cannot be loaded.
+      }
+    }
+    void loadRole();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleLogout() {
     setLogoutLoading(true);
@@ -80,7 +106,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <span className="text-xl font-semibold text-white">Checklist KB</span>
           </Link>
           <nav className="mt-4 flex flex-col gap-1.5 text-[15px]">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const active = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
               return (
                 <Link
@@ -132,20 +158,20 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                className="rounded-lg border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-medium text-[#dce8ff] hover:bg-[#223657]"
-              >
-                Search
-              </button>
-              <button
-                type="button"
                 className="inline-flex items-center gap-2 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-medium text-[#dce8ff] hover:bg-[#223657]"
               >
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#d6e4ff] text-[#274b84]">J</span>
-                John Novak
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#d6e4ff] text-[#274b84]">
+                  {displayName.charAt(0).toUpperCase() || 'U'}
+                </span>
+                {displayName}
               </button>
             </div>
           </header>
-          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 md:p-5">{children}</div>
+          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 md:p-5">
+            <AdminAccessProvider isReadOnly={isReadOnly}>
+              <div className={isReadOnly ? '[&_button]:hidden' : undefined}>{children}</div>
+            </AdminAccessProvider>
+          </div>
         </div>
       </div>
     </section>

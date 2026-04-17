@@ -24,6 +24,8 @@ export type AuthResponse = {
 };
 
 export const ACCESS_TOKEN_STORAGE_KEY = 'checklist_access_token';
+export const ORIGINAL_ACCESS_TOKEN_STORAGE_KEY = 'checklist_original_access_token';
+export const ROLE_SWITCH_ACTIVE_STORAGE_KEY = 'checklist_role_switch_active';
 
 export function persistAccessToken(token: string | null) {
   if (typeof window === 'undefined') {
@@ -34,6 +36,46 @@ export function persistAccessToken(token: string | null) {
   } else {
     window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
   }
+}
+
+export function beginRoleSwitchSession(temporaryToken: string) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  const currentToken = window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+  if (currentToken) {
+    window.localStorage.setItem(ORIGINAL_ACCESS_TOKEN_STORAGE_KEY, currentToken);
+  }
+  window.localStorage.setItem(ROLE_SWITCH_ACTIVE_STORAGE_KEY, '1');
+  window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, temporaryToken);
+}
+
+export function isRoleSwitchSessionActive() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  return window.localStorage.getItem(ROLE_SWITCH_ACTIVE_STORAGE_KEY) === '1';
+}
+
+export function clearRoleSwitchSession() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window.localStorage.removeItem(ORIGINAL_ACCESS_TOKEN_STORAGE_KEY);
+  window.localStorage.removeItem(ROLE_SWITCH_ACTIVE_STORAGE_KEY);
+}
+
+export function restoreOriginalAccessToken() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  const originalToken = window.localStorage.getItem(ORIGINAL_ACCESS_TOKEN_STORAGE_KEY);
+  if (!originalToken) {
+    return false;
+  }
+  window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, originalToken);
+  clearRoleSwitchSession();
+  return true;
 }
 
 export async function registerAccount(payload: { email: string; password: string }) {

@@ -19,10 +19,22 @@ export default function NewChecklistPage() {
     setLoading(true);
     setError('');
     try {
+      const normalizedTitle = title.trim();
+      const normalizedLawDecree = lawDecree.trim();
+      const parsedVersion = Number.parseInt(version, 10);
+      if (!normalizedTitle || !normalizedLawDecree) {
+        setError('Title and Law/Decree are required.');
+        return;
+      }
+      if (!Number.isInteger(parsedVersion) || parsedVersion < 1) {
+        setError('Version must be a valid integer (1 or greater).');
+        return;
+      }
       const created = await createChecklist({
-        title,
-        lawDecree,
-        version,
+        title: normalizedTitle,
+        auditType: 'compliance',
+        lawDecree: normalizedLawDecree,
+        version: String(parsedVersion),
         status,
       });
       router.push(`/admin/checklists/${created.id}`);
@@ -46,19 +58,19 @@ export default function NewChecklistPage() {
       </header>
       <form onSubmit={onSubmit} className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm space-y-3">
         <label className="block space-y-2 text-sm">
-          <span className="font-medium text-[#566b8d]">Title</span>
+          <span className="font-medium text-[#566b8d]">Title <span className="text-[#c43e53]">*</span></span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
         </label>
         <label className="block space-y-2 text-sm">
-          <span className="font-medium text-[#566b8d]">Law/Decree</span>
+          <span className="font-medium text-[#566b8d]">Law/Decree <span className="text-[#c43e53]">*</span></span>
           <input value={lawDecree} onChange={(e) => setLawDecree(e.target.value)} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
         </label>
         <label className="block space-y-2 text-sm">
-          <span className="font-medium text-[#566b8d]">Version</span>
-          <input value={version} onChange={(e) => setVersion(e.target.value)} type="number" min={1} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
+          <span className="font-medium text-[#566b8d]">Version <span className="text-[#c43e53]">*</span></span>
+          <input value={version} onChange={(e) => setVersion(e.target.value.replace(/[^\d]/g, ''))} type="number" min={1} step={1} placeholder="1" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
         </label>
         <label className="block space-y-2 text-sm">
-          <span className="font-medium text-[#566b8d]">Status</span>
+          <span className="font-medium text-[#566b8d]">Status <span className="text-[#c43e53]">*</span></span>
           <select value={status} onChange={(e) => setStatus(e.target.value as 'draft' | 'published')} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">
             <option value="draft">draft</option>
             <option value="published">published</option>

@@ -1,21 +1,28 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { getCustomerDashboardSummary, type CustomerDashboardSummary } from '@/lib/dashboard';
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState<CustomerDashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [permissionBlocked, setPermissionBlocked] = useState(false);
 
   async function loadDashboard() {
     setLoading(true);
     setError('');
+    setPermissionBlocked(false);
     try {
       const response = await getCustomerDashboardSummary();
       setSummary(response);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load customer dashboard');
+      const msg = err instanceof Error ? err.message : 'Failed to load customer dashboard';
+      setError(msg);
+      if (msg.includes('insufficient_permissions')) {
+        setPermissionBlocked(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -44,6 +51,20 @@ export default function DashboardPage() {
 
       {error ? (
         <p className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">{error}</p>
+      ) : null}
+      {permissionBlocked ? (
+        <div className="rounded-lg border border-amber-300/30 bg-amber-500/10 px-3 py-3 text-sm text-amber-100">
+          This switched session cannot access customer dashboard summary. Use `Assessment`/`Access`, or click `Return to
+          Admin`.
+          <div className="mt-2 flex gap-2">
+            <Link href="/assessment" className="rounded-md border border-amber-300/50 px-2 py-1 text-xs hover:bg-amber-500/15">
+              Go to Assessment
+            </Link>
+            <Link href="/access" className="rounded-md border border-amber-300/50 px-2 py-1 text-xs hover:bg-amber-500/15">
+              Go to Access
+            </Link>
+          </div>
+        </div>
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

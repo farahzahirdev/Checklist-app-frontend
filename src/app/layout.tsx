@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Space_Grotesk, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
+import { AppToaster } from '@/components/app-toaster';
 
 const displayFont = Space_Grotesk({
   subsets: ['latin'],
@@ -25,7 +26,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${displayFont.variable} ${monoFont.variable}`}>{children}</body>
+      <body className={`${displayFont.variable} ${monoFont.variable}`}>
+        {children}
+        <AppToaster />
+      </body>
     </html>
   );
 }

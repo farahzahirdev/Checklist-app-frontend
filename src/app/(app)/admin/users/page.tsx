@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import {
   activateCustomer,
   assignPermissionsToUser,
@@ -19,8 +21,12 @@ import {
   type AdminManagedUser,
   type AdminUserDetail,
 } from '@/lib/admin-users';
+import { useAdminAccess } from '@/lib/admin-access';
+import { beginRoleSwitchSession, clearRoleSwitchSession } from '@/lib/auth';
 
 export default function AdminUsersPage() {
+  const router = useRouter();
+  const { isReadOnly } = useAdminAccess();
   const [users, setUsers] = useState<AdminManagedUser[]>([]);
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
   const [selectedUserId, setSelectedUserId] = useState('');
@@ -36,9 +42,20 @@ export default function AdminUsersPage() {
   const [switchDuration, setSwitchDuration] = useState(30);
   const [customerReason, setCustomerReason] = useState('Support action');
   const [isPermanentDeactivation, setIsPermanentDeactivation] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState<
+    | ''
+    | 'load-user'
+    | 'change-role'
+    | 'assign-permissions'
+    | 'reset-permissions'
+    | 'load-customer'
+    | 'deactivate-customer'
+    | 'activate-customer'
+    | 'view-customer-dashboard'
+    | 'switch-role'
+    | 'end-switch'
+  >('');
 
   const dashboardRecentAssessments = Array.isArray(customerDashboardData?.recent_assessments)
     ? (customerDashboardData.recent_assessments as Array<Record<string, unknown>>)
@@ -52,64 +69,88 @@ export default function AdminUsersPage() {
       : null;
 
   async function loadLists() {
-    const [usersResponse, customersResponse] = await Promise.all([listAdminUsers(), listCustomers()]);
-    setUsers(usersResponse.users);
-    setCustomers(customersResponse.customers);
+    try {
+      const [usersResponse, customersResponse] = await Promise.all([listAdminUsers(), listCustomers()]);
+      setUsers(usersResponse.users);
+      setCustomers(customersResponse.customers);
+    } catch (err) {
+      if (isReadOnly) {
+        return;
+      }
+      toast.error(err instanceof Error ? err.message : 'Failed to load users.');
+    }
   }
 
   useEffect(() => {
+    if (isReadOnly) {
+      return;
+    }
     void loadLists();
-  }, []);
+  }, [isReadOnly]);
+
+  if (isReadOnly) {
+    return (
+      <section className="space-y-4">
+        <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Users</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#1f2d45]">Users & Role Assignment</h1>
+          <p className="mt-2 text-sm text-[#607594]">Only admins can manage users.</p>
+        </header>
+      </section>
+    );
+  }
 
   async function onLoadUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
-    setMessage('');
     if (!selectedUserId.trim()) {
-      setError('Select a user first.');
+      toast.error('Select a user first.');
       return;
     }
+    setActionLoading('load-user');
     setLoading(true);
     try {
       const detail = await getAdminUser(selectedUserId);
       setSelectedUserDetail(detail);
-      setMessage('User details loaded.');
+      toast.success('User details loaded.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load user.');
+      toast.error(err instanceof Error ? err.message : 'Failed to load user.');
     } finally {
+      setActionLoading('');
       setLoading(false);
     }
   }
 
   async function onChangeRole(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage('');
-    setError('');
 
     if (!selectedUserId.trim()) {
-      setError('User ID is required.');
+      toast.error('User ID is required.');
+      return;
+    }
+    if (!roleReason.trim()) {
+      toast.error('Reason is required.');
       return;
     }
 
+    setActionLoading('change-role');
     setLoading(true);
     try {
       const updated = await changeAdminUserRole(selectedUserId, { new_role_code: newRoleCode, reason: roleReason });
-      setMessage(`Role changed for ${updated.email} to ${updated.role}.`);
+      toast.success(`Role changed for ${updated.email} to ${updated.role}.`);
       setSelectedUserDetail(null);
       await loadLists();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to change role.');
+      toast.error(err instanceof Error ? err.message : 'Failed to change role.');
     } finally {
+      setActionLoading('');
       setLoading(false);
     }
   }
 
   async function onAssignPermissions(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage('');
-    setError('');
     if (!selectedUserId.trim()) {
-      setError('User ID is required.');
+      toast.error('User ID is required.');
       return;
     }
     const parsedPermissions = permissionsInput
@@ -120,120 +161,141 @@ export default function AdminUsersPage() {
       .filter((parts): parts is [string, string] => parts.length === 2 && Boolean(parts[0]) && Boolean(parts[1]));
 
     if (!parsedPermissions.length) {
-      setError('Use format resource:action,resource:action');
+      toast.error('Use format resource:action,resource:action');
       return;
     }
+    setActionLoading('assign-permissions');
     setLoading(true);
     try {
       await assignPermissionsToUser(selectedUserId, parsedPermissions);
-      setMessage('Custom permissions assigned.');
+      toast.success('Custom permissions assigned.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to assign permissions.');
+      toast.error(err instanceof Error ? err.message : 'Failed to assign permissions.');
     } finally {
+      setActionLoading('');
       setLoading(false);
     }
   }
 
   async function onResetPermissions() {
-    setMessage('');
-    setError('');
     if (!selectedUserId.trim()) {
-      setError('User ID is required.');
+      toast.error('User ID is required.');
       return;
     }
+    setActionLoading('reset-permissions');
     setLoading(true);
     try {
       await resetUserPermissions(selectedUserId);
-      setMessage('Permissions reset to role defaults.');
+      toast.success('Permissions reset to role defaults.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reset permissions.');
+      toast.error(err instanceof Error ? err.message : 'Failed to reset permissions.');
     } finally {
+      setActionLoading('');
       setLoading(false);
     }
   }
 
   async function onLoadCustomer(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage('');
-    setError('');
     setCustomerDashboardData(null);
     if (!selectedCustomerId.trim()) {
-      setError('Select a customer first.');
+      toast.error('Select a customer first.');
       return;
     }
+    setActionLoading('load-customer');
     setLoading(true);
     try {
       const detail = await getCustomer(selectedCustomerId);
       setSelectedCustomerDetail(detail);
-      setMessage('Customer details loaded.');
+      toast.success('Customer details loaded.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load customer.');
+      toast.error(err instanceof Error ? err.message : 'Failed to load customer.');
     } finally {
+      setActionLoading('');
       setLoading(false);
     }
   }
 
   async function onDeactivateCustomer() {
-    setMessage('');
-    setError('');
     if (!selectedCustomerId.trim()) {
-      setError('Customer ID is required.');
+      toast.error('Customer ID is required.');
       return;
     }
+    if (!customerReason.trim()) {
+      toast.error('Reason is required.');
+      return;
+    }
+    setActionLoading('deactivate-customer');
     setLoading(true);
     try {
       await deactivateCustomer(selectedCustomerId, { reason: customerReason, permanent: isPermanentDeactivation });
-      setMessage('Customer deactivated.');
+      toast.success('Customer deactivated.');
       await loadLists();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to deactivate customer.');
+      toast.error(err instanceof Error ? err.message : 'Failed to deactivate customer.');
     } finally {
+      setActionLoading('');
       setLoading(false);
     }
   }
 
   async function onActivateCustomer() {
-    setMessage('');
-    setError('');
     if (!selectedCustomerId.trim()) {
-      setError('Customer ID is required.');
+      toast.error('Customer ID is required.');
       return;
     }
+    if (!customerReason.trim()) {
+      toast.error('Reason is required.');
+      return;
+    }
+    setActionLoading('activate-customer');
     setLoading(true);
     try {
       await activateCustomer(selectedCustomerId, { reason: customerReason });
-      setMessage('Customer activated.');
+      toast.success('Customer activated.');
       await loadLists();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to activate customer.');
+      toast.error(err instanceof Error ? err.message : 'Failed to activate customer.');
     } finally {
+      setActionLoading('');
       setLoading(false);
     }
   }
 
   async function onViewCustomerDashboard() {
-    setMessage('');
-    setError('');
     if (!selectedCustomerId.trim()) {
-      setError('Customer ID is required.');
+      toast.error('Customer ID is required.');
       return;
     }
+    if (!customerReason.trim()) {
+      toast.error('Reason is required.');
+      return;
+    }
+    setActionLoading('view-customer-dashboard');
     setLoading(true);
     try {
       const dashboardData = await viewCustomerDashboardAsAdmin(selectedCustomerId, customerReason);
       setCustomerDashboardData(dashboardData);
-      setMessage('Customer dashboard data loaded for admin review.');
+      toast.success('Customer dashboard data loaded for admin review.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to view customer dashboard.');
+      toast.error(err instanceof Error ? err.message : 'Failed to view customer dashboard.');
     } finally {
+      setActionLoading('');
       setLoading(false);
     }
   }
 
   async function onSwitchRole(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage('');
-    setError('');
+    if (!switchReason.trim()) {
+      toast.error('Reason is required.');
+      return;
+    }
+    if (!Number.isInteger(switchDuration) || switchDuration < 1) {
+      toast.error('Duration minutes must be an integer greater than 0.');
+      return;
+    }
+    setActionLoading('switch-role');
     setLoading(true);
     try {
       const response = await switchAdminRole({
@@ -241,24 +303,40 @@ export default function AdminUsersPage() {
         reason: switchReason,
         duration_minutes: switchDuration,
       });
-      setMessage(`Switched to ${response.switched_to_role} until ${new Date(response.expires_at).toLocaleString()}.`);
+      if (response.temporary_token) {
+        beginRoleSwitchSession(response.temporary_token);
+      }
+      toast.success(`Switched to ${response.switched_to_role} until ${new Date(response.expires_at).toLocaleString()}.`);
+      const switchedRole = response.switched_to_role.toLowerCase();
+      if (switchedRole === 'customer') {
+        router.push('/dashboard');
+      } else if (switchedRole === 'auditor') {
+        router.push('/admin');
+      } else {
+        router.push('/admin');
+      }
+      router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to switch role.');
+      toast.error(err instanceof Error ? err.message : 'Failed to switch role.');
     } finally {
+      setActionLoading('');
       setLoading(false);
     }
   }
 
   async function onEndRoleSwitch() {
-    setMessage('');
-    setError('');
+    setActionLoading('end-switch');
     setLoading(true);
     try {
       await endAdminRoleSwitch();
-      setMessage('Returned to original admin role.');
+      clearRoleSwitchSession();
+      toast.success('Returned to original admin role.');
+      router.push('/admin');
+      router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to end role switch.');
+      toast.error(err instanceof Error ? err.message : 'Failed to end role switch.');
     } finally {
+      setActionLoading('');
       setLoading(false);
     }
   }
@@ -317,7 +395,7 @@ export default function AdminUsersPage() {
 
         <form onSubmit={onLoadUser} className="mt-4 space-y-3">
           <label className="block space-y-2 text-sm">
-            <span className="font-medium text-[#566b8d]">Selected user ID</span>
+            <span className="font-medium text-[#566b8d]">Selected user ID <span className="text-[#c43e53]">*</span></span>
             <input
               type="text"
               value={selectedUserId}
@@ -331,7 +409,7 @@ export default function AdminUsersPage() {
             disabled={loading}
             className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Load user detail
+            {actionLoading === 'load-user' ? 'Loading user…' : 'Load user detail'}
           </button>
         </form>
 
@@ -356,7 +434,7 @@ export default function AdminUsersPage() {
             </select>
           </label>
           <label className="block space-y-2 text-sm">
-            <span className="font-medium text-[#566b8d]">Reason</span>
+            <span className="font-medium text-[#566b8d]">Reason <span className="text-[#c43e53]">*</span></span>
             <input
               type="text"
               value={roleReason}
@@ -370,7 +448,7 @@ export default function AdminUsersPage() {
             disabled={loading}
             className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? 'Updating…' : 'Change role'}
+            {actionLoading === 'change-role' ? 'Changing role…' : 'Change role'}
           </button>
         </form>
 
@@ -392,7 +470,7 @@ export default function AdminUsersPage() {
               disabled={loading}
               className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Assign permissions
+              {actionLoading === 'assign-permissions' ? 'Assigning…' : 'Assign permissions'}
             </button>
             <button
               type="button"
@@ -400,7 +478,7 @@ export default function AdminUsersPage() {
               disabled={loading}
               className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-4 py-2 text-sm font-semibold text-[#2a3d5f] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Reset permissions
+              {actionLoading === 'reset-permissions' ? 'Resetting…' : 'Reset permissions'}
             </button>
           </div>
         </form>
@@ -441,7 +519,7 @@ export default function AdminUsersPage() {
 
         <form onSubmit={onLoadCustomer} className="mt-4 space-y-3">
           <label className="block space-y-2 text-sm">
-            <span className="font-medium text-[#566b8d]">Selected customer ID</span>
+            <span className="font-medium text-[#566b8d]">Selected customer ID <span className="text-[#c43e53]">*</span></span>
             <input
               type="text"
               value={selectedCustomerId}
@@ -455,7 +533,7 @@ export default function AdminUsersPage() {
             disabled={loading}
             className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Load customer detail
+            {actionLoading === 'load-customer' ? 'Loading customer…' : 'Load customer detail'}
           </button>
         </form>
 
@@ -471,7 +549,7 @@ export default function AdminUsersPage() {
 
         <div className="mt-4 space-y-3">
           <label className="block space-y-2 text-sm">
-            <span className="font-medium text-[#566b8d]">Reason</span>
+            <span className="font-medium text-[#566b8d]">Reason <span className="text-[#c43e53]">*</span></span>
             <input
               type="text"
               value={customerReason}
@@ -495,7 +573,7 @@ export default function AdminUsersPage() {
               disabled={loading}
               className="rounded-xl border border-[#d45f6b] bg-[#fff1f3] px-4 py-2 text-sm font-semibold text-[#a73a46] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Deactivate
+              {actionLoading === 'deactivate-customer' ? 'Deactivating…' : 'Deactivate'}
             </button>
             <button
               type="button"
@@ -503,7 +581,7 @@ export default function AdminUsersPage() {
               disabled={loading}
               className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Activate
+              {actionLoading === 'activate-customer' ? 'Activating…' : 'Activate'}
             </button>
             <button
               type="button"
@@ -511,7 +589,7 @@ export default function AdminUsersPage() {
               disabled={loading}
               className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-4 py-2 text-sm font-semibold text-[#2a3d5f] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              View Dashboard
+              {actionLoading === 'view-customer-dashboard' ? 'Loading dashboard…' : 'View Dashboard'}
             </button>
           </div>
           {customerDashboardData ? (
@@ -583,9 +661,12 @@ export default function AdminUsersPage() {
 
       <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm">
         <h2 className="text-xl font-semibold text-[#243555]">Role Switch For Testing</h2>
+        <p className="mt-1 text-sm text-[#607594]">
+          This temporarily changes your active session from admin to the selected role for testing. Use <span className="font-semibold">End switch</span> to return to admin.
+        </p>
         <form onSubmit={onSwitchRole} className="mt-4 space-y-3">
           <label className="block space-y-2 text-sm">
-            <span className="font-medium text-[#566b8d]">Switch to role</span>
+            <span className="font-medium text-[#566b8d]">Switch to role <span className="text-[#c43e53]">*</span></span>
             <select
               value={switchRole}
               onChange={(event) => setSwitchRole(event.target.value as 'customer' | 'auditor')}
@@ -596,7 +677,7 @@ export default function AdminUsersPage() {
             </select>
           </label>
           <label className="block space-y-2 text-sm">
-            <span className="font-medium text-[#566b8d]">Reason</span>
+            <span className="font-medium text-[#566b8d]">Reason <span className="text-[#c43e53]">*</span></span>
             <input
               type="text"
               value={switchReason}
@@ -605,7 +686,7 @@ export default function AdminUsersPage() {
             />
           </label>
           <label className="block space-y-2 text-sm">
-            <span className="font-medium text-[#566b8d]">Duration minutes</span>
+            <span className="font-medium text-[#566b8d]">Duration minutes <span className="text-[#c43e53]">*</span></span>
             <input
               type="number"
               min={1}
@@ -620,7 +701,7 @@ export default function AdminUsersPage() {
               disabled={loading}
               className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Switch role
+              {actionLoading === 'switch-role' ? 'Switching role…' : 'Switch role'}
             </button>
             <button
               type="button"
@@ -628,14 +709,12 @@ export default function AdminUsersPage() {
               disabled={loading}
               className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-4 py-2 text-sm font-semibold text-[#2a3d5f] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              End switch
+              {actionLoading === 'end-switch' ? 'Ending switch…' : 'End switch'}
             </button>
           </div>
         </form>
       </article>
 
-      {message ? <p className="rounded-lg bg-[#e9f8ef] px-3 py-2 text-sm text-[#2f9960]">{message}</p> : null}
-      {error ? <p className="rounded-lg bg-[#ffedf0] px-3 py-2 text-sm text-[#cc5163]">{error}</p> : null}
     </section>
   );
 }
