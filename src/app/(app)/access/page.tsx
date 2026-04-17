@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { getCurrentAssessment, startAssessment } from '@/lib/assessment';
 
 function formatTimeRemaining(expiresAt: string): string {
@@ -19,6 +20,7 @@ function formatTimeRemaining(expiresAt: string): string {
 }
 
 export default function AccessPage() {
+  const searchParams = useSearchParams();
   const [checklistId, setChecklistId] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -31,6 +33,13 @@ export default function AccessPage() {
   const [loading, setLoading] = useState(false);
 
   const remaining = useMemo(() => (assessment ? formatTimeRemaining(assessment.expires_at) : ''), [assessment]);
+
+  useEffect(() => {
+    const fromQuery = searchParams.get('checklist_id');
+    if (fromQuery) {
+      setChecklistId(fromQuery);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     let intervalId: number | undefined;

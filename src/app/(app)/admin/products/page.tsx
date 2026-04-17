@@ -23,7 +23,7 @@ export default function AdminProductsPage() {
       <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ecf0f8] px-4 py-3">
           <h2 className="text-xl font-semibold text-[#243555]">Catalog Items</h2>
-          <button type="button" className="rounded-xl border border-[#2f7dff] bg-[#2f7dff] px-4 py-2 text-sm font-semibold text-white">
+          <button type="button" className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657]">
             Add Product
           </button>
         </div>

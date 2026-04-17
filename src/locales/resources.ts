@@ -36,4 +36,7 @@ export const resourcesMessages: TranslationMessages = {
     'audiences.auditorsConsultants.title': 'Auditors & Consultants',
     'audiences.auditorsConsultants.body': 'Save time with structured, consistent assessments.',
   },
+  es: {},
+  fr: {},
+  de: {},
 };

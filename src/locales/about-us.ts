@@ -38,4 +38,7 @@ export const aboutUsMessages: TranslationMessages = {
     'bottom.contact': 'Contact Us',
     'bottom.products': 'Explore Products',
   },
+  es: {},
+  fr: {},
+  de: {},
 };

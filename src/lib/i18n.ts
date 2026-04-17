@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 
 export const LOCALE_STORAGE_KEY = 'checklist_locale';
-export const SUPPORTED_LOCALES = ['en'] as const;
+export const SUPPORTED_LOCALES = ['en', 'es', 'fr', 'de'] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 export type TranslationDictionary = Record<string, string>;
-export type TranslationMessages = Record<Locale, TranslationDictionary>;
+export type TranslationMessages = Partial<Record<Locale, TranslationDictionary>>;
 
 export const DEFAULT_LOCALE: Locale = 'en';
 
@@ -56,7 +56,7 @@ export function translate(
   key: string,
   values?: Record<string, string>
 ) {
-  const template = messages[locale][key] ?? messages[DEFAULT_LOCALE][key] ?? key;
+  const template = messages[locale]?.[key] ?? messages[DEFAULT_LOCALE]?.[key] ?? key;
   if (!values) {
     return template;
   }

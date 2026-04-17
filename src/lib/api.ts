@@ -1,5 +1,5 @@
-// const DEFAULT_API_BASE_URL = 'https://checklist-app-backend-wine.vercel.app/api/v1';
-const DEFAULT_API_BASE_URL = 'http://localhost:8000/api/v1';
+const DEFAULT_API_BASE_URL = 'https://checklist-app-backend-wine.vercel.app/api/v1';
+// const DEFAULT_API_BASE_URL = 'http://localhost:8000/api/v1';
 
 export function getApiBaseUrl() {
   return process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
@@ -157,6 +157,22 @@ export async function apiPatch<TResponse, TPayload>(
     method: 'PATCH',
     headers: buildHeaders(auth),
     body: JSON.stringify(payload),
+    cache: 'no-store',
+  });
+
+  const raw = await response.text();
+
+  if (!response.ok) {
+    throw new Error(errorMessageFromResponse(response.status, raw));
+  }
+
+  return (raw ? JSON.parse(raw) : null) as TResponse;
+}
+
+export async function apiDelete<TResponse>(path: string, auth?: ApiAuth): Promise<TResponse> {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+    method: 'DELETE',
+    headers: buildHeaders(auth),
     cache: 'no-store',
   });
 

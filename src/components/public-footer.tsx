@@ -41,10 +41,8 @@ export function PublicFooter() {
           <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
             <Link href="/products" className="hover:text-[#dce8ff]">Products</Link>
             <Link href="/faq" className="hover:text-[#dce8ff]">FAQ</Link>
-            <Link href="/how-it-works" className="hover:text-[#dce8ff]">How It Works</Link>
             <Link href="/contact" className="hover:text-[#dce8ff]">Contact</Link>
-            <Link href="/what-you-get" className="hover:text-[#dce8ff]">What You Get</Link>
-            <Link href="/who-its-for" className="hover:text-[#dce8ff]">Who It&apos;s For</Link>
+            <Link href="/products/audit-readiness-checklist" className="hover:text-[#dce8ff]">Product Details</Link>
           </div>
         </div>
 

@@ -2,12 +2,18 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { getCurrentUser, getRoleKey, getUserDisplayName, logoutAccount, persistAccessToken, type UserRoleKey } from '@/lib/auth';
+import { AdminAccessProvider } from '@/lib/admin-access';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+  const [role, setRole] = useState<UserRoleKey | ''>('');
+  const [displayName, setDisplayName] = useState('User');
 
   const navItems = [
     { href: '/admin', label: 'Dashboard', icon: 'home' },
@@ -16,10 +22,48 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { href: '/admin/checklists', label: 'Checklist Content', icon: 'checklist' },
     { href: '/admin/products', label: 'Products', icon: 'box' },
     { href: '/admin/users', label: 'Users', icon: 'users' },
+    { href: '/admin/rbac', label: 'RBAC', icon: 'shield' },
     { href: '/admin/logs', label: 'Audit Logs', icon: 'shield' },
     { href: '/admin/settings', label: 'Settings', icon: 'settings' },
-    { href: '/dashboard', label: 'Log out', icon: 'logout' },
   ] as const;
+  const isReadOnly = role !== 'admin';
+  const visibleNavItems = isReadOnly
+    ? navItems.filter((item) => ['/admin', '/admin/reports', '/admin/logs'].includes(item.href))
+    : navItems;
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadRole() {
+      try {
+        const response = await getCurrentUser();
+        if (!cancelled) {
+          setRole(getRoleKey(response.user.role));
+          setDisplayName(getUserDisplayName(response.user));
+        }
+      } catch {
+        // Keep default if role cannot be loaded.
+      }
+    }
+    void loadRole();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleLogout() {
+    setLogoutLoading(true);
+    try {
+      await logoutAccount();
+    } catch {
+      // API logout may fail if token is already invalid.
+    } finally {
+      persistAccessToken(null);
+      setLogoutLoading(false);
+      setMobileNavOpen(false);
+      router.push('/login');
+      router.refresh();
+    }
+  }
 
   const iconByName = (name: string) => {
     if (name === 'home') return <path d="M3 11.5 12 4l9 7.5M6 10v9h12v-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />;
@@ -38,7 +82,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   // 1) Protect this layout with admin-only guard once auth context is wired.
   // 2) Keep checklist management as top priority domain in admin nav.
   return (
-    <section className="relative h-[calc(100vh-2rem)] overflow-hidden rounded-3xl border border-[#263f6e] bg-[#f4f6fb] text-[#182843]">
+    <section className="relative h-screen w-full overflow-hidden bg-[#f4f6fb] text-[#182843]">
       {mobileNavOpen ? (
         <button
           type="button"
@@ -62,12 +106,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <span className="text-xl font-semibold text-white">Checklist KB</span>
           </Link>
           <nav className="mt-4 flex flex-col gap-1.5 text-[15px]">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const active = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={item.href as any}
                   onClick={() => setMobileNavOpen(false)}
                   className={`flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
                     active ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
@@ -82,6 +126,19 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 </Link>
               );
             })}
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              disabled={logoutLoading}
+              className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-[#b8cae7] transition-colors hover:bg-[#10284f] hover:text-white disabled:opacity-60"
+            >
+              <span className="inline-flex h-5 w-5 items-center justify-center">
+                <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" aria-hidden="true">
+                  {iconByName('logout')}
+                </svg>
+              </span>
+              {logoutLoading ? 'Logging out...' : 'Log out'}
+            </button>
           </nav>
         </aside>
         <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
@@ -91,7 +148,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 type="button"
                 aria-label="Open sidebar"
                 onClick={() => setMobileNavOpen((prev) => !prev)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#2d4f83] bg-[#081b39] text-[#dce8ff] hover:bg-[#102750] lg:hidden"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#2d4f83] bg-[#182843] text-[#dce8ff] hover:bg-[#223657] lg:hidden"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
                   <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -101,20 +158,20 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                className="rounded-lg border border-[#2d4f83] bg-[#081b39] px-4 py-2 text-sm font-medium text-[#dce8ff] hover:bg-[#102750]"
+                className="inline-flex items-center gap-2 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-medium text-[#dce8ff] hover:bg-[#223657]"
               >
-                Search
-              </button>
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-lg border border-[#2d4f83] bg-[#081b39] px-3 py-2 text-sm font-medium text-[#dce8ff] hover:bg-[#102750]"
-              >
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#d6e4ff] text-[#274b84]">J</span>
-                John Novak
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#d6e4ff] text-[#274b84]">
+                  {displayName.charAt(0).toUpperCase() || 'U'}
+                </span>
+                {displayName}
               </button>
             </div>
           </header>
-          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 md:p-5">{children}</div>
+          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 md:p-5">
+            <AdminAccessProvider isReadOnly={isReadOnly}>
+              <div className={isReadOnly ? '[&_button]:hidden' : undefined}>{children}</div>
+            </AdminAccessProvider>
+          </div>
         </div>
       </div>
     </section>

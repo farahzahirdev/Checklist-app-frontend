@@ -21,4 +21,7 @@ export const contactMessages: TranslationMessages = {
     'bottom.title': 'Start your assessment today',
     'bottom.subtitle': 'Sign up now and simplify your cybersecurity audit process.',
   },
+  es: {},
+  fr: {},
+  de: {},
 };

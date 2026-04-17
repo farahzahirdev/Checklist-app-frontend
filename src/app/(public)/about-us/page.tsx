@@ -10,7 +10,7 @@ function ArrowRightIcon({ className = 'h-4 w-4' }: { className?: string }) {
   );
 }
 
-export default function AboutUsPage() {
+export default function HomePage() {
   const heroStyle = {
     backgroundImage: `linear-gradient(rgba(4, 9, 22, 0.56), rgba(4, 9, 22, 0.72)), url(${heroBackground.src})`,
     backgroundSize: 'cover',
@@ -23,7 +23,7 @@ export default function AboutUsPage() {
       <section style={heroStyle}>
         <div className="mx-auto grid min-h-[560px] w-full max-w-[1440px] items-center gap-10 px-4 py-10 text-white sm:px-6 sm:py-12 md:gap-12 md:px-6 md:py-16 lg:grid-cols-2 lg:gap-14">
           <div className="space-y-7">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">About Us</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">Home</p>
             <h1 className="max-w-xl text-4xl font-semibold leading-[1.04] motion-safe:animate-fade-in-up motion-safe:delay-100 sm:text-5xl md:text-6xl">
               Built by
               <br />
@@ -135,7 +135,7 @@ export default function AboutUsPage() {
                 </svg>
               </span>
               <div>
-                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-[40px]">Who We Are</h3>
+                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-[40px]">What We Do</h3>
                 <p className="mt-2 text-base leading-8 text-[#55627e] md:text-[18px]">
                   We are cybersecurity professionals with hands-on experience in audits, compliance, and incident response. Over the years, we have worked with organizations across different industries, helping them strengthen their security and prepare for audits with confidence.
                 </p>
@@ -309,7 +309,7 @@ export default function AboutUsPage() {
                 </svg>
               </span>
               <div className="min-w-0">
-                <p className="text-2xl font-semibold md:text-4xl">Want to know more about our work?</p>
+                <p className="text-2xl font-semibold md:text-4xl">Ready to work with us?</p>
                 <p className="mt-1 text-sm text-[#c7d8f8] md:text-base">
                   We&apos;re always open to new conversations about how we can help you and your organization stay secure and audit-ready.
                 </p>
