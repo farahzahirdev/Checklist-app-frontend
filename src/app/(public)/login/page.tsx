@@ -14,6 +14,7 @@ import {
   verifyMfaChallenge,
   verifyMfaCode,
 } from '@/lib/auth';
+import { createStripeCheckoutSession } from '@/lib/payments';
 import authBackground from '@/assets/cybersecurity-background.jpg';
 
 export default function LoginPage() {
@@ -29,6 +30,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AuthResponse | null>(null);
   const [setupLoading, setSetupLoading] = useState(false);
+
+  async function redirectCustomerToCheckout(userId: string) {
+    const origin = window.location.origin;
+    const checkoutUrl = await createStripeCheckoutSession({
+      user_id: userId,
+      success_url: `${origin}/payment/success`,
+      cancel_url: `${origin}/payment?checkout=cancelled`,
+    });
+    window.location.assign(checkoutUrl);
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -85,8 +96,12 @@ export default function LoginPage() {
         return;
       }
       persistAccessToken(data.access_token);
-      router.push(destination as Route);
-      router.refresh();
+      if (role === 'customer') {
+        await redirectCustomerToCheckout(data.user.id);
+      } else {
+        router.push(destination as Route);
+        router.refresh();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign in failed');
     } finally {
@@ -127,8 +142,7 @@ export default function LoginPage() {
         return;
       }
       persistAccessToken(data.access_token);
-      router.push('/payment');
-      router.refresh();
+      await redirectCustomerToCheckout(data.user.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to verify OTP code.');
     } finally {
@@ -151,8 +165,7 @@ export default function LoginPage() {
       if (data.access_token) {
         persistAccessToken(data.access_token);
       }
-      router.push('/payment');
-      router.refresh();
+      await redirectCustomerToCheckout(data.user.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to complete MFA setup.');
     } finally {

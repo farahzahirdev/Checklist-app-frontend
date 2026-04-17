@@ -13,6 +13,21 @@ type ChecklistApiModel = {
   updated_at: string;
 };
 
+export type CustomerChecklist = {
+  id: string;
+  title: string;
+  checklist_type: {
+    id: string;
+    code: string;
+    name: string;
+    description: string;
+  };
+  version: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
 type SectionApiModel = {
   id: string;
   checklist_id: string;
@@ -261,4 +276,24 @@ export async function deleteQuestion(
 
 export async function getReportSummary(_assessmentId?: string): Promise<ReportSummary> {
   return mockReportSummary;
+}
+
+export async function listPublishedCustomerChecklists() {
+  return apiGetWithAuth<CustomerChecklist[]>('/checklists/');
+}
+
+export type ChecklistAccessGrant = {
+  id: string;
+  user_id: string;
+  payment_id: string;
+  checklist_id: string;
+  activated_at: string;
+  expires_at: string;
+  created_at: string;
+};
+
+export async function selectChecklistAfterPayment(checklistId: string) {
+  const query = new URLSearchParams();
+  query.set('checklist_id', checklistId);
+  return apiPost<ChecklistAccessGrant, Record<string, never>>(`/access/select-checklist?${query.toString()}`, {});
 }
