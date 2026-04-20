@@ -211,7 +211,7 @@ export async function createQuestion(
       legal_requirement: string;
       explanation: string;
       expected_implementation: string;
-      points: number;
+      points?: number; // Optional: will be derived from security_level if not provided
     }
   >(`/admin/checklists/${checklistId}/sections/${sectionId}/questions`, {
     question_id: payload.questionId ?? '',
@@ -220,7 +220,7 @@ export async function createQuestion(
     legal_requirement: payload.legalRequirement ?? '',
     explanation: payload.explanation ?? '',
     expected_implementation: payload.expectedImplementation ?? '',
-    points: payload.points ?? 1,
+    points: payload.points, // Optional
   });
   return mapQuestion(data);
 }
