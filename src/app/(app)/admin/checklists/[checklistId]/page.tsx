@@ -23,6 +23,7 @@ export default function ChecklistDetailPage() {
   const [sections, setSections] = useState<ChecklistSection[]>([]);
   const [title, setTitle] = useState('');
   const [lawDecree, setLawDecree] = useState('');
+  const [version, setVersion] = useState('v1.0');
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [newSectionTitle, setNewSectionTitle] = useState('');
   const [newSectionOrder, setNewSectionOrder] = useState('1');
@@ -43,6 +44,7 @@ export default function ChecklistDetailPage() {
       setChecklist(checklistResponse);
       setTitle(checklistResponse.title);
       setLawDecree(checklistResponse.lawDecree);
+      setVersion(checklistResponse.version);
       setStatus(checklistResponse.status);
       setSections(sectionsResponse);
     } catch (err) {
@@ -67,7 +69,7 @@ export default function ChecklistDetailPage() {
         return;
       }
       const requestedStatus = status;
-      const requestedVersion = checklist?.version ?? 'v1.0';
+      const requestedVersion = version.trim() || checklist?.version || 'v1.0';
       const requestedAuditType = checklist?.auditType ?? 'compliance';
 
       const updated = await updateChecklist(checklistId, {
@@ -176,6 +178,12 @@ export default function ChecklistDetailPage() {
             <p className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">{lawDecree || '-'}</p>
           </div>
           <div className="space-y-2 text-sm text-[#3b4d6c]">
+            <p className="font-medium">
+              Version <span className="text-[#c43e53]">*</span>
+            </p>
+            <p className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">{version || '-'}</p>
+          </div>
+          <div className="space-y-2 text-sm text-[#3b4d6c]">
             <p className="font-medium">Default compliance type</p>
             <p className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">compliance</p>
           </div>
@@ -196,6 +204,10 @@ export default function ChecklistDetailPage() {
           <label className="block space-y-2 text-sm text-[#3b4d6c]">
             <span className="font-medium">Law decree <span className="text-[#c43e53]">*</span></span>
             <input value={lawDecree} onChange={(e) => setLawDecree(e.target.value)} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" />
+          </label>
+          <label className="block space-y-2 text-sm text-[#3b4d6c]">
+            <span className="font-medium">Version <span className="text-[#c43e53]">*</span></span>
+            <input value={version} onChange={(e) => setVersion(e.target.value)} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" />
           </label>
           <label className="block space-y-2 text-sm text-[#3b4d6c]">
             <span className="font-medium">Status <span className="text-[#c43e53]">*</span></span>

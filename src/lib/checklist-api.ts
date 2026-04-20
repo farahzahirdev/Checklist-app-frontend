@@ -132,11 +132,15 @@ export async function createChecklist(payload: Partial<Checklist>): Promise<Chec
 }
 
 export async function updateChecklist(checklistId: string, payload: Partial<Checklist>): Promise<Checklist> {
+  const parsedVersion = payload.version
+    ? Number.parseInt(String(payload.version).replace(/[^\d]/g, ''), 10)
+    : undefined;
   const data = await apiPatch<
     ChecklistApiModel,
     {
       title?: string;
       law_decree?: string;
+      version?: number;
       status?: 'draft' | 'published';
     }
   >(
@@ -144,6 +148,7 @@ export async function updateChecklist(checklistId: string, payload: Partial<Chec
     {
       title: payload.title,
       law_decree: payload.lawDecree,
+      version: Number.isNaN(parsedVersion) ? undefined : parsedVersion,
       status: payload.status,
     },
   );
