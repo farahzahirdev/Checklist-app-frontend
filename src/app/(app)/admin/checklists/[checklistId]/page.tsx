@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import {
@@ -16,7 +16,9 @@ import type { Checklist, ChecklistSection } from '@/lib/checklist-types';
 
 export default function ChecklistDetailPage() {
   const params = useParams<{ checklistId: string }>();
+  const searchParams = useSearchParams();
   const checklistId = String(params.checklistId);
+  const isViewOnly = searchParams.get('mode') === 'view';
   const [checklist, setChecklist] = useState<Checklist | null>(null);
   const [sections, setSections] = useState<ChecklistSection[]>([]);
   const [title, setTitle] = useState('');
@@ -158,28 +160,57 @@ export default function ChecklistDetailPage() {
         </div>
       </header>
 
-      <form onSubmit={onUpdateChecklist} className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold text-[#243555]">Checklist Metadata</h2>
-        <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Title <span className="text-[#c43e53]">*</span></span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" />
-        </label>
-        <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Law decree <span className="text-[#c43e53]">*</span></span>
-          <input value={lawDecree} onChange={(e) => setLawDecree(e.target.value)} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" />
-        </label>
-        <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Status <span className="text-[#c43e53]">*</span></span>
-          <select value={status} onChange={(e) => setStatus(e.target.value as 'draft' | 'published')} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">
-            <option value="draft">draft</option>
-            <option value="published">published</option>
-          </select>
-        </label>
-        <button disabled={loading || Boolean(actionLoading)} className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60">
-          {actionLoading === 'update-checklist' ? 'Saving…' : 'Save checklist'}
-        </button>
-      </form>
+      {isViewOnly ? (
+        <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm space-y-3">
+          <h2 className="text-xl font-semibold text-[#243555]">Checklist Metadata</h2>
+          <div className="space-y-2 text-sm text-[#3b4d6c]">
+            <p className="font-medium">
+              Title <span className="text-[#c43e53]">*</span>
+            </p>
+            <p className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">{title || '-'}</p>
+          </div>
+          <div className="space-y-2 text-sm text-[#3b4d6c]">
+            <p className="font-medium">
+              Law decree <span className="text-[#c43e53]">*</span>
+            </p>
+            <p className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">{lawDecree || '-'}</p>
+          </div>
+          <div className="space-y-2 text-sm text-[#3b4d6c]">
+            <p className="font-medium">Default compliance type</p>
+            <p className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">compliance</p>
+          </div>
+          <div className="space-y-2 text-sm text-[#3b4d6c]">
+            <p className="font-medium">
+              Status <span className="text-[#c43e53]">*</span>
+            </p>
+            <p className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">{status}</p>
+          </div>
+        </article>
+      ) : (
+        <form onSubmit={onUpdateChecklist} className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm space-y-3">
+          <h2 className="text-xl font-semibold text-[#243555]">Checklist Metadata</h2>
+          <label className="block space-y-2 text-sm text-[#3b4d6c]">
+            <span className="font-medium">Title <span className="text-[#c43e53]">*</span></span>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" />
+          </label>
+          <label className="block space-y-2 text-sm text-[#3b4d6c]">
+            <span className="font-medium">Law decree <span className="text-[#c43e53]">*</span></span>
+            <input value={lawDecree} onChange={(e) => setLawDecree(e.target.value)} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" />
+          </label>
+          <label className="block space-y-2 text-sm text-[#3b4d6c]">
+            <span className="font-medium">Status <span className="text-[#c43e53]">*</span></span>
+            <select value={status} onChange={(e) => setStatus(e.target.value as 'draft' | 'published')} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">
+              <option value="draft">draft</option>
+              <option value="published">published</option>
+            </select>
+          </label>
+          <button disabled={loading || Boolean(actionLoading)} className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60">
+            {actionLoading === 'update-checklist' ? 'Saving…' : 'Save checklist'}
+          </button>
+        </form>
+      )}
 
+      {!isViewOnly ? (
       <form onSubmit={onCreateSection} className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm space-y-3">
         <h2 className="text-xl font-semibold text-[#243555]">Create Section</h2>
         <label className="block space-y-2 text-sm text-[#3b4d6c]">
@@ -194,63 +225,45 @@ export default function ChecklistDetailPage() {
           {actionLoading === 'create-section' ? 'Adding…' : 'Add section'}
         </button>
       </form>
+      ) : null}
 
       <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
+        <div className="border-b border-[#edf2f9] px-4 py-3">
+          <h2 className="text-lg font-semibold text-[#243555]">Sections</h2>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-[#f3f6fc] text-[#607594]">
               <tr>
                 <th className="px-4 py-3 text-left">Order</th>
                 <th className="px-4 py-3 text-left">Title</th>
-                <th className="px-4 py-3 text-left">Actions</th>
+                {!isViewOnly ? <th className="px-4 py-3 text-left">Actions</th> : null}
               </tr>
             </thead>
             <tbody>
               {sections.map((section) => (
                 <tr key={section.id} className="border-t border-[#edf2f9]">
                   <td className="px-4 py-3">{section.order}</td>
-                  <td className="px-4 py-3">
-                    {editingSectionId === section.id ? (
-                      <input
-                        value={editingSectionTitle}
-                        onChange={(e) => setEditingSectionTitle(e.target.value)}
-                        className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2 py-1"
-                      />
-                    ) : (
-                      section.title
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Link href={`/admin/checklists/${checklistId}/sections/${section.id}`} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]">View</Link>
-                      {editingSectionId === section.id ? (
-                        <button type="button" disabled={Boolean(actionLoading)} onClick={() => void onSaveSection(section)} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#2f9960] hover:bg-[#e9f8ef] disabled:opacity-60">
-                          {actionLoading === 'save-section' && activeSectionId === section.id ? 'Saving…' : 'Save'}
+                  <td className="px-4 py-3">{section.title}</td>
+                  {!isViewOnly ? (
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <Link href={`/admin/checklists/${checklistId}/sections/${section.id}?mode=view`} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]">View</Link>
+                        <Link href={`/admin/checklists/${checklistId}/sections/${section.id}`} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]">Edit</Link>
+                        <Link href={`/admin/checklists/${checklistId}/sections/${section.id}`} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#2d4f83] hover:bg-[#edf4ff]">Add Questions</Link>
+                        <button type="button" disabled={Boolean(actionLoading)} onClick={() => setConfirmDeleteSectionId(section.id)} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#c43e53] hover:bg-[#fff3f5] disabled:opacity-60">
+                          {actionLoading === 'delete-section' && activeSectionId === section.id ? 'Deleting…' : 'Delete'}
                         </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingSectionId(section.id);
-                            setEditingSectionTitle(section.title);
-                          }}
-                          className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]"
-                        >
-                          Edit
-                        </button>
-                      )}
-                      <button type="button" disabled={Boolean(actionLoading)} onClick={() => setConfirmDeleteSectionId(section.id)} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#c43e53] hover:bg-[#fff3f5] disabled:opacity-60">
-                        {actionLoading === 'delete-section' && activeSectionId === section.id ? 'Deleting…' : 'Delete'}
-                      </button>
-                    </div>
-                  </td>
+                      </div>
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </article>
-      {confirmDeleteSectionId ? (
+      {!isViewOnly && confirmDeleteSectionId ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-md rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-xl">
             <h3 className="text-lg font-semibold text-[#243555]">Delete section?</h3>

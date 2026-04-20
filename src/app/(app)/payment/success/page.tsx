@@ -15,7 +15,7 @@ export default function PaymentSuccessPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatusResponse['payment_status'] | ''>('');
   const [statusMessage, setStatusMessage] = useState('');
-  const [hasActiveAccessWindow, setHasActiveAccessWindow] = useState(false);
+  const [selectedChecklistFromStatus, setSelectedChecklistFromStatus] = useState<PaymentStatusResponse['checklist']>(null);
   const [accessExpiresAt, setAccessExpiresAt] = useState<string | null>(null);
 
   const selectedChecklist = useMemo(
@@ -59,11 +59,11 @@ export default function PaymentSuccessPage() {
           return;
         }
         setPaymentStatus(response.payment_status);
-        setHasActiveAccessWindow(Boolean(response.access_window_id));
+        setSelectedChecklistFromStatus(response.checklist ?? null);
         setAccessExpiresAt(response.access_expires_at);
 
         if (response.payment_status === 'succeeded') {
-          if (response.access_window_id) {
+          if (response.checklist) {
             setStatusMessage('Payment confirmed and checklist access is already active.');
           } else {
             setStatusMessage('Payment confirmed. Select a checklist to activate access.');
@@ -112,7 +112,12 @@ export default function PaymentSuccessPage() {
       setSuccessMessage(`Access granted until ${new Date(grant.expires_at).toLocaleString()}.`);
       window.location.assign(`/access?checklist_id=${encodeURIComponent(selectedChecklistId)}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to activate checklist access.');
+      const message = err instanceof Error ? err.message : 'Failed to activate checklist access.';
+      if (message.includes('checklist_already_selected')) {
+        window.location.assign('/access');
+        return;
+      }
+      setError(message);
     } finally {
       setSubmitting(false);
     }
@@ -132,17 +137,19 @@ export default function PaymentSuccessPage() {
         {loading ? <p className="text-sm text-zinc-200">Checking payment status...</p> : null}
         {statusMessage ? <p className="text-sm text-zinc-200">{statusMessage}</p> : null}
 
-        {!loading && paymentStatus === 'succeeded' && !hasActiveAccessWindow && !checklists.length ? (
+        {!loading && paymentStatus === 'succeeded' && !selectedChecklistFromStatus && !checklists.length ? (
           <p className="text-sm text-amber-200">No published checklists are available yet.</p>
         ) : null}
 
-        {paymentStatus === 'succeeded' && hasActiveAccessWindow ? (
-          <div className="mt-3 space-y-3">
-            {accessExpiresAt ? (
-              <p className="text-sm text-zinc-200">
-                Your access is active until {new Date(accessExpiresAt).toLocaleString()}.
-              </p>
-            ) : null}
+        {paymentStatus === 'succeeded' && selectedChecklistFromStatus ? (
+          <div className="space-y-3">
+            <div className="rounded-lg border border-white/15 bg-white/5 p-3 text-sm text-zinc-200">
+              <p className="font-semibold text-white">{selectedChecklistFromStatus.title}</p>
+              <p className="mt-1 text-zinc-300">Selected checklist version: v{selectedChecklistFromStatus.version}</p>
+              {accessExpiresAt ? (
+                <p className="mt-1 text-zinc-300">Access active until: {new Date(accessExpiresAt).toLocaleString()}</p>
+              ) : null}
+            </div>
             <div className="flex flex-wrap gap-2 text-sm">
               <Link href="/access" className="rounded-lg border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 text-cyan-100">
                 Go to Access
@@ -154,7 +161,7 @@ export default function PaymentSuccessPage() {
           </div>
         ) : null}
 
-        {paymentStatus === 'succeeded' && !hasActiveAccessWindow && checklists.length ? (
+        {paymentStatus === 'succeeded' && !selectedChecklistFromStatus && checklists.length ? (
           <div className="space-y-3">
             <label className="block space-y-2 text-sm">
               <span className="text-zinc-200">Checklist</span>

@@ -40,6 +40,11 @@ export type PaymentStatusResponse = {
   paid_at: string | null;
   access_window_id: string | null;
   access_expires_at: string | null;
+  checklist?: {
+    id: string;
+    title: string;
+    version: number;
+  } | null;
 };
 
 export async function createStripeCheckoutSession(payload: {
