@@ -6,7 +6,7 @@ import type { Route } from 'next';
 import { useState, type FormEvent } from 'react';
 import type { AuthResponse } from '@/lib/auth';
 import { getRoleHomePath, getRoleKey, persistAccessToken, registerAccount, startMfaSetup, verifyMfaCode } from '@/lib/auth';
-import { createStripeCheckoutSession } from '@/lib/payments';
+import { createStripeCheckoutSession, getUserPaymentStatus } from '@/lib/payments';
 import authBackground from '@/assets/cybersecurity-background.jpg';
 
 const LATEST_PAYMENT_ID_STORAGE_KEY = 'checklist_latest_payment_id';
@@ -25,6 +25,16 @@ export default function RegisterPage() {
   const [setupLoading, setSetupLoading] = useState(false);
 
   async function redirectCustomerToCheckout(userId: string) {
+    try {
+      const paymentState = await getUserPaymentStatus(userId);
+      if (paymentState.payment_status === 'succeeded') {
+        window.location.assign('/payment/success');
+        return;
+      }
+    } catch {
+      // Continue with checkout creation when no payment state exists yet.
+    }
+
     const origin = window.location.origin;
     const checkoutUrl = await createStripeCheckoutSession({
       user_id: userId,
