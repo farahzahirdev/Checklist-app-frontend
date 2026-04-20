@@ -20,6 +20,14 @@ export default function QuestionDetailPage() {
   const [explanation, setExplanation] = useState('');
   const [expectedImplementation, setExpectedImplementation] = useState('');
   const [points, setPoints] = useState('1');
+
+  // Derive points from security level
+  const derivedPoints = securityLevel === 'low' ? 1 : securityLevel === 'medium' ? 3 : 4;
+
+  // Update points when security level changes
+  useEffect(() => {
+    setPoints(String(derivedPoints));
+  }, [derivedPoints]);
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<'save' | 'delete' | ''>('');
@@ -55,10 +63,6 @@ export default function QuestionDetailPage() {
       toast.error('All required fields must be filled.');
       return;
     }
-    if (!Number.isInteger(parsedPoints) || parsedPoints < 1) {
-      toast.error('Points must be a valid integer (1 or greater).');
-      return;
-    }
     setActionLoading('save');
     try {
       await updateQuestion(checklistId, sectionId, questionIdParam, {
@@ -67,7 +71,7 @@ export default function QuestionDetailPage() {
         legalRequirement: legalRequirement.trim(),
         explanation: explanation.trim(),
         expectedImplementation: expectedImplementation.trim(),
-        points: parsedPoints,
+        points: derivedPoints,
         note: note.trim() || null,
       });
       toast.success('Question updated.');
@@ -132,8 +136,8 @@ export default function QuestionDetailPage() {
             <textarea value={expectedImplementation} onChange={(e) => setExpectedImplementation(e.target.value)} placeholder="Expected implementation" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
           </label>
           <label className="block space-y-2 text-sm text-[#3b4d6c]">
-            <span className="font-medium">Points <span className="text-[#c43e53]">*</span></span>
-            <input value={points} onChange={(e) => setPoints(e.target.value.replace(/[^\d]/g, ''))} type="number" min={1} step={1} placeholder="Points" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
+            <span className="font-medium">Points (derived from security level)</span>
+            <input value={derivedPoints} readOnly className="w-full rounded-xl border border-[#d4dced] bg-[#f0f2f5] px-3 py-2 text-[#6b7280] cursor-not-allowed" />
           </label>
           <label className="block space-y-2 text-sm text-[#3b4d6c]">
             <span className="font-medium">Note (optional)</span>
