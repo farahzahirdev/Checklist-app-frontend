@@ -116,6 +116,12 @@ export default function AdminChecklistsPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Link
+                          href={`/admin/checklists/${checklist.id}?mode=view`}
+                          className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]"
+                        >
+                          View
+                        </Link>
+                        <Link
                           href={`/admin/checklists/${checklist.id}`}
                           className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]"
                         >

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { deleteQuestion, getQuestionsBySection, getSectionsByChecklist, updateSection } from '@/lib/checklist-api';
@@ -9,8 +9,10 @@ import type { ChecklistQuestion } from '@/lib/checklist-types';
 
 export default function SectionDetailPage() {
   const params = useParams<{ checklistId: string; sectionId: string }>();
+  const searchParams = useSearchParams();
   const checklistId = String(params.checklistId);
   const sectionId = String(params.sectionId);
+  const isViewOnly = searchParams.get('mode') === 'view';
   const [sectionTitle, setSectionTitle] = useState('');
   const [sectionOrder, setSectionOrder] = useState('1');
   const [previousSectionTitle, setPreviousSectionTitle] = useState('');
@@ -87,31 +89,49 @@ export default function SectionDetailPage() {
           </Link>
           <h1 className="text-3xl font-semibold">Section Detail</h1>
         </div>
-        <Link
-          href={`/admin/checklists/${checklistId}/sections/${sectionId}/questions/new`}
-          className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white hover:bg-[#223657]"
-        >
-          Add Question
-        </Link>
       </header>
 
-      <form onSubmit={onUpdateSection} className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm space-y-3">
-        <h2 className="text-xl font-semibold text-[#243555]">Edit Section</h2>
-        {previousSectionTitle ? <p className="text-sm text-[#607594]">Current title: {previousSectionTitle}</p> : null}
-        <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Section title</span>
-          <input value={sectionTitle} onChange={(e) => setSectionTitle(e.target.value)} placeholder="Section title" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" />
-        </label>
-        <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Display order</span>
-          <input value={sectionOrder} onChange={(e) => setSectionOrder(e.target.value)} type="number" min={1} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" />
-        </label>
-        <button disabled={Boolean(actionLoading)} className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60">
-          {actionLoading === 'save-section' ? 'Saving…' : 'Save section'}
-        </button>
-      </form>
+      {isViewOnly ? (
+        <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm space-y-3">
+          <h2 className="text-xl font-semibold text-[#243555]">Section Detail</h2>
+          {previousSectionTitle ? <p className="text-sm text-[#607594]">Current title: {previousSectionTitle}</p> : null}
+          <div className="space-y-2 text-sm text-[#3b4d6c]">
+            <p className="font-medium">Section title</p>
+            <p className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">{sectionTitle || '-'}</p>
+          </div>
+          <div className="space-y-2 text-sm text-[#3b4d6c]">
+            <p className="font-medium">Display order</p>
+            <p className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">{sectionOrder || '-'}</p>
+          </div>
+        </article>
+      ) : (
+        <form onSubmit={onUpdateSection} className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm space-y-3">
+          <h2 className="text-xl font-semibold text-[#243555]">Edit Section</h2>
+          {previousSectionTitle ? <p className="text-sm text-[#607594]">Current title: {previousSectionTitle}</p> : null}
+          <label className="block space-y-2 text-sm text-[#3b4d6c]">
+            <span className="font-medium">Section title</span>
+            <input value={sectionTitle} onChange={(e) => setSectionTitle(e.target.value)} placeholder="Section title" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" />
+          </label>
+          <label className="block space-y-2 text-sm text-[#3b4d6c]">
+            <span className="font-medium">Display order</span>
+            <input value={sectionOrder} onChange={(e) => setSectionOrder(e.target.value)} type="number" min={1} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" />
+          </label>
+          <button disabled={Boolean(actionLoading)} className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60">
+            {actionLoading === 'save-section' ? 'Saving…' : 'Save section'}
+          </button>
+        </form>
+      )}
 
       <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-[#edf2f9] px-4 py-3">
+          <h2 className="text-lg font-semibold text-[#243555]">Questions</h2>
+          <Link
+            href={`/admin/checklists/${checklistId}/sections/${sectionId}/questions/new`}
+            className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white hover:bg-[#223657]"
+          >
+            Add Question
+          </Link>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-[#f3f6fc] text-[#607594]">
@@ -138,6 +158,12 @@ export default function SectionDetailPage() {
                     <td className="px-4 py-3 text-[#5f7395]">{question.points}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
+                        <Link
+                          href={`/admin/checklists/${checklistId}/sections/${sectionId}/questions/${question.id}?mode=view`}
+                          className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]"
+                        >
+                          View
+                        </Link>
                         <Link
                           href={`/admin/checklists/${checklistId}/sections/${sectionId}/questions/${question.id}`}
                           className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]"
