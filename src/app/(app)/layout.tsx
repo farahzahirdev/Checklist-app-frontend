@@ -151,14 +151,8 @@ export default function AppLayout({
                       >
                         Dashboard
                       </Link>
-                      <Link href="/assessment" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
-                        Assessment
-                      </Link>
                       <Link href="/access" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
                         Access
-                      </Link>
-                      <Link href="/payment" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
-                        Payment
                       </Link>
                     </>
                   ) : (

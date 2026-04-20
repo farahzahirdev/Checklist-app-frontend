@@ -14,8 +14,10 @@ import {
   verifyMfaChallenge,
   verifyMfaCode,
 } from '@/lib/auth';
-import { createStripeCheckoutSession } from '@/lib/payments';
+import { createStripeCheckoutSession, getUserPaymentStatus } from '@/lib/payments';
 import authBackground from '@/assets/cybersecurity-background.jpg';
+
+const LATEST_PAYMENT_ID_STORAGE_KEY = 'checklist_latest_payment_id';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,13 +34,26 @@ export default function LoginPage() {
   const [setupLoading, setSetupLoading] = useState(false);
 
   async function redirectCustomerToCheckout(userId: string) {
+    try {
+      const paymentState = await getUserPaymentStatus(userId);
+      if (paymentState.payment_status === 'succeeded') {
+        window.location.assign('/payment/success');
+        return;
+      }
+    } catch {
+      // Continue with checkout creation when no payment state exists yet.
+    }
+
     const origin = window.location.origin;
     const checkoutUrl = await createStripeCheckoutSession({
       user_id: userId,
       success_url: `${origin}/payment/success`,
       cancel_url: `${origin}/payment?checkout=cancelled`,
     });
-    window.location.assign(checkoutUrl);
+    if (checkoutUrl.paymentId) {
+      window.localStorage.setItem(LATEST_PAYMENT_ID_STORAGE_KEY, checkoutUrl.paymentId);
+    }
+    window.location.assign(checkoutUrl.checkoutUrl);
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getCurrentAssessment, startAssessment } from '@/lib/assessment';
@@ -33,6 +34,7 @@ export default function AccessPage() {
   const [loading, setLoading] = useState(false);
 
   const remaining = useMemo(() => (assessment ? formatTimeRemaining(assessment.expires_at) : ''), [assessment]);
+  const assessmentAlreadyStarted = Boolean(assessment && assessment.status !== 'not_started');
 
   useEffect(() => {
     const fromQuery = searchParams.get('checklist_id');
@@ -40,6 +42,30 @@ export default function AccessPage() {
       setChecklistId(fromQuery);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function preloadCurrentAssessment() {
+      try {
+        const response = await getCurrentAssessment();
+        if (!mounted) {
+          return;
+        }
+        setAssessment(response);
+        if (response.checklist_id) {
+          setChecklistId(response.checklist_id);
+        }
+      } catch {
+        // No active assessment yet; keep manual checklist input flow.
+      }
+    }
+
+    void preloadCurrentAssessment();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let intervalId: number | undefined;
@@ -122,14 +148,23 @@ export default function AccessPage() {
           />
         </label>
         <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={start}
-            disabled={loading}
-            className="rounded-lg border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 text-sm text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? 'Processing…' : 'Start Assessment'}
-          </button>
+          {!assessmentAlreadyStarted ? (
+            <button
+              type="button"
+              onClick={start}
+              disabled={loading}
+              className="rounded-lg border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 text-sm text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? 'Processing…' : 'Start Assessment'}
+            </button>
+          ) : (
+            <Link
+              href="/assessment"
+              className="rounded-lg border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 text-sm text-cyan-100"
+            >
+              Continue Assessment
+            </Link>
+          )}
           <button
             type="button"
             onClick={loadCurrent}
