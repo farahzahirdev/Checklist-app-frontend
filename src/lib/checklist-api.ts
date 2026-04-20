@@ -99,6 +99,16 @@ function mapQuestion(data: QuestionApiModel): ChecklistQuestion {
   };
 }
 
+function parseChecklistVersion(input: string | number | undefined, fallback: number): number {
+  const raw = String(input ?? '').trim();
+  const majorMatch = raw.match(/^v?\s*(\d+)/i);
+  if (!majorMatch) {
+    return fallback;
+  }
+  const parsed = Number.parseInt(majorMatch[1], 10);
+  return Number.isNaN(parsed) ? fallback : parsed;
+}
+
 export async function getAdminChecklists(): Promise<Checklist[]> {
   const data = await apiGetWithAuth<ChecklistApiModel[]>('/admin/checklists');
   return data.map(mapChecklist);
@@ -110,7 +120,7 @@ export async function getChecklistById(checklistId: string): Promise<Checklist> 
 }
 
 export async function createChecklist(payload: Partial<Checklist>): Promise<Checklist> {
-  const parsedVersion = Number.parseInt(String(payload.version ?? '1').replace(/[^\d]/g, ''), 10);
+  const parsedVersion = parseChecklistVersion(payload.version, 1);
   const data = await apiPost<
     ChecklistApiModel,
     {
@@ -124,7 +134,7 @@ export async function createChecklist(payload: Partial<Checklist>): Promise<Chec
     {
       title: payload.title ?? '',
       law_decree: payload.lawDecree ?? '',
-      version: Number.isNaN(parsedVersion) ? 1 : parsedVersion,
+      version: parsedVersion,
       status: payload.status ?? 'draft',
     },
   );
@@ -132,9 +142,8 @@ export async function createChecklist(payload: Partial<Checklist>): Promise<Chec
 }
 
 export async function updateChecklist(checklistId: string, payload: Partial<Checklist>): Promise<Checklist> {
-  const parsedVersion = payload.version
-    ? Number.parseInt(String(payload.version).replace(/[^\d]/g, ''), 10)
-    : undefined;
+  const hasVersion = payload.version !== undefined && payload.version !== null && String(payload.version).trim() !== '';
+  const parsedVersion = hasVersion ? parseChecklistVersion(payload.version, 1) : undefined;
   const data = await apiPatch<
     ChecklistApiModel,
     {
@@ -148,7 +157,7 @@ export async function updateChecklist(checklistId: string, payload: Partial<Chec
     {
       title: payload.title,
       law_decree: payload.lawDecree,
-      version: Number.isNaN(parsedVersion) ? undefined : parsedVersion,
+      version: parsedVersion,
       status: payload.status,
     },
   );

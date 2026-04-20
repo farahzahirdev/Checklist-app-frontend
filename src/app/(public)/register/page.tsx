@@ -54,34 +54,6 @@ export default function RegisterPage() {
         setError('Password cannot contain spaces.');
         return;
       }
-      if (!/[a-z]/.test(normalizedPassword)) {
-        setError('Password must contain at least one lowercase letter.');
-        return;
-      }
-      if (!/[A-Z]/.test(normalizedPassword)) {
-        setError('Password must contain at least one uppercase letter.');
-        return;
-      }
-      if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(normalizedPassword)) {
-        setError('Password must contain at least one special character.');
-        return;
-      }
-      if (normalizedPassword.length < 12) {
-        setError('Password must be at least 12 characters long.');
-        return;
-      }
-      if (!/[a-z]/.test(normalizedPassword)) {
-        setError('Password must contain at least one lowercase letter.');
-        return;
-      }
-      if (!/[A-Z]/.test(normalizedPassword)) {
-        setError('Password must contain at least one uppercase letter.');
-        return;
-      }
-      if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(normalizedPassword)) {
-        setError('Password must contain at least one special character.');
-        return;
-      }
       const data = await registerAccount({ email: normalizedEmail, password: normalizedPassword });
       setResult(data);
       const role = getRoleKey(data.user.role);
