@@ -59,7 +59,7 @@ export default function PaymentSuccessPage() {
           return;
         }
         setPaymentStatus(response.payment_status);
-        setSelectedChecklistFromStatus(response.checklist ?? null);
+        setSelectedChecklistFromStatus(response.checklist);
         setAccessExpiresAt(response.access_expires_at);
 
         if (response.payment_status === 'succeeded') {
@@ -168,7 +168,7 @@ export default function PaymentSuccessPage() {
               <select
                 value={selectedChecklistId}
                 onChange={(event) => setSelectedChecklistId(event.target.value)}
-                className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-zinc-100 outline-none ring-cyan-300/50 focus:ring"
+                className="w-full rounded-lg border border-white/20 bg-[#0d1d3a] px-3 py-2 text-white outline-none ring-cyan-300/50 focus:ring"
               >
                 {checklists.map((item) => (
                   <option key={item.id} value={item.id}>

@@ -45,7 +45,16 @@ export default function RegisterPage() {
 
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      const data = await registerAccount({ email: normalizedEmail, password });
+      const normalizedPassword = password.trim();
+      if (!normalizedPassword) {
+        setError('Password cannot be empty or spaces only.');
+        return;
+      }
+      if (/\s/.test(password)) {
+        setError('Password cannot contain spaces.');
+        return;
+      }
+      const data = await registerAccount({ email: normalizedEmail, password: normalizedPassword });
       setResult(data);
       const role = getRoleKey(data.user.role);
       const destination = role === 'customer' ? '/payment' : getRoleHomePath(data.user.role);
@@ -195,7 +204,7 @@ export default function RegisterPage() {
                   required
                   minLength={12}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value.replace(/\s/g, ''))}
                   className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 pr-10 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
                 />
                 <button
