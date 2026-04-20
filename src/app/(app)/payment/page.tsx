@@ -6,6 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { createStripeCheckoutSession } from '@/lib/payments';
 
+const LATEST_PAYMENT_ID_STORAGE_KEY = 'checklist_latest_payment_id';
+
 export default function PaymentPage() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -23,7 +25,10 @@ export default function PaymentPage() {
           success_url: `${origin}/payment/success`,
           cancel_url: `${origin}/payment?checkout=cancelled`,
         });
-        window.location.assign(checkoutUrl);
+        if (checkoutUrl.paymentId) {
+          window.localStorage.setItem(LATEST_PAYMENT_ID_STORAGE_KEY, checkoutUrl.paymentId);
+        }
+        window.location.assign(checkoutUrl.checkoutUrl);
       } catch (err) {
         if (!mounted) {
           return;

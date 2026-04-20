@@ -2,15 +2,19 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { getCurrentUser } from '@/lib/auth';
 import { listPublishedCustomerChecklists, selectChecklistAfterPayment, type CustomerChecklist } from '@/lib/checklist-api';
+import { getUserPaymentStatus, type PaymentStatusResponse } from '@/lib/payments';
 
 export default function PaymentSuccessPage() {
   const [checklists, setChecklists] = useState<CustomerChecklist[]>([]);
   const [selectedChecklistId, setSelectedChecklistId] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatusResponse['payment_status'] | ''>('');
+  const [statusMessage, setStatusMessage] = useState('');
 
   const selectedChecklist = useMemo(
     () => checklists.find((item) => item.id === selectedChecklistId) ?? null,
@@ -19,10 +23,10 @@ export default function PaymentSuccessPage() {
 
   useEffect(() => {
     let mounted = true;
+    let pollTimeout: number | null = null;
+    let currentUserId = '';
 
     async function loadChecklists() {
-      setLoading(true);
-      setError('');
       try {
         const response = await listPublishedCustomerChecklists();
         if (!mounted) {
@@ -37,6 +41,39 @@ export default function PaymentSuccessPage() {
           return;
         }
         setError(err instanceof Error ? err.message : 'Failed to load checklists.');
+      }
+    }
+
+    async function checkStatusAndMaybePoll() {
+      setLoading(true);
+      setError('');
+      try {
+        if (!currentUserId) {
+          const me = await getCurrentUser();
+          currentUserId = me.user.id;
+        }
+        const response = await getUserPaymentStatus(currentUserId);
+        if (!mounted) {
+          return;
+        }
+        setPaymentStatus(response.payment_status);
+
+        if (response.payment_status === 'succeeded') {
+          setStatusMessage('Payment confirmed. Select a checklist to activate access.');
+          await loadChecklists();
+        } else if (response.payment_status === 'pending') {
+          setStatusMessage('Payment is still processing. We will refresh automatically.');
+          pollTimeout = window.setTimeout(() => {
+            void checkStatusAndMaybePoll();
+          }, 3000);
+        } else {
+          setStatusMessage('Payment failed. Please retry checkout.');
+        }
+      } catch (err) {
+        if (!mounted) {
+          return;
+        }
+        setError(err instanceof Error ? err.message : 'Failed to fetch payment status.');
       } finally {
         if (mounted) {
           setLoading(false);
@@ -44,9 +81,12 @@ export default function PaymentSuccessPage() {
       }
     }
 
-    void loadChecklists();
+    void checkStatusAndMaybePoll();
     return () => {
       mounted = false;
+      if (pollTimeout) {
+        window.clearTimeout(pollTimeout);
+      }
     };
   }, []);
 
@@ -81,13 +121,14 @@ export default function PaymentSuccessPage() {
       </header>
 
       <article className="rounded-2xl border border-white/15 bg-black/25 p-5">
-        {loading ? <p className="text-sm text-zinc-200">Loading available checklists...</p> : null}
+        {loading ? <p className="text-sm text-zinc-200">Checking payment status...</p> : null}
+        {statusMessage ? <p className="text-sm text-zinc-200">{statusMessage}</p> : null}
 
-        {!loading && !checklists.length ? (
+        {!loading && paymentStatus === 'succeeded' && !checklists.length ? (
           <p className="text-sm text-amber-200">No published checklists are available yet.</p>
         ) : null}
 
-        {checklists.length ? (
+        {paymentStatus === 'succeeded' && checklists.length ? (
           <div className="space-y-3">
             <label className="block space-y-2 text-sm">
               <span className="text-zinc-200">Checklist</span>
@@ -115,7 +156,7 @@ export default function PaymentSuccessPage() {
 
             <button
               type="button"
-              disabled={submitting}
+              disabled={submitting || paymentStatus !== 'succeeded'}
               onClick={() => void onSelectChecklist()}
               className="rounded-lg border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 text-sm text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -128,14 +169,16 @@ export default function PaymentSuccessPage() {
         {error ? <p className="mt-3 text-sm text-rose-300">{error}</p> : null}
       </article>
 
-      <div className="flex flex-wrap gap-2 text-sm">
-        <Link href="/payment" className="rounded-lg border border-white/20 px-3 py-2 text-zinc-100 hover:bg-white/10">
-          Back to payment
-        </Link>
-        <Link href="/dashboard" className="rounded-lg border border-white/20 px-3 py-2 text-zinc-100 hover:bg-white/10">
-          Dashboard
-        </Link>
-      </div>
+      {(paymentStatus === 'failed' || Boolean(error)) ? (
+        <div className="flex flex-wrap gap-2 text-sm">
+          <Link href="/payment" className="rounded-lg border border-white/20 px-3 py-2 text-zinc-100 hover:bg-white/10">
+            Start checkout
+          </Link>
+          <Link href="/dashboard" className="rounded-lg border border-white/20 px-3 py-2 text-zinc-100 hover:bg-white/10">
+            Dashboard
+          </Link>
+        </div>
+      ) : null}
     </section>
   );
 }
