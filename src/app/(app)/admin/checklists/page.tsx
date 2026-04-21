@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAdminAccess } from '@/lib/admin-access';
 import {
@@ -619,34 +619,124 @@ export default function AdminChecklistsPage() {
                                 </thead>
                                 <tbody>
                                   {questions.map((question) => (
-                                    <tr key={question.id} className="border-t border-[#e5ecfa] bg-white">
-                                      <td className="px-3 py-2 text-[#304568]">
-                                        <span className="block truncate" title={question.questionId}>
-                                          {question.questionId}
-                                        </span>
-                                      </td>
-                                      <td className="px-3 py-2 text-[#5f7395]">{question.securityLevel}</td>
-                                      <td className="px-3 py-2 text-[#5f7395]">{question.points}</td>
-                                      <td className="px-3 py-2">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                          <Link
-                                            href={`/admin/checklists/${checklist.id}/sections/${section.id}/questions/${question.id}?mode=view`}
-                                            className="rounded-lg border border-[#d4dced] px-2.5 py-1 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]"
-                                          >
-                                            View
-                                          </Link>
-                                          {!isReadOnly ? (
-                                            <button
-                                              type="button"
-                                              onClick={() => startQuestionEdit(question)}
+                                    <Fragment key={question.id}>
+                                      <tr className="border-t border-[#e5ecfa] bg-white">
+                                        <td className="px-3 py-2 text-[#304568]">
+                                          <span className="block truncate" title={question.questionId}>
+                                            {question.questionId}
+                                          </span>
+                                        </td>
+                                        <td className="px-3 py-2 text-[#5f7395]">{question.securityLevel}</td>
+                                        <td className="px-3 py-2 text-[#5f7395]">{question.points}</td>
+                                        <td className="px-3 py-2">
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <Link
+                                              href={`/admin/checklists/${checklist.id}/sections/${section.id}/questions/${question.id}?mode=view`}
                                               className="rounded-lg border border-[#d4dced] px-2.5 py-1 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]"
                                             >
-                                              Quick Edit
-                                            </button>
-                                          ) : null}
-                                        </div>
-                                      </td>
-                                    </tr>
+                                              View
+                                            </Link>
+                                            {!isReadOnly ? (
+                                              <button
+                                                type="button"
+                                                onClick={() => startQuestionEdit(question)}
+                                                className="rounded-lg border border-[#d4dced] px-2.5 py-1 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]"
+                                              >
+                                                Quick Edit
+                                              </button>
+                                            ) : null}
+                                          </div>
+                                        </td>
+                                      </tr>
+                                      {editingQuestionId === question.id ? (
+                                        <tr className="border-t border-[#e5ecfa] bg-[#fcfdff]">
+                                          <td colSpan={4} className="px-3 py-3">
+                                            <div className="rounded-lg border border-[#d9e3f6] bg-white p-3">
+                                              <div className="grid gap-2 md:grid-cols-2">
+                                                <label className="space-y-1 text-xs text-[#3b4d6c] md:col-span-2">
+                                                  <span className="font-medium">Question ID / text</span>
+                                                  <input
+                                                    value={editingQuestionText}
+                                                    onChange={(event) => setEditingQuestionText(event.target.value)}
+                                                    className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2.5 py-1.5"
+                                                  />
+                                                </label>
+                                                <label className="space-y-1 text-xs text-[#3b4d6c]">
+                                                  <span className="font-medium">Security level</span>
+                                                  <select
+                                                    value={editingQuestionSecurity}
+                                                    onChange={(event) => setEditingQuestionSecurity(event.target.value as 'low' | 'medium' | 'high')}
+                                                    className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2.5 py-1.5"
+                                                  >
+                                                    <option value="low">low</option>
+                                                    <option value="medium">medium</option>
+                                                    <option value="high">high</option>
+                                                  </select>
+                                                </label>
+                                                <label className="space-y-1 text-xs text-[#3b4d6c]">
+                                                  <span className="font-medium">Points</span>
+                                                  <input
+                                                    readOnly
+                                                    value={editingQuestionSecurity === 'low' ? 1 : editingQuestionSecurity === 'medium' ? 3 : 4}
+                                                    className="w-full cursor-not-allowed rounded-lg border border-[#d4dced] bg-[#f0f2f5] px-2.5 py-1.5 text-[#6b7280]"
+                                                  />
+                                                </label>
+                                                <label className="space-y-1 text-xs text-[#3b4d6c] md:col-span-2">
+                                                  <span className="font-medium">Legal requirement</span>
+                                                  <input
+                                                    value={editingQuestionLegalRequirement}
+                                                    onChange={(event) => setEditingQuestionLegalRequirement(event.target.value)}
+                                                    className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2.5 py-1.5"
+                                                  />
+                                                </label>
+                                                <label className="space-y-1 text-xs text-[#3b4d6c]">
+                                                  <span className="font-medium">Explanation</span>
+                                                  <textarea
+                                                    value={editingQuestionExplanation}
+                                                    onChange={(event) => setEditingQuestionExplanation(event.target.value)}
+                                                    className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2.5 py-1.5"
+                                                  />
+                                                </label>
+                                                <label className="space-y-1 text-xs text-[#3b4d6c]">
+                                                  <span className="font-medium">Expected implementation</span>
+                                                  <textarea
+                                                    value={editingQuestionExpectedImplementation}
+                                                    onChange={(event) => setEditingQuestionExpectedImplementation(event.target.value)}
+                                                    className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2.5 py-1.5"
+                                                  />
+                                                </label>
+                                                <label className="space-y-1 text-xs text-[#3b4d6c] md:col-span-2">
+                                                  <span className="font-medium">Note (optional)</span>
+                                                  <input
+                                                    value={editingQuestionNote}
+                                                    onChange={(event) => setEditingQuestionNote(event.target.value)}
+                                                    className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2.5 py-1.5"
+                                                  />
+                                                </label>
+                                              </div>
+                                              <div className="mt-3 flex flex-wrap items-center gap-2">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => void onSaveQuestion(checklist.id, section.id, editingQuestionId)}
+                                                  disabled={actionLoading === 'save-question'}
+                                                  className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
+                                                >
+                                                  {actionLoading === 'save-question' && activeQuestionId === editingQuestionId ? 'Saving…' : 'Save'}
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={cancelQuestionEdit}
+                                                  disabled={actionLoading === 'save-question'}
+                                                  className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#425f8f] hover:bg-[#edf4ff] disabled:opacity-60"
+                                                >
+                                                  Cancel
+                                                </button>
+                                              </div>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      ) : null}
+                                    </Fragment>
                                   ))}
                                   {!questions.length ? (
                                     <tr>
@@ -658,90 +748,6 @@ export default function AdminChecklistsPage() {
                                 </tbody>
                               </table>
                             </div>
-                            {editingQuestionId && questions.some((question) => question.id === editingQuestionId) ? (
-                              <div className="mt-3 rounded-lg border border-[#d9e3f6] bg-white p-3">
-                                <div className="grid gap-2 md:grid-cols-2">
-                                  <label className="space-y-1 text-xs text-[#3b4d6c] md:col-span-2">
-                                    <span className="font-medium">Question ID / text</span>
-                                    <input
-                                      value={editingQuestionText}
-                                      onChange={(event) => setEditingQuestionText(event.target.value)}
-                                      className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2.5 py-1.5"
-                                    />
-                                  </label>
-                                  <label className="space-y-1 text-xs text-[#3b4d6c]">
-                                    <span className="font-medium">Security level</span>
-                                    <select
-                                      value={editingQuestionSecurity}
-                                      onChange={(event) => setEditingQuestionSecurity(event.target.value as 'low' | 'medium' | 'high')}
-                                      className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2.5 py-1.5"
-                                    >
-                                      <option value="low">low</option>
-                                      <option value="medium">medium</option>
-                                      <option value="high">high</option>
-                                    </select>
-                                  </label>
-                                  <label className="space-y-1 text-xs text-[#3b4d6c]">
-                                    <span className="font-medium">Points</span>
-                                    <input
-                                      readOnly
-                                      value={editingQuestionSecurity === 'low' ? 1 : editingQuestionSecurity === 'medium' ? 3 : 4}
-                                      className="w-full cursor-not-allowed rounded-lg border border-[#d4dced] bg-[#f0f2f5] px-2.5 py-1.5 text-[#6b7280]"
-                                    />
-                                  </label>
-                                  <label className="space-y-1 text-xs text-[#3b4d6c] md:col-span-2">
-                                    <span className="font-medium">Legal requirement</span>
-                                    <input
-                                      value={editingQuestionLegalRequirement}
-                                      onChange={(event) => setEditingQuestionLegalRequirement(event.target.value)}
-                                      className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2.5 py-1.5"
-                                    />
-                                  </label>
-                                  <label className="space-y-1 text-xs text-[#3b4d6c]">
-                                    <span className="font-medium">Explanation</span>
-                                    <textarea
-                                      value={editingQuestionExplanation}
-                                      onChange={(event) => setEditingQuestionExplanation(event.target.value)}
-                                      className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2.5 py-1.5"
-                                    />
-                                  </label>
-                                  <label className="space-y-1 text-xs text-[#3b4d6c]">
-                                    <span className="font-medium">Expected implementation</span>
-                                    <textarea
-                                      value={editingQuestionExpectedImplementation}
-                                      onChange={(event) => setEditingQuestionExpectedImplementation(event.target.value)}
-                                      className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2.5 py-1.5"
-                                    />
-                                  </label>
-                                  <label className="space-y-1 text-xs text-[#3b4d6c] md:col-span-2">
-                                    <span className="font-medium">Note (optional)</span>
-                                    <input
-                                      value={editingQuestionNote}
-                                      onChange={(event) => setEditingQuestionNote(event.target.value)}
-                                      className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2.5 py-1.5"
-                                    />
-                                  </label>
-                                </div>
-                                <div className="mt-3 flex flex-wrap items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => void onSaveQuestion(checklist.id, section.id, editingQuestionId)}
-                                    disabled={actionLoading === 'save-question'}
-                                    className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
-                                  >
-                                    {actionLoading === 'save-question' && activeQuestionId === editingQuestionId ? 'Saving…' : 'Save'}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={cancelQuestionEdit}
-                                    disabled={actionLoading === 'save-question'}
-                                    className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#425f8f] hover:bg-[#edf4ff] disabled:opacity-60"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </div>
-                            ) : null}
                           </div>
                         );
                       })}
