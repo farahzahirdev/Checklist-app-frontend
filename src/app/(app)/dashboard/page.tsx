@@ -36,31 +36,31 @@ export default function DashboardPage() {
     <section className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-[#9dc5ff]">Customer Dashboard</p>
-          <h1 className="text-3xl font-semibold text-white">Overview</h1>
+          <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Customer Dashboard</p>
+          <h1 className="text-3xl font-semibold text-[#1f2d45]">Overview</h1>
         </div>
         <button
           type="button"
           onClick={() => void loadDashboard()}
           disabled={loading}
-          className="rounded-lg border border-[#345793] px-3 py-2 text-sm text-[#d8e2f2] hover:bg-[#1f7bff]/20 disabled:opacity-60"
+          className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff] disabled:opacity-60"
         >
           {loading ? 'Refreshing...' : 'Refresh'}
         </button>
       </header>
 
       {error ? (
-        <p className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">{error}</p>
+        <p className="rounded-lg border border-[#f0c7cf] bg-[#fff2f4] px-3 py-2 text-sm text-[#b63d51]">{error}</p>
       ) : null}
       {permissionBlocked ? (
-        <div className="rounded-lg border border-amber-300/30 bg-amber-500/10 px-3 py-3 text-sm text-amber-100">
+        <div className="rounded-lg border border-[#f2dfad] bg-[#fff9ea] px-3 py-3 text-sm text-[#835f12]">
           This switched session cannot access customer dashboard summary. Use `Assessment`/`Access`, or click `Return to
           Admin`.
           <div className="mt-2 flex gap-2">
-            <Link href="/assessment" className="rounded-md border border-amber-300/50 px-2 py-1 text-xs hover:bg-amber-500/15">
+            <Link href="/assessment" className="rounded-md border border-[#e4d2a0] px-2 py-1 text-xs hover:bg-[#fff2ce]">
               Go to Assessment
             </Link>
-            <Link href="/access" className="rounded-md border border-amber-300/50 px-2 py-1 text-xs hover:bg-amber-500/15">
+            <Link href="/access" className="rounded-md border border-[#e4d2a0] px-2 py-1 text-xs hover:bg-[#fff2ce]">
               Go to Access
             </Link>
           </div>
@@ -91,7 +91,7 @@ export default function DashboardPage() {
       </div>
 
       {summary?.generated_at ? (
-        <p className="text-xs text-[#97a5bb]">Last generated at: {new Date(summary.generated_at).toLocaleString()}</p>
+        <p className="text-xs text-[#607594]">Last generated at: {new Date(summary.generated_at).toLocaleString()}</p>
       ) : null}
     </section>
   );

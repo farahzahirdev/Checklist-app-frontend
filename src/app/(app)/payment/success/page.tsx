@@ -126,14 +126,25 @@ export default function PaymentSuccessPage() {
   return (
     <section className="space-y-6">
       <header className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.3em] text-emerald-200/85">Payment complete</p>
-        <h1 className="text-3xl font-semibold text-white">Select your checklist</h1>
-        <p className="text-sm text-[#97a5bb]">
+        <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Payment complete</p>
+        <h1 className="text-3xl font-semibold text-[#1f2d45]">Select your checklist</h1>
+        <p className="text-sm text-[#4f6281]">
           Choose one checklist to activate your 7-day customer access window.
         </p>
       </header>
 
-      <article className="rounded-2xl border border-white/15 bg-black/25 p-5">
+      <article
+        className={`rounded-2xl border p-5 ${
+          paymentStatus === 'succeeded'
+            ? 'border-[#2f4d82] text-white'
+            : 'border-white/15 bg-black/25'
+        }`}
+        style={
+          paymentStatus === 'succeeded'
+            ? { background: 'linear-gradient(180deg, #06142f, #071a39)' }
+            : undefined
+        }
+      >
         {loading ? <p className="text-sm text-zinc-200">Checking payment status...</p> : null}
         {statusMessage ? <p className="text-sm text-zinc-200">{statusMessage}</p> : null}
 
@@ -142,19 +153,22 @@ export default function PaymentSuccessPage() {
         ) : null}
 
         {paymentStatus === 'succeeded' && selectedChecklistFromStatus ? (
-          <div className="space-y-3">
-            <div className="rounded-lg border border-white/15 bg-white/5 p-3 text-sm text-zinc-200">
+          <div
+            className="space-y-3 rounded-xl border border-[#2f4d82] p-4"
+            style={{ background: 'linear-gradient(180deg, #06142f, #071a39)' }}
+          >
+            <div className="rounded-lg border border-white/20 bg-white/10 p-3 text-sm text-white">
               <p className="font-semibold text-white">{selectedChecklistFromStatus.title}</p>
-              <p className="mt-1 text-zinc-300">Selected checklist version: v{selectedChecklistFromStatus.version}</p>
+              <p className="mt-1 text-white">Selected checklist version: v{selectedChecklistFromStatus.version}</p>
               {accessExpiresAt ? (
-                <p className="mt-1 text-zinc-300">Access active until: {new Date(accessExpiresAt).toLocaleString()}</p>
+                <p className="mt-1 text-white">Access active until: {new Date(accessExpiresAt).toLocaleString()}</p>
               ) : null}
             </div>
             <div className="flex flex-wrap gap-2 text-sm">
-              <Link href="/access" className="rounded-lg border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 text-cyan-100">
+              <Link href="/access" className="rounded-lg border border-[#7fb0ff] bg-[#1f7bff]/25 px-3 py-2 text-white hover:bg-[#1f7bff]/35">
                 Go to Access
               </Link>
-              <Link href="/dashboard" className="rounded-lg border border-white/20 px-3 py-2 text-zinc-100 hover:bg-white/10">
+              <Link href="/dashboard" className="rounded-lg border border-white/30 px-3 py-2 text-white hover:bg-white/10">
                 Dashboard
               </Link>
             </div>

@@ -90,19 +90,23 @@ export default function AssessmentPage() {
   return (
     <section className="space-y-6">
       <header className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.3em] text-cyan-200/85">Customer</p>
-        <h1 className="text-3xl font-semibold">Assessment</h1>
-        <p className="text-sm text-zinc-300">
-          We load your current session automatically. If none exists, start one from <Link href="/access" className="underline">Access</Link>.
+        <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Customer</p>
+        <h1 className="text-3xl font-semibold text-[#1f2d45]">Assessment</h1>
+        <p className="text-sm text-[#5f7395]">
+          We load your current session automatically. If none exists, start one from{' '}
+          <Link href="/access" className="font-medium text-[#2f4f83] underline">
+            Access
+          </Link>
+          .
         </p>
       </header>
 
       <section className="grid gap-5 lg:grid-cols-[280px_1fr]">
-        <aside className="rounded-2xl border border-white/15 bg-black/25 p-4">
-          <h3 className="text-lg font-semibold">Sections</h3>
+        <aside className="rounded-2xl border border-[#dbe4f4] bg-white p-4 shadow-sm">
+          <h3 className="text-lg font-semibold text-[#243555]">Sections</h3>
           <ul className="mt-3 space-y-2 text-sm">
             {mockSections.map((section) => (
-              <li key={section.id} className="rounded-lg border border-white/15 p-2">
+              <li key={section.id} className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-2 text-[#3f5677]">
                 {section.order}. {section.title}
               </li>
             ))}
@@ -110,11 +114,11 @@ export default function AssessmentPage() {
         </aside>
 
         <div className="space-y-5">
-          <article className="rounded-2xl border border-white/15 bg-black/25 p-5">
-            <h3 className="text-lg font-semibold">Current Question</h3>
-            <p className="mt-3 text-sm text-zinc-300">Question ID: {activeQuestion.questionId}</p>
-            <p className="mt-2 text-sm text-zinc-300">Legal Requirement: {activeQuestion.legalRequirement}</p>
-            <p className="mt-2 text-sm text-zinc-400">Expected Implementation: {activeQuestion.expectedImplementation}</p>
+          <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+            <h3 className="text-lg font-semibold text-[#243555]">Current Question</h3>
+            <p className="mt-3 text-sm text-[#4f6281]">Question ID: {activeQuestion.questionId}</p>
+            <p className="mt-2 text-sm text-[#4f6281]">Legal Requirement: {activeQuestion.legalRequirement}</p>
+            <p className="mt-2 text-sm text-[#607594]">Expected Implementation: {activeQuestion.expectedImplementation}</p>
 
             <div className="mt-4 space-y-3">
               <div className="flex flex-wrap gap-2 text-sm">
@@ -132,7 +136,9 @@ export default function AssessmentPage() {
                       }))
                     }
                     className={`rounded-lg border px-3 py-1.5 ${
-                      activeAnswer?.answer === value ? 'border-cyan-300/60 bg-cyan-500/20 text-cyan-100' : 'border-white/20 text-zinc-200'
+                      activeAnswer?.answer === value
+                        ? 'border-[#7aa5e8] bg-[#edf4ff] text-[#2f4f83]'
+                        : 'border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f6f9ff]'
                     }`}
                   >
                     {value.toUpperCase()}
@@ -152,7 +158,7 @@ export default function AssessmentPage() {
                   }))
                 }
                 placeholder="Optional note for auditor context"
-                className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-zinc-100 outline-none ring-cyan-300/50 focus:ring"
+                className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
                 rows={3}
               />
             </div>
@@ -162,7 +168,7 @@ export default function AssessmentPage() {
                 type="button"
                 onClick={() => void onSaveAnswer()}
                 disabled={loading}
-                className="rounded-lg border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 text-sm text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Saving…' : 'Save Answer'}
               </button>
@@ -170,19 +176,19 @@ export default function AssessmentPage() {
                 type="button"
                 onClick={() => void onSubmitAssessment()}
                 disabled={loading}
-                className="rounded-lg border border-emerald-300/40 bg-emerald-500/15 px-3 py-2 text-sm text-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg border border-[#2f9960] bg-[#e9f8ef] px-3 py-2 text-sm text-[#2f9960] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Submitting…' : 'Submit Assessment'}
               </button>
-              {assessmentId ? <p className="self-center text-xs text-zinc-400">Session: {assessmentId}</p> : null}
+              {assessmentId ? <p className="self-center text-xs text-[#607594]">Session: {assessmentId}</p> : null}
             </div>
 
-            {message ? <p className="mt-3 text-sm text-emerald-300">{message}</p> : null}
-            {error ? <p className="mt-3 text-sm text-rose-300">{error}</p> : null}
+            {message ? <p className="mt-3 text-sm text-[#2f9960]">{message}</p> : null}
+            {error ? <p className="mt-3 text-sm text-[#c43e53]">{error}</p> : null}
           </article>
 
-          <article className="rounded-2xl border border-white/15 bg-black/25 p-5">
-            <h3 className="text-sm font-semibold text-zinc-200">Question Navigator</h3>
+          <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-[#243555]">Question Navigator</h3>
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
               {questionsInActiveSection.map((question, idx) => (
                 <button
@@ -190,7 +196,9 @@ export default function AssessmentPage() {
                   type="button"
                   onClick={() => setActiveQuestionIndex(idx)}
                   className={`rounded-md border px-2 py-1 ${
-                    idx === activeQuestionIndex ? 'border-cyan-300/60 bg-cyan-500/20 text-cyan-100' : 'border-white/20 text-zinc-200'
+                    idx === activeQuestionIndex
+                      ? 'border-[#7aa5e8] bg-[#edf4ff] text-[#2f4f83]'
+                      : 'border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f6f9ff]'
                   }`}
                 >
                   {question.questionId}

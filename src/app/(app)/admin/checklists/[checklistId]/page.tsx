@@ -2,17 +2,18 @@
 
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
-import { useEffect, useState, type FormEvent } from 'react';
+import { Fragment, useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import {
   createSection,
   deleteSection,
   getChecklistById,
+  getQuestionsBySection,
   getSectionsByChecklist,
   updateChecklist,
   updateSection,
 } from '@/lib/checklist-api';
-import type { Checklist, ChecklistSection } from '@/lib/checklist-types';
+import type { Checklist, ChecklistQuestion, ChecklistSection } from '@/lib/checklist-types';
 
 export default function ChecklistDetailPage() {
   const params = useParams<{ checklistId: string }>();
@@ -21,6 +22,7 @@ export default function ChecklistDetailPage() {
   const isViewOnly = searchParams.get('mode') === 'view';
   const [checklist, setChecklist] = useState<Checklist | null>(null);
   const [sections, setSections] = useState<ChecklistSection[]>([]);
+  const [questionsBySectionId, setQuestionsBySectionId] = useState<Record<string, ChecklistQuestion[]>>({});
   const [title, setTitle] = useState('');
   const [lawDecree, setLawDecree] = useState('');
   const [version, setVersion] = useState('v1.0');
@@ -41,12 +43,16 @@ export default function ChecklistDetailPage() {
         getChecklistById(checklistId),
         getSectionsByChecklist(checklistId),
       ]);
+      const questionEntries = await Promise.all(
+        sectionsResponse.map(async (section) => [section.id, await getQuestionsBySection(checklistId, section.id)] as const),
+      );
       setChecklist(checklistResponse);
       setTitle(checklistResponse.title);
       setLawDecree(checklistResponse.lawDecree);
       setVersion(checklistResponse.version);
       setStatus(checklistResponse.status);
       setSections(sectionsResponse);
+      setQuestionsBySectionId(Object.fromEntries(questionEntries));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to load checklist.');
     } finally {
@@ -254,22 +260,58 @@ export default function ChecklistDetailPage() {
             </thead>
             <tbody>
               {sections.map((section) => (
-                <tr key={section.id} className="border-t border-[#edf2f9]">
-                  <td className="px-4 py-3">{section.order}</td>
-                  <td className="px-4 py-3">{section.title}</td>
-                  {!isViewOnly ? (
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Link href={`/admin/checklists/${checklistId}/sections/${section.id}?mode=view`} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]">View</Link>
-                        <Link href={`/admin/checklists/${checklistId}/sections/${section.id}`} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]">Edit</Link>
-                        <Link href={`/admin/checklists/${checklistId}/sections/${section.id}`} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#2d4f83] hover:bg-[#edf4ff]">Add Questions</Link>
-                        <button type="button" disabled={Boolean(actionLoading)} onClick={() => setConfirmDeleteSectionId(section.id)} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#c43e53] hover:bg-[#fff3f5] disabled:opacity-60">
-                          {actionLoading === 'delete-section' && activeSectionId === section.id ? 'Deleting…' : 'Delete'}
-                        </button>
-                      </div>
-                    </td>
+                <Fragment key={section.id}>
+                  <tr className="border-t border-[#edf2f9]">
+                    <td className="px-4 py-3">{section.order}</td>
+                    <td className="px-4 py-3">{section.title}</td>
+                    {!isViewOnly ? (
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Link href={`/admin/checklists/${checklistId}/sections/${section.id}?mode=view`} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]">View</Link>
+                          <Link href={`/admin/checklists/${checklistId}/sections/${section.id}`} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]">Edit</Link>
+                          <Link href={`/admin/checklists/${checklistId}/sections/${section.id}`} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#2d4f83] hover:bg-[#edf4ff]">Add Questions</Link>
+                          <button type="button" disabled={Boolean(actionLoading)} onClick={() => setConfirmDeleteSectionId(section.id)} className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#c43e53] hover:bg-[#fff3f5] disabled:opacity-60">
+                            {actionLoading === 'delete-section' && activeSectionId === section.id ? 'Deleting…' : 'Delete'}
+                          </button>
+                        </div>
+                      </td>
+                    ) : null}
+                  </tr>
+                  {isViewOnly ? (
+                    <tr className="border-t border-[#edf2f9] bg-[#fafcff]">
+                      <td colSpan={2} className="px-4 py-3">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#607594]">Questions</p>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full text-xs">
+                            <thead className="bg-[#f1f5fd] text-[#607594]">
+                              <tr>
+                                <th className="px-3 py-2 text-left">Question</th>
+                                <th className="px-3 py-2 text-left">Security</th>
+                                <th className="px-3 py-2 text-left">Points</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(questionsBySectionId[section.id] ?? []).map((question) => (
+                                <tr key={question.id} className="border-t border-[#e5ecfa] bg-white">
+                                  <td className="px-3 py-2 text-[#304568]">{question.questionId}</td>
+                                  <td className="px-3 py-2 text-[#5f7395]">{question.securityLevel}</td>
+                                  <td className="px-3 py-2 text-[#5f7395]">{question.points}</td>
+                                </tr>
+                              ))}
+                              {(questionsBySectionId[section.id] ?? []).length === 0 ? (
+                                <tr>
+                                  <td className="px-3 py-2 text-[#607594]" colSpan={3}>
+                                    No questions in this section.
+                                  </td>
+                                </tr>
+                              ) : null}
+                            </tbody>
+                          </table>
+                        </div>
+                      </td>
+                    </tr>
                   ) : null}
-                </tr>
+                </Fragment>
               ))}
             </tbody>
           </table>

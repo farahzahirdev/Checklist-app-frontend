@@ -27,8 +27,12 @@ export default function AppLayout({
   const [authReady, setAuthReady] = useState(false);
   const [role, setRole] = useState<UserRoleKey | ''>('');
   const [roleSwitchActive, setRoleSwitchActive] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAdminPath = pathname?.startsWith('/admin') ?? false;
   const isPaymentPath = pathname?.startsWith('/payment') ?? false;
+  const dashboardActive = pathname === '/dashboard';
+  const assessmentActive = pathname?.startsWith('/assessment') ?? false;
+  const accessActive = pathname?.startsWith('/access') ?? false;
 
   function canAccessPath(currentRole: UserRoleKey, currentPath: string): boolean {
     if (currentPath.startsWith('/admin')) {
@@ -119,10 +123,14 @@ export default function AppLayout({
     }
   }, [authReady, pathname, role, router]);
 
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
   if (!authReady) {
     return (
-      <main className="min-h-screen px-6 py-8 text-[#ffffff] md:py-10">
-        <div className="mx-auto max-w-7xl rounded-2xl border border-[#2f4d82] bg-[#07112a]/85 p-6 text-sm text-[#d8e2f2]">
+      <main className="min-h-screen bg-white px-6 py-8 text-[#1f2d45] md:py-10">
+        <div className="mx-auto max-w-7xl rounded-xl border border-[#d8e1ef] bg-white p-6 text-sm text-[#4c607d]">
           Validating session...
         </div>
       </main>
@@ -133,61 +141,157 @@ export default function AppLayout({
     isAdminPath ? (
       <main className="min-h-screen bg-[#e9eef8] text-[#ffffff]">{children}</main>
     ) : (
-      <main className="min-h-screen px-6 py-8 text-[#ffffff] md:py-10">
-        <div className="mx-auto max-w-7xl">
-          {!isPaymentPath ? (
-            <header className="mb-8 rounded-3xl border border-[#2f4d82] bg-[#07112a]/85 p-5 backdrop-blur md:p-6">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.32em] text-[#9dc5ff]">Checklist App</p>
-                  <p className="mt-2 text-xl font-semibold text-white md:text-2xl">Secure Access Workspace</p>
-                </div>
-                <nav className="flex items-center gap-3 text-sm text-[#d8e2f2]">
-                  {role === 'customer' ? (
-                    <>
-                      <Link
-                        href="/dashboard"
-                        className="rounded-lg border border-[#1f7bff] bg-[#1f7bff]/25 px-3 py-1.5 text-[#f3f8ff] hover:bg-[#1f7bff]/35"
-                      >
-                        Dashboard
-                      </Link>
-                      <Link href="/access" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
-                        Access
-                      </Link>
-                    </>
-                  ) : (
-                    <>
-                      <Link href="/" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
-                        Public
-                      </Link>
-                      <Link href="/reports" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
-                        Reports
-                      </Link>
-                      <Link href="/products/audit-readiness-checklist" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
-                        Product Details
-                      </Link>
-                      <Link href="/health" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
-                        Health
-                      </Link>
-                    </>
-                  )}
-                  <LogoutButton />
-                  {roleSwitchActive ? (
-                    <button
-                      type="button"
-                      onClick={() => void onReturnToAdmin()}
-                      className="rounded-lg border border-amber-300/70 bg-amber-500/10 px-3 py-1.5 text-amber-100 hover:bg-amber-500/20"
-                    >
-                      Return to Admin
-                    </button>
-                  ) : null}
-                </nav>
+      <main className="min-h-screen bg-white text-[#1f2d45]">
+        {!isPaymentPath ? (
+          <header
+            className="w-full border-b border-[#2f4d82] px-6 py-5 md:px-8 md:py-6"
+            style={{ background: 'linear-gradient(180deg, #06142f, #071a39)' }}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.32em] text-[#9dc5ff]">Checklist App</p>
+                <p className="mt-2 text-xl font-semibold text-white md:text-2xl">Customer Workspace</p>
               </div>
-            </header>
-          ) : null}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((previous) => !previous)}
+                className="inline-flex items-center rounded-md border border-[#345793] px-3 py-2 text-sm text-[#d8e2f2] hover:bg-[#1f7bff]/20 md:hidden"
+                aria-expanded={mobileMenuOpen}
+                aria-label="Toggle navigation menu"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                  <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </button>
+              <nav className="hidden items-center gap-3 text-sm text-[#d8e2f2] md:flex">
+                {role === 'customer' ? (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      className={`rounded-lg border px-3 py-1.5 ${
+                        dashboardActive
+                          ? 'border-[#1f7bff] bg-[#1f7bff]/25 text-[#f3f8ff] hover:bg-[#1f7bff]/35'
+                          : 'border-[#345793] text-[#d8e2f2] hover:bg-[#1f7bff]/20'
+                      }`}
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      href="/assessment"
+                      className={`rounded-lg border px-3 py-1.5 ${
+                        assessmentActive
+                          ? 'border-[#1f7bff] bg-[#1f7bff]/25 text-[#f3f8ff] hover:bg-[#1f7bff]/35'
+                          : 'border-[#345793] text-[#d8e2f2] hover:bg-[#1f7bff]/20'
+                      }`}
+                    >
+                      Assessment
+                    </Link>
+                    <Link
+                      href="/access"
+                      className={`rounded-lg border px-3 py-1.5 ${
+                        accessActive
+                          ? 'border-[#1f7bff] bg-[#1f7bff]/25 text-[#f3f8ff] hover:bg-[#1f7bff]/35'
+                          : 'border-[#345793] text-[#d8e2f2] hover:bg-[#1f7bff]/20'
+                      }`}
+                    >
+                      Access
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
+                      Public
+                    </Link>
+                    <Link href="/reports" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
+                      Reports
+                    </Link>
+                    <Link href="/products/audit-readiness-checklist" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
+                      Product Details
+                    </Link>
+                    <Link href="/health" className="rounded-lg border border-[#345793] px-3 py-1.5 hover:bg-[#1f7bff]/20">
+                      Health
+                    </Link>
+                  </>
+                )}
+                <LogoutButton />
+                {roleSwitchActive ? (
+                  <button
+                    type="button"
+                    onClick={() => void onReturnToAdmin()}
+                    className="rounded-lg border border-amber-300/70 bg-amber-500/10 px-3 py-1.5 text-amber-100 hover:bg-amber-500/20"
+                  >
+                    Return to Admin
+                  </button>
+                ) : null}
+              </nav>
+            </div>
+            {mobileMenuOpen ? (
+              <nav className="mt-4 flex flex-col gap-2 border-t border-[#2f4d82] pt-4 text-sm text-[#d8e2f2] md:hidden">
+                {role === 'customer' ? (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      className={`rounded-lg border px-3 py-2 ${
+                        dashboardActive
+                          ? 'border-[#1f7bff] bg-[#1f7bff]/25 text-[#f3f8ff] hover:bg-[#1f7bff]/35'
+                          : 'border-[#345793] text-[#d8e2f2] hover:bg-[#1f7bff]/20'
+                      }`}
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      href="/assessment"
+                      className={`rounded-lg border px-3 py-2 ${
+                        assessmentActive
+                          ? 'border-[#1f7bff] bg-[#1f7bff]/25 text-[#f3f8ff] hover:bg-[#1f7bff]/35'
+                          : 'border-[#345793] text-[#d8e2f2] hover:bg-[#1f7bff]/20'
+                      }`}
+                    >
+                      Assessment
+                    </Link>
+                    <Link
+                      href="/access"
+                      className={`rounded-lg border px-3 py-2 ${
+                        accessActive
+                          ? 'border-[#1f7bff] bg-[#1f7bff]/25 text-[#f3f8ff] hover:bg-[#1f7bff]/35'
+                          : 'border-[#345793] text-[#d8e2f2] hover:bg-[#1f7bff]/20'
+                      }`}
+                    >
+                      Access
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/" className="rounded-lg border border-[#345793] px-3 py-2 hover:bg-[#1f7bff]/20">
+                      Public
+                    </Link>
+                    <Link href="/reports" className="rounded-lg border border-[#345793] px-3 py-2 hover:bg-[#1f7bff]/20">
+                      Reports
+                    </Link>
+                    <Link href="/products/audit-readiness-checklist" className="rounded-lg border border-[#345793] px-3 py-2 hover:bg-[#1f7bff]/20">
+                      Product Details
+                    </Link>
+                    <Link href="/health" className="rounded-lg border border-[#345793] px-3 py-2 hover:bg-[#1f7bff]/20">
+                      Health
+                    </Link>
+                  </>
+                )}
+                <LogoutButton />
+                {roleSwitchActive ? (
+                  <button
+                    type="button"
+                    onClick={() => void onReturnToAdmin()}
+                    className="rounded-lg border border-amber-300/70 bg-amber-500/10 px-3 py-2 text-amber-100 hover:bg-amber-500/20"
+                  >
+                    Return to Admin
+                  </button>
+                ) : null}
+              </nav>
+            ) : null}
+          </header>
+        ) : null}
 
-          {children}
-        </div>
+        <div className="px-6 py-8 md:px-8 md:py-10">{children}</div>
       </main>
     )
   );

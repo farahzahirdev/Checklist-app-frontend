@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getCurrentAssessment, startAssessment } from '@/lib/assessment';
+import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
 
 function formatTimeRemaining(expiresAt: string): string {
   const expires = new Date(expiresAt).getTime();
@@ -22,7 +23,9 @@ function formatTimeRemaining(expiresAt: string): string {
 
 export default function AccessPage() {
   const searchParams = useSearchParams();
+  const checklistIdFromQuery = searchParams.get('checklist_id') ?? '';
   const [checklistId, setChecklistId] = useState('');
+  const [checklists, setChecklists] = useState<CustomerChecklist[]>([]);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [assessment, setAssessment] = useState<{
@@ -35,13 +38,17 @@ export default function AccessPage() {
 
   const remaining = useMemo(() => (assessment ? formatTimeRemaining(assessment.expires_at) : ''), [assessment]);
   const assessmentAlreadyStarted = Boolean(assessment && assessment.status !== 'not_started');
+  const checklistLocked = assessmentAlreadyStarted || Boolean(checklistIdFromQuery);
+  const selectedChecklistName = useMemo(
+    () => checklists.find((checklist) => checklist.id === checklistId)?.title ?? '',
+    [checklistId, checklists],
+  );
 
   useEffect(() => {
-    const fromQuery = searchParams.get('checklist_id');
-    if (fromQuery) {
-      setChecklistId(fromQuery);
+    if (checklistIdFromQuery) {
+      setChecklistId(checklistIdFromQuery);
     }
-  }, [searchParams]);
+  }, [checklistIdFromQuery]);
 
   useEffect(() => {
     let mounted = true;
@@ -62,6 +69,26 @@ export default function AccessPage() {
     }
 
     void preloadCurrentAssessment();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadPublishedChecklists() {
+      try {
+        const response = await listPublishedCustomerChecklists();
+        if (!mounted) {
+          return;
+        }
+        const sorted = [...response].sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
+        setChecklists(sorted);
+      } catch {
+        // keep access flow functional even when checklist catalog fails
+      }
+    }
+    void loadPublishedChecklists();
     return () => {
       mounted = false;
     };
@@ -100,7 +127,7 @@ export default function AccessPage() {
     setError('');
     setMessage('');
     if (!checklistId.trim()) {
-      setError('Checklist ID is required.');
+      setError('Checklist is required.');
       return;
     }
     setLoading(true);
@@ -123,44 +150,76 @@ export default function AccessPage() {
   return (
     <section className="space-y-6">
       <header className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.3em] text-cyan-200/85">Customer</p>
-        <h1 className="text-3xl font-semibold">Access & Pre-start</h1>
+        <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Customer</p>
+        <h1 className="text-3xl font-semibold text-[#1f2d45]">Access & Pre-start</h1>
       </header>
 
-      <article className="rounded-2xl border border-white/15 bg-black/25 p-5">
-        <h2 className="text-lg font-semibold">Before you start</h2>
-        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-zinc-300">
+      {assessment ? (
+        <article className="rounded-xl border border-[#bfd4ff] bg-[#eef4ff] p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#4a6ea8]">Remaining time</p>
+          <p className="mt-1 text-3xl font-semibold text-[#1f2d45]">{remaining}</p>
+          <div className="mt-3 grid gap-2 text-sm text-[#445c7e] md:grid-cols-3">
+            <p>
+              <span className="font-semibold">Status:</span> {assessment.status}
+            </p>
+            <p>
+              <span className="font-semibold">Completion:</span> {assessment.completion_percent}%
+            </p>
+            <p>
+              <span className="font-semibold">Expires:</span> {new Date(assessment.expires_at).toLocaleString()}
+            </p>
+          </div>
+        </article>
+      ) : null}
+
+      <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+        <h2 className="text-lg font-semibold text-[#243555]">Before you start</h2>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#4f6281]">
           <li>The 7-day completion window starts only when you click Start Assessment.</li>
           <li>Evidence uploads are optional but recommended for better auditor review.</li>
           <li>Final report is published in-app after manual auditor review.</li>
         </ul>
       </article>
 
-      <article className="rounded-2xl border border-white/15 bg-black/25 p-5">
-        <label className="block space-y-2 text-sm">
-          <span className="text-zinc-200">Checklist ID</span>
-          <input
-            type="text"
-            value={checklistId}
-            onChange={(event) => setChecklistId(event.target.value)}
-            placeholder="Published checklist UUID"
-            className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-zinc-100 outline-none ring-cyan-300/50 focus:ring"
-          />
-        </label>
+      <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+        {checklistLocked ? (
+          <div className="space-y-2 text-sm">
+            <p className="text-[#3f5677]">Checklist</p>
+            <p className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555]">
+              {selectedChecklistName || checklistId || 'Selected checklist'}
+            </p>
+          </div>
+        ) : (
+          <label className="block space-y-2 text-sm">
+            <span className="text-[#3f5677]">Checklist</span>
+            <select
+              value={checklistId}
+              onChange={(event) => setChecklistId(event.target.value)}
+              className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
+            >
+              <option value="">Select checklist</option>
+              {checklists.map((checklist) => (
+                <option key={checklist.id} value={checklist.id}>
+                  {checklist.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <div className="mt-3 flex flex-wrap gap-2">
           {!assessmentAlreadyStarted ? (
             <button
               type="button"
               onClick={start}
               disabled={loading}
-              className="rounded-lg border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 text-sm text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? 'Processing…' : 'Start Assessment'}
             </button>
           ) : (
             <Link
               href="/assessment"
-              className="rounded-lg border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 text-sm text-cyan-100"
+              className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white"
             >
               Continue Assessment
             </Link>
@@ -169,23 +228,24 @@ export default function AccessPage() {
             type="button"
             onClick={loadCurrent}
             disabled={loading}
-            className="rounded-lg border border-white/20 px-3 py-2 text-sm text-zinc-200 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff] disabled:cursor-not-allowed disabled:opacity-60"
           >
             Load Current
           </button>
         </div>
 
         {assessment ? (
-          <div className="mt-4 space-y-1 text-sm text-zinc-200">
+          <div className="mt-4 space-y-1 text-sm text-[#445c7e]">
+            {selectedChecklistName ? <p>Checklist: {selectedChecklistName}</p> : null}
             <p>Status: {assessment.status}</p>
             <p>Started At: {assessment.started_at}</p>
             <p>Expires At: {assessment.expires_at}</p>
             <p>Completion: {assessment.completion_percent}%</p>
-            <p className="text-cyan-200">{remaining}</p>
+            <p className="font-semibold text-[#2f4f83]">{remaining}</p>
           </div>
         ) : null}
-        {message ? <p className="mt-3 text-sm text-emerald-300">{message}</p> : null}
-        {error ? <p className="mt-3 text-sm text-rose-300">{error}</p> : null}
+        {message ? <p className="mt-3 text-sm text-[#2f9960]">{message}</p> : null}
+        {error ? <p className="mt-3 text-sm text-[#c43e53]">{error}</p> : null}
       </article>
     </section>
   );

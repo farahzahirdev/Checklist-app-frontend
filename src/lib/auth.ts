@@ -136,7 +136,7 @@ export function getRoleKey(role: UserRole): UserRoleKey {
 
 export function getRoleHomePath(role: UserRole): string {
   if (role === 0) return '/admin';
-  if (role === 1) return '/auditor';
+  if (role === 1) return '/admin';
   return '/dashboard';
 }
 

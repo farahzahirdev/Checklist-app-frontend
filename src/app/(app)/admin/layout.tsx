@@ -27,9 +27,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { href: '/admin/settings', label: 'Settings', icon: 'settings' },
   ] as const;
   const isReadOnly = role !== 'admin';
-  const visibleNavItems = isReadOnly
-    ? navItems.filter((item) => ['/admin', '/admin/reports', '/admin/logs'].includes(item.href))
-    : navItems;
+  const visibleNavItems = navItems;
 
   useEffect(() => {
     let cancelled = false;
@@ -169,7 +167,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </header>
           <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 md:p-5">
             <AdminAccessProvider isReadOnly={isReadOnly}>
-              <div className={isReadOnly ? '[&_button]:hidden' : undefined}>{children}</div>
+              <div>{children}</div>
             </AdminAccessProvider>
           </div>
         </div>
