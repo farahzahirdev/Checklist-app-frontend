@@ -16,6 +16,16 @@ function messageFromApiDetail(detail: unknown): string | null {
     if (detail === 'email_already_registered') {
       return 'This email is already registered.';
     }
+    if (detail === 'invalid_credentials') {
+      return 'Invalid email or password.';
+    }
+    if (detail === 'mfa_code_invalid') {
+      return 'The MFA code is invalid. Please try again.';
+    }
+    if (/^[a-z0-9_]+$/.test(detail)) {
+      const sentence = detail.replace(/_/g, ' ');
+      return sentence.charAt(0).toUpperCase() + sentence.slice(1) + '.';
+    }
     return detail;
   }
   if (Array.isArray(detail)) {

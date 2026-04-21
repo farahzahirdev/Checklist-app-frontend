@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { useState, type FormEvent } from 'react';
-import type { AuthResponse } from '@/lib/auth';
+import { toast } from 'sonner';
 import { getRoleHomePath, getRoleKey, persistAccessToken, registerAccount, startMfaSetup, verifyMfaCode } from '@/lib/auth';
-import { createStripeCheckoutSession } from '@/lib/payments';
+import { createStripeCheckoutSession, getUserPaymentStatus } from '@/lib/payments';
 import authBackground from '@/assets/cybersecurity-background.jpg';
 
 const LATEST_PAYMENT_ID_STORAGE_KEY = 'checklist_latest_payment_id';
@@ -19,12 +19,24 @@ export default function RegisterPage() {
   const [mfaCode, setMfaCode] = useState('');
   const [mfaQrSvg, setMfaQrSvg] = useState('');
   const [step, setStep] = useState<'credentials' | 'customer-mfa-verify' | 'customer-mfa-setup'>('credentials');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<AuthResponse | null>(null);
   const [setupLoading, setSetupLoading] = useState(false);
 
   async function redirectCustomerToCheckout(userId: string) {
+    try {
+      const paymentState = await getUserPaymentStatus(userId);
+      if (paymentState.payment_status === 'succeeded') {
+        if (paymentState.checklist) {
+          window.location.assign('/dashboard');
+        } else {
+          window.location.assign('/payment/success');
+        }
+        return;
+      }
+    } catch {
+      // Continue with checkout creation when no payment state exists yet.
+    }
+
     const origin = window.location.origin;
     const checkoutUrl = await createStripeCheckoutSession({
       user_id: userId,
@@ -39,32 +51,30 @@ export default function RegisterPage() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
     setLoading(true);
-    setResult(null);
 
     try {
       const normalizedEmail = email.trim().toLowerCase();
       const normalizedPassword = password.trim();
       if (!normalizedPassword) {
-        setError('Password cannot be empty or spaces only.');
+        toast.error('Password cannot be empty or spaces only.');
         return;
       }
       if (/\s/.test(password)) {
-        setError('Password cannot contain spaces.');
+        toast.error('Password cannot contain spaces.');
         return;
       }
       const data = await registerAccount({ email: normalizedEmail, password: normalizedPassword });
-      setResult(data);
       const role = getRoleKey(data.user.role);
       const destination = role === 'customer' ? '/payment' : getRoleHomePath(data.user.role);
 
       if (role === 'admin' || role === 'auditor') {
         if (!data.access_token) {
-          setError('Registration did not return an access token.');
+          toast.error('Registration did not return an access token.');
           return;
         }
         persistAccessToken(data.access_token);
+        toast.success('Account created successfully.');
         router.push(destination as Route);
         router.refresh();
         return;
@@ -72,30 +82,33 @@ export default function RegisterPage() {
 
       if (data.mfa_required && data.mfa_enabled) {
         if (!data.access_token) {
-          setError('MFA verification requires an access token from registration.');
+          toast.error('MFA verification requires an access token from registration.');
           return;
         }
         persistAccessToken(data.access_token);
         setStep('customer-mfa-verify');
+        toast.info('Enter your OTP code to complete account setup.');
         return;
       }
 
       if (data.mfa_required && !data.mfa_enabled) {
         if (!data.access_token) {
-          setError('MFA setup requires an access token from registration.');
+          toast.error('MFA setup requires an access token from registration.');
           return;
         }
         persistAccessToken(data.access_token);
         setStep('customer-mfa-setup');
+        toast.info('Set up MFA in your authenticator app.');
         await loadMfaSetup();
         return;
       }
 
       if (!data.access_token) {
-        setError('Registration did not return an access token.');
+        toast.error('Registration did not return an access token.');
         return;
       }
       persistAccessToken(data.access_token);
+      toast.success('Account created successfully.');
       if (role === 'customer') {
         await redirectCustomerToCheckout(data.user.id);
       } else {
@@ -103,7 +116,7 @@ export default function RegisterPage() {
         router.refresh();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      toast.error(err instanceof Error ? err.message : 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -111,12 +124,11 @@ export default function RegisterPage() {
 
   async function loadMfaSetup() {
     setSetupLoading(true);
-    setError('');
     try {
       const setup = await startMfaSetup();
       setMfaQrSvg(setup.svg_qr ?? '');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load MFA setup details.');
+      toast.error(err instanceof Error ? err.message : 'Failed to load MFA setup details.');
     } finally {
       setSetupLoading(false);
     }
@@ -124,20 +136,20 @@ export default function RegisterPage() {
 
   async function onVerifyMfaCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
     const code = mfaCode.trim();
     if (code.length !== 6) {
-      setError('Enter your 6-digit OTP code.');
+      toast.error('Enter your 6-digit OTP code.');
       return;
     }
     setLoading(true);
     try {
       const data = await verifyMfaCode({ code });
       if (!data.access_token) {
-        setError('MFA verification succeeded but no access token was returned.');
+        toast.error('MFA verification succeeded but no access token was returned.');
         return;
       }
       persistAccessToken(data.access_token);
+      toast.success('MFA verified successfully.');
       const role = getRoleKey(data.user.role);
       const destination = role === 'customer' ? '/payment' : getRoleHomePath(data.user.role);
       if (role === 'customer') {
@@ -147,7 +159,7 @@ export default function RegisterPage() {
         router.refresh();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to verify OTP code.');
+      toast.error(err instanceof Error ? err.message : 'Failed to verify OTP code.');
     } finally {
       setLoading(false);
     }
@@ -167,11 +179,6 @@ export default function RegisterPage() {
           <p className="text-xs uppercase tracking-[0.35em] text-[#9dc5ff]">Account</p>
           <h1 className="mt-2 text-3xl font-semibold text-white">Create an account</h1>
           <p className="mt-2 text-sm text-[#97a5bb]">Password must be at least 12 characters.</p>
-          {result && step === 'credentials' ? (
-            <p className="mt-2 text-sm text-emerald-300">
-              Account created for {result.user.email}. Redirecting to your workspace...
-            </p>
-          ) : null}
           {step === 'customer-mfa-verify' ? (
             <p className="mt-2 text-sm text-amber-300">MFA is enabled. Enter your OTP to complete account setup.</p>
           ) : null}
@@ -237,12 +244,6 @@ export default function RegisterPage() {
               </div>
             </label>
 
-            {error ? (
-              <p role="alert" aria-live="polite" className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-                {error}
-              </p>
-            ) : null}
-
             <button
               type="submit"
               disabled={loading}
@@ -268,11 +269,6 @@ export default function RegisterPage() {
                 className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
               />
             </label>
-            {error ? (
-              <p role="alert" aria-live="polite" className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-                {error}
-              </p>
-            ) : null}
             <button
               type="submit"
               disabled={loading}
@@ -318,11 +314,6 @@ export default function RegisterPage() {
                 className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
               />
             </label>
-            {error ? (
-              <p role="alert" aria-live="polite" className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-                {error}
-              </p>
-            ) : null}
             <div className="flex gap-3">
               <button
                 type="button"

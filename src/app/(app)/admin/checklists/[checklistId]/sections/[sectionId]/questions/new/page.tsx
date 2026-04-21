@@ -47,7 +47,7 @@ export default function NewQuestionPage() {
         points: derivedPoints,
         note: note.trim() || null,
       });
-      router.push(`/admin/checklists/${checklistId}/sections/${sectionId}`);
+      router.push('/admin/checklists');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create question');
     } finally {
@@ -58,7 +58,7 @@ export default function NewQuestionPage() {
   return (
     <section className="space-y-5">
       <header>
-        <Link href={`/admin/checklists/${checklistId}/sections/${sectionId}`} className="inline-flex items-center gap-1 text-sm font-medium text-[#425f8f] hover:text-[#223a63]">
+        <Link href="/admin/checklists" className="inline-flex items-center gap-1 text-sm font-medium text-[#425f8f] hover:text-[#223a63]">
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
             <path d="M15 6 9 12l6 6M9 12h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -67,38 +67,40 @@ export default function NewQuestionPage() {
         <h1 className="text-3xl font-semibold">Create Question</h1>
       </header>
       <form onSubmit={onSubmit} className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm space-y-3">
-        <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Question ID / text <span className="text-[#c43e53]">*</span></span>
-          <input value={questionId} onChange={(e) => setQuestionId(e.target.value)} placeholder="Question ID / text" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
-        </label>
-        <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Security level <span className="text-[#c43e53]">*</span></span>
-          <select value={securityLevel} onChange={(e) => setSecurityLevel(e.target.value as 'low' | 'medium' | 'high')} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">
-            <option value="low">low</option>
-            <option value="medium">medium</option>
-            <option value="high">high</option>
-          </select>
-        </label>
-        <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Legal requirement <span className="text-[#c43e53]">*</span></span>
-          <input value={legalRequirement} onChange={(e) => setLegalRequirement(e.target.value)} placeholder="Legal requirement" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
-        </label>
-        <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Explanation <span className="text-[#c43e53]">*</span></span>
-          <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} placeholder="Explanation" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
-        </label>
-        <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Expected implementation <span className="text-[#c43e53]">*</span></span>
-          <textarea value={expectedImplementation} onChange={(e) => setExpectedImplementation(e.target.value)} placeholder="Expected implementation" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
-        </label>
-        <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Points (derived from security level)</span>
-          <input value={derivedPoints} readOnly className="w-full rounded-xl border border-[#d4dced] bg-[#f0f2f5] px-3 py-2 text-[#6b7280] cursor-not-allowed" />
-        </label>
-        <label className="block space-y-2 text-sm text-[#3b4d6c]">
-          <span className="font-medium">Note (optional)</span>
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" />
-        </label>
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="block space-y-2 text-sm text-[#3b4d6c]">
+            <span className="font-medium">Question ID / text <span className="text-[#c43e53]">*</span></span>
+            <input value={questionId} onChange={(e) => setQuestionId(e.target.value)} placeholder="Question ID / text" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
+          </label>
+          <label className="block space-y-2 text-sm text-[#3b4d6c]">
+            <span className="font-medium">Security level <span className="text-[#c43e53]">*</span></span>
+            <select value={securityLevel} onChange={(e) => setSecurityLevel(e.target.value as 'low' | 'medium' | 'high')} className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2">
+              <option value="low">low</option>
+              <option value="medium">medium</option>
+              <option value="high">high</option>
+            </select>
+          </label>
+          <label className="block space-y-2 text-sm text-[#3b4d6c] md:col-span-2">
+            <span className="font-medium">Legal requirement <span className="text-[#c43e53]">*</span></span>
+            <input value={legalRequirement} onChange={(e) => setLegalRequirement(e.target.value)} placeholder="Legal requirement" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
+          </label>
+          <label className="block space-y-2 text-sm text-[#3b4d6c]">
+            <span className="font-medium">Explanation <span className="text-[#c43e53]">*</span></span>
+            <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} placeholder="Explanation" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
+          </label>
+          <label className="block space-y-2 text-sm text-[#3b4d6c]">
+            <span className="font-medium">Expected implementation <span className="text-[#c43e53]">*</span></span>
+            <textarea value={expectedImplementation} onChange={(e) => setExpectedImplementation(e.target.value)} placeholder="Expected implementation" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" required />
+          </label>
+          <label className="block space-y-2 text-sm text-[#3b4d6c]">
+            <span className="font-medium">Points (derived from security level)</span>
+            <input value={derivedPoints} readOnly className="w-full rounded-xl border border-[#d4dced] bg-[#f0f2f5] px-3 py-2 text-[#6b7280] cursor-not-allowed" />
+          </label>
+          <label className="block space-y-2 text-sm text-[#3b4d6c]">
+            <span className="font-medium">Note (optional)</span>
+            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2" />
+          </label>
+        </div>
         {error ? <p className="rounded-lg bg-[#ffedf0] px-3 py-2 text-sm text-[#cc5163]">{error}</p> : null}
         <button disabled={loading} className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657]">
           {loading ? 'Creating...' : 'Create question'}

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { useState, type FormEvent } from 'react';
-import type { AuthResponse } from '@/lib/auth';
+import { toast } from 'sonner';
 import {
   getRoleHomePath,
   getRoleKey,
@@ -28,16 +28,18 @@ export default function LoginPage() {
   const [mfaChallengeToken, setMfaChallengeToken] = useState('');
   const [mfaQrSvg, setMfaQrSvg] = useState('');
   const [step, setStep] = useState<'credentials' | 'customer-mfa-verify' | 'customer-mfa-setup'>('credentials');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<AuthResponse | null>(null);
   const [setupLoading, setSetupLoading] = useState(false);
 
   async function redirectCustomerToCheckout(userId: string) {
     try {
       const paymentState = await getUserPaymentStatus(userId);
       if (paymentState.payment_status === 'succeeded') {
-        window.location.assign('/payment/success');
+        if (paymentState.checklist) {
+          window.location.assign('/dashboard');
+        } else {
+          window.location.assign('/payment/success');
+        }
         return;
       }
     } catch {
@@ -58,19 +60,17 @@ export default function LoginPage() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
     setLoading(true);
-    setResult(null);
 
     try {
       const normalizedEmail = email.trim().toLowerCase();
       const normalizedPassword = password.trim();
       if (!normalizedPassword) {
-        setError('Password cannot be empty or spaces only.');
+        toast.error('Password cannot be empty or spaces only.');
         return;
       }
       if (/\s/.test(password)) {
-        setError('Password cannot contain spaces.');
+        toast.error('Password cannot contain spaces.');
         return;
       }
       const payload = {
@@ -79,16 +79,16 @@ export default function LoginPage() {
       };
 
       const data = await loginAccount(payload);
-      setResult(data);
 
       const role = getRoleKey(data.user.role);
       const destination = role === 'customer' ? '/payment' : getRoleHomePath(data.user.role);
       if (role === 'admin' || role === 'auditor') {
         if (!data.access_token) {
-          setError('Sign in did not return an access token.');
+          toast.error('Sign in did not return an access token.');
           return;
         }
         persistAccessToken(data.access_token);
+        toast.success('Signed in successfully.');
         router.push(destination as Route);
         router.refresh();
         return;
@@ -96,30 +96,33 @@ export default function LoginPage() {
 
       if (data.mfa_required && data.mfa_enabled) {
         if (!data.challenge_token) {
-          setError('MFA verification requires a challenge token from login.');
+          toast.error('MFA verification requires a challenge token from login.');
           return;
         }
         setMfaChallengeToken(data.challenge_token);
         setStep('customer-mfa-verify');
+        toast.info('Enter your OTP code to complete sign in.');
         return;
       }
 
       if (data.mfa_required && !data.mfa_enabled) {
         if (!data.access_token) {
-          setError('MFA setup requires an access token from login.');
+          toast.error('MFA setup requires an access token from login.');
           return;
         }
         persistAccessToken(data.access_token);
         setStep('customer-mfa-setup');
+        toast.info('Set up MFA in your authenticator app.');
         await loadMfaSetup();
         return;
       }
 
       if (!data.access_token) {
-        setError('Sign in did not return an access token.');
+        toast.error('Sign in did not return an access token.');
         return;
       }
       persistAccessToken(data.access_token);
+      toast.success('Signed in successfully.');
       if (role === 'customer') {
         await redirectCustomerToCheckout(data.user.id);
       } else {
@@ -127,7 +130,7 @@ export default function LoginPage() {
         router.refresh();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sign in failed');
+      toast.error(err instanceof Error ? err.message : 'Sign in failed');
     } finally {
       setLoading(false);
     }
@@ -135,12 +138,11 @@ export default function LoginPage() {
 
   async function loadMfaSetup() {
     setSetupLoading(true);
-    setError('');
     try {
       const setup = await startMfaSetup();
       setMfaQrSvg(setup.svg_qr ?? '');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load MFA setup details.');
+      toast.error(err instanceof Error ? err.message : 'Failed to load MFA setup details.');
     } finally {
       setSetupLoading(false);
     }
@@ -148,27 +150,27 @@ export default function LoginPage() {
 
   async function onVerifyMfaChallenge(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
     const code = mfaCode.trim();
     if (code.length !== 6) {
-      setError('Enter your 6-digit OTP code.');
+      toast.error('Enter your 6-digit OTP code.');
       return;
     }
     setLoading(true);
     try {
       if (!mfaChallengeToken) {
-        setError('Missing MFA challenge token. Please sign in again.');
+        toast.error('Missing MFA challenge token. Please sign in again.');
         return;
       }
       const data = await verifyMfaChallenge({ challenge_token: mfaChallengeToken, code });
       if (!data.access_token) {
-        setError('MFA verification succeeded but no access token was returned.');
+        toast.error('MFA verification succeeded but no access token was returned.');
         return;
       }
       persistAccessToken(data.access_token);
+      toast.success('MFA verified successfully.');
       await redirectCustomerToCheckout(data.user.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to verify OTP code.');
+      toast.error(err instanceof Error ? err.message : 'Failed to verify OTP code.');
     } finally {
       setLoading(false);
     }
@@ -176,10 +178,9 @@ export default function LoginPage() {
 
   async function onVerifyMfaEnrollment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
     const code = mfaCode.trim();
     if (code.length !== 6) {
-      setError('Enter your 6-digit OTP code.');
+      toast.error('Enter your 6-digit OTP code.');
       return;
     }
 
@@ -189,9 +190,10 @@ export default function LoginPage() {
       if (data.access_token) {
         persistAccessToken(data.access_token);
       }
+      toast.success('MFA setup completed.');
       await redirectCustomerToCheckout(data.user.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to complete MFA setup.');
+      toast.error(err instanceof Error ? err.message : 'Failed to complete MFA setup.');
     } finally {
       setLoading(false);
     }
@@ -211,11 +213,6 @@ export default function LoginPage() {
           <p className="text-xs uppercase tracking-[0.35em] text-[#9dc5ff]">Account</p>
           <h1 className="mt-2 text-3xl font-semibold text-white">Sign in</h1>
           <p className="mt-2 text-sm text-[#97a5bb]">Use your registered account credentials.</p>
-          {result && step === 'credentials' ? (
-            <p className="mt-2 text-sm text-emerald-300">
-              Signed in as {result.user.email}. Redirecting to your workspace...
-            </p>
-          ) : null}
           {step === 'customer-mfa-verify' ? (
             <p className="mt-2 text-sm text-amber-300">
               MFA is enabled. Enter your OTP to complete sign in.
@@ -282,12 +279,6 @@ export default function LoginPage() {
               </div>
             </label>
 
-            {error ? (
-              <p role="alert" aria-live="polite" className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-                {error}
-              </p>
-            ) : null}
-
             <button
               type="submit"
               disabled={loading}
@@ -313,11 +304,6 @@ export default function LoginPage() {
                 className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
               />
             </label>
-            {error ? (
-              <p role="alert" aria-live="polite" className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-                {error}
-              </p>
-            ) : null}
             <button
               type="submit"
               disabled={loading}
@@ -364,11 +350,6 @@ export default function LoginPage() {
                 className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
               />
             </label>
-            {error ? (
-              <p role="alert" aria-live="polite" className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-                {error}
-              </p>
-            ) : null}
             <div className="flex gap-3">
               <button
                 type="button"

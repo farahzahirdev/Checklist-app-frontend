@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
-import { deleteQuestion, getQuestionsBySection, getSectionsByChecklist, updateSection } from '@/lib/checklist-api';
+import { getQuestionsBySection, getSectionsByChecklist, updateSection } from '@/lib/checklist-api';
 import type { ChecklistQuestion } from '@/lib/checklist-types';
 
 export default function SectionDetailPage() {
@@ -18,9 +18,7 @@ export default function SectionDetailPage() {
   const [previousSectionTitle, setPreviousSectionTitle] = useState('');
   const [questions, setQuestions] = useState<ChecklistQuestion[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<'save-section' | 'delete-question' | ''>('');
-  const [activeQuestionId, setActiveQuestionId] = useState('');
-  const [confirmDeleteQuestionId, setConfirmDeleteQuestionId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<'save-section' | ''>('');
 
   async function loadQuestions() {
     setLoading(true);
@@ -61,27 +59,11 @@ export default function SectionDetailPage() {
     }
   }
 
-  async function onDeleteQuestion(questionId: string) {
-    setActionLoading('delete-question');
-    setActiveQuestionId(questionId);
-    try {
-      await deleteQuestion(checklistId, sectionId, questionId);
-      toast.success('Question deleted.');
-      await loadQuestions();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete question.');
-    } finally {
-      setActionLoading('');
-      setActiveQuestionId('');
-      setConfirmDeleteQuestionId(null);
-    }
-  }
-
   return (
     <section className="space-y-5">
       <header className="flex items-center justify-between">
         <div>
-          <Link href={`/admin/checklists/${checklistId}`} className="inline-flex items-center gap-1 text-sm font-medium text-[#425f8f] hover:text-[#223a63]">
+          <Link href="/admin/checklists" className="inline-flex items-center gap-1 text-sm font-medium text-[#425f8f] hover:text-[#223a63]">
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
               <path d="M15 6 9 12l6 6M9 12h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -125,12 +107,6 @@ export default function SectionDetailPage() {
       <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-[#edf2f9] px-4 py-3">
           <h2 className="text-lg font-semibold text-[#243555]">Questions</h2>
-          <Link
-            href={`/admin/checklists/${checklistId}/sections/${sectionId}/questions/new`}
-            className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white hover:bg-[#223657]"
-          >
-            Add Question
-          </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
@@ -139,13 +115,12 @@ export default function SectionDetailPage() {
                 <th className="px-4 py-3 text-left">Question</th>
                 <th className="px-4 py-3 text-left">Security</th>
                 <th className="px-4 py-3 text-left">Points</th>
-                <th className="px-4 py-3 text-left">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td className="px-4 py-3 text-[#607594]" colSpan={4}>
+                  <td className="px-4 py-3 text-[#607594]" colSpan={3}>
                     Loading questions...
                   </td>
                 </tr>
@@ -156,62 +131,12 @@ export default function SectionDetailPage() {
                     <td className="px-4 py-3 text-[#25375a]">{question.questionId}</td>
                     <td className="px-4 py-3 text-[#5f7395]">{question.securityLevel}</td>
                     <td className="px-4 py-3 text-[#5f7395]">{question.points}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/admin/checklists/${checklistId}/sections/${sectionId}/questions/${question.id}?mode=view`}
-                          className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]"
-                        >
-                          View
-                        </Link>
-                        <Link
-                          href={`/admin/checklists/${checklistId}/sections/${sectionId}/questions/${question.id}`}
-                          className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDeleteQuestionId(question.id)}
-                          disabled={Boolean(actionLoading)}
-                          className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#c43e53] hover:bg-[#fff3f5] disabled:opacity-60"
-                        >
-                          {actionLoading === 'delete-question' && activeQuestionId === question.id ? 'Deleting…' : 'Delete'}
-                        </button>
-                      </div>
-                    </td>
                   </tr>
                 ))}
             </tbody>
           </table>
         </div>
       </article>
-      {confirmDeleteQuestionId ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-xl">
-            <h3 className="text-lg font-semibold text-[#243555]">Delete question?</h3>
-            <p className="mt-2 text-sm text-[#607594]">This action cannot be undone.</p>
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmDeleteQuestionId(null)}
-                disabled={Boolean(actionLoading)}
-                className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm font-semibold text-[#2a3d5f]"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void onDeleteQuestion(confirmDeleteQuestionId)}
-                disabled={Boolean(actionLoading)}
-                className="rounded-lg border border-[#d45f6b] bg-[#fff1f3] px-3 py-2 text-sm font-semibold text-[#a73a46]"
-              >
-                {actionLoading === 'delete-question' ? 'Deleting…' : 'Confirm delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </section>
   );
 }

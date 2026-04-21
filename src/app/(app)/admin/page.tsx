@@ -8,14 +8,17 @@ import {
   getAdminDistribution,
   getAdminRetention,
   getAdminSystemHealth,
+  getAuditorDashboardSummary,
   type AdminActivityItem,
   type AdminAwaitingReviewItem,
   type AdminDashboardSummary,
   type AdminDistribution,
   type AdminRetention,
   type AdminSystemHealth,
+  type AuditorDashboardSummary,
 } from '@/lib/dashboard';
 import { ACCESS_TOKEN_STORAGE_KEY } from '@/lib/auth';
+import { useAdminAccess } from '@/lib/admin-access';
 
 type AdminDashboardState = {
   summary: AdminDashboardSummary | null;
@@ -36,7 +39,9 @@ const INITIAL_STATE: AdminDashboardState = {
 };
 
 export default function AdminDashboardPage() {
+  const { isReadOnly } = useAdminAccess();
   const [data, setData] = useState<AdminDashboardState>(INITIAL_STATE);
+  const [auditorSummary, setAuditorSummary] = useState<AuditorDashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -49,6 +54,12 @@ export default function AdminDashboardPage() {
       if (!accessToken) {
         throw new Error('missing_bearer_token');
       }
+      if (isReadOnly) {
+        const summary = await getAuditorDashboardSummary({ token: accessToken });
+        setAuditorSummary(summary);
+        setData(INITIAL_STATE);
+        return;
+      }
       const [summary, awaitingReview, activity, distribution, retention, systemHealth] = await Promise.all([
         getAdminDashboardSummary({ token: accessToken }),
         getAdminAwaitingReview({ token: accessToken }),
@@ -58,6 +69,7 @@ export default function AdminDashboardPage() {
         getAdminSystemHealth({ token: accessToken }),
       ]);
       setData({ summary, awaitingReview, activity, distribution, retention, systemHealth });
+      setAuditorSummary(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load admin dashboard');
     } finally {
@@ -67,9 +79,16 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     void loadDashboard();
-  }, []);
+  }, [isReadOnly]);
 
-  const summaryCards = [
+  const summaryCards = isReadOnly
+    ? [
+        { label: 'Reports under review', value: auditorSummary?.reports_under_review },
+        { label: 'Changes requested', value: auditorSummary?.reports_changes_requested },
+        { label: 'Draft reports waiting', value: auditorSummary?.draft_reports_waiting },
+        { label: 'Findings total', value: auditorSummary?.findings_total },
+      ]
+    : [
     { label: 'Users total', value: data.summary?.users_total },
     { label: 'Customers total', value: data.summary?.customers_total },
     { label: 'Checklists published', value: data.summary?.checklists_published },
@@ -78,7 +97,7 @@ export default function AdminDashboardPage() {
     { label: 'Payments succeeded', value: data.summary?.payments_succeeded },
     { label: 'Pending review', value: data.summary?.pending_review },
     { label: 'Expired assessments', value: data.summary?.expired_assessments },
-  ] as const;
+  ];
 
   return (
     <section className="space-y-4">
@@ -105,6 +124,7 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
+      {!isReadOnly ? (
       <div className="grid gap-3 xl:grid-cols-2">
         <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
           <div className="border-b border-[#ecf0f8] px-4 py-3">
@@ -144,7 +164,13 @@ export default function AdminDashboardPage() {
           </div>
         </article>
       </div>
+      ) : (
+        <article className="rounded-2xl border border-[#e2e8f5] bg-white p-4 text-sm text-[#2f4264] shadow-sm">
+          Auditor dashboard is read-only by design. You can review admin pages, but editing remains admin-only.
+        </article>
+      )}
 
+      {!isReadOnly ? (
       <div className="grid gap-3 xl:grid-cols-3">
         <article className="rounded-2xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
           <h3 className="text-lg font-semibold text-[#243555]">Distribution</h3>
@@ -170,6 +196,7 @@ export default function AdminDashboardPage() {
           <p className="text-sm text-[#2f4264]">Reports: {data.systemHealth?.reports_status ?? (loading ? '...' : 'unknown')}</p>
         </article>
       </div>
+      ) : null}
     </section>
   );
 }
