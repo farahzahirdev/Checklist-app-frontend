@@ -129,9 +129,13 @@ export default function AppLayout({
 
   if (!authReady) {
     return (
-      <main className="min-h-screen bg-white px-6 py-8 text-[#1f2d45] md:py-10">
-        <div className="mx-auto max-w-7xl rounded-xl border border-[#d8e1ef] bg-white p-6 text-sm text-[#4c607d]">
-          Validating session...
+      <main className="flex min-h-screen items-center justify-center bg-white px-6 py-8 text-[#1f2d45] md:py-10">
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="h-10 w-10 animate-spin rounded-full border-4 border-[#dbe4f4] border-t-[#2f4f83]"
+            aria-hidden="true"
+          />
+          <p className="text-sm font-medium text-[#4c607d]">Validating session...</p>
         </div>
       </main>
     );
@@ -291,7 +295,7 @@ export default function AppLayout({
           </header>
         ) : null}
 
-        <div className="px-6 py-8 md:px-8 md:py-10">{children}</div>
+        <div className={isPaymentPath ? 'py-8 md:py-10' : 'px-6 py-8 md:px-8 md:py-10'}>{children}</div>
       </main>
     )
   );

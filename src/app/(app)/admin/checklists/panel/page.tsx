@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
-export default function NewChecklistRouteRedirect() {
+export default function ChecklistPanelRouteRedirect() {
   redirect('/admin/checklists');
 }

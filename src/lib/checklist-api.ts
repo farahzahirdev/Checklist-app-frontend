@@ -1,6 +1,6 @@
-import { apiDelete, apiGetWithAuth, apiPatch, apiPost } from '@/lib/api';
+import { apiDelete, apiGetWithAuth, apiPatch, apiPost, apiPostFormData } from '@/lib/api';
 import { mockReportSummary } from '@/lib/checklist-mocks';
-import type { Checklist, ChecklistQuestion, ChecklistSection, ReportSummary } from '@/lib/checklist-types';
+import type { Checklist, ChecklistAnswerOption, ChecklistQuestion, ChecklistSection, ReportSummary } from '@/lib/checklist-types';
 
 type ChecklistApiModel = {
   id: string;
@@ -40,11 +40,32 @@ type QuestionApiModel = {
   checklist_id: string;
   section_id: string;
   question_id: string;
+  question_title?: string;
+  parent_question_id?: string | null;
+  illustrative_image_id?: string | null;
   security_level: 'low' | 'medium' | 'high';
+  answer_logic?: 'answer_only' | 'answer_with_adjustment';
   audit_type: 'compliance';
-  legal_requirement: string;
+  legal_requirement?: string;
+  legal_requirement_title?: string;
+  legal_requirement_description?: string;
   explanation: string;
   expected_implementation: string;
+  how_it_works?: string;
+  guidance_score_4?: string;
+  guidance_score_3?: string;
+  guidance_score_2?: string;
+  guidance_score_1?: string;
+  recommendation_template?: string;
+  evidence_enabled?: boolean;
+  answer_options?: Array<{
+    position: number;
+    label: string;
+    score: number;
+    choice_code: string;
+    description: string;
+    illustrative_image_id?: string | null;
+  }>;
   points: number;
   customer_answer: string | null;
   customer_answer_status: 'not_started' | 'in_progress' | 'completed' | 'needs_review';
@@ -53,6 +74,77 @@ type QuestionApiModel = {
     allowed_mime_types: string[];
     max_file_size_bytes: number;
   };
+  sub_questions?: QuestionApiModel[];
+};
+
+type QuestionAnswerOptionPayload = {
+  position: number;
+  label: string;
+  score: number;
+  choice_code: string;
+  description: string;
+  illustrative_image_id?: string;
+};
+
+function buildDefaultAnswerOptions(illustrativeImageId?: string): QuestionAnswerOptionPayload[] {
+  return [
+    {
+      position: 1,
+      label: 'Yes',
+      score: 1,
+      choice_code: 'YES',
+      description: 'Control is fully implemented.',
+      illustrative_image_id: illustrativeImageId,
+    },
+    {
+      position: 2,
+      label: 'Maybe',
+      score: 1,
+      choice_code: 'MAYBE',
+      description: 'Control is partially implemented or uncertain.',
+      illustrative_image_id: illustrativeImageId,
+    },
+    {
+      position: 3,
+      label: 'Sure',
+      score: 1,
+      choice_code: 'SURE',
+      description: 'Control is confidently implemented.',
+      illustrative_image_id: illustrativeImageId,
+    },
+    {
+      position: 4,
+      label: 'No',
+      score: 1,
+      choice_code: 'NO',
+      description: 'Control is not implemented.',
+      illustrative_image_id: illustrativeImageId,
+    },
+  ];
+}
+
+function mapAnswerOption(option: ChecklistAnswerOption): QuestionAnswerOptionPayload {
+  return {
+    position: option.position,
+    label: option.label,
+    score: option.score,
+    choice_code: option.choiceCode,
+    description: option.description,
+    illustrative_image_id: option.illustrativeImageId ?? undefined,
+  };
+}
+
+export type UploadedMedia = {
+  filename: string;
+  original_filename: string;
+  mime_type: string;
+  file_size_bytes: number;
+  media_type: string;
+  id: string;
+  sha256: string;
+  scan_status: string;
+  encryption_status: string;
+  created_at: string;
 };
 
 function mapChecklist(data: ChecklistApiModel): Checklist {
@@ -83,11 +175,24 @@ function mapQuestion(data: QuestionApiModel): ChecklistQuestion {
     checklistId: data.checklist_id,
     sectionId: data.section_id,
     questionId: data.question_id,
+    questionTitle: data.question_title,
+    parentQuestionId: data.parent_question_id ?? null,
+    illustrativeImageId: data.illustrative_image_id ?? null,
     securityLevel: data.security_level,
+    answerLogic: data.answer_logic,
     auditType: data.audit_type,
-    legalRequirement: data.legal_requirement,
+    legalRequirementTitle: data.legal_requirement_title,
+    legalRequirementDescription: data.legal_requirement_description,
+    legalRequirement: data.legal_requirement_description ?? data.legal_requirement_title ?? data.legal_requirement ?? '',
     explanation: data.explanation,
     expectedImplementation: data.expected_implementation,
+    howItWorks: data.how_it_works,
+    guidanceScore4: data.guidance_score_4,
+    guidanceScore3: data.guidance_score_3,
+    guidanceScore2: data.guidance_score_2,
+    guidanceScore1: data.guidance_score_1,
+    recommendationTemplate: data.recommendation_template,
+    evidenceEnabled: data.evidence_enabled,
     points: data.points,
     customerAnswer: data.customer_answer,
     customerAnswerStatus: data.customer_answer_status,
@@ -96,17 +201,31 @@ function mapQuestion(data: QuestionApiModel): ChecklistQuestion {
       allowedMimeTypes: data.evidence_rule.allowed_mime_types,
       maxFileSizeBytes: data.evidence_rule.max_file_size_bytes,
     },
+    answerOptions: (data.answer_options ?? []).map((option) => ({
+      position: option.position,
+      label: option.label,
+      score: option.score,
+      choiceCode: option.choice_code,
+      description: option.description,
+      illustrativeImageId: option.illustrative_image_id ?? null,
+    })),
   };
 }
 
-function parseChecklistVersion(input: string | number | undefined, fallback: number): number {
-  const raw = String(input ?? '').trim();
-  const majorMatch = raw.match(/^v?\s*(\d+)/i);
-  if (!majorMatch) {
-    return fallback;
-  }
-  const parsed = Number.parseInt(majorMatch[1], 10);
-  return Number.isNaN(parsed) ? fallback : parsed;
+function flattenQuestionTree(questions: QuestionApiModel[]): QuestionApiModel[] {
+  const flattened: QuestionApiModel[] = [];
+  const visit = (question: QuestionApiModel) => {
+    flattened.push(question);
+    (question.sub_questions ?? []).forEach(visit);
+  };
+  questions.forEach(visit);
+  return flattened;
+}
+
+export async function uploadChecklistQuestionMedia(file: File): Promise<UploadedMedia> {
+  const formData = new FormData();
+  formData.append('file', file);
+  return apiPostFormData<UploadedMedia>('/media/upload', formData);
 }
 
 export async function getAdminChecklists(): Promise<Checklist[]> {
@@ -120,13 +239,12 @@ export async function getChecklistById(checklistId: string): Promise<Checklist> 
 }
 
 export async function createChecklist(payload: Partial<Checklist>): Promise<Checklist> {
-  const parsedVersion = parseChecklistVersion(payload.version, 1);
   const data = await apiPost<
     ChecklistApiModel,
     {
       title: string;
       law_decree: string;
-      version: number;
+      checklist_type_code: 'compliance';
       status: 'draft' | 'published';
     }
   >(
@@ -134,7 +252,7 @@ export async function createChecklist(payload: Partial<Checklist>): Promise<Chec
     {
       title: payload.title ?? '',
       law_decree: payload.lawDecree ?? '',
-      version: parsedVersion,
+      checklist_type_code: 'compliance',
       status: payload.status ?? 'draft',
     },
   );
@@ -142,14 +260,11 @@ export async function createChecklist(payload: Partial<Checklist>): Promise<Chec
 }
 
 export async function updateChecklist(checklistId: string, payload: Partial<Checklist>): Promise<Checklist> {
-  const hasVersion = payload.version !== undefined && payload.version !== null && String(payload.version).trim() !== '';
-  const parsedVersion = hasVersion ? parseChecklistVersion(payload.version, 1) : undefined;
   const data = await apiPatch<
     ChecklistApiModel,
     {
       title?: string;
       law_decree?: string;
-      version?: number;
       status?: 'draft' | 'published';
     }
   >(
@@ -157,7 +272,6 @@ export async function updateChecklist(checklistId: string, payload: Partial<Chec
     {
       title: payload.title,
       law_decree: payload.lawDecree,
-      version: parsedVersion,
       status: payload.status,
     },
   );
@@ -184,7 +298,7 @@ export async function getQuestionsBySection(checklistId: string, sectionId: stri
   const data = await apiGetWithAuth<QuestionApiModel[]>(
     `/admin/checklists/${checklistId}/sections/${sectionId}/questions`,
   );
-  return data.map(mapQuestion);
+  return flattenQuestionTree(data).map(mapQuestion);
 }
 
 export async function createSection(checklistId: string, payload: Partial<ChecklistSection>): Promise<ChecklistSection> {
@@ -211,6 +325,44 @@ export async function deleteSection(checklistId: string, sectionId: string): Pro
   return apiDelete<{ message?: string }>(`/admin/checklists/${checklistId}/sections/${sectionId}`);
 }
 
+export async function reorderSections(
+  checklistId: string,
+  sectionOrders: Array<{ sectionId: string; order: number }>,
+): Promise<ChecklistSection[]> {
+  const uuidLike = /^(?:urn:uuid:)?[0-9a-fA-F-]{36}$/;
+  const invalid = sectionOrders.find((item) => !uuidLike.test(item.sectionId));
+  if (invalid) {
+    throw new Error(`Invalid section UUID for reorder: ${invalid.sectionId}`);
+  }
+
+  const endpoints = [
+    `/admin/checklists/${checklistId}/sections/reorder/`,
+    `/admin/checklists/${checklistId}/sections/reorder`,
+  ];
+  const payload = {
+    section_orders: sectionOrders.map((item) => ({
+      section_id: item.sectionId,
+      order: item.order,
+    })),
+  };
+
+  let lastError: unknown = null;
+  for (const endpoint of endpoints) {
+    try {
+      const data = await apiPatch<
+        SectionApiModel[],
+        {
+          section_orders: Array<{ section_id: string; order: number }>;
+        }
+      >(endpoint, payload);
+      return data.map(mapSection);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('Failed to reorder sections');
+}
+
 export async function createQuestion(
   checklistId: string,
   sectionId: string,
@@ -220,20 +372,50 @@ export async function createQuestion(
     QuestionApiModel,
     {
       question_id: string;
+      question_title: string;
+      parent_question_id?: string;
       note?: string;
       security_level: 'low' | 'medium' | 'high';
-      legal_requirement: string;
+      answer_logic: 'answer_only' | 'answer_with_adjustment';
+      audit_type: 'compliance';
+      legal_requirement_title: string;
+      legal_requirement_description: string;
       explanation: string;
       expected_implementation: string;
+      how_it_works: string;
+      guidance_score_4: string;
+      guidance_score_3: string;
+      guidance_score_2: string;
+      guidance_score_1: string;
+      recommendation_template: string;
+      evidence_enabled: boolean;
+      illustrative_image_id?: string;
+      answer_options: QuestionAnswerOptionPayload[];
       points?: number; // Optional: will be derived from security_level if not provided
     }
   >(`/admin/checklists/${checklistId}/sections/${sectionId}/questions`, {
     question_id: payload.questionId ?? '',
+    question_title: payload.questionTitle ?? payload.questionId ?? '',
+    parent_question_id: payload.parentQuestionId ?? undefined,
     note: payload.note ?? undefined,
     security_level: payload.securityLevel ?? 'low',
-    legal_requirement: payload.legalRequirement ?? '',
+    answer_logic: payload.answerLogic ?? 'answer_only',
+    audit_type: 'compliance',
+    legal_requirement_title: payload.legalRequirementTitle ?? payload.legalRequirement ?? '',
+    legal_requirement_description: payload.legalRequirementDescription ?? payload.legalRequirement ?? '',
     explanation: payload.explanation ?? '',
     expected_implementation: payload.expectedImplementation ?? '',
+    how_it_works: payload.howItWorks ?? '',
+    guidance_score_4: payload.guidanceScore4 ?? '',
+    guidance_score_3: payload.guidanceScore3 ?? '',
+    guidance_score_2: payload.guidanceScore2 ?? '',
+    guidance_score_1: payload.guidanceScore1 ?? '',
+    recommendation_template: payload.recommendationTemplate ?? '',
+    evidence_enabled: payload.evidenceEnabled ?? false,
+    illustrative_image_id: payload.illustrativeImageId ?? undefined,
+    answer_options: payload.answerOptions?.length
+      ? payload.answerOptions.map(mapAnswerOption)
+      : buildDefaultAnswerOptions(payload.illustrativeImageId ?? undefined),
     points: payload.points, // Optional
   });
   return mapQuestion(data);
@@ -260,21 +442,51 @@ export async function updateQuestion(
     QuestionApiModel,
     {
       question_id?: string;
+      question_title?: string;
+      parent_question_id?: string;
       note?: string;
       security_level?: 'low' | 'medium' | 'high';
-      legal_requirement?: string;
+      answer_logic?: 'answer_only' | 'answer_with_adjustment';
+      audit_type?: 'compliance';
+      legal_requirement_title?: string;
+      legal_requirement_description?: string;
       explanation?: string;
       expected_implementation?: string;
+      how_it_works?: string;
+      guidance_score_4?: string;
+      guidance_score_3?: string;
+      guidance_score_2?: string;
+      guidance_score_1?: string;
+      recommendation_template?: string;
+      evidence_enabled?: boolean;
+      illustrative_image_id?: string;
+      answer_options?: QuestionAnswerOptionPayload[];
       points?: number;
       order?: number;
     }
   >(`/admin/checklists/${checklistId}/sections/${sectionId}/questions/${questionId}`, {
     question_id: payload.questionId,
+    question_title: payload.questionTitle ?? payload.questionId,
+    parent_question_id: payload.parentQuestionId ?? undefined,
     note: payload.note ?? undefined,
     security_level: payload.securityLevel,
-    legal_requirement: payload.legalRequirement,
+    answer_logic: payload.answerLogic ?? 'answer_only',
+    audit_type: 'compliance',
+    legal_requirement_title: payload.legalRequirementTitle ?? payload.legalRequirement,
+    legal_requirement_description: payload.legalRequirementDescription ?? payload.legalRequirement,
     explanation: payload.explanation,
     expected_implementation: payload.expectedImplementation,
+    how_it_works: payload.howItWorks,
+    guidance_score_4: payload.guidanceScore4 ?? '',
+    guidance_score_3: payload.guidanceScore3 ?? '',
+    guidance_score_2: payload.guidanceScore2 ?? '',
+    guidance_score_1: payload.guidanceScore1 ?? '',
+    recommendation_template: payload.recommendationTemplate ?? '',
+    evidence_enabled: payload.evidenceEnabled ?? false,
+    illustrative_image_id: payload.illustrativeImageId ?? undefined,
+    answer_options: payload.answerOptions?.length
+      ? payload.answerOptions.map(mapAnswerOption)
+      : buildDefaultAnswerOptions(payload.illustrativeImageId ?? undefined),
     points: payload.points,
   });
   return mapQuestion(data);

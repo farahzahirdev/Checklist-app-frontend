@@ -70,11 +70,12 @@ function resolveToken(auth?: ApiAuth): string | null {
   return window.localStorage.getItem('checklist_access_token');
 }
 
-function buildHeaders(auth?: ApiAuth): Record<string, string> {
+function buildHeaders(auth?: ApiAuth, options?: { includeJsonContentType?: boolean }): Record<string, string> {
   const token = resolveToken(auth);
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
+  const headers: Record<string, string> = {};
+  if (options?.includeJsonContentType !== false) {
+    headers['Content-Type'] = 'application/json';
+  }
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -105,6 +106,27 @@ export async function apiPost<TResponse, TPayload>(
     method: 'POST',
     headers: buildHeaders(auth),
     body: JSON.stringify(payload),
+    cache: 'no-store',
+  });
+
+  const raw = await response.text();
+
+  if (!response.ok) {
+    throw new Error(errorMessageFromResponse(response.status, raw));
+  }
+
+  return (raw ? JSON.parse(raw) : null) as TResponse;
+}
+
+export async function apiPostFormData<TResponse>(
+  path: string,
+  payload: FormData,
+  auth?: ApiAuth,
+): Promise<TResponse> {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+    method: 'POST',
+    headers: buildHeaders(auth, { includeJsonContentType: false }),
+    body: payload,
     cache: 'no-store',
   });
 

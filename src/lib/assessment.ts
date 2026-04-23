@@ -1,4 +1,5 @@
-import { apiGetWithAuth, apiPost, apiPut } from '@/lib/api';
+import { ACCESS_TOKEN_STORAGE_KEY } from '@/lib/auth';
+import { apiGetWithAuth, apiPost, apiPut, getApiBaseUrl } from '@/lib/api';
 
 export type AssessmentStatus = 'not_started' | 'in_progress' | 'submitted' | 'closed' | 'expired';
 
@@ -21,6 +22,46 @@ export async function startAssessment(payload: { checklist_id: string }) {
 export async function getCurrentAssessment(checklistId?: string) {
   const suffix = checklistId ? `?checklist_id=${encodeURIComponent(checklistId)}` : '';
   return apiGetWithAuth<AssessmentSessionResponse>(`/assessment/current${suffix}`);
+}
+
+export type AssessmentDetailAnswer = {
+  answer?: string | null;
+  note_text?: string | null;
+};
+
+export type AssessmentDetailSubQuestion = {
+  id: string;
+  question_id?: string;
+  legal_requirement?: string;
+  expected_implementation?: string;
+  current_answer?: AssessmentDetailAnswer | null;
+};
+
+export type AssessmentDetailQuestion = {
+  id: string;
+  question_id?: string;
+  legal_requirement?: string;
+  expected_implementation?: string;
+  evidence_enabled?: boolean;
+  current_answer?: AssessmentDetailAnswer | null;
+  sub_questions?: AssessmentDetailSubQuestion[];
+};
+
+export type AssessmentDetailSection = {
+  id: string;
+  title: string;
+  order: number;
+  questions: AssessmentDetailQuestion[];
+};
+
+export type AssessmentCurrentDetailResponse = AssessmentSessionResponse & {
+  checklist_title: string;
+  sections: AssessmentDetailSection[];
+};
+
+export async function getCurrentAssessmentDetail(checklistId?: string) {
+  const suffix = checklistId ? `?checklist_id=${encodeURIComponent(checklistId)}` : '';
+  return apiGetWithAuth<AssessmentCurrentDetailResponse>(`/assessment/current/detail${suffix}`);
 }
 
 export type AssessmentAnswerResponse = {
@@ -48,4 +89,23 @@ export type AssessmentSubmitResponse = {
 
 export async function submitAssessment(assessmentId: string) {
   return apiPost<AssessmentSubmitResponse, Record<string, never>>(`/assessment/${assessmentId}/submit`, {});
+}
+
+export async function uploadAssessmentEvidence(assessmentId: string, questionId: string, file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const token = typeof window !== 'undefined' ? window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) : null;
+  const response = await fetch(
+    `${getApiBaseUrl()}/assessment/${assessmentId}/evidence?question_id=${encodeURIComponent(questionId)}`,
+    {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: formData,
+    },
+  );
+  const raw = await response.text();
+  if (!response.ok) {
+    throw new Error(raw || `Request failed with status ${response.status}`);
+  }
+  return raw ? (JSON.parse(raw) as string) : '';
 }

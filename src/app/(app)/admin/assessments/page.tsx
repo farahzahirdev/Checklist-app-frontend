@@ -12,13 +12,23 @@ const statusClass: Record<string, string> = {
   Expired: 'bg-[#ffedf0] text-[#cc5163]',
 };
 
-export default function AdminAssessmentsPage() {
+type AssessmentsPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function AdminAssessmentsPage({ searchParams }: AssessmentsPageProps) {
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const statusFilterRaw = resolvedSearchParams.status;
+  const statusFilter = (Array.isArray(statusFilterRaw) ? statusFilterRaw[0] : statusFilterRaw)?.trim() ?? '';
+  const filteredRows = statusFilter ? assessmentRows.filter((row) => row.status.toLowerCase() === statusFilter.toLowerCase()) : assessmentRows;
+
   return (
     <section className="space-y-4">
       <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Assessments</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#1f2d45]">Assessment Management</h1>
         <p className="mt-1 text-sm text-[#607594]">Track active assessment windows, review queues, and expirations.</p>
+        {statusFilter ? <p className="mt-2 text-sm font-semibold text-[#3e69b0]">Filtered by status: {statusFilter}</p> : null}
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -64,7 +74,7 @@ export default function AdminAssessmentsPage() {
               </tr>
             </thead>
             <tbody>
-              {assessmentRows.map((row) => (
+              {filteredRows.map((row) => (
                 <tr key={`${row.company}-${row.checklist}`} className="border-b border-[#edf2f9] last:border-0">
                   <td className="py-3 pr-4 font-semibold text-[#25375a]">{row.company}</td>
                   <td className="py-3 pr-4 text-[#5f7395]">{row.checklist}</td>
@@ -81,6 +91,13 @@ export default function AdminAssessmentsPage() {
                   </td>
                 </tr>
               ))}
+              {!filteredRows.length ? (
+                <tr>
+                  <td className="py-3 text-[#607594]" colSpan={7}>
+                    No assessments match the selected status.
+                  </td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>

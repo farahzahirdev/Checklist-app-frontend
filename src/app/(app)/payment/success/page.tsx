@@ -124,51 +124,38 @@ export default function PaymentSuccessPage() {
   }
 
   return (
-    <section className="space-y-6">
+    <section className="mx-auto w-full max-w-5xl space-y-6 px-6 md:px-8">
       <header className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Payment complete</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#6c83a8]">Payment Complete</p>
         <h1 className="text-3xl font-semibold text-[#1f2d45]">Select your checklist</h1>
-        <p className="text-sm text-[#4f6281]">
-          Choose one checklist to activate your 7-day customer access window.
-        </p>
+        <p className="max-w-2xl text-sm text-[#4f6281]">Choose one checklist to activate your 7-day customer access window.</p>
       </header>
 
       <article
-        className={`rounded-2xl border p-5 ${
-          paymentStatus === 'succeeded'
-            ? 'border-[#2f4d82] text-white'
-            : 'border-white/15 bg-black/25'
+        className={`border p-6 shadow-sm ${
+          paymentStatus === 'succeeded' ? 'border-[#2f4d82] text-white' : 'border-[#dbe4f4] bg-white text-[#2a3d5f]'
         }`}
-        style={
-          paymentStatus === 'succeeded'
-            ? { background: 'linear-gradient(180deg, #06142f, #071a39)' }
-            : undefined
-        }
+        style={paymentStatus === 'succeeded' ? { background: 'linear-gradient(180deg, #06142f, #071a39)' } : undefined}
       >
-        {loading ? <p className="text-sm text-zinc-200">Checking payment status...</p> : null}
-        {statusMessage ? <p className="text-sm text-zinc-200">{statusMessage}</p> : null}
+        {loading ? <p className="text-sm text-inherit/90">Checking payment status...</p> : null}
+        {statusMessage ? <p className="text-sm text-inherit/90">{statusMessage}</p> : null}
 
         {!loading && paymentStatus === 'succeeded' && !selectedChecklistFromStatus && !checklists.length ? (
-          <p className="text-sm text-amber-200">No published checklists are available yet.</p>
+          <p className="mt-3 text-sm text-amber-200">No published checklists are available yet.</p>
         ) : null}
 
         {paymentStatus === 'succeeded' && selectedChecklistFromStatus ? (
-          <div
-            className="space-y-3 rounded-xl border border-[#2f4d82] p-4"
-            style={{ background: 'linear-gradient(180deg, #06142f, #071a39)' }}
-          >
-            <div className="rounded-lg border border-white/20 bg-white/10 p-3 text-sm text-white">
-              <p className="font-semibold text-white">{selectedChecklistFromStatus.title}</p>
-              <p className="mt-1 text-white">Selected checklist version: v{selectedChecklistFromStatus.version}</p>
-              {accessExpiresAt ? (
-                <p className="mt-1 text-white">Access active until: {new Date(accessExpiresAt).toLocaleString()}</p>
-              ) : null}
+          <div className="mt-4 space-y-4">
+            <div className="border border-white/20 bg-white/10 p-4 text-sm">
+              <p className="text-lg font-semibold">{selectedChecklistFromStatus.title}</p>
+              <p className="mt-1 text-white/90">Selected checklist version: v{selectedChecklistFromStatus.version}</p>
+              {accessExpiresAt ? <p className="mt-1 text-white/90">Access active until: {new Date(accessExpiresAt).toLocaleString()}</p> : null}
             </div>
             <div className="flex flex-wrap gap-2 text-sm">
-              <Link href="/access" className="rounded-lg border border-[#7fb0ff] bg-[#1f7bff]/25 px-3 py-2 text-white hover:bg-[#1f7bff]/35">
+              <Link href="/access" className="border border-[#7fb0ff] bg-[#1f7bff]/25 px-3 py-2 text-white hover:bg-[#1f7bff]/35">
                 Go to Access
               </Link>
-              <Link href="/dashboard" className="rounded-lg border border-white/30 px-3 py-2 text-white hover:bg-white/10">
+              <Link href="/dashboard" className="border border-white/30 px-3 py-2 text-white hover:bg-white/10">
                 Dashboard
               </Link>
             </div>
@@ -176,13 +163,13 @@ export default function PaymentSuccessPage() {
         ) : null}
 
         {paymentStatus === 'succeeded' && !selectedChecklistFromStatus && checklists.length ? (
-          <div className="space-y-3">
+          <div className="mt-4 max-w-2xl space-y-4">
             <label className="block space-y-2 text-sm">
-              <span className="text-zinc-200">Checklist</span>
+              <span className="font-medium text-white">Checklist</span>
               <select
                 value={selectedChecklistId}
                 onChange={(event) => setSelectedChecklistId(event.target.value)}
-                className="w-full rounded-lg border border-white/20 bg-[#0d1d3a] px-3 py-2 text-white outline-none ring-cyan-300/50 focus:ring"
+                className="w-full cursor-pointer border border-white/20 bg-[#0d1d3a] px-3 py-2 text-white outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
               >
                 {checklists.map((item) => (
                   <option key={item.id} value={item.id}>
@@ -193,7 +180,7 @@ export default function PaymentSuccessPage() {
             </label>
 
             {selectedChecklist ? (
-              <div className="rounded-lg border border-white/15 bg-white/5 p-3 text-sm text-zinc-200">
+              <div className="border border-white/15 bg-white/5 p-4 text-sm">
                 <p className="font-semibold text-white">{selectedChecklist.title}</p>
                 <p className="mt-1 text-zinc-300">
                   Type: {selectedChecklist.checklist_type.name} ({selectedChecklist.checklist_type.code})
@@ -205,7 +192,7 @@ export default function PaymentSuccessPage() {
               type="button"
               disabled={submitting || paymentStatus !== 'succeeded'}
               onClick={() => void onSelectChecklist()}
-              className="rounded-lg border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 text-sm text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 text-sm text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? 'Activating access...' : 'Activate 7-day checklist access'}
             </button>
@@ -216,12 +203,12 @@ export default function PaymentSuccessPage() {
         {error ? <p className="mt-3 text-sm text-rose-300">{error}</p> : null}
       </article>
 
-      {(paymentStatus === 'failed' || Boolean(error)) ? (
+      {paymentStatus === 'failed' || Boolean(error) ? (
         <div className="flex flex-wrap gap-2 text-sm">
-          <Link href="/payment" className="rounded-lg border border-white/20 px-3 py-2 text-zinc-100 hover:bg-white/10">
+          <Link href="/payment" className="border border-[#d4dced] px-3 py-2 text-[#2a3d5f] hover:bg-[#f6f9ff]">
             Start checkout
           </Link>
-          <Link href="/dashboard" className="rounded-lg border border-white/20 px-3 py-2 text-zinc-100 hover:bg-white/10">
+          <Link href="/dashboard" className="border border-[#d4dced] px-3 py-2 text-[#2a3d5f] hover:bg-[#f6f9ff]">
             Dashboard
           </Link>
         </div>

@@ -1,10 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { EvidenceUploadHint } from '@/components/evidence/evidence-upload-hint';
-import { mockQuestions, mockSections } from '@/lib/checklist-mocks';
-import { getCurrentAssessment, saveAssessmentAnswer, submitAssessment } from '@/lib/assessment';
+import {
+  getCurrentAssessment,
+  getCurrentAssessmentDetail,
+  saveAssessmentAnswer,
+  submitAssessment,
+  uploadAssessmentEvidence,
+  type AssessmentCurrentDetailResponse,
+} from '@/lib/assessment';
+import { isAllowedEvidenceFileSize, isAllowedEvidenceMimeType } from '@/lib/upload-rules';
 
 type LocalAnswer = {
   answer: string;
@@ -17,19 +24,58 @@ function isUuid(value: string) {
 
 export default function AssessmentPage() {
   const [assessmentId, setAssessmentId] = useState('');
-  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+  const [assessmentDetail, setAssessmentDetail] = useState<AssessmentCurrentDetailResponse | null>(null);
+  const [selectedSectionId, setSelectedSectionId] = useState('');
+  const [activeQuestionId, setActiveQuestionId] = useState('');
   const [answers, setAnswers] = useState<Record<string, LocalAnswer>>({});
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [selectedEvidenceFile, setSelectedEvidenceFile] = useState<File | null>(null);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
 
-  const activeQuestion = mockQuestions[activeQuestionIndex] ?? mockQuestions[0];
+  const allQuestions = useMemo(
+    () =>
+      (assessmentDetail?.sections ?? []).flatMap((section) => section.questions.map((question) => ({ ...question, sectionId: section.id }))),
+    [assessmentDetail],
+  );
+  const activeQuestion =
+    allQuestions.find((question) => question.id === activeQuestionId) ??
+    allQuestions.find((question) => question.sectionId === selectedSectionId) ??
+    allQuestions[0];
   const activeAnswer = activeQuestion ? answers[activeQuestion.id] : undefined;
+  const isEvidenceEnabledForActiveQuestion = useMemo(() => {
+    if (!activeQuestion) {
+      return false;
+    }
+
+    // Backend responses may expose this flag in different shapes.
+    const questionWithFlexibleEvidence = activeQuestion as typeof activeQuestion & {
+      evidenceEnabled?: boolean;
+      evidence_rule?: unknown;
+    };
+
+    if (typeof questionWithFlexibleEvidence.evidence_enabled === 'boolean') {
+      return questionWithFlexibleEvidence.evidence_enabled;
+    }
+    if (typeof questionWithFlexibleEvidence.evidenceEnabled === 'boolean') {
+      return questionWithFlexibleEvidence.evidenceEnabled;
+    }
+    if (questionWithFlexibleEvidence.evidence_rule) {
+      return true;
+    }
+
+    // Keep current behavior if backend doesn't send evidence metadata yet.
+    return true;
+  }, [activeQuestion]);
 
   const questionsInActiveSection = useMemo(() => {
-    const activeSection = mockSections[0];
-    return mockQuestions.filter((item) => item.sectionId === activeSection.id);
-  }, []);
+    if (!selectedSectionId) {
+      return [];
+    }
+    return allQuestions.filter((item) => item.sectionId === selectedSectionId);
+  }, [allQuestions, selectedSectionId]);
 
   async function ensureCurrentAssessmentId() {
     if (assessmentId) {
@@ -39,6 +85,42 @@ export default function AssessmentPage() {
     setAssessmentId(current.assessment_id);
     return current.assessment_id;
   }
+
+  async function loadAssessmentDetail() {
+    setInitialLoading(true);
+    try {
+      const detail = await getCurrentAssessmentDetail();
+      setAssessmentDetail(detail);
+      setAssessmentId(detail.assessment_id);
+      const initialAnswers: Record<string, LocalAnswer> = {};
+      detail.sections.forEach((section) => {
+        section.questions.forEach((question) => {
+          initialAnswers[question.id] = {
+            answer: (question.current_answer?.answer ?? '').toLowerCase(),
+            note_text: question.current_answer?.note_text ?? '',
+          };
+        });
+      });
+      setAnswers(initialAnswers);
+      const firstSection = detail.sections[0];
+      const firstQuestion = firstSection?.questions[0];
+      setSelectedSectionId(firstSection?.id ?? '');
+      setActiveQuestionId(firstQuestion?.id ?? '');
+      setError('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load assessment details.');
+    } finally {
+      setInitialLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadAssessmentDetail();
+  }, []);
+
+  useEffect(() => {
+    setSelectedEvidenceFile(null);
+  }, [activeQuestionId]);
 
   async function onSaveAnswer() {
     if (!activeQuestion) {
@@ -65,6 +147,7 @@ export default function AssessmentPage() {
         note_text: payload.note_text || undefined,
       });
       setMessage(`Answer saved. Completion: ${result.completion_percent}%`);
+      await loadAssessmentDetail();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save answer.');
     } finally {
@@ -80,10 +163,48 @@ export default function AssessmentPage() {
       const currentAssessmentId = await ensureCurrentAssessmentId();
       const result = await submitAssessment(currentAssessmentId);
       setMessage(`Assessment submitted. Completion: ${result.completion_percent}%`);
+      await loadAssessmentDetail();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit assessment.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function onUploadEvidence() {
+    if (!activeQuestion) {
+      setError('No active question found.');
+      return;
+    }
+    if (!selectedEvidenceFile) {
+      setError('Choose an evidence file before uploading.');
+      return;
+    }
+    if (!isAllowedEvidenceMimeType(selectedEvidenceFile.type)) {
+      setError('Unsupported evidence file type.');
+      return;
+    }
+    if (!isAllowedEvidenceFileSize(selectedEvidenceFile.size)) {
+      setError('Evidence file is too large.');
+      return;
+    }
+    if (!isUuid(activeQuestion.id)) {
+      setError('Question ID is not a backend UUID yet. Connect backend question IDs before uploading evidence.');
+      return;
+    }
+
+    setError('');
+    setMessage('');
+    setEvidenceLoading(true);
+    try {
+      const currentAssessmentId = await ensureCurrentAssessmentId();
+      await uploadAssessmentEvidence(currentAssessmentId, activeQuestion.id, selectedEvidenceFile);
+      setMessage('Evidence uploaded successfully.');
+      setSelectedEvidenceFile(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload evidence.');
+    } finally {
+      setEvidenceLoading(false);
     }
   }
 
@@ -101,14 +222,32 @@ export default function AssessmentPage() {
         </p>
       </header>
 
+      {initialLoading ? <p className="text-sm text-[#607594]">Loading assessment details...</p> : null}
+
       <section className="grid gap-5 lg:grid-cols-[280px_1fr]">
         <aside className="rounded-2xl border border-[#dbe4f4] bg-white p-4 shadow-sm">
           <h3 className="text-lg font-semibold text-[#243555]">Sections</h3>
           <ul className="mt-3 space-y-2 text-sm">
-            {mockSections.map((section) => (
-              <li key={section.id} className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-2 text-[#3f5677]">
-                {section.order}. {section.title}
-              </li>
+            {(assessmentDetail?.sections ?? []).map((section) => (
+                <li key={section.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedSectionId(section.id);
+                      const firstQuestionInSection = section.questions[0];
+                      if (firstQuestionInSection) {
+                        setActiveQuestionId(firstQuestionInSection.id);
+                      }
+                    }}
+                    className={`w-full rounded-lg border p-2 text-left ${
+                      selectedSectionId === section.id
+                        ? 'border-[#7aa5e8] bg-[#edf4ff] text-[#2f4f83]'
+                        : 'border-[#e2e8f5] bg-[#f7f9fe] text-[#3f5677]'
+                    }`}
+                  >
+                    {section.order}. {section.title}
+                  </button>
+                </li>
             ))}
           </ul>
         </aside>
@@ -116,9 +255,19 @@ export default function AssessmentPage() {
         <div className="space-y-5">
           <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
             <h3 className="text-lg font-semibold text-[#243555]">Current Question</h3>
-            <p className="mt-3 text-sm text-[#4f6281]">Question ID: {activeQuestion.questionId}</p>
-            <p className="mt-2 text-sm text-[#4f6281]">Legal Requirement: {activeQuestion.legalRequirement}</p>
-            <p className="mt-2 text-sm text-[#607594]">Expected Implementation: {activeQuestion.expectedImplementation}</p>
+            {selectedSectionId && questionsInActiveSection.length === 0 ? (
+              <div className="mt-3 rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] px-3 py-3 text-sm text-[#607594]">
+                No questions for this section yet. Select another section from the left panel.
+              </div>
+            ) : activeQuestion ? (
+              <>
+                <p className="mt-3 text-sm text-[#4f6281]">Question ID: {activeQuestion.question_id ?? activeQuestion.id}</p>
+                <p className="mt-2 text-sm text-[#4f6281]">Legal Requirement: {activeQuestion.legal_requirement ?? '-'}</p>
+                <p className="mt-2 text-sm text-[#607594]">Expected Implementation: {activeQuestion.expected_implementation ?? '-'}</p>
+              </>
+            ) : (
+              <p className="mt-3 text-sm text-[#607594]">No questions available for this assessment.</p>
+            )}
 
             <div className="mt-4 space-y-3">
               <div className="flex flex-wrap gap-2 text-sm">
@@ -126,15 +275,17 @@ export default function AssessmentPage() {
                   <button
                     key={value}
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      if (!activeQuestion) return;
                       setAnswers((prev) => ({
                         ...prev,
                         [activeQuestion.id]: {
                           answer: value,
                           note_text: prev[activeQuestion.id]?.note_text ?? '',
                         },
-                      }))
-                    }
+                      }));
+                    }}
+                    disabled={!activeQuestion}
                     className={`rounded-lg border px-3 py-1.5 ${
                       activeAnswer?.answer === value
                         ? 'border-[#7aa5e8] bg-[#edf4ff] text-[#2f4f83]'
@@ -149,17 +300,20 @@ export default function AssessmentPage() {
               <textarea
                 value={activeAnswer?.note_text ?? ''}
                 onChange={(event) =>
-                  setAnswers((prev) => ({
-                    ...prev,
-                    [activeQuestion.id]: {
-                      answer: prev[activeQuestion.id]?.answer ?? '',
-                      note_text: event.target.value,
-                    },
-                  }))
+                  activeQuestion
+                    ? setAnswers((prev) => ({
+                        ...prev,
+                        [activeQuestion.id]: {
+                          answer: prev[activeQuestion.id]?.answer ?? '',
+                          note_text: event.target.value,
+                        },
+                      }))
+                    : null
                 }
                 placeholder="Optional note for auditor context"
                 className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
                 rows={3}
+                disabled={!activeQuestion}
               />
             </div>
 
@@ -167,7 +321,7 @@ export default function AssessmentPage() {
               <button
                 type="button"
                 onClick={() => void onSaveAnswer()}
-                disabled={loading}
+                disabled={loading || !activeQuestion}
                 className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Saving…' : 'Save Answer'}
@@ -175,12 +329,41 @@ export default function AssessmentPage() {
               <button
                 type="button"
                 onClick={() => void onSubmitAssessment()}
-                disabled={loading}
+                disabled={loading || !activeQuestion}
                 className="rounded-lg border border-[#2f9960] bg-[#e9f8ef] px-3 py-2 text-sm text-[#2f9960] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Submitting…' : 'Submit Assessment'}
               </button>
-              {assessmentId ? <p className="self-center text-xs text-[#607594]">Session: {assessmentId}</p> : null}
+            </div>
+
+            <div className="mt-4 rounded-lg border border-[#dbe4f4] bg-[#f9fbff] p-3">
+              <p className="text-sm font-medium text-[#243555]">Evidence upload</p>
+              {isEvidenceEnabledForActiveQuestion ? (
+                <>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <input
+                      type="file"
+                      onChange={(event) => setSelectedEvidenceFile(event.target.files?.[0] ?? null)}
+                      className="max-w-full rounded-lg border border-[#d4dced] bg-white px-2 py-1 text-xs text-[#3f5677]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void onUploadEvidence()}
+                      disabled={evidenceLoading || !selectedEvidenceFile || !activeQuestion}
+                      className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                    >
+                      {evidenceLoading ? 'Uploading…' : 'Upload evidence'}
+                    </button>
+                  </div>
+                  {selectedEvidenceFile ? (
+                    <p className="mt-2 text-xs text-[#607594]">
+                      Selected: {selectedEvidenceFile.name}
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <p className="mt-2 text-xs text-[#607594]">Evidence is disabled for this question.</p>
+              )}
             </div>
 
             {message ? <p className="mt-3 text-sm text-[#2f9960]">{message}</p> : null}
@@ -190,20 +373,28 @@ export default function AssessmentPage() {
           <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
             <h3 className="text-sm font-semibold text-[#243555]">Question Navigator</h3>
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              {questionsInActiveSection.map((question, idx) => (
-                <button
-                  key={question.id}
-                  type="button"
-                  onClick={() => setActiveQuestionIndex(idx)}
-                  className={`rounded-md border px-2 py-1 ${
-                    idx === activeQuestionIndex
-                      ? 'border-[#7aa5e8] bg-[#edf4ff] text-[#2f4f83]'
-                      : 'border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f6f9ff]'
-                  }`}
-                >
-                  {question.questionId}
-                </button>
-              ))}
+              {selectedSectionId && questionsInActiveSection.length === 0 ? (
+                <p className="text-sm text-[#607594]">No questions for this section.</p>
+              ) : null}
+              {questionsInActiveSection.map((question) => {
+                const isActive = question.id === activeQuestion?.id;
+                return (
+                  <button
+                    key={question.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveQuestionId(question.id);
+                    }}
+                    className={`rounded-md border px-2 py-1 ${
+                      isActive
+                        ? 'border-[#7aa5e8] bg-[#edf4ff] text-[#2f4f83]'
+                        : 'border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f6f9ff]'
+                    }`}
+                  >
+                    {question.question_id ?? question.id}
+                  </button>
+                );
+              })}
             </div>
           </article>
 

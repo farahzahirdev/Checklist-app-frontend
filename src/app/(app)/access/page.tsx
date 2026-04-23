@@ -43,6 +43,16 @@ export default function AccessPage() {
     () => checklists.find((checklist) => checklist.id === checklistId)?.title ?? '',
     [checklistId, checklists],
   );
+  const orderedChecklists = useMemo(() => {
+    if (!checklistId) {
+      return checklists;
+    }
+    const selected = checklists.find((checklist) => checklist.id === checklistId);
+    if (!selected) {
+      return checklists;
+    }
+    return [selected, ...checklists.filter((checklist) => checklist.id !== checklistId)];
+  }, [checklistId, checklists]);
 
   useEffect(() => {
     if (checklistIdFromQuery) {
@@ -159,11 +169,19 @@ export default function AccessPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#4a6ea8]">Remaining time</p>
           <p className="mt-1 text-3xl font-semibold text-[#1f2d45]">{remaining}</p>
           <div className="mt-3 grid gap-2 text-sm text-[#445c7e] md:grid-cols-3">
+            {selectedChecklistName ? (
+              <p>
+                <span className="font-semibold">Checklist:</span> {selectedChecklistName}
+              </p>
+            ) : null}
             <p>
               <span className="font-semibold">Status:</span> {assessment.status}
             </p>
             <p>
               <span className="font-semibold">Completion:</span> {assessment.completion_percent}%
+            </p>
+            <p>
+              <span className="font-semibold">Started:</span> {new Date(assessment.started_at).toLocaleString()}
             </p>
             <p>
               <span className="font-semibold">Expires:</span> {new Date(assessment.expires_at).toLocaleString()}
@@ -197,8 +215,8 @@ export default function AccessPage() {
               onChange={(event) => setChecklistId(event.target.value)}
               className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
             >
-              <option value="">Select checklist</option>
-              {checklists.map((checklist) => (
+              {!checklistId ? <option value="">Select checklist</option> : null}
+              {orderedChecklists.map((checklist) => (
                 <option key={checklist.id} value={checklist.id}>
                   {checklist.title}
                 </option>
@@ -234,16 +252,6 @@ export default function AccessPage() {
           </button>
         </div>
 
-        {assessment ? (
-          <div className="mt-4 space-y-1 text-sm text-[#445c7e]">
-            {selectedChecklistName ? <p>Checklist: {selectedChecklistName}</p> : null}
-            <p>Status: {assessment.status}</p>
-            <p>Started At: {assessment.started_at}</p>
-            <p>Expires At: {assessment.expires_at}</p>
-            <p>Completion: {assessment.completion_percent}%</p>
-            <p className="font-semibold text-[#2f4f83]">{remaining}</p>
-          </div>
-        ) : null}
         {message ? <p className="mt-3 text-sm text-[#2f9960]">{message}</p> : null}
         {error ? <p className="mt-3 text-sm text-[#c43e53]">{error}</p> : null}
       </article>

@@ -9,6 +9,15 @@ export interface EvidenceRule {
   maxFileSizeBytes: number;
 }
 
+export interface ChecklistAnswerOption {
+  position: number;
+  label: string;
+  score: number;
+  choiceCode: string;
+  description: string;
+  illustrativeImageId?: string | null;
+}
+
 export interface Checklist {
   id: string;
   title: string;
@@ -32,16 +41,30 @@ export interface ChecklistQuestion {
   checklistId: string;
   sectionId: string;
   questionId: string;
+  questionTitle?: string;
+  parentQuestionId?: string | null;
+  illustrativeImageId?: string | null;
   securityLevel: RiskLevel;
+  answerLogic?: 'answer_only' | 'answer_with_adjustment';
   auditType: AuditType;
+  legalRequirementTitle?: string;
+  legalRequirementDescription?: string;
   legalRequirement: string;
   explanation: string;
   expectedImplementation: string;
+  howItWorks?: string;
+  guidanceScore4?: string;
+  guidanceScore3?: string;
+  guidanceScore2?: string;
+  guidanceScore1?: string;
+  recommendationTemplate?: string;
+  evidenceEnabled?: boolean;
   points: number;
   customerAnswer: string | null;
   customerAnswerStatus: AnswerStatus;
   note: string | null;
   evidenceRule: EvidenceRule;
+  answerOptions?: ChecklistAnswerOption[];
 }
 
 export interface EvidenceItem {
