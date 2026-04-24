@@ -29,22 +29,39 @@ export type AssessmentDetailAnswer = {
   note_text?: string | null;
 };
 
-export type AssessmentDetailSubQuestion = {
-  id: string;
-  question_id?: string;
-  legal_requirement?: string;
-  expected_implementation?: string;
-  current_answer?: AssessmentDetailAnswer | null;
+export type AssessmentDetailAnswerOption = {
+  position?: number;
+  label?: string;
+  score?: number;
+  choice_code?: string;
+  description?: string;
+  illustrative_image_id?: string | null;
 };
 
 export type AssessmentDetailQuestion = {
   id: string;
   question_id?: string;
+  question_title?: string | null;
+  questions_title?: string | null;
+  security_level?: 'low' | 'medium' | 'high' | string;
+  audit_type?: string;
+  legal_requirement_title?: string | null;
+  legal_requirement_description?: string | null;
   legal_requirement?: string;
+  explanation?: string;
   expected_implementation?: string;
-  evidence_enabled?: boolean;
+  illustrative_image_id?: string | null;
+  answer_options?: AssessmentDetailAnswerOption[];
   current_answer?: AssessmentDetailAnswer | null;
-  sub_questions?: AssessmentDetailSubQuestion[];
+  admin_note?: string | null;
+  user_note?: string | null;
+  note_enabled?: boolean;
+  evidence_enabled?: boolean;
+  evidence_rule?: {
+    allowed_mime_types?: string[];
+    max_file_size_bytes?: number;
+  } | null;
+  sub_questions?: AssessmentDetailQuestion[];
 };
 
 export type AssessmentDetailSection = {
@@ -62,6 +79,10 @@ export type AssessmentCurrentDetailResponse = AssessmentSessionResponse & {
 export async function getCurrentAssessmentDetail(checklistId?: string) {
   const suffix = checklistId ? `?checklist_id=${encodeURIComponent(checklistId)}` : '';
   return apiGetWithAuth<AssessmentCurrentDetailResponse>(`/assessment/current/detail${suffix}`);
+}
+
+export async function getMediaPreviewUrl(mediaId: string) {
+  return apiGetWithAuth<string>(`/media/${encodeURIComponent(mediaId)}/preview`);
 }
 
 export type AssessmentAnswerResponse = {

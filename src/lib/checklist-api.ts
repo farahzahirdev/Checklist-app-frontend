@@ -11,6 +11,20 @@ type ChecklistApiModel = {
   status: 'draft' | 'published';
   created_at: string;
   updated_at: string;
+  warning?: string | null;
+  pricing?: {
+    price_id: string;
+    amount_cents: number | string;
+    currency: string;
+  } | null;
+  stripe_info?: {
+    product_id?: string | null;
+    price_id?: string | null;
+    price_amount_cents?: number | string | null;
+    price_currency?: string | null;
+    price_available: boolean;
+    price_status: string;
+  } | null;
 };
 
 export type CustomerChecklist = {
@@ -26,6 +40,12 @@ export type CustomerChecklist = {
   status: string;
   created_at: string;
   updated_at: string;
+  warning?: string | null;
+  pricing?: {
+    price_id: string;
+    amount_cents: number;
+    currency: string;
+  } | null;
 };
 
 type SectionApiModel = {
@@ -45,7 +65,7 @@ type QuestionApiModel = {
   illustrative_image_id?: string | null;
   security_level: 'low' | 'medium' | 'high';
   answer_logic?: 'answer_only' | 'answer_with_adjustment';
-  audit_type: 'compliance';
+  audit_type: string;
   legal_requirement?: string;
   legal_requirement_title?: string;
   legal_requirement_description?: string;
@@ -58,6 +78,7 @@ type QuestionApiModel = {
   guidance_score_1?: string;
   recommendation_template?: string;
   evidence_enabled?: boolean;
+  note_enabled?: boolean;
   answer_options?: Array<{
     position: number;
     label: string;
@@ -84,6 +105,21 @@ type QuestionAnswerOptionPayload = {
   choice_code: string;
   description: string;
   illustrative_image_id?: string;
+};
+
+type SortOrder = 'asc' | 'desc';
+
+type AdminChecklistSortBy = 'created_at' | 'updated_at' | 'version' | 'status';
+type SectionSortBy = 'display_order' | 'section_code' | 'title';
+type QuestionSortBy = 'display_order' | 'question_id' | 'severity';
+type PublicChecklistSortBy = 'created_at' | 'updated_at' | 'version' | 'status';
+
+type ListQueryOptions<TSortBy extends string> = {
+  skip?: number;
+  limit?: number;
+  sortBy?: TSortBy;
+  sortOrder?: SortOrder;
+  search?: string;
 };
 
 function buildDefaultAnswerOptions(illustrativeImageId?: string): QuestionAnswerOptionPayload[] {
@@ -148,6 +184,15 @@ export type UploadedMedia = {
 };
 
 function mapChecklist(data: ChecklistApiModel): Checklist {
+  const toNullableNumber = (value: number | string | null | undefined): number | null => {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+  };
+
   return {
     id: data.id,
     title: data.title,
@@ -157,6 +202,24 @@ function mapChecklist(data: ChecklistApiModel): Checklist {
     status: data.status,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
+    warning: data.warning ?? null,
+    pricing: data.pricing
+      ? {
+          priceId: data.pricing.price_id,
+          amountCents: toNullableNumber(data.pricing.amount_cents) ?? 0,
+          currency: data.pricing.currency,
+        }
+      : null,
+    stripeInfo: data.stripe_info
+      ? {
+          productId: data.stripe_info.product_id ?? null,
+          priceId: data.stripe_info.price_id ?? null,
+          priceAmountCents: toNullableNumber(data.stripe_info.price_amount_cents),
+          priceCurrency: data.stripe_info.price_currency ?? null,
+          priceAvailable: data.stripe_info.price_available,
+          priceStatus: data.stripe_info.price_status,
+        }
+      : null,
   };
 }
 
@@ -193,6 +256,7 @@ function mapQuestion(data: QuestionApiModel): ChecklistQuestion {
     guidanceScore1: data.guidance_score_1,
     recommendationTemplate: data.recommendation_template,
     evidenceEnabled: data.evidence_enabled,
+    noteEnabled: data.note_enabled,
     points: data.points,
     customerAnswer: data.customer_answer,
     customerAnswerStatus: data.customer_answer_status,
@@ -222,15 +286,57 @@ function flattenQuestionTree(questions: QuestionApiModel[]): QuestionApiModel[] 
   return flattened;
 }
 
+function asArray<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (value && typeof value === 'object') {
+    const maybe = value as {
+      items?: unknown;
+      data?: unknown;
+      results?: unknown;
+      checklists?: unknown;
+      sections?: unknown;
+      questions?: unknown;
+      users?: unknown;
+      customers?: unknown;
+    };
+    if (Array.isArray(maybe.items)) return maybe.items as T[];
+    if (Array.isArray(maybe.data)) return maybe.data as T[];
+    if (Array.isArray(maybe.results)) return maybe.results as T[];
+    if (Array.isArray(maybe.checklists)) return maybe.checklists as T[];
+    if (Array.isArray(maybe.sections)) return maybe.sections as T[];
+    if (Array.isArray(maybe.questions)) return maybe.questions as T[];
+    if (Array.isArray(maybe.users)) return maybe.users as T[];
+    if (Array.isArray(maybe.customers)) return maybe.customers as T[];
+  }
+  return [];
+}
+
+function withListQuery<TSortBy extends string>(path: string, options?: ListQueryOptions<TSortBy>): string {
+  if (!options) return path;
+
+  const params = new URLSearchParams();
+  if (typeof options.skip === 'number') params.set('skip', String(options.skip));
+  if (typeof options.limit === 'number') params.set('limit', String(options.limit));
+  if (options.sortBy) params.set('sort_by', options.sortBy);
+  if (options.sortOrder) params.set('sort_order', options.sortOrder);
+  if (options.search) params.set('search', options.search);
+
+  const query = params.toString();
+  if (!query) return path;
+  return `${path}${path.includes('?') ? '&' : '?'}${query}`;
+}
+
 export async function uploadChecklistQuestionMedia(file: File): Promise<UploadedMedia> {
   const formData = new FormData();
   formData.append('file', file);
   return apiPostFormData<UploadedMedia>('/media/upload', formData);
 }
 
-export async function getAdminChecklists(): Promise<Checklist[]> {
-  const data = await apiGetWithAuth<ChecklistApiModel[]>('/admin/checklists');
-  return data.map(mapChecklist);
+export async function getAdminChecklists(options?: ListQueryOptions<AdminChecklistSortBy>): Promise<Checklist[]> {
+  const data = await apiGetWithAuth<ChecklistApiModel[] | { items?: ChecklistApiModel[]; data?: ChecklistApiModel[]; results?: ChecklistApiModel[] }>(
+    withListQuery('/admin/checklists', options),
+  );
+  return asArray<ChecklistApiModel>(data).map(mapChecklist);
 }
 
 export async function getChecklistById(checklistId: string): Promise<Checklist> {
@@ -289,16 +395,25 @@ export async function publishChecklist(checklistId: string): Promise<Checklist> 
   return mapChecklist(data);
 }
 
-export async function getSectionsByChecklist(checklistId: string): Promise<ChecklistSection[]> {
-  const data = await apiGetWithAuth<SectionApiModel[]>(`/admin/checklists/${checklistId}/sections`);
-  return data.map(mapSection);
+export async function getSectionsByChecklist(
+  checklistId: string,
+  options?: ListQueryOptions<SectionSortBy>,
+): Promise<ChecklistSection[]> {
+  const data = await apiGetWithAuth<SectionApiModel[] | { items?: SectionApiModel[]; data?: SectionApiModel[]; results?: SectionApiModel[] }>(
+    withListQuery(`/admin/checklists/${checklistId}/sections`, options),
+  );
+  return asArray<SectionApiModel>(data).map(mapSection);
 }
 
-export async function getQuestionsBySection(checklistId: string, sectionId: string): Promise<ChecklistQuestion[]> {
-  const data = await apiGetWithAuth<QuestionApiModel[]>(
-    `/admin/checklists/${checklistId}/sections/${sectionId}/questions`,
+export async function getQuestionsBySection(
+  checklistId: string,
+  sectionId: string,
+  options?: ListQueryOptions<QuestionSortBy>,
+): Promise<ChecklistQuestion[]> {
+  const data = await apiGetWithAuth<QuestionApiModel[] | { items?: QuestionApiModel[]; data?: QuestionApiModel[]; results?: QuestionApiModel[] }>(
+    withListQuery(`/admin/checklists/${checklistId}/sections/${sectionId}/questions`, options),
   );
-  return flattenQuestionTree(data).map(mapQuestion);
+  return flattenQuestionTree(asArray<QuestionApiModel>(data)).map(mapQuestion);
 }
 
 export async function createSection(checklistId: string, payload: Partial<ChecklistSection>): Promise<ChecklistSection> {
@@ -350,17 +465,56 @@ export async function reorderSections(
   for (const endpoint of endpoints) {
     try {
       const data = await apiPatch<
-        SectionApiModel[],
+        SectionApiModel[] | { items?: SectionApiModel[]; data?: SectionApiModel[]; results?: SectionApiModel[] },
         {
           section_orders: Array<{ section_id: string; order: number }>;
         }
       >(endpoint, payload);
-      return data.map(mapSection);
+      return asArray<SectionApiModel>(data).map(mapSection);
     } catch (err) {
       lastError = err;
     }
   }
   throw lastError instanceof Error ? lastError : new Error('Failed to reorder sections');
+}
+
+export async function reorderQuestions(
+  checklistId: string,
+  sectionId: string,
+  questionOrders: Array<{ questionId: string; order: number }>,
+): Promise<ChecklistQuestion[]> {
+  const uuidLike = /^(?:urn:uuid:)?[0-9a-fA-F-]{36}$/;
+  const invalid = questionOrders.find((item) => !uuidLike.test(item.questionId));
+  if (invalid) {
+    throw new Error(`Invalid question UUID for reorder: ${invalid.questionId}`);
+  }
+
+  const endpoints = [
+    `/admin/checklists/${checklistId}/sections/${sectionId}/questions/reorder/`,
+    `/admin/checklists/${checklistId}/sections/${sectionId}/questions/reorder`,
+  ];
+  const payload = {
+    question_orders: questionOrders.map((item) => ({
+      question_id: item.questionId,
+      order: item.order,
+    })),
+  };
+
+  let lastError: unknown = null;
+  for (const endpoint of endpoints) {
+    try {
+      const data = await apiPatch<
+        QuestionApiModel[] | { items?: QuestionApiModel[]; data?: QuestionApiModel[]; results?: QuestionApiModel[]; questions?: QuestionApiModel[] },
+        {
+          question_orders: Array<{ question_id: string; order: number }>;
+        }
+      >(endpoint, payload);
+      return flattenQuestionTree(asArray<QuestionApiModel>(data)).map(mapQuestion);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('Failed to reorder questions');
 }
 
 export async function createQuestion(
@@ -377,7 +531,7 @@ export async function createQuestion(
       note?: string;
       security_level: 'low' | 'medium' | 'high';
       answer_logic: 'answer_only' | 'answer_with_adjustment';
-      audit_type: 'compliance';
+      audit_type: string;
       legal_requirement_title: string;
       legal_requirement_description: string;
       explanation: string;
@@ -389,6 +543,7 @@ export async function createQuestion(
       guidance_score_1: string;
       recommendation_template: string;
       evidence_enabled: boolean;
+      note_enabled: boolean;
       illustrative_image_id?: string;
       answer_options: QuestionAnswerOptionPayload[];
       points?: number; // Optional: will be derived from security_level if not provided
@@ -400,7 +555,7 @@ export async function createQuestion(
     note: payload.note ?? undefined,
     security_level: payload.securityLevel ?? 'low',
     answer_logic: payload.answerLogic ?? 'answer_only',
-    audit_type: 'compliance',
+    audit_type: payload.auditType?.trim() || 'compliance',
     legal_requirement_title: payload.legalRequirementTitle ?? payload.legalRequirement ?? '',
     legal_requirement_description: payload.legalRequirementDescription ?? payload.legalRequirement ?? '',
     explanation: payload.explanation ?? '',
@@ -412,6 +567,7 @@ export async function createQuestion(
     guidance_score_1: payload.guidanceScore1 ?? '',
     recommendation_template: payload.recommendationTemplate ?? '',
     evidence_enabled: payload.evidenceEnabled ?? false,
+    note_enabled: payload.noteEnabled ?? false,
     illustrative_image_id: payload.illustrativeImageId ?? undefined,
     answer_options: payload.answerOptions?.length
       ? payload.answerOptions.map(mapAnswerOption)
@@ -447,7 +603,7 @@ export async function updateQuestion(
       note?: string;
       security_level?: 'low' | 'medium' | 'high';
       answer_logic?: 'answer_only' | 'answer_with_adjustment';
-      audit_type?: 'compliance';
+      audit_type?: string;
       legal_requirement_title?: string;
       legal_requirement_description?: string;
       explanation?: string;
@@ -459,6 +615,7 @@ export async function updateQuestion(
       guidance_score_1?: string;
       recommendation_template?: string;
       evidence_enabled?: boolean;
+      note_enabled?: boolean;
       illustrative_image_id?: string;
       answer_options?: QuestionAnswerOptionPayload[];
       points?: number;
@@ -471,7 +628,7 @@ export async function updateQuestion(
     note: payload.note ?? undefined,
     security_level: payload.securityLevel,
     answer_logic: payload.answerLogic ?? 'answer_only',
-    audit_type: 'compliance',
+    audit_type: payload.auditType?.trim() || 'compliance',
     legal_requirement_title: payload.legalRequirementTitle ?? payload.legalRequirement,
     legal_requirement_description: payload.legalRequirementDescription ?? payload.legalRequirement,
     explanation: payload.explanation,
@@ -483,6 +640,7 @@ export async function updateQuestion(
     guidance_score_1: payload.guidanceScore1 ?? '',
     recommendation_template: payload.recommendationTemplate ?? '',
     evidence_enabled: payload.evidenceEnabled ?? false,
+    note_enabled: payload.noteEnabled ?? false,
     illustrative_image_id: payload.illustrativeImageId ?? undefined,
     answer_options: payload.answerOptions?.length
       ? payload.answerOptions.map(mapAnswerOption)
@@ -504,8 +662,11 @@ export async function getReportSummary(_assessmentId?: string): Promise<ReportSu
   return mockReportSummary;
 }
 
-export async function listPublishedCustomerChecklists() {
-  return apiGetWithAuth<CustomerChecklist[]>('/checklists/');
+export async function listPublishedCustomerChecklists(options?: ListQueryOptions<PublicChecklistSortBy>) {
+  const data = await apiGetWithAuth<
+    CustomerChecklist[] | { items?: CustomerChecklist[]; data?: CustomerChecklist[]; results?: CustomerChecklist[]; checklists?: CustomerChecklist[] }
+  >(withListQuery('/checklists/', options));
+  return asArray<CustomerChecklist>(data);
 }
 
 export type ChecklistAccessGrant = {

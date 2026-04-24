@@ -23,6 +23,7 @@ export default function ChecklistPanelListPage() {
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | ChecklistStatus>('all');
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'set' | 'not_set'>('all');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<'create' | 'publish' | 'delete' | ''>('');
   const [activeChecklistId, setActiveChecklistId] = useState('');
@@ -60,13 +61,33 @@ export default function ChecklistPanelListPage() {
         const matchesSearch =
           item.title.toLowerCase().includes(search.toLowerCase()) || item.lawDecree.toLowerCase().includes(search.toLowerCase());
         const matchesFilter = filter === 'all' || item.status === filter;
-        return matchesSearch && matchesFilter;
+        const isPriceSet = Boolean(item.stripeInfo?.priceAvailable);
+        const matchesPayment =
+          paymentFilter === 'all' || (paymentFilter === 'set' ? isPriceSet : !isPriceSet);
+        return matchesSearch && matchesFilter && matchesPayment;
       }),
-    [checklists, search, filter],
+    [checklists, search, filter, paymentFilter],
   );
 
   const publishedCount = checklists.filter((item) => item.status === 'published').length;
   const draftCount = checklists.filter((item) => item.status === 'draft').length;
+
+  function getFriendlyStripeStatus(priceStatus?: string | null) {
+    if (!priceStatus) {
+      return { label: 'Stripe status unknown', className: 'bg-[#3a4f73] text-[#d8e6ff]' };
+    }
+    const normalized = priceStatus.toLowerCase();
+    if (normalized === 'active' || normalized === 'available') {
+      return { label: 'Price available', className: 'bg-[#1f5b3d] text-[#9bf5be]' };
+    }
+    if (normalized === 'not_set' || normalized === 'missing' || normalized === 'not_available') {
+      return { label: 'Price needed', className: 'bg-[#5f3d1f] text-[#ffd8a0]' };
+    }
+    if (normalized === 'archived' || normalized === 'inactive') {
+      return { label: 'Price inactive', className: 'bg-[#4a3a62] text-[#e0ccff]' };
+    }
+    return { label: 'Price status pending', className: 'bg-[#3a4f73] text-[#d8e6ff]' };
+  }
 
   function openCreateChecklistModal() {
     setCreateTitle('');
@@ -100,6 +121,11 @@ export default function ChecklistPanelListPage() {
   }
 
   async function handlePublish(checklistId: string) {
+    const checklist = checklists.find((item) => item.id === checklistId);
+    if (!checklist?.stripeInfo?.priceAvailable) {
+      toast.error('Price needed. Set Stripe price before publishing this checklist.');
+      return;
+    }
     setActionLoading('publish');
     setActiveChecklistId(checklistId);
     try {
@@ -166,8 +192,7 @@ export default function ChecklistPanelListPage() {
       <div className="w-full px-6 py-6">
         <header className="mb-5 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-[#1f2d45]">Checklist Dashboard</h1>
-            <p className="mt-1 text-sm text-[#607594]">Create and manage checklist content.</p>
+            <h1 className="text-3xl font-semibold text-[#1f2d45]">Checklists</h1>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -223,6 +248,24 @@ export default function ChecklistPanelListPage() {
               </button>
             ))}
           </div>
+          <div className="flex rounded-xl border border-[#d4dced] bg-[linear-gradient(130deg,#ffffff_0%,#f2f7ff_100%)] p-1">
+            {([
+              { id: 'all', label: 'All prices' },
+              { id: 'set', label: 'Price set' },
+              { id: 'not_set', label: 'Price needed' },
+            ] as const).map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => setPaymentFilter(option.id)}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
+                  paymentFilter === option.id ? 'bg-[#182843] text-white' : 'text-[#5f7395] hover:bg-[#edf4ff]'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="relative min-h-[220px]">
@@ -233,6 +276,11 @@ export default function ChecklistPanelListPage() {
                   <div className="mb-2 flex items-start justify-between gap-2">
                     <h2 className="text-base font-semibold text-white">{item.title}</h2>
                     <div className="relative flex items-center gap-2">
+                      {item.stripeInfo ? (
+                        <span className={`rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] ${getFriendlyStripeStatus(item.stripeInfo.priceStatus).className}`}>
+                          {getFriendlyStripeStatus(item.stripeInfo.priceStatus).label}
+                        </span>
+                      ) : null}
                       <span
                         className={`rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] ${
                           item.status === 'published'
@@ -275,6 +323,12 @@ export default function ChecklistPanelListPage() {
                   </div>
                   <p className="mb-3 text-xs text-[#9db8e6]">{item.lawDecree}</p>
                   <p className="mb-4 text-sm text-[#d8e6ff]">Version: {item.version}</p>
+                  {item.stripeInfo?.priceAvailable && item.stripeInfo.priceAmountCents !== null && item.stripeInfo.priceCurrency ? (
+                    <p className="mb-2 text-xs text-[#cfe3ff]">
+                      Price: {(item.stripeInfo.priceAmountCents / 100).toFixed(2)} {item.stripeInfo.priceCurrency.toUpperCase()}
+                    </p>
+                  ) : null}
+                  {item.warning ? <p className="mb-3 text-xs text-amber-200">{item.warning}</p> : null}
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
@@ -287,8 +341,9 @@ export default function ChecklistPanelListPage() {
                       <button
                         type="button"
                         onClick={() => void handlePublish(item.id)}
-                        disabled={actionLoading === 'publish' && activeChecklistId === item.id}
+                        disabled={(actionLoading === 'publish' && activeChecklistId === item.id) || !item.stripeInfo?.priceAvailable}
                         className="rounded-lg border border-[#2d4f83] bg-[#10284f] px-3 py-2 text-xs font-semibold text-[#9bf5be] hover:bg-[#16345f] disabled:opacity-60"
+                        title={item.stripeInfo?.priceAvailable ? 'Publish checklist' : 'Price needed before publishing'}
                       >
                         {actionLoading === 'publish' && activeChecklistId === item.id ? 'Publishing...' : 'Publish'}
                       </button>
@@ -455,6 +510,7 @@ export default function ChecklistPanelListPage() {
             </div>
           </div>
         ) : null}
+
       </div>
     </section>
   );

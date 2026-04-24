@@ -6,10 +6,7 @@ import type { Route } from 'next';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { getRoleHomePath, getRoleKey, persistAccessToken, registerAccount, startMfaSetup, verifyMfaCode } from '@/lib/auth';
-import { createStripeCheckoutSession, getUserPaymentStatus } from '@/lib/payments';
 import authBackground from '@/assets/cybersecurity-background.jpg';
-
-const LATEST_PAYMENT_ID_STORAGE_KEY = 'checklist_latest_payment_id';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -21,33 +18,6 @@ export default function RegisterPage() {
   const [step, setStep] = useState<'credentials' | 'customer-mfa-verify' | 'customer-mfa-setup'>('credentials');
   const [loading, setLoading] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
-
-  async function redirectCustomerToCheckout(userId: string) {
-    try {
-      const paymentState = await getUserPaymentStatus(userId);
-      if (paymentState.payment_status === 'succeeded') {
-        if (paymentState.checklist) {
-          window.location.assign('/dashboard');
-        } else {
-          window.location.assign('/payment/success');
-        }
-        return;
-      }
-    } catch {
-      // Continue with checkout creation when no payment state exists yet.
-    }
-
-    const origin = window.location.origin;
-    const checkoutUrl = await createStripeCheckoutSession({
-      user_id: userId,
-      success_url: `${origin}/payment/success`,
-      cancel_url: `${origin}/payment?checkout=cancelled`,
-    });
-    if (checkoutUrl.paymentId) {
-      window.localStorage.setItem(LATEST_PAYMENT_ID_STORAGE_KEY, checkoutUrl.paymentId);
-    }
-    window.location.assign(checkoutUrl.checkoutUrl);
-  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -80,41 +50,14 @@ export default function RegisterPage() {
         return;
       }
 
-      if (data.mfa_required && data.mfa_enabled) {
-        if (!data.access_token) {
-          toast.error('MFA verification requires an access token from registration.');
-          return;
-        }
-        persistAccessToken(data.access_token);
-        setStep('customer-mfa-verify');
-        toast.info('Enter your OTP code to complete account setup.');
-        return;
-      }
-
-      if (data.mfa_required && !data.mfa_enabled) {
-        if (!data.access_token) {
-          toast.error('MFA setup requires an access token from registration.');
-          return;
-        }
-        persistAccessToken(data.access_token);
-        setStep('customer-mfa-setup');
-        toast.info('Set up MFA in your authenticator app.');
-        await loadMfaSetup();
-        return;
-      }
-
       if (!data.access_token) {
         toast.error('Registration did not return an access token.');
         return;
       }
       persistAccessToken(data.access_token);
       toast.success('Account created successfully.');
-      if (role === 'customer') {
-        await redirectCustomerToCheckout(data.user.id);
-      } else {
-        router.push(destination as Route);
-        router.refresh();
-      }
+      router.push(destination as Route);
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Registration failed');
     } finally {
@@ -153,7 +96,8 @@ export default function RegisterPage() {
       const role = getRoleKey(data.user.role);
       const destination = role === 'customer' ? '/payment' : getRoleHomePath(data.user.role);
       if (role === 'customer') {
-        await redirectCustomerToCheckout(data.user.id);
+        router.push(destination as Route);
+        router.refresh();
       } else {
         router.push(destination as Route);
         router.refresh();

@@ -48,15 +48,15 @@ export type PaymentStatusResponse = {
 };
 
 export async function createStripeCheckoutSession(payload: {
-  user_id?: string;
   success_url: string;
   cancel_url: string;
+  checklist_id?: string;
 }): Promise<CheckoutSessionResult> {
   const query = new URLSearchParams();
   query.set('success_url', payload.success_url);
   query.set('cancel_url', payload.cancel_url);
-  if (payload.user_id) {
-    query.set('user_id', payload.user_id);
+  if (payload.checklist_id) {
+    query.set('checklist_id', payload.checklist_id);
   }
 
   const response = await apiPost<CheckoutSessionResponse, Record<string, never>>(
@@ -77,4 +77,56 @@ export async function createStripeCheckoutSession(payload: {
 
 export async function getUserPaymentStatus(userId: string) {
   return apiGetWithAuth<PaymentStatusResponse>(`/payments/users/${userId}/status`);
+}
+
+export async function adminUpdateUserPaymentStatus(payload: {
+  user_id: string;
+  payment_status: 'pending' | 'succeeded' | 'failed';
+  amount_cents: number;
+  currency: string;
+}) {
+  return apiPost<
+    PaymentStatusResponse,
+    {
+      payment_status: 'pending' | 'succeeded' | 'failed';
+      amount_cents: number;
+      currency: string;
+    }
+  >(`/payments/admin/users/${payload.user_id}/status`, {
+    payment_status: payload.payment_status,
+    amount_cents: payload.amount_cents,
+    currency: payload.currency,
+  });
+}
+
+export type ChecklistPricingResponse = {
+  checklist_id: string;
+  product_id?: string;
+  price_id: string;
+  amount_cents: number;
+  currency: string;
+};
+
+export async function upsertChecklistStripePrice(payload: {
+  checklist_id: string;
+  amount_cents: number;
+  currency: string;
+}) {
+  const endpoints = [
+    `/payments/admin/checklists/${payload.checklist_id}/pricing`,
+    `/admin/checklists/${payload.checklist_id}/pricing`,
+  ];
+
+  let lastError: unknown = null;
+  for (const endpoint of endpoints) {
+    try {
+      return await apiPost<ChecklistPricingResponse, { amount_cents: number; currency: string }>(endpoint, {
+        amount_cents: payload.amount_cents,
+        currency: payload.currency,
+      });
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('Failed to update checklist Stripe pricing.');
 }

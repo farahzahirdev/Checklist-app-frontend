@@ -14,10 +14,9 @@ import {
   verifyMfaChallenge,
   verifyMfaCode,
 } from '@/lib/auth';
-import { createStripeCheckoutSession, getUserPaymentStatus } from '@/lib/payments';
+import { getCurrentAssessment } from '@/lib/assessment';
+import { getUserPaymentStatus } from '@/lib/payments';
 import authBackground from '@/assets/cybersecurity-background.jpg';
-
-const LATEST_PAYMENT_ID_STORAGE_KEY = 'checklist_latest_payment_id';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,31 +30,32 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
 
-  async function redirectCustomerToCheckout(userId: string) {
+  async function redirectCustomerAfterAuth(userId: string) {
     try {
       const paymentState = await getUserPaymentStatus(userId);
       if (paymentState.payment_status === 'succeeded') {
         if (paymentState.checklist) {
-          window.location.assign('/dashboard');
+          try {
+            const active = await getCurrentAssessment(paymentState.checklist.id);
+            if (active.status !== 'not_started') {
+              router.push('/dashboard');
+            } else {
+              router.push(`/access?checklist_id=${encodeURIComponent(paymentState.checklist.id)}`);
+            }
+          } catch {
+            router.push(`/access?checklist_id=${encodeURIComponent(paymentState.checklist.id)}`);
+          }
         } else {
-          window.location.assign('/payment/success');
+          router.push('/payment/success');
         }
+        router.refresh();
         return;
       }
     } catch {
-      // Continue with checkout creation when no payment state exists yet.
+      // Fallback to payment selection page.
     }
-
-    const origin = window.location.origin;
-    const checkoutUrl = await createStripeCheckoutSession({
-      user_id: userId,
-      success_url: `${origin}/payment/success`,
-      cancel_url: `${origin}/payment?checkout=cancelled`,
-    });
-    if (checkoutUrl.paymentId) {
-      window.localStorage.setItem(LATEST_PAYMENT_ID_STORAGE_KEY, checkoutUrl.paymentId);
-    }
-    window.location.assign(checkoutUrl.checkoutUrl);
+    router.push('/payment');
+    router.refresh();
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -124,7 +124,7 @@ export default function LoginPage() {
       persistAccessToken(data.access_token);
       toast.success('Signed in successfully.');
       if (role === 'customer') {
-        await redirectCustomerToCheckout(data.user.id);
+        await redirectCustomerAfterAuth(data.user.id);
       } else {
         router.push(destination as Route);
         router.refresh();
@@ -168,7 +168,7 @@ export default function LoginPage() {
       }
       persistAccessToken(data.access_token);
       toast.success('MFA verified successfully.');
-      await redirectCustomerToCheckout(data.user.id);
+      await redirectCustomerAfterAuth(data.user.id);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to verify OTP code.');
     } finally {
@@ -191,7 +191,7 @@ export default function LoginPage() {
         persistAccessToken(data.access_token);
       }
       toast.success('MFA setup completed.');
-      await redirectCustomerToCheckout(data.user.id);
+      await redirectCustomerAfterAuth(data.user.id);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to complete MFA setup.');
     } finally {

@@ -1,6 +1,6 @@
 export type RiskLevel = 'low' | 'medium' | 'high';
 export type AnswerStatus = 'not_started' | 'in_progress' | 'completed' | 'needs_review';
-export type AuditType = 'compliance';
+export type AuditType = string;
 
 export type ChecklistStatus = 'draft' | 'published';
 
@@ -27,6 +27,20 @@ export interface Checklist {
   status: ChecklistStatus;
   createdAt: string;
   updatedAt: string;
+  pricing?: {
+    priceId: string;
+    amountCents: number;
+    currency: string;
+  } | null;
+  warning?: string | null;
+  stripeInfo?: {
+    productId: string | null;
+    priceId: string | null;
+    priceAmountCents: number | null;
+    priceCurrency: string | null;
+    priceAvailable: boolean;
+    priceStatus: string;
+  } | null;
 }
 
 export interface ChecklistSection {
@@ -59,6 +73,7 @@ export interface ChecklistQuestion {
   guidanceScore1?: string;
   recommendationTemplate?: string;
   evidenceEnabled?: boolean;
+  noteEnabled?: boolean;
   points: number;
   customerAnswer: string | null;
   customerAnswerStatus: AnswerStatus;

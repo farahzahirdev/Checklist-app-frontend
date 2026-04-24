@@ -79,6 +79,12 @@ function buildHeaders(auth?: ApiAuth, options?: { includeJsonContentType?: boole
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
+  if (typeof window !== 'undefined') {
+    const locale = window.localStorage.getItem('checklist_locale') || window.navigator.language || 'en';
+    headers['Accept-Language'] = locale;
+  } else {
+    headers['Accept-Language'] = 'en';
+  }
   return headers;
 }
 

@@ -13,6 +13,7 @@ import {
   getQuestionsBySection,
   getSectionsByChecklist,
   reorderSections,
+  reorderQuestions,
   uploadChecklistQuestionMedia,
   updateQuestion as updateQuestionApi,
   updateSection as updateSectionApi,
@@ -46,7 +47,7 @@ type PanelQuestion = {
   guidanceScore1: string;
   recommendationTemplate: string;
   answerLogic: AnswerLogic;
-  auditType: 'compliance';
+  auditType: string;
   parentQuestionId: string;
   evidenceEnabled: boolean;
   noteEnabled: boolean;
@@ -165,7 +166,7 @@ function RichTextEditor({
 function makeQuestion(index: number): PanelQuestion {
   return {
     id: `q-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    questionId: `question_${index}`,
+    questionId: '',
     questionTitle: '',
     securityLevel: 'low',
     points: '',
@@ -187,12 +188,16 @@ function makeQuestion(index: number): PanelQuestion {
     note: '',
     illustrativeImageId: '',
     answerOptions: [
-      { label: 'Yes', score: '1', choiceCode: 'YES', description: 'Control is fully implemented.', illustrativeImageId: '' },
-      { label: 'Maybe', score: '1', choiceCode: 'MAYBE', description: 'Control is partially implemented or uncertain.', illustrativeImageId: '' },
-      { label: 'Sure', score: '1', choiceCode: 'SURE', description: 'Control is confidently implemented.', illustrativeImageId: '' },
+      { label: 'Yes', score: '4', choiceCode: 'YES', description: 'Control is fully implemented.', illustrativeImageId: '' },
+      { label: 'Maybe', score: '3', choiceCode: 'MAYBE', description: 'Control is partially implemented or uncertain.', illustrativeImageId: '' },
+      { label: 'Sure', score: '2', choiceCode: 'SURE', description: 'Control is confidently implemented.', illustrativeImageId: '' },
       { label: 'No', score: '1', choiceCode: 'NO', description: 'Control is not implemented.', illustrativeImageId: '' },
     ],
   };
+}
+
+function fixedScoreForAnswer(index: number): string {
+  return String(Math.max(1, 4 - index));
 }
 
 function mapApiQuestionToPanelQuestion(question: {
@@ -212,9 +217,10 @@ function mapApiQuestionToPanelQuestion(question: {
   guidanceScore1?: string;
   recommendationTemplate?: string;
   answerLogic?: AnswerLogic;
-  auditType?: 'compliance';
+  auditType?: string;
   parentQuestionId?: string | null;
   evidenceEnabled?: boolean;
+  noteEnabled?: boolean;
   note: string | null;
   illustrativeImageId?: string | null;
   answerOptions?: Array<{
@@ -248,17 +254,17 @@ function mapApiQuestionToPanelQuestion(question: {
     guidanceScore1: String(question.guidanceScore1 ?? ''),
     recommendationTemplate: String(question.recommendationTemplate ?? ''),
     answerLogic: question.answerLogic ?? 'answer_only',
-    auditType: question.auditType ?? 'compliance',
+    auditType: String(question.auditType ?? ''),
     parentQuestionId: String(question.parentQuestionId ?? ''),
     evidenceEnabled: Boolean(question.evidenceEnabled),
-    noteEnabled: Boolean(question.note),
+    noteEnabled: Boolean(question.noteEnabled),
     note: String(question.note ?? ''),
     illustrativeImageId: String(question.illustrativeImageId ?? ''),
     answerOptions:
       question.answerOptions && question.answerOptions.length >= 4
         ? question.answerOptions.slice(0, 4).map((option, index) => ({
             label: String(option.label ?? `Answer ${index + 1}`),
-            score: String(option.score ?? 1),
+            score: fixedScoreForAnswer(index),
             choiceCode: String(option.choiceCode ?? option.label ?? `OPTION_${index + 1}`),
             description: String(option.description ?? option.label ?? `Answer ${index + 1}`),
             illustrativeImageId: String(option.illustrativeImageId ?? ''),
@@ -299,9 +305,26 @@ export default function ChecklistPanelBuilderPage() {
     isSubQuestion: boolean;
   } | null>(null);
   const [uploadingMediaKey, setUploadingMediaKey] = useState<string | null>(null);
+  const [newQuestionImagePreviewUrl, setNewQuestionImagePreviewUrl] = useState('');
+  const [editQuestionImagePreview, setEditQuestionImagePreview] = useState<{ questionId: string; url: string } | null>(null);
+  const [collapsedSectionIds, setCollapsedSectionIds] = useState<string[]>([]);
   const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
   const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
   const [reorderingSections, setReorderingSections] = useState(false);
+  const [draggedQuestionId, setDraggedQuestionId] = useState<string | null>(null);
+  const [dragOverQuestionId, setDragOverQuestionId] = useState<string | null>(null);
+  const [reorderingQuestionsSectionId, setReorderingQuestionsSectionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (newQuestionImagePreviewUrl) {
+        URL.revokeObjectURL(newQuestionImagePreviewUrl);
+      }
+      if (editQuestionImagePreview?.url) {
+        URL.revokeObjectURL(editQuestionImagePreview.url);
+      }
+    };
+  }, [newQuestionImagePreviewUrl, editQuestionImagePreview]);
 
   useEffect(() => {
     let cancelled = false;
@@ -455,7 +478,7 @@ export default function ChecklistPanelBuilderPage() {
     return question.answerOptions.map((option, index) => ({
       position: index + 1,
       label: option.label.trim() || `Answer ${index + 1}`,
-      score: Number.parseInt(option.score || '1', 10) || 1,
+      score: Number.parseInt(fixedScoreForAnswer(index), 10),
       choiceCode: (option.choiceCode.trim() || option.label.trim() || `OPTION_${index + 1}`)
         .toUpperCase()
         .replace(/[^A-Z0-9]+/g, '_'),
@@ -582,15 +605,14 @@ export default function ChecklistPanelBuilderPage() {
     if (!section) return;
     if (parentQuestionId) {
       const parentDepth = getQuestionDepthInSection(section, parentQuestionId);
-      if (parentDepth >= 2) {
-        toast.error('Maximum subquestion depth reached.');
+      if (parentDepth >= 1) {
+        toast.error('Subquestions cannot have subquestions.');
         return;
       }
     }
     const nextIndex = (section?.questions.length ?? 0) + 1;
     setAddQuestionSectionId(sectionId);
     const nextDraft = makeQuestion(nextIndex);
-    nextDraft.questionId = buildUniqueQuestionId(parentQuestionId);
     if (parentQuestionId) {
       nextDraft.parentQuestionId = parentQuestionId;
     }
@@ -618,8 +640,10 @@ export default function ChecklistPanelBuilderPage() {
 
     const ordered: Array<{ question: PanelQuestion; displayCode: string; isSubQuestion: boolean; depth: number }> = [];
     const visit = (question: PanelQuestion, displayCode: string, isSubQuestion: boolean, depth: number) => {
+      if (depth > 1) return;
       ordered.push({ question, displayCode, isSubQuestion, depth });
       const children = byParent.get(question.id) ?? [];
+      if (depth >= 1) return;
       children.forEach((child, childIndex) => {
         visit(child, `${displayCode}.${childIndex + 1}`, true, depth + 1);
       });
@@ -633,6 +657,10 @@ export default function ChecklistPanelBuilderPage() {
 
   async function handleConfirmCreateQuestion() {
     if (!addQuestionSectionId) return;
+    if (uploadingMediaKey === 'create-question-image') {
+      toast.error('Please wait until example image upload completes.');
+      return;
+    }
     const draftQuestion = newQuestionDraft;
     const derivedPoints = draftQuestion.securityLevel === 'low' ? 1 : draftQuestion.securityLevel === 'medium' ? 3 : 4;
     if (
@@ -667,6 +695,7 @@ export default function ChecklistPanelBuilderPage() {
         recommendationTemplate: draftQuestion.recommendationTemplate,
         answerLogic: draftQuestion.answerLogic,
         evidenceEnabled: draftQuestion.evidenceEnabled,
+        noteEnabled: draftQuestion.noteEnabled,
         note: draftQuestion.note || null,
         illustrativeImageId: draftQuestion.illustrativeImageId || undefined,
         points: derivedPoints,
@@ -715,6 +744,7 @@ export default function ChecklistPanelBuilderPage() {
         recommendationTemplate: question.recommendationTemplate,
         answerLogic: question.answerLogic,
         evidenceEnabled: question.evidenceEnabled,
+        noteEnabled: question.noteEnabled,
         note: question.note || null,
         illustrativeImageId: question.illustrativeImageId || undefined,
         points: derivedPoints,
@@ -793,16 +823,97 @@ export default function ChecklistPanelBuilderPage() {
     }
   }
 
+  async function handleQuestionDrop(sectionId: string, targetQuestionId: string) {
+    if (!draggedQuestionId || draggedQuestionId === targetQuestionId) return;
+
+    const section = sections.find((item) => item.id === sectionId);
+    if (!section) return;
+
+    const hierarchy = getSectionQuestionHierarchy(section);
+    const draggedEntry = hierarchy.find((item) => item.question.id === draggedQuestionId);
+    const targetEntry = hierarchy.find((item) => item.question.id === targetQuestionId);
+    if (!draggedEntry || !targetEntry) return;
+
+    if (draggedEntry.depth !== 0 || targetEntry.depth !== 0) {
+      toast.error('Only top-level questions can be reordered.');
+      setDraggedQuestionId(null);
+      setDragOverQuestionId(null);
+      return;
+    }
+
+    const rootIds = hierarchy.filter((item) => item.depth === 0).map((item) => item.question.id);
+    const sourceIndex = rootIds.indexOf(draggedQuestionId);
+    const targetIndex = rootIds.indexOf(targetQuestionId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+
+    const reorderedRootIds = [...rootIds];
+    const [moved] = reorderedRootIds.splice(sourceIndex, 1);
+    reorderedRootIds.splice(targetIndex, 0, moved);
+
+    const childrenByParent = new Map<string, string[]>();
+    hierarchy
+      .filter((item) => item.depth === 1 && item.question.parentQuestionId)
+      .forEach((item) => {
+        const parentId = String(item.question.parentQuestionId);
+        const siblings = childrenByParent.get(parentId) ?? [];
+        siblings.push(item.question.id);
+        childrenByParent.set(parentId, siblings);
+      });
+
+    const visibleIds = reorderedRootIds.flatMap((rootId) => [rootId, ...(childrenByParent.get(rootId) ?? [])]);
+
+    const byId = new Map(section.questions.map((question) => [question.id, question] as const));
+    const hiddenQuestions = section.questions.filter((question) => !visibleIds.includes(question.id));
+    const nextQuestions = visibleIds
+      .map((id) => byId.get(id))
+      .filter((question): question is PanelQuestion => Boolean(question))
+      .concat(hiddenQuestions);
+
+    const previousSections = sections;
+    setReorderingQuestionsSectionId(sectionId);
+    setSections((previous) =>
+      previous.map((item) => (item.id === sectionId ? { ...item, questions: nextQuestions } : item)),
+    );
+
+    try {
+      const reordered = await reorderQuestions(
+        checklistId,
+        sectionId,
+        nextQuestions.map((question, index) => ({ questionId: question.id, order: index + 1 })),
+      );
+      const mapped = reordered.map(mapApiQuestionToPanelQuestion);
+      setSections((previous) =>
+        previous.map((item) => (item.id === sectionId ? { ...item, questions: mapped } : item)),
+      );
+      toast.success('Question order updated.');
+    } catch (err) {
+      setSections(previousSections);
+      toast.error(err instanceof Error ? err.message : 'Failed to reorder questions');
+    } finally {
+      setReorderingQuestionsSectionId(null);
+      setDraggedQuestionId(null);
+      setDragOverQuestionId(null);
+    }
+  }
+
   return (
     <section className="relative h-screen min-h-screen overflow-hidden bg-[linear-gradient(160deg,#eef3fb_0%,#f8fbff_45%,#eef4ff_100%)] text-[#1f2d45]">
       <div className="flex h-full flex-col">
         <header className="grid grid-cols-[320px_1fr] items-center gap-5 border-b border-[#1f3f73] bg-[linear-gradient(180deg,#071a39,#0b2a57)] px-5 py-4 shadow-sm">
-          <div>
+          <div className="flex justify-start">
             <Link
               href="/admin/checklists"
-              className="rounded-lg border border-[#2d4f83] bg-[#10284f] px-3 py-2 text-xs font-semibold text-white hover:bg-[#16345f]"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#2d4f83] bg-[#10284f] text-sm font-semibold text-white hover:bg-[#16345f]"
+              aria-label="Back to checklist dashboard"
             >
-              Back to checklist dashboard
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 90 90"
+                className="h-4 w-4 fill-current"
+                aria-hidden="true"
+              >
+                <path d="M 0.053 44.915 l 33.782 -19.553 v 13.353 h 56.029 c 0.075 0 0.136 0.061 0.136 0.136 v 12.298 c 0 0.075 -0.061 0.136 -0.136 0.136 H 33.835 v 13.353 L 0.053 45.085 C -0.018 45.05 -0.018 44.95 0.053 44.915 z" />
+              </svg>
             </Link>
           </div>
           <div className="flex items-center justify-between gap-2">
@@ -858,6 +969,28 @@ export default function ChecklistPanelBuilderPage() {
                       </span>
                       <button
                         type="button"
+                        onClick={() =>
+                          setCollapsedSectionIds((previous) =>
+                            previous.includes(section.id)
+                              ? previous.filter((id) => id !== section.id)
+                              : [...previous, section.id],
+                          )
+                        }
+                        className="rounded-md p-1 text-[#c4d6f7] hover:bg-[#16345f]"
+                        aria-label={collapsedSectionIds.includes(section.id) ? 'Expand section' : 'Collapse section'}
+                        title={collapsedSectionIds.includes(section.id) ? 'Expand section' : 'Collapse section'}
+                      >
+                        <svg
+                          viewBox="0 0 20 20"
+                          fill="none"
+                          className={`h-3.5 w-3.5 transition-transform ${collapsedSectionIds.includes(section.id) ? '-rotate-90' : ''}`}
+                          aria-hidden="true"
+                        >
+                          <path d="M5 7.5 10 12.5 15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => setSelected({ type: 'section', sectionId: section.id })}
                         className={`flex-1 rounded-md px-2 py-2 text-left text-sm ${
                           selected.type === 'section' && selected.sectionId === section.id
@@ -909,51 +1042,84 @@ export default function ChecklistPanelBuilderPage() {
                       </button>
                     </div>
 
-                    <div className="mt-2 space-y-1">
-                      {getSectionQuestionHierarchy(section).map(({ question, displayCode, isSubQuestion, depth }) => {
-                        const canAddSub = depth < 2;
-                        return (
-                          <div key={question.id} className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => setSelected({ type: 'question', sectionId: section.id, questionId: question.id })}
-                              className={`flex-1 rounded-md px-2 py-1.5 text-left text-xs ${
-                                selected.type === 'question' && selected.questionId === question.id
-                                  ? 'bg-[#163a72] text-white'
-                                  : 'text-[#c4d6f7] hover:bg-[#16345f]'
-                              } ${isSubQuestion ? 'ml-3 border-l border-[#2d4f83] pl-3' : ''}`}
-                            >
-                              {isSubQuestion ? '↳ ' : ''}Q{displayCode}: {question.questionTitle || question.questionId || 'Untitled question'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => addQuestion(section.id, question.id)}
-                              disabled={
-                                !canAddSub ||
-                                (questionActionLoading === 'create' && addingQuestionSectionId === section.id) ||
-                                reorderingSections
-                              }
-                              className="rounded-md border border-dashed border-[#5d84be] px-2 py-1 text-[10px] font-semibold text-[#d8e6ff] hover:bg-[#16345f] disabled:cursor-not-allowed disabled:opacity-40"
-                              title={canAddSub ? 'Add subquestion' : 'Max depth reached'}
-                            >
-                              + Sub
-                            </button>
-                          </div>
-                        );
-                      })}
-                      {section.questions.length === 0 ? (
-                        <p className="px-2 py-1 text-[11px] text-[#9db8e6]">No questions loaded</p>
-                      ) : null}
-                    </div>
+                    {!collapsedSectionIds.includes(section.id) ? (
+                      <>
+                        <div className="mt-2 space-y-1">
+                          {getSectionQuestionHierarchy(section).map(({ question, displayCode, isSubQuestion, depth }) => {
+                            const canAddSub = depth < 1;
+                            return (
+                              <div
+                                key={question.id}
+                                draggable={!isSubQuestion && !reorderingSections && !reorderingQuestionsSectionId}
+                                onDragStart={() => {
+                                  if (isSubQuestion) return;
+                                  setDraggedQuestionId(question.id);
+                                }}
+                                onDragOver={(event) => {
+                                  if (isSubQuestion) return;
+                                  event.preventDefault();
+                                  if (dragOverQuestionId !== question.id) setDragOverQuestionId(question.id);
+                                }}
+                                onDragEnd={() => {
+                                  setDraggedQuestionId(null);
+                                  setDragOverQuestionId(null);
+                                }}
+                                onDrop={(event) => {
+                                  if (isSubQuestion) return;
+                                  event.preventDefault();
+                                  void handleQuestionDrop(section.id, question.id);
+                                }}
+                                className={`flex items-center gap-1 rounded-md ${!isSubQuestion && dragOverQuestionId === question.id ? 'ring-1 ring-[#5ea2ff]' : ''}`}
+                              >
+                                {!isSubQuestion ? (
+                                  <span className="cursor-grab px-1 text-[10px] text-[#9db8e6]" title="Drag to reorder questions">
+                                    ⋮⋮
+                                  </span>
+                                ) : (
+                                  <span className="w-4" />
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setSelected({ type: 'question', sectionId: section.id, questionId: question.id })}
+                                  className={`flex-1 rounded-md px-2 py-1.5 text-left text-xs ${
+                                    selected.type === 'question' && selected.questionId === question.id
+                                      ? 'bg-[#163a72] text-white'
+                                      : 'text-[#c4d6f7] hover:bg-[#16345f]'
+                                  } ${isSubQuestion ? 'ml-3 border-l border-[#2d4f83] pl-3' : ''}`}
+                                >
+                                  {isSubQuestion ? '↳ ' : ''}Q{displayCode}: {question.questionTitle || question.questionId || 'Untitled question'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => addQuestion(section.id, question.id)}
+                                  disabled={
+                                    !canAddSub ||
+                                    (questionActionLoading === 'create' && addingQuestionSectionId === section.id) ||
+                                    reorderingSections
+                                  }
+                                  className="rounded-md border border-dashed border-[#5d84be] px-2 py-1 text-[10px] font-semibold text-[#d8e6ff] hover:bg-[#16345f] disabled:cursor-not-allowed disabled:opacity-40"
+                                  title={canAddSub ? 'Add subquestion' : 'Subquestions cannot have subquestions'}
+                                >
+                                  + Sub
+                                </button>
+                              </div>
+                            );
+                          })}
+                          {section.questions.length === 0 ? (
+                            <p className="px-2 py-1 text-[11px] text-[#9db8e6]">No questions loaded</p>
+                          ) : null}
+                        </div>
 
-                    <button
-                      type="button"
-                      onClick={() => addQuestion(section.id)}
-                      disabled={(questionActionLoading === 'create' && addingQuestionSectionId === section.id) || reorderingSections}
-                      className="mt-2 w-full rounded-md border border-dashed border-[#5d84be] px-2 py-1.5 text-xs font-semibold text-[#d8e6ff] hover:bg-[#16345f] disabled:opacity-60"
-                    >
-                      {questionActionLoading === 'create' && addingQuestionSectionId === section.id ? 'Adding question...' : '+ Add question'}
-                    </button>
+                        <button
+                          type="button"
+                          onClick={() => addQuestion(section.id)}
+                          disabled={(questionActionLoading === 'create' && addingQuestionSectionId === section.id) || reorderingSections}
+                          className="mt-2 w-full rounded-md border border-dashed border-[#5d84be] px-2 py-1.5 text-xs font-semibold text-[#d8e6ff] hover:bg-[#16345f] disabled:opacity-60"
+                        >
+                          {questionActionLoading === 'create' && addingQuestionSectionId === section.id ? 'Adding question...' : '+ Add question'}
+                        </button>
+                      </>
+                    ) : null}
                   </div>
                 ))}
             </div>
@@ -1095,7 +1261,9 @@ export default function ChecklistPanelBuilderPage() {
                     <label className={labelClass}>Audit type</label>
                     <input
                       value={newQuestionDraft.auditType}
-                      readOnly
+                      onChange={(event) =>
+                        setNewQuestionDraft((previous) => ({ ...previous, auditType: event.target.value }))
+                      }
                       className={inputClass}
                     />
                   </div>
@@ -1206,7 +1374,7 @@ export default function ChecklistPanelBuilderPage() {
                             </span>
                             <span className="text-sm font-medium text-[#1f2d45]">{option.label || `Answer ${index + 1}`}</span>
                             <span className="rounded-full bg-[#e6f1fb] px-2 py-0.5 text-[11px] font-medium text-[#185fa5]">
-                              score: {option.score || '0'}
+                              score: {fixedScoreForAnswer(index)}
                             </span>
                           </div>
                           <div className="grid gap-3 md:grid-cols-2">
@@ -1227,16 +1395,9 @@ export default function ChecklistPanelBuilderPage() {
                             type="number"
                             min={1}
                             max={4}
-                            value={option.score}
-                            onChange={(event) =>
-                              setNewQuestionDraft((previous) => ({
-                                ...previous,
-                                answerOptions: previous.answerOptions.map((item, itemIndex) =>
-                                  itemIndex === index ? { ...item, score: event.target.value.replace(/[^\d]/g, '') } : item,
-                                ),
-                              }))
-                            }
-                            className={inputClass}
+                            value={fixedScoreForAnswer(index)}
+                            readOnly
+                            className={`${inputClass} cursor-not-allowed bg-[#eef3fb] text-[#607594]`}
                             placeholder="Score (1-4)"
                           />
                           </div>
@@ -1271,6 +1432,11 @@ export default function ChecklistPanelBuilderPage() {
                         onChange={(event) => {
                           const file = event.target.files?.[0];
                           if (!file) return;
+                          const previewUrl = URL.createObjectURL(file);
+                          setNewQuestionImagePreviewUrl((previous) => {
+                            if (previous) URL.revokeObjectURL(previous);
+                            return previewUrl;
+                          });
                           const mediaKey = 'create-question-image';
                           setUploadingMediaKey(mediaKey);
                           void uploadQuestionImage(file)
@@ -1290,8 +1456,25 @@ export default function ChecklistPanelBuilderPage() {
                     </label>
                     {uploadingMediaKey === 'create-question-image' ? (
                       <p className="text-xs text-[#607594]">Uploading...</p>
-                    ) : newQuestionDraft.illustrativeImageId ? (
-                      <p className="text-xs text-[#607594]">Image id: {newQuestionDraft.illustrativeImageId}</p>
+                    ) : null}
+                    {newQuestionImagePreviewUrl ? (
+                      <div className="relative mt-2 w-full max-w-[280px] overflow-hidden rounded-xl border border-[#d4dced] bg-white">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewQuestionImagePreviewUrl((previous) => {
+                              if (previous) URL.revokeObjectURL(previous);
+                              return '';
+                            });
+                            setNewQuestionDraft((previous) => ({ ...previous, illustrativeImageId: '' }));
+                          }}
+                          className="absolute right-2 top-2 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#0b1220]/70 text-sm font-semibold text-white hover:bg-[#0b1220]"
+                          aria-label="Remove example image"
+                        >
+                          ×
+                        </button>
+                        <img src={newQuestionImagePreviewUrl} alt="Example image preview" className="h-16 w-full object-cover" />
+                      </div>
                     ) : null}
                   </div>
                 </div>
@@ -1307,7 +1490,7 @@ export default function ChecklistPanelBuilderPage() {
                   <button
                     type="button"
                     onClick={() => void handleConfirmCreateQuestion()}
-                    disabled={questionActionLoading === 'create'}
+                    disabled={questionActionLoading === 'create' || uploadingMediaKey === 'create-question-image'}
                     className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
                   >
                     {questionActionLoading === 'create' ? 'Creating...' : 'Create question'}
@@ -1366,7 +1549,9 @@ export default function ChecklistPanelBuilderPage() {
                     <label className={labelClass}>Audit type</label>
                     <input
                       value={selectedQuestion.auditType}
-                      readOnly
+                      onChange={(event) =>
+                        updateQuestion(selectedSection.id, selectedQuestion.id, { auditType: event.target.value })
+                      }
                       className={inputClass}
                     />
                   </div>
@@ -1496,7 +1681,7 @@ export default function ChecklistPanelBuilderPage() {
                           </span>
                           <span className="text-sm font-medium text-[#1f2d45]">{option.label || `Answer ${index + 1}`}</span>
                           <span className="rounded-full bg-[#e6f1fb] px-2 py-0.5 text-[11px] font-medium text-[#185fa5]">
-                            score: {option.score || '0'}
+                            score: {fixedScoreForAnswer(index)}
                           </span>
                         </div>
                         <div className="grid gap-3 md:grid-cols-2">
@@ -1516,15 +1701,9 @@ export default function ChecklistPanelBuilderPage() {
                           type="number"
                           min={1}
                           max={4}
-                          value={option.score}
-                          onChange={(event) =>
-                            updateQuestion(selectedSection.id, selectedQuestion.id, {
-                              answerOptions: selectedQuestion.answerOptions.map((item, itemIndex) =>
-                                itemIndex === index ? { ...item, score: event.target.value.replace(/[^\d]/g, '') } : item,
-                              ),
-                            })
-                          }
-                          className={inputClass}
+                          value={fixedScoreForAnswer(index)}
+                          readOnly
+                          className={`${inputClass} cursor-not-allowed bg-[#eef3fb] text-[#607594]`}
                           placeholder="Score (1-4)"
                         />
                         </div>
@@ -1558,6 +1737,11 @@ export default function ChecklistPanelBuilderPage() {
                       onChange={(event) => {
                         const file = event.target.files?.[0];
                         if (!file) return;
+                        const previewUrl = URL.createObjectURL(file);
+                        setEditQuestionImagePreview((previous) => {
+                          if (previous?.url) URL.revokeObjectURL(previous.url);
+                          return { questionId: selectedQuestion.id, url: previewUrl };
+                        });
                         const mediaKey = `edit-question-${selectedQuestion.id}`;
                         setUploadingMediaKey(mediaKey);
                         void uploadQuestionImage(file)
@@ -1577,8 +1761,25 @@ export default function ChecklistPanelBuilderPage() {
                   </label>
                   {uploadingMediaKey === `edit-question-${selectedQuestion.id}` ? (
                     <p className="text-xs text-[#607594]">Uploading...</p>
-                  ) : selectedQuestion.illustrativeImageId ? (
-                    <p className="text-xs text-[#607594]">Image id: {selectedQuestion.illustrativeImageId}</p>
+                  ) : null}
+                  {editQuestionImagePreview?.questionId === selectedQuestion.id ? (
+                    <div className="relative mt-2 w-full max-w-[280px] overflow-hidden rounded-xl border border-[#d4dced] bg-white">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditQuestionImagePreview((previous) => {
+                            if (previous?.url) URL.revokeObjectURL(previous.url);
+                            return null;
+                          });
+                          updateQuestion(selectedSection.id, selectedQuestion.id, { illustrativeImageId: '' });
+                        }}
+                        className="absolute right-2 top-2 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#0b1220]/70 text-sm font-semibold text-white hover:bg-[#0b1220]"
+                        aria-label="Remove example image"
+                      >
+                        ×
+                      </button>
+                      <img src={editQuestionImagePreview.url} alt="Example image preview" className="h-20 w-full object-cover" />
+                    </div>
                   ) : null}
                 </div>
                 <div className="flex items-center gap-2">
