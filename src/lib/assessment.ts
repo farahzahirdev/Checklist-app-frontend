@@ -49,6 +49,7 @@ export type AssessmentDetailQuestion = {
   legal_requirement_description?: string | null;
   legal_requirement?: string;
   explanation?: string;
+  how_it_works?: string | null;
   expected_implementation?: string;
   illustrative_image_id?: string | null;
   answer_options?: AssessmentDetailAnswerOption[];
