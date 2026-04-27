@@ -84,12 +84,14 @@ function RichTextEditor({
   onChange,
   placeholder,
   minHeight = 90,
+  hasError = false,
 }: {
   label: string;
   value: string;
   onChange: (next: string) => void;
   placeholder: string;
   minHeight?: number;
+  hasError?: boolean;
 }) {
   const editorRef = useRef<HTMLDivElement | null>(null);
 
@@ -127,7 +129,11 @@ function RichTextEditor({
         <label className={labelClass}>{label}</label>
         <span className="rounded-full bg-[#e6f1fb] px-2 py-0.5 text-[10px] font-semibold text-[#185fa5]">Rich text</span>
       </div>
-      <div className="overflow-hidden rounded-xl border border-[#d4dced] bg-white focus-within:border-[#3e69b0]">
+      <div
+        className={`overflow-hidden rounded-xl border bg-white focus-within:border-[#3e69b0] ${
+          hasError ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : 'border-[#d4dced]'
+        }`}
+      >
         <div className="flex items-center gap-1 border-b border-[#e2e8f5] bg-[#f7f9fe] px-2 py-1">
           <button type="button" className="h-6 w-6 rounded text-xs hover:bg-white" onClick={() => runCommand('bold')}>
             <span className="font-bold">B</span>
@@ -316,6 +322,8 @@ export default function ChecklistPanelBuilderPage() {
   const [draggedQuestionId, setDraggedQuestionId] = useState<string | null>(null);
   const [dragOverQuestionId, setDragOverQuestionId] = useState<string | null>(null);
   const [reorderingQuestionsSectionId, setReorderingQuestionsSectionId] = useState<string | null>(null);
+  const [createQuestionMissingFields, setCreateQuestionMissingFields] = useState<string[]>([]);
+  const [editQuestionMissingFields, setEditQuestionMissingFields] = useState<string[]>([]);
 
   useEffect(() => {
     return () => {
@@ -327,6 +335,15 @@ export default function ChecklistPanelBuilderPage() {
       }
     };
   }, [newQuestionImagePreviewUrl, editQuestionImagePreview]);
+
+  useEffect(() => {
+    if (selected.type !== 'createQuestion') {
+      setCreateQuestionMissingFields([]);
+    }
+    if (selected.type !== 'question') {
+      setEditQuestionMissingFields([]);
+    }
+  }, [selected]);
 
   useEffect(() => {
     let cancelled = false;
@@ -665,16 +682,20 @@ export default function ChecklistPanelBuilderPage() {
     }
     const draftQuestion = newQuestionDraft;
     const derivedPoints = draftQuestion.securityLevel === 'low' ? 1 : draftQuestion.securityLevel === 'medium' ? 3 : 4;
-    if (
-      !draftQuestion.questionTitle.trim() ||
-      !draftQuestion.legalRequirementTitle.trim() ||
-      !draftQuestion.legalRequirementDescription.trim() ||
-      !draftQuestion.explanation.trim() ||
-      !draftQuestion.expectedImplementation.trim()
-    ) {
+    const missingFields = [
+      !draftQuestion.questionId.trim() ? 'questionId' : null,
+      !draftQuestion.questionTitle.trim() ? 'questionTitle' : null,
+      !draftQuestion.legalRequirementTitle.trim() ? 'legalRequirementTitle' : null,
+      !draftQuestion.legalRequirementDescription.trim() ? 'legalRequirementDescription' : null,
+      !draftQuestion.explanation.trim() ? 'explanation' : null,
+      !draftQuestion.expectedImplementation.trim() ? 'expectedImplementation' : null,
+    ].filter((item): item is string => Boolean(item));
+    if (missingFields.length > 0) {
+      setCreateQuestionMissingFields(missingFields);
       toast.error('Please fill all required question fields.');
       return;
     }
+    setCreateQuestionMissingFields([]);
     setQuestionActionLoading('create');
     setAddingQuestionSectionId(addQuestionSectionId);
     try {
@@ -724,6 +745,20 @@ export default function ChecklistPanelBuilderPage() {
     const section = sections.find((item) => item.id === sectionId);
     const question = section?.questions.find((item) => item.id === questionId);
     if (!question) return;
+    const missingFields = [
+      !question.questionId.trim() ? 'questionId' : null,
+      !question.questionTitle.trim() ? 'questionTitle' : null,
+      !question.legalRequirementTitle.trim() ? 'legalRequirementTitle' : null,
+      !question.legalRequirementDescription.trim() ? 'legalRequirementDescription' : null,
+      !question.explanation.trim() ? 'explanation' : null,
+      !question.expectedImplementation.trim() ? 'expectedImplementation' : null,
+    ].filter((item): item is string => Boolean(item));
+    if (missingFields.length > 0) {
+      setEditQuestionMissingFields(missingFields);
+      toast.error('Please fill all required question fields.');
+      return;
+    }
+    setEditQuestionMissingFields([]);
     const derivedPoints = question.securityLevel === 'low' ? 1 : question.securityLevel === 'medium' ? 3 : 4;
     setQuestionActionLoading('save');
     try {
@@ -1257,7 +1292,7 @@ export default function ChecklistPanelBuilderPage() {
                     <input
                       value={newQuestionDraft.questionTitle}
                       onChange={(event) => setNewQuestionDraft((previous) => ({ ...previous, questionTitle: event.target.value }))}
-                      className={inputClass}
+                      className={`${inputClass} ${createQuestionMissingFields.includes('questionTitle') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
                     />
                   </div>
                   <div>
@@ -1265,7 +1300,7 @@ export default function ChecklistPanelBuilderPage() {
                     <input
                       value={newQuestionDraft.questionId}
                       onChange={(event) => setNewQuestionDraft((previous) => ({ ...previous, questionId: event.target.value }))}
-                      className={inputClass}
+                      className={`${inputClass} ${createQuestionMissingFields.includes('questionId') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
                     />
                   </div>
                   <div>
@@ -1300,7 +1335,7 @@ export default function ChecklistPanelBuilderPage() {
                       onChange={(event) =>
                         setNewQuestionDraft((previous) => ({ ...previous, legalRequirementTitle: event.target.value }))
                       }
-                      className={inputClass}
+                      className={`${inputClass} ${createQuestionMissingFields.includes('legalRequirementTitle') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -1312,6 +1347,7 @@ export default function ChecklistPanelBuilderPage() {
                       }
                       placeholder="Describe the legal or regulatory basis..."
                       minHeight={80}
+                      hasError={createQuestionMissingFields.includes('legalRequirementDescription')}
                     />
                   </div>
                   <div className={sectionHeadingClass + ' md:col-span-2'}>Content & guidance</div>
@@ -1322,6 +1358,7 @@ export default function ChecklistPanelBuilderPage() {
                       onChange={(next) => setNewQuestionDraft((previous) => ({ ...previous, explanation: next }))}
                       placeholder="Why this control matters..."
                       minHeight={90}
+                      hasError={createQuestionMissingFields.includes('explanation')}
                     />
                   </div>
                   <div>
@@ -1333,6 +1370,7 @@ export default function ChecklistPanelBuilderPage() {
                       }
                       placeholder="• Step 1"
                       minHeight={90}
+                      hasError={createQuestionMissingFields.includes('expectedImplementation')}
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -1543,7 +1581,7 @@ export default function ChecklistPanelBuilderPage() {
                       onChange={(event) =>
                         updateQuestion(selectedSection.id, selectedQuestion.id, { questionTitle: event.target.value })
                       }
-                      className={inputClass}
+                      className={`${inputClass} ${editQuestionMissingFields.includes('questionTitle') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
                     />
                   </div>
                   <div>
@@ -1553,7 +1591,7 @@ export default function ChecklistPanelBuilderPage() {
                       onChange={(event) =>
                         updateQuestion(selectedSection.id, selectedQuestion.id, { questionId: event.target.value })
                       }
-                      className={inputClass}
+                      className={`${inputClass} ${editQuestionMissingFields.includes('questionId') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
                     />
                   </div>
                   <div>
@@ -1594,7 +1632,7 @@ export default function ChecklistPanelBuilderPage() {
                         legalRequirementTitle: event.target.value,
                       })
                     }
-                    className={inputClass}
+                    className={`${inputClass} ${editQuestionMissingFields.includes('legalRequirementTitle') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
                   />
                 </div>
                 <div>
@@ -1608,6 +1646,7 @@ export default function ChecklistPanelBuilderPage() {
                     }
                     placeholder="Describe the legal or regulatory basis..."
                     minHeight={80}
+                    hasError={editQuestionMissingFields.includes('legalRequirementDescription')}
                   />
                 </div>
                 <div className={sectionHeadingClass}>Content & guidance</div>
@@ -1621,6 +1660,7 @@ export default function ChecklistPanelBuilderPage() {
                       }
                       placeholder="Why this control matters..."
                       minHeight={90}
+                      hasError={editQuestionMissingFields.includes('explanation')}
                     />
                   </div>
                   <div>
@@ -1634,6 +1674,7 @@ export default function ChecklistPanelBuilderPage() {
                       }
                       placeholder="• Step 1"
                       minHeight={90}
+                      hasError={editQuestionMissingFields.includes('expectedImplementation')}
                     />
                   </div>
                 </div>
