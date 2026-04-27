@@ -235,17 +235,17 @@ export default function AdminRbacPage() {
                 {allUsers.length ? (
                   filteredAuditorUsers.length ? (
                     filteredAuditorUsers.map((user) => (
-                      <button
+                        <button
                         key={user.id}
-                        type="button"
-                        onClick={() => setTargetUserId(user.id)}
+                          type="button"
+                          onClick={() => setTargetUserId(user.id)}
                         className={`w-full rounded-lg border px-2.5 py-2 text-left ${
                           targetUserId === user.id ? 'border-[#2f7dff] bg-[#edf4ff]' : 'border-[#d4dced] bg-white hover:bg-[#edf4ff]'
-                        }`}
-                      >
+                          }`}
+                        >
                         <p className="text-sm font-semibold text-[#2a3d5f]">{user.email}</p>
                         <p className="text-xs text-[#607594]">{user.role}</p>
-                      </button>
+                        </button>
                     ))
                   ) : (
                     <p className="px-2 py-2 text-xs text-[#607594]">No users match your search.</p>
@@ -253,7 +253,7 @@ export default function AdminRbacPage() {
                 ) : (
                   <p className="px-2 py-2 text-xs text-[#607594]">No users available for selection.</p>
                 )}
-              </div>
+          </div>
               {!allUsers.length && auditorUserListUnavailable ? (
                 <p className="mt-2 rounded-lg border border-[#e3e9f6] bg-[#f9fbff] px-3 py-2 text-xs text-[#607594]">
                   Your auditor role does not have access to user listing APIs yet. Dropdown will populate when backend permission is enabled.

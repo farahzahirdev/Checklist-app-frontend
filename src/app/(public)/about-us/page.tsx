@@ -1,6 +1,12 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { PublicFooter } from '@/components/public-footer';
+import { ACCESS_TOKEN_STORAGE_KEY, getCurrentUser, getRoleHomePath } from '@/lib/auth';
 
 function ArrowRightIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
@@ -11,6 +17,31 @@ function ArrowRightIcon({ className = 'h-4 w-4' }: { className?: string }) {
 }
 
 export default function HomePage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function redirectIfAuthenticated() {
+      const token = window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+      if (!token) return;
+      try {
+        const me = await getCurrentUser();
+        if (cancelled) return;
+        router.replace(getRoleHomePath(me.user.role) as Route);
+        router.refresh();
+      } catch {
+        // Keep visitor on public home for invalid/stale token.
+      }
+    }
+
+    void redirectIfAuthenticated();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
   const heroStyle = {
     backgroundImage: `linear-gradient(rgba(4, 9, 22, 0.56), rgba(4, 9, 22, 0.72)), url(${heroBackground.src})`,
     backgroundSize: 'cover',

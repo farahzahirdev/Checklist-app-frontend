@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import {
+  ACCESS_TOKEN_STORAGE_KEY,
   getRoleHomePath,
   getRoleKey,
+  getCurrentUser,
   loginAccount,
   persistAccessToken,
   startMfaSetup,
@@ -29,6 +31,29 @@ export default function LoginPage() {
   const [step, setStep] = useState<'credentials' | 'customer-mfa-verify' | 'customer-mfa-setup'>('credentials');
   const [loading, setLoading] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function redirectIfAuthenticated() {
+      const token = window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+      if (!token) return;
+      try {
+        const me = await getCurrentUser();
+        if (cancelled) return;
+        router.replace(getRoleHomePath(me.user.role) as Route);
+        router.refresh();
+      } catch {
+        // Keep user on login if token is stale/invalid.
+      }
+    }
+
+    void redirectIfAuthenticated();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   async function redirectCustomerAfterAuth(userId: string) {
     try {
