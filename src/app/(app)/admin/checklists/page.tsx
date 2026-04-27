@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { createChecklist, deleteChecklist, getAdminChecklists, publishChecklist, updateChecklist } from '@/lib/checklist-api';
 import type { Checklist } from '@/lib/checklist-types';
+import { useAdminAccess } from '@/lib/admin-access';
 
 type ChecklistStatus = 'draft' | 'published';
 
@@ -20,6 +21,7 @@ type ChecklistCardItem = {
 
 export default function ChecklistPanelListPage() {
   const router = useRouter();
+  const { isReadOnly } = useAdminAccess();
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | ChecklistStatus>('all');
@@ -194,16 +196,18 @@ export default function ChecklistPanelListPage() {
           <div>
             <h1 className="text-3xl font-semibold text-[#1f2d45]">Checklists</h1>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={openCreateChecklistModal}
-              disabled={actionLoading === 'create'}
-              className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657]"
-            >
-              {actionLoading === 'create' ? 'Creating...' : '+ New checklist'}
-            </button>
-          </div>
+          {!isReadOnly ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={openCreateChecklistModal}
+                disabled={actionLoading === 'create'}
+                className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657]"
+              >
+                {actionLoading === 'create' ? 'Creating...' : '+ New checklist'}
+              </button>
+            </div>
+          ) : null}
         </header>
 
         <div className="mb-5 grid gap-3 md:grid-cols-4">
@@ -290,15 +294,17 @@ export default function ChecklistPanelListPage() {
                       >
                         {item.status}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => setOpenCardMenuId((prev) => (prev === item.id ? null : item.id))}
-                        className="rounded-md border border-[#2d4f83] bg-[#10284f] px-2 py-1 text-xs font-semibold text-[#dce8ff] hover:bg-[#16345f]"
-                        aria-label="Checklist options"
-                      >
-                        ...
-                      </button>
-                      {openCardMenuId === item.id ? (
+                      {!isReadOnly ? (
+                        <button
+                          type="button"
+                          onClick={() => setOpenCardMenuId((prev) => (prev === item.id ? null : item.id))}
+                          className="rounded-md border border-[#2d4f83] bg-[#10284f] px-2 py-1 text-xs font-semibold text-[#dce8ff] hover:bg-[#16345f]"
+                          aria-label="Checklist options"
+                        >
+                          ...
+                        </button>
+                      ) : null}
+                      {!isReadOnly && openCardMenuId === item.id ? (
                         <div className="absolute right-0 top-8 z-20 min-w-[120px] rounded-lg border border-[#d4dced] bg-white p-1 shadow-lg">
                           <button
                             type="button"
@@ -337,7 +343,7 @@ export default function ChecklistPanelListPage() {
                     >
                       Open panel
                     </button>
-                    {item.status === 'draft' ? (
+                    {!isReadOnly && item.status === 'draft' ? (
                       <button
                         type="button"
                         onClick={() => void handlePublish(item.id)}
@@ -368,7 +374,7 @@ export default function ChecklistPanelListPage() {
           ) : null}
         </div>
 
-        {confirmDeleteChecklistId ? (
+        {!isReadOnly && confirmDeleteChecklistId ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4">
             <div className="w-full max-w-md rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl">
               <h2 className="text-lg font-semibold text-[#1f2d45]">Delete checklist?</h2>
@@ -397,7 +403,7 @@ export default function ChecklistPanelListPage() {
           </div>
         ) : null}
 
-        {isCreateChecklistModalOpen ? (
+        {!isReadOnly && isCreateChecklistModalOpen ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4">
             <div className="w-full max-w-lg rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl">
               <h2 className="text-lg font-semibold text-[#1f2d45]">New checklist</h2>
@@ -455,7 +461,7 @@ export default function ChecklistPanelListPage() {
           </div>
         ) : null}
 
-        {editChecklistId ? (
+        {!isReadOnly && editChecklistId ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4">
             <div className="w-full max-w-lg rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl">
               <h2 className="text-lg font-semibold text-[#1f2d45]">Edit checklist</h2>

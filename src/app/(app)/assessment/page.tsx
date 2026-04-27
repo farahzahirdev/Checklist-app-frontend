@@ -292,6 +292,39 @@ export default function AssessmentPage() {
     };
   }, [activeQuestion?.illustrative_image_id, previewUrlsByMediaId]);
 
+  useEffect(() => {
+    const mediaIds = (activeQuestion?.sub_questions ?? [])
+      .map((subQuestion) => subQuestion.illustrative_image_id)
+      .filter((mediaId): mediaId is string => Boolean(mediaId) && !isHttpUrl(mediaId));
+    const missingMediaIds = mediaIds.filter((mediaId) => !previewUrlsByMediaId[mediaId] && !previewErrorsByMediaId[mediaId]);
+    if (!missingMediaIds.length) {
+      return;
+    }
+    let cancelled = false;
+    void Promise.all(
+      missingMediaIds.map(async (mediaId) => {
+        try {
+          const previewUrl = await getMediaPreviewUrl(mediaId);
+          if (cancelled || !previewUrl) return;
+          setPreviewUrlsByMediaId((previous) => ({ ...previous, [mediaId]: previewUrl }));
+          setPreviewErrorsByMediaId((previous) => {
+            if (!previous[mediaId]) return previous;
+            const next = { ...previous };
+            delete next[mediaId];
+            return next;
+          });
+        } catch (err) {
+          if (cancelled) return;
+          const errorMessage = err instanceof Error ? err.message : 'Failed to load preview image.';
+          setPreviewErrorsByMediaId((previous) => ({ ...previous, [mediaId]: errorMessage }));
+        }
+      }),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [activeQuestion?.sub_questions, previewUrlsByMediaId, previewErrorsByMediaId]);
+
   async function onSaveAnswer() {
     if (!activeQuestion) {
       setError('No active question found.');
@@ -516,7 +549,6 @@ export default function AssessmentPage() {
                                 <p className="font-medium">
                                   {subQuestion.question_title || subQuestion.questions_title || subQuestion.question_id || 'Sub-question'}
                                 </p>
-                                <p className="text-xs text-[#6a7f9d]">{subQuestion.question_id || subQuestion.id}</p>
                               </div>
                               <span className="text-xs text-[#4b6ea6]">
                                 {expandedSubQuestionId === subQuestion.id ? 'Collapse' : 'Expand'}
@@ -524,20 +556,86 @@ export default function AssessmentPage() {
                             </button>
                             {expandedSubQuestionId === subQuestion.id ? (
                               <div className="mt-2 space-y-1 border-t border-[#e7edf8] pt-2 text-xs text-[#3f5677]">
-                                <p>
-                                  <span className="font-semibold text-[#294b7d]">Legal requirement:</span>{' '}
-                                  {subQuestion.legal_requirement_title ||
-                                    subQuestion.legal_requirement_description ||
-                                    subQuestion.legal_requirement ||
-                                    '-'}
-                                </p>
-                                <p>
-                                  <span className="font-semibold text-[#294b7d]">Explanation:</span> {subQuestion.explanation || '-'}
-                                </p>
-                                <p>
-                                  <span className="font-semibold text-[#294b7d]">Expected implementation:</span>{' '}
-                                  {subQuestion.expected_implementation || '-'}
-                                </p>
+                                {(subQuestion.legal_requirement_title ||
+                                  subQuestion.legal_requirement_description ||
+                                  subQuestion.legal_requirement) ? (
+                                  <p>
+                                    <span className="font-semibold text-[#294b7d]">Legal requirement:</span>{' '}
+                                    {subQuestion.legal_requirement_title ||
+                                      subQuestion.legal_requirement_description ||
+                                      subQuestion.legal_requirement}
+                                  </p>
+                                ) : null}
+                                {subQuestion.explanation ? (
+                                  <p>
+                                    <span className="font-semibold text-[#294b7d]">Explanation:</span> {subQuestion.explanation}
+                                  </p>
+                                ) : null}
+                                {subQuestion.expected_implementation ? (
+                                  <p>
+                                    <span className="font-semibold text-[#294b7d]">Expected implementation:</span>{' '}
+                                    {subQuestion.expected_implementation}
+                                  </p>
+                                ) : null}
+                                {subQuestion.audit_type ? (
+                                  <p>
+                                    <span className="font-semibold text-[#294b7d]">Audit type:</span> {subQuestion.audit_type}
+                                  </p>
+                                ) : null}
+                                {subQuestion.security_level ? (
+                                  <p>
+                                    <span className="font-semibold text-[#294b7d]">Security level:</span> {subQuestion.security_level}
+                                  </p>
+                                ) : null}
+                                {subQuestion.how_it_works ? (
+                                  <p>
+                                    <span className="font-semibold text-[#294b7d]">Why this matters:</span> {subQuestion.how_it_works}
+                                  </p>
+                                ) : null}
+                                {subQuestion.admin_note ? (
+                                  <p>
+                                    <span className="font-semibold text-[#294b7d]">Note:</span> {subQuestion.admin_note}
+                                  </p>
+                                ) : null}
+                                {subQuestion.illustrative_image_id ? (
+                                  <div className="space-y-1">
+                                    <p>
+                                      <span className="font-semibold text-[#294b7d]">Example evidence:</span>
+                                    </p>
+                                    {isHttpUrl(subQuestion.illustrative_image_id) ||
+                                    previewUrlsByMediaId[subQuestion.illustrative_image_id] ? (
+                                      <div className="overflow-hidden rounded-md border border-[#dbe4f4] bg-white">
+                                        <img
+                                          src={
+                                            isHttpUrl(subQuestion.illustrative_image_id)
+                                              ? subQuestion.illustrative_image_id
+                                              : (previewUrlsByMediaId[subQuestion.illustrative_image_id] ?? '')
+                                          }
+                                          alt="Sub-question example evidence"
+                                          className="h-24 w-full object-cover"
+                                        />
+                                      </div>
+                                    ) : previewErrorsByMediaId[subQuestion.illustrative_image_id] ? (
+                                      <p className="text-[#6a7f9d]">
+                                        Preview unavailable: {previewErrorsByMediaId[subQuestion.illustrative_image_id]}
+                                      </p>
+                                    ) : (
+                                      <p className="text-[#6a7f9d]">Loading image preview...</p>
+                                    )}
+                                  </div>
+                                ) : null}
+                                {!subQuestion.legal_requirement_title &&
+                                !subQuestion.legal_requirement_description &&
+                                !subQuestion.legal_requirement &&
+                                !subQuestion.explanation &&
+                                !subQuestion.expected_implementation &&
+                                !subQuestion.audit_type &&
+                                !subQuestion.security_level &&
+                                !subQuestion.how_it_works &&
+                                !subQuestion.admin_note &&
+                                !subQuestion.illustrative_image_id ? (
+                                  <p className="text-[#6a7f9d]">No additional details available for this sub-question.</p>
+                                ) : null}
                               </div>
                             ) : null}
                           </div>

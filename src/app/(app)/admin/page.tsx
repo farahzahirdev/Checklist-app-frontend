@@ -103,7 +103,7 @@ export default function AdminDashboardPage() {
   return (
     <section className="space-y-4">
       <header className="flex items-center justify-between gap-3">
-        <h1 className="text-4xl font-semibold tracking-tight text-[#1f2d45]">Admin Dashboard</h1>
+        <h1 className="text-4xl font-semibold tracking-tight text-[#1f2d45]">{isReadOnly ? 'Auditor Dashboard' : 'Admin Dashboard'}</h1>
         <button
           type="button"
           onClick={() => void loadDashboard()}

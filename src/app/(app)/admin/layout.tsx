@@ -25,8 +25,18 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { href: '/admin/settings', label: 'Settings', icon: 'settings' },
   ] as const;
   const isReadOnly = role !== 'admin';
-  const visibleNavItems = navItems;
+  const visibleNavItems = isReadOnly
+    ? navItems.filter((item) => item.href === '/admin' || item.href === '/admin/checklists' || item.href === '/admin/rbac')
+    : navItems;
   const isChecklistPanelRoute = /^\/admin\/checklists\/[^/]+\/?$/.test(pathname);
+
+  useEffect(() => {
+    if (!isReadOnly) return;
+    const isAllowedAuditorRoute = pathname === '/admin' || pathname.startsWith('/admin/checklists') || pathname.startsWith('/admin/rbac');
+    if (!isAllowedAuditorRoute) {
+      router.replace('/admin/checklists');
+    }
+  }, [isReadOnly, pathname, router]);
 
   useEffect(() => {
     let cancelled = false;
