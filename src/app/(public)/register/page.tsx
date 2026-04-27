@@ -122,7 +122,7 @@ export default function RegisterPage() {
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-[#9dc5ff]">Account</p>
           <h1 className="mt-2 text-3xl font-semibold text-white">Create an account</h1>
-          <p className="mt-2 text-sm text-[#97a5bb]">Password must be at least 12 characters.</p>
+          <p className="mt-2 text-sm text-[#97a5bb]">Password must be at least 8 characters.</p>
           {step === 'customer-mfa-verify' ? (
             <p className="mt-2 text-sm text-amber-300">MFA is enabled. Enter your OTP to complete account setup.</p>
           ) : null}
@@ -153,7 +153,7 @@ export default function RegisterPage() {
                   name="password"
                   autoComplete="new-password"
                   required
-                  minLength={12}
+                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value.replace(/\s/g, ''))}
                   className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 pr-10 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"

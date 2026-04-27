@@ -25,6 +25,7 @@ type FlattenedQuestion = AssessmentDetailQuestion & {
   sectionId: string;
   sectionTitle: string;
   depth: 0 | 1;
+  parentQuestionTitle?: string;
 };
 
 function flattenSectionQuestions(
@@ -34,9 +35,15 @@ function flattenSectionQuestions(
 ): FlattenedQuestion[] {
   const rows: FlattenedQuestion[] = [];
   questions.forEach((question) => {
-    rows.push({ ...question, sectionId, sectionTitle, depth: 0 });
+    rows.push({ ...question, sectionId, sectionTitle, depth: 0, parentQuestionTitle: undefined });
     (question.sub_questions ?? []).forEach((child) => {
-      rows.push({ ...child, sectionId, sectionTitle, depth: 1 });
+      rows.push({
+        ...child,
+        sectionId,
+        sectionTitle,
+        depth: 1,
+        parentQuestionTitle: question.question_title ?? question.question_id ?? 'Parent question',
+      });
     });
   });
   return rows;
@@ -82,6 +89,8 @@ export default function AssessmentPage() {
   const [submittingAssessment, setSubmittingAssessment] = useState(false);
   const [previewUrlsByMediaId, setPreviewUrlsByMediaId] = useState<Record<string, string>>({});
   const [previewErrorsByMediaId, setPreviewErrorsByMediaId] = useState<Record<string, string>>({});
+  const [subQuestionsExpanded, setSubQuestionsExpanded] = useState(true);
+  const [expandedSubQuestionId, setExpandedSubQuestionId] = useState('');
 
   const allQuestions = useMemo(
     () =>
@@ -187,6 +196,7 @@ export default function AssessmentPage() {
   }, [activeQuestion]);
 
   const whyThisMattersText = (activeQuestion?.how_it_works || activeQuestion?.explanation || '').trim();
+  const activeQuestionSubQuestions = activeQuestion?.sub_questions ?? [];
 
   async function ensureCurrentAssessmentId() {
     if (assessmentId) {
@@ -445,11 +455,18 @@ export default function AssessmentPage() {
             ) : activeQuestion ? (
               <>
                 <div className="mb-3 flex items-start justify-between gap-3">
-                  <span className="rounded-md bg-[#eaf1fb] px-2 py-1 text-xs font-semibold text-[#2f4f83]">
-                    {selectedSectionId
-                      ? `${assessmentDetail?.sections.find((s) => s.id === selectedSectionId)?.order ?? 1}. ${activeQuestion.sectionTitle}`
-                      : activeQuestion.sectionTitle}
-                  </span>
+                  <div className="space-y-1">
+                    <span className="inline-flex rounded-md bg-[#eaf1fb] px-2 py-1 text-xs font-semibold text-[#2f4f83]">
+                      {selectedSectionId
+                        ? `${assessmentDetail?.sections.find((s) => s.id === selectedSectionId)?.order ?? 1}. ${activeQuestion.sectionTitle}`
+                        : activeQuestion.sectionTitle}
+                    </span>
+                    {activeQuestion.depth === 1 ? (
+                      <p className="text-xs font-medium text-[#6a7f9d]">
+                        Sub-question of: {activeQuestion.parentQuestionTitle || 'Parent question'}
+                      </p>
+                    ) : null}
+                  </div>
                   <div className="flex items-center gap-3">
                     <p className="text-xs font-semibold text-[#65748f]">
                       Question {activeQuestionIndex + 1 > 0 ? activeQuestionIndex + 1 : 1} of {allQuestions.length || 1}
@@ -466,13 +483,69 @@ export default function AssessmentPage() {
                       Why this matters
                     </button>
                     {whyThisMattersText ? (
-                      <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 hidden w-80 rounded-lg border border-[#d9e4f5] bg-white p-3 text-xs text-[#3f5677] shadow-lg group-hover:block">
+                      <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 hidden w-96 rounded-lg border border-[#d9e4f5] bg-white p-4 text-sm text-[#3f5677] shadow-lg group-hover:block">
                         {whyThisMattersText}
                       </div>
                     ) : null}
                   </div>
                   </div>
                 </div>
+
+                {activeQuestionSubQuestions.length > 0 ? (
+                  <div className="mb-3 rounded-lg border border-[#d9e4f5] bg-[#f4f8ff] p-3">
+                    <button
+                      type="button"
+                      onClick={() => setSubQuestionsExpanded((previous) => !previous)}
+                      className="flex w-full items-center justify-between text-left text-sm font-semibold text-[#294b7d]"
+                    >
+                      <span>Sub-questions ({activeQuestionSubQuestions.length})</span>
+                      <span className="text-xs">{subQuestionsExpanded ? 'Hide' : 'Show'}</span>
+                    </button>
+                    {subQuestionsExpanded ? (
+                      <div className="mt-2 space-y-2">
+                        {activeQuestionSubQuestions.map((subQuestion) => (
+                          <div key={subQuestion.id} className="rounded-md border border-[#d7e4fa] bg-white px-3 py-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedSubQuestionId((previous) => (previous === subQuestion.id ? '' : subQuestion.id))
+                              }
+                              className="flex w-full items-center justify-between text-left text-sm text-[#2a3d5f]"
+                            >
+                              <div>
+                                <p className="font-medium">
+                                  {subQuestion.question_title || subQuestion.questions_title || subQuestion.question_id || 'Sub-question'}
+                                </p>
+                                <p className="text-xs text-[#6a7f9d]">{subQuestion.question_id || subQuestion.id}</p>
+                              </div>
+                              <span className="text-xs text-[#4b6ea6]">
+                                {expandedSubQuestionId === subQuestion.id ? 'Collapse' : 'Expand'}
+                              </span>
+                            </button>
+                            {expandedSubQuestionId === subQuestion.id ? (
+                              <div className="mt-2 space-y-1 border-t border-[#e7edf8] pt-2 text-xs text-[#3f5677]">
+                                <p>
+                                  <span className="font-semibold text-[#294b7d]">Legal requirement:</span>{' '}
+                                  {subQuestion.legal_requirement_title ||
+                                    subQuestion.legal_requirement_description ||
+                                    subQuestion.legal_requirement ||
+                                    '-'}
+                                </p>
+                                <p>
+                                  <span className="font-semibold text-[#294b7d]">Explanation:</span> {subQuestion.explanation || '-'}
+                                </p>
+                                <p>
+                                  <span className="font-semibold text-[#294b7d]">Expected implementation:</span>{' '}
+                                  {subQuestion.expected_implementation || '-'}
+                                </p>
+                              </div>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 <div className="rounded-lg border border-[#e2e8f5] bg-white p-2">
                   <p className="px-2 py-1 text-[44px] leading-[1.1] font-semibold text-[#1f2d45]">

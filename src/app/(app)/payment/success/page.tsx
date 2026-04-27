@@ -28,6 +28,7 @@ export default function PaymentSuccessPage() {
   const [mfaCode, setMfaCode] = useState('');
   const [mfaLoading, setMfaLoading] = useState(false);
   const [mfaSetupLoading, setMfaSetupLoading] = useState(false);
+  const [mfaResolving, setMfaResolving] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
   const selectedChecklist = useMemo(
@@ -89,6 +90,7 @@ export default function PaymentSuccessPage() {
         setAccessExpiresAt(response.access_expires_at);
 
         if (response.payment_status === 'succeeded') {
+          setMfaResolving(true);
           const me = await getCurrentUser();
           if (!mounted) return;
           setMfaSetupRequired(!me.mfa_enabled);
@@ -103,6 +105,7 @@ export default function PaymentSuccessPage() {
             if (!me.mfa_enabled) {
               await loadMfaSetup();
             }
+            setMfaResolving(false);
           } else {
             const preferredChecklistId =
               searchParams.get('checklist_id') || window.localStorage.getItem(CHECKOUT_CHECKLIST_ID_STORAGE_KEY) || '';
@@ -122,6 +125,7 @@ export default function PaymentSuccessPage() {
                 if (!me.mfa_enabled) {
                   await loadMfaSetup();
                 }
+                setMfaResolving(false);
                 return;
               } catch (selectErr) {
                 const message = selectErr instanceof Error ? selectErr.message : 'Failed to activate checklist access.';
@@ -135,6 +139,7 @@ export default function PaymentSuccessPage() {
                   if (!me.mfa_enabled) {
                     await loadMfaSetup();
                   }
+                  setMfaResolving(false);
                   return;
                 }
               }
@@ -142,19 +147,23 @@ export default function PaymentSuccessPage() {
 
             setStatusMessage('Payment confirmed, but checklist activation is pending.');
             await loadChecklists();
+            setMfaResolving(false);
           }
         } else if (response.payment_status === 'pending') {
+          setMfaResolving(false);
           setStatusMessage('Payment is still processing. We will refresh automatically.');
           pollTimeout = window.setTimeout(() => {
             void checkStatusAndMaybePoll();
           }, 3000);
         } else {
+          setMfaResolving(false);
           setStatusMessage('Payment failed. Please retry checkout.');
         }
       } catch (err) {
         if (!mounted) {
           return;
         }
+        setMfaResolving(false);
         setError(err instanceof Error ? err.message : 'Failed to fetch payment status.');
       } finally {
         if (mounted) {
@@ -226,7 +235,9 @@ export default function PaymentSuccessPage() {
   const shouldHoldSelectionUi =
     paymentStatus === 'succeeded' && !selectedChecklistFromStatus && Boolean(preferredChecklistIdFromCheckout) && !error;
   const shouldHoldMfaUi =
-    paymentStatus === 'succeeded' && mfaSetupRequired && (mfaSetupLoading || (!mfaQrSvg && !error));
+    paymentStatus === 'succeeded' && (mfaResolving || (mfaSetupRequired && (mfaSetupLoading || (!mfaQrSvg && !error))));
+  const shouldShowPageLoader = initializing || shouldHoldSelectionUi || shouldHoldMfaUi;
+  const shouldShowRecoveryLinks = paymentStatus === 'failed' || (Boolean(error) && !(paymentStatus === 'succeeded' && mfaSetupRequired));
 
   return (
     <section className="mx-auto w-full max-w-5xl space-y-6 px-6 md:px-8">
@@ -242,20 +253,20 @@ export default function PaymentSuccessPage() {
         }`}
         style={paymentStatus === 'succeeded' ? { background: 'linear-gradient(180deg, #06142f, #071a39)' } : undefined}
       >
-        {initializing || shouldHoldSelectionUi || shouldHoldMfaUi ? (
+        {shouldShowPageLoader ? (
           <div className="space-y-2 text-sm text-inherit/90">
             <p>Finalizing payment and preparing your secure setup...</p>
             <p>Please wait a moment.</p>
           </div>
         ) : null}
-        {loading ? <p className="text-sm text-inherit/90">Checking payment status...</p> : null}
-        {statusMessage ? <p className="text-sm text-inherit/90">{statusMessage}</p> : null}
+        {!shouldShowPageLoader && loading ? <p className="text-sm text-inherit/90">Checking payment status...</p> : null}
+        {!shouldShowPageLoader && statusMessage ? <p className="text-sm text-inherit/90">{statusMessage}</p> : null}
 
-        {!loading && paymentStatus === 'succeeded' && !selectedChecklistFromStatus && !checklists.length ? (
+        {!shouldShowPageLoader && !loading && paymentStatus === 'succeeded' && !selectedChecklistFromStatus && !checklists.length ? (
           <p className="mt-3 text-sm text-amber-200">No published checklists are available yet.</p>
         ) : null}
 
-        {paymentStatus === 'succeeded' && selectedChecklistFromStatus ? (
+        {!shouldShowPageLoader && paymentStatus === 'succeeded' && selectedChecklistFromStatus ? (
           <div className="mt-4 space-y-4">
             <div className="border border-white/20 bg-white/10 p-4 text-sm">
               <p className="text-lg font-semibold">{selectedChecklistFromStatus.title}</p>
@@ -275,7 +286,12 @@ export default function PaymentSuccessPage() {
           </div>
         ) : null}
 
-        {paymentStatus === 'succeeded' && !selectedChecklistFromStatus && checklists.length && !initializing && !shouldHoldSelectionUi ? (
+        {!shouldShowPageLoader &&
+        paymentStatus === 'succeeded' &&
+        !selectedChecklistFromStatus &&
+        checklists.length &&
+        !initializing &&
+        !shouldHoldSelectionUi ? (
           <div className="mt-4 max-w-2xl space-y-4">
             <label className="block space-y-2 text-sm">
               <span className="font-medium text-white">Checklist</span>
@@ -312,8 +328,8 @@ export default function PaymentSuccessPage() {
           </div>
         ) : null}
 
-        {paymentStatus === 'succeeded' && mfaSetupRequired && !shouldHoldMfaUi ? (
-          <div className="mt-4 max-w-2xl space-y-4 border border-white/20 bg-white/10 p-4 text-sm">
+        {!shouldShowPageLoader && paymentStatus === 'succeeded' && mfaSetupRequired && !shouldHoldMfaUi ? (
+          <div className="mt-4 space-y-4 border border-white/20 bg-white/10 p-4 text-sm">
             <p className="font-semibold text-white">Complete MFA setup</p>
             <p className="text-white/90">Set up MFA now to continue to your dashboard.</p>
             {mfaSetupLoading ? <p className="text-white/90">Loading MFA setup details...</p> : null}
@@ -326,26 +342,33 @@ export default function PaymentSuccessPage() {
                 <div className="rounded bg-white p-3" dangerouslySetInnerHTML={{ __html: mfaQrSvg }} />
               )
             ) : null}
-            <label className="block space-y-2 text-sm">
-              <span className="font-medium text-white">Enter OTP code</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]{6}"
-                maxLength={6}
-                value={mfaCode}
-                onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="w-full border border-white/20 bg-[#0d1d3a] px-3 py-2 text-white outline-none"
-              />
-            </label>
-            <button
-              type="button"
-              disabled={mfaLoading}
-              onClick={() => void onCompleteMfa()}
-              className="border border-[#7fb0ff] bg-[#1f7bff]/25 px-3 py-2 text-white hover:bg-[#1f7bff]/35 disabled:opacity-60"
+            <form
+              className="space-y-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void onCompleteMfa();
+              }}
             >
-              {mfaLoading ? 'Completing MFA...' : 'Complete MFA and continue'}
-            </button>
+              <label className="block space-y-2 text-sm">
+                <span className="font-medium text-white">Enter OTP code</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  value={mfaCode}
+                  onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="w-full border border-white/20 bg-[#0d1d3a] px-3 py-2 text-white outline-none"
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={mfaLoading}
+                className="border border-[#7fb0ff] bg-[#1f7bff]/25 px-3 py-2 text-white hover:bg-[#1f7bff]/35 disabled:opacity-60"
+              >
+                {mfaLoading ? 'Completing MFA...' : 'Complete MFA and continue'}
+              </button>
+            </form>
           </div>
         ) : null}
 
@@ -353,7 +376,7 @@ export default function PaymentSuccessPage() {
         {error ? <p className="mt-3 text-sm text-rose-300">{error}</p> : null}
       </article>
 
-      {paymentStatus === 'failed' || Boolean(error) ? (
+      {shouldShowRecoveryLinks ? (
         <div className="flex flex-wrap gap-2 text-sm">
           <Link href="/payment" className="border border-[#d4dced] px-3 py-2 text-[#2a3d5f] hover:bg-[#f6f9ff]">
             Start checkout
