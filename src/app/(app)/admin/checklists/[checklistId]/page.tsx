@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
+import { useAdminAccess } from '@/lib/admin-access';
 import {
   createQuestion,
   createSection,
@@ -83,12 +84,14 @@ function RichTextEditor({
   onChange,
   placeholder,
   minHeight = 90,
+  hasError = false,
 }: {
   label: string;
   value: string;
   onChange: (next: string) => void;
   placeholder: string;
   minHeight?: number;
+  hasError?: boolean;
 }) {
   const editorRef = useRef<HTMLDivElement | null>(null);
 
@@ -126,7 +129,11 @@ function RichTextEditor({
         <label className={labelClass}>{label}</label>
         <span className="rounded-full bg-[#e6f1fb] px-2 py-0.5 text-[10px] font-semibold text-[#185fa5]">Rich text</span>
       </div>
-      <div className="overflow-hidden rounded-xl border border-[#d4dced] bg-white focus-within:border-[#3e69b0]">
+      <div
+        className={`overflow-hidden rounded-xl border bg-white focus-within:border-[#3e69b0] ${
+          hasError ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : 'border-[#d4dced]'
+        }`}
+      >
         <div className="flex items-center gap-1 border-b border-[#e2e8f5] bg-[#f7f9fe] px-2 py-1">
           <button type="button" className="h-6 w-6 rounded text-xs hover:bg-white" onClick={() => runCommand('bold')}>
             <span className="font-bold">B</span>
@@ -276,6 +283,7 @@ function mapApiQuestionToPanelQuestion(question: {
 export default function ChecklistPanelBuilderPage() {
   const params = useParams<{ checklistId: string }>();
   const checklistId = String(params.checklistId);
+  const { isReadOnly } = useAdminAccess();
 
   const [title, setTitle] = useState('Checklist Builder Draft');
   const [lawDecree, setLawDecree] = useState('');
@@ -314,6 +322,8 @@ export default function ChecklistPanelBuilderPage() {
   const [draggedQuestionId, setDraggedQuestionId] = useState<string | null>(null);
   const [dragOverQuestionId, setDragOverQuestionId] = useState<string | null>(null);
   const [reorderingQuestionsSectionId, setReorderingQuestionsSectionId] = useState<string | null>(null);
+  const [createQuestionMissingFields, setCreateQuestionMissingFields] = useState<string[]>([]);
+  const [editQuestionMissingFields, setEditQuestionMissingFields] = useState<string[]>([]);
 
   useEffect(() => {
     return () => {
@@ -325,6 +335,15 @@ export default function ChecklistPanelBuilderPage() {
       }
     };
   }, [newQuestionImagePreviewUrl, editQuestionImagePreview]);
+
+  useEffect(() => {
+    if (selected.type !== 'createQuestion') {
+      setCreateQuestionMissingFields([]);
+    }
+    if (selected.type !== 'question') {
+      setEditQuestionMissingFields([]);
+    }
+  }, [selected]);
 
   useEffect(() => {
     let cancelled = false;
@@ -663,16 +682,20 @@ export default function ChecklistPanelBuilderPage() {
     }
     const draftQuestion = newQuestionDraft;
     const derivedPoints = draftQuestion.securityLevel === 'low' ? 1 : draftQuestion.securityLevel === 'medium' ? 3 : 4;
-    if (
-      !draftQuestion.questionTitle.trim() ||
-      !draftQuestion.legalRequirementTitle.trim() ||
-      !draftQuestion.legalRequirementDescription.trim() ||
-      !draftQuestion.explanation.trim() ||
-      !draftQuestion.expectedImplementation.trim()
-    ) {
+    const missingFields = [
+      !draftQuestion.questionId.trim() ? 'questionId' : null,
+      !draftQuestion.questionTitle.trim() ? 'questionTitle' : null,
+      !draftQuestion.legalRequirementTitle.trim() ? 'legalRequirementTitle' : null,
+      !draftQuestion.legalRequirementDescription.trim() ? 'legalRequirementDescription' : null,
+      !draftQuestion.explanation.trim() ? 'explanation' : null,
+      !draftQuestion.expectedImplementation.trim() ? 'expectedImplementation' : null,
+    ].filter((item): item is string => Boolean(item));
+    if (missingFields.length > 0) {
+      setCreateQuestionMissingFields(missingFields);
       toast.error('Please fill all required question fields.');
       return;
     }
+    setCreateQuestionMissingFields([]);
     setQuestionActionLoading('create');
     setAddingQuestionSectionId(addQuestionSectionId);
     try {
@@ -722,6 +745,20 @@ export default function ChecklistPanelBuilderPage() {
     const section = sections.find((item) => item.id === sectionId);
     const question = section?.questions.find((item) => item.id === questionId);
     if (!question) return;
+    const missingFields = [
+      !question.questionId.trim() ? 'questionId' : null,
+      !question.questionTitle.trim() ? 'questionTitle' : null,
+      !question.legalRequirementTitle.trim() ? 'legalRequirementTitle' : null,
+      !question.legalRequirementDescription.trim() ? 'legalRequirementDescription' : null,
+      !question.explanation.trim() ? 'explanation' : null,
+      !question.expectedImplementation.trim() ? 'expectedImplementation' : null,
+    ].filter((item): item is string => Boolean(item));
+    if (missingFields.length > 0) {
+      setEditQuestionMissingFields(missingFields);
+      toast.error('Please fill all required question fields.');
+      return;
+    }
+    setEditQuestionMissingFields([]);
     const derivedPoints = question.securityLevel === 'low' ? 1 : question.securityLevel === 'medium' ? 3 : 4;
     setQuestionActionLoading('save');
     try {
@@ -923,14 +960,16 @@ export default function ChecklistPanelBuilderPage() {
 
         <div className="flex min-h-0 flex-1">
           <aside className="flex min-h-0 w-[320px] shrink-0 flex-col border-r border-[#dde6f5] bg-[linear-gradient(180deg,#071a39,#0b2a57)] p-4 text-[#d8e6ff]">
-            <button
-              type="button"
-              onClick={addSection}
-              disabled={loadingSections || sectionActionLoading === 'create'}
-              className="mb-4 w-full rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
-            >
-              {sectionActionLoading === 'create' ? 'Adding...' : '+ Add section'}
-            </button>
+            {!isReadOnly ? (
+              <button
+                type="button"
+                onClick={addSection}
+                disabled={loadingSections || sectionActionLoading === 'create'}
+                className="mb-4 w-full rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
+              >
+                {sectionActionLoading === 'create' ? 'Adding...' : '+ Add section'}
+              </button>
+            ) : null}
 
             <div className="mb-3 rounded-lg border border-[#2d4f83] bg-[#10284f] px-3 py-2 text-left">
               <p className="text-[10px] uppercase tracking-[0.08em] text-[#9db8e6]">Checklist</p>
@@ -945,9 +984,13 @@ export default function ChecklistPanelBuilderPage() {
               {orderedSections.map((section) => (
                   <div
                     key={section.id}
-                    draggable={!reorderingSections}
-                    onDragStart={() => setDraggedSectionId(section.id)}
+                    draggable={!isReadOnly && !reorderingSections}
+                    onDragStart={() => {
+                      if (isReadOnly) return;
+                      setDraggedSectionId(section.id);
+                    }}
                     onDragOver={(event) => {
+                      if (isReadOnly) return;
                       event.preventDefault();
                       if (dragOverSectionId !== section.id) setDragOverSectionId(section.id);
                     }}
@@ -956,6 +999,7 @@ export default function ChecklistPanelBuilderPage() {
                       setDragOverSectionId(null);
                     }}
                     onDrop={(event) => {
+                      if (isReadOnly) return;
                       event.preventDefault();
                       void handleSectionDrop(section.id);
                     }}
@@ -964,9 +1008,11 @@ export default function ChecklistPanelBuilderPage() {
                     } ${reorderingSections ? 'opacity-80' : ''}`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="cursor-grab px-1 text-xs text-[#9db8e6]" title="Drag to reorder">
-                        ⋮⋮
-                      </span>
+                      {!isReadOnly ? (
+                        <span className="cursor-grab px-1 text-xs text-[#9db8e6]" title="Drag to reorder">
+                          ⋮⋮
+                        </span>
+                      ) : null}
                       <button
                         type="button"
                         onClick={() =>
@@ -1005,14 +1051,15 @@ export default function ChecklistPanelBuilderPage() {
                           </span>
                         </div>
                       </button>
-                      <button
-                        type="button"
-                        aria-label="Delete section"
-                        title="Delete section"
-                        onClick={() => setConfirmDeleteSectionId(section.id)}
-                        disabled={sectionActionLoading === 'delete'}
-                        className="p-1 text-[#bf2e2e] hover:text-[#a52828] disabled:opacity-60"
-                      >
+                      {!isReadOnly ? (
+                        <button
+                          type="button"
+                          aria-label="Delete section"
+                          title="Delete section"
+                          onClick={() => setConfirmDeleteSectionId(section.id)}
+                          disabled={sectionActionLoading === 'delete'}
+                          className="p-1 text-[#bf2e2e] hover:text-[#a52828] disabled:opacity-60"
+                        >
                         <svg viewBox="0 0 90 90" fill="none" className="h-4 w-4" aria-hidden="true">
                           <path
                             d="M64.71 90H25.291c-4.693 0-8.584-3.67-8.859-8.355l-3.928-67.088c-.048-.825.246-1.633.812-2.234.567-.601 1.356-.941 2.183-.941h59.002c.826 0 1.615.341 2.183.941.566.601.86 1.409.813 2.234l-3.928 67.089C73.294 86.33 69.403 90 64.71 90ZM18.679 17.381l3.743 63.913C22.51 82.812 23.771 84 25.291 84H64.71c1.52 0 2.779-1.188 2.868-2.705l3.742-63.914H18.679Z"
@@ -1039,7 +1086,8 @@ export default function ChecklistPanelBuilderPage() {
                             fill="currentColor"
                           />
                         </svg>
-                      </button>
+                        </button>
+                      ) : null}
                     </div>
 
                     {!collapsedSectionIds.includes(section.id) ? (
@@ -1050,12 +1098,14 @@ export default function ChecklistPanelBuilderPage() {
                             return (
                               <div
                                 key={question.id}
-                                draggable={!isSubQuestion && !reorderingSections && !reorderingQuestionsSectionId}
+                                draggable={!isReadOnly && !isSubQuestion && !reorderingSections && !reorderingQuestionsSectionId}
                                 onDragStart={() => {
+                                  if (isReadOnly) return;
                                   if (isSubQuestion) return;
                                   setDraggedQuestionId(question.id);
                                 }}
                                 onDragOver={(event) => {
+                                  if (isReadOnly) return;
                                   if (isSubQuestion) return;
                                   event.preventDefault();
                                   if (dragOverQuestionId !== question.id) setDragOverQuestionId(question.id);
@@ -1065,13 +1115,14 @@ export default function ChecklistPanelBuilderPage() {
                                   setDragOverQuestionId(null);
                                 }}
                                 onDrop={(event) => {
+                                  if (isReadOnly) return;
                                   if (isSubQuestion) return;
                                   event.preventDefault();
                                   void handleQuestionDrop(section.id, question.id);
                                 }}
                                 className={`flex items-center gap-1 rounded-md ${!isSubQuestion && dragOverQuestionId === question.id ? 'ring-1 ring-[#5ea2ff]' : ''}`}
                               >
-                                {!isSubQuestion ? (
+                                {!isReadOnly && !isSubQuestion ? (
                                   <span className="cursor-grab px-1 text-[10px] text-[#9db8e6]" title="Drag to reorder questions">
                                     ⋮⋮
                                   </span>
@@ -1089,19 +1140,21 @@ export default function ChecklistPanelBuilderPage() {
                                 >
                                   {isSubQuestion ? '↳ ' : ''}Q{displayCode}: {question.questionTitle || question.questionId || 'Untitled question'}
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={() => addQuestion(section.id, question.id)}
-                                  disabled={
-                                    !canAddSub ||
-                                    (questionActionLoading === 'create' && addingQuestionSectionId === section.id) ||
-                                    reorderingSections
-                                  }
-                                  className="rounded-md border border-dashed border-[#5d84be] px-2 py-1 text-[10px] font-semibold text-[#d8e6ff] hover:bg-[#16345f] disabled:cursor-not-allowed disabled:opacity-40"
-                                  title={canAddSub ? 'Add subquestion' : 'Subquestions cannot have subquestions'}
-                                >
-                                  + Sub
-                                </button>
+                                {!isReadOnly ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => addQuestion(section.id, question.id)}
+                                    disabled={
+                                      !canAddSub ||
+                                      (questionActionLoading === 'create' && addingQuestionSectionId === section.id) ||
+                                      reorderingSections
+                                    }
+                                    className="rounded-md border border-dashed border-[#5d84be] px-2 py-1 text-[10px] font-semibold text-[#d8e6ff] hover:bg-[#16345f] disabled:cursor-not-allowed disabled:opacity-40"
+                                    title={canAddSub ? 'Add subquestion' : 'Subquestions cannot have subquestions'}
+                                  >
+                                    + Sub
+                                  </button>
+                                ) : null}
                               </div>
                             );
                           })}
@@ -1110,14 +1163,16 @@ export default function ChecklistPanelBuilderPage() {
                           ) : null}
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => addQuestion(section.id)}
-                          disabled={(questionActionLoading === 'create' && addingQuestionSectionId === section.id) || reorderingSections}
-                          className="mt-2 w-full rounded-md border border-dashed border-[#5d84be] px-2 py-1.5 text-xs font-semibold text-[#d8e6ff] hover:bg-[#16345f] disabled:opacity-60"
-                        >
-                          {questionActionLoading === 'create' && addingQuestionSectionId === section.id ? 'Adding question...' : '+ Add question'}
-                        </button>
+                        {!isReadOnly ? (
+                          <button
+                            type="button"
+                            onClick={() => addQuestion(section.id)}
+                            disabled={(questionActionLoading === 'create' && addingQuestionSectionId === section.id) || reorderingSections}
+                            className="mt-2 w-full rounded-md border border-dashed border-[#5d84be] px-2 py-1.5 text-xs font-semibold text-[#d8e6ff] hover:bg-[#16345f] disabled:opacity-60"
+                          >
+                            {questionActionLoading === 'create' && addingQuestionSectionId === section.id ? 'Adding question...' : '+ Add question'}
+                          </button>
+                        ) : null}
                       </>
                     ) : null}
                   </div>
@@ -1128,6 +1183,8 @@ export default function ChecklistPanelBuilderPage() {
           <main className="min-h-0 flex-1 overflow-y-auto p-5">
             {selected.type === 'section' && selectedSection ? (
               <div className={`${cardClass} space-y-4`}>
+                {isReadOnly ? <p className="rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2 text-xs text-[#5f7395]">Read-only mode: editing actions are disabled for auditor.</p> : null}
+                <fieldset disabled={isReadOnly} className="space-y-4">
                 <h2 className="text-lg font-semibold">Section</h2>
                 <div>
                   <label className={labelClass}>Section title *</label>
@@ -1147,28 +1204,31 @@ export default function ChecklistPanelBuilderPage() {
                     className={inputClass}
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void handleSaveSection(selectedSection.id)}
-                    disabled={sectionActionLoading === 'save'}
-                    className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
-                  >
-                    {sectionActionLoading === 'save' ? 'Saving...' : 'Save section'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleDeleteSection(selectedSection.id)}
-                    disabled={sectionActionLoading === 'delete'}
-                    className="rounded-lg border border-[#d45f6b] bg-[#fff1f3] px-3 py-2 text-xs font-semibold text-[#a73a46] disabled:opacity-60"
-                  >
-                    {sectionActionLoading === 'delete' ? 'Deleting...' : 'Delete section'}
-                  </button>
-                </div>
+                {!isReadOnly ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveSection(selectedSection.id)}
+                      disabled={sectionActionLoading === 'save'}
+                      className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
+                    >
+                      {sectionActionLoading === 'save' ? 'Saving...' : 'Save section'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleDeleteSection(selectedSection.id)}
+                      disabled={sectionActionLoading === 'delete'}
+                      className="rounded-lg border border-[#d45f6b] bg-[#fff1f3] px-3 py-2 text-xs font-semibold text-[#a73a46] disabled:opacity-60"
+                    >
+                      {sectionActionLoading === 'delete' ? 'Deleting...' : 'Delete section'}
+                    </button>
+                  </div>
+                ) : null}
+                </fieldset>
               </div>
             ) : null}
 
-            {selected.type === 'createSection' ? (
+            {!isReadOnly && selected.type === 'createSection' ? (
               <div className={`${cardClass} space-y-4`}>
                 <h2 className="text-lg font-semibold">Add section</h2>
                 <p className="text-sm text-[#607594]">Enter section details before creating it.</p>
@@ -1211,7 +1271,7 @@ export default function ChecklistPanelBuilderPage() {
               </div>
             ) : null}
 
-            {selected.type === 'createQuestion' ? (
+            {!isReadOnly && selected.type === 'createQuestion' ? (
               <div className={`${cardClass} space-y-4`}>
                 <div className="flex items-start justify-between gap-3 border-b border-[#e2e8f5] pb-3">
                   <div>
@@ -1232,7 +1292,7 @@ export default function ChecklistPanelBuilderPage() {
                     <input
                       value={newQuestionDraft.questionTitle}
                       onChange={(event) => setNewQuestionDraft((previous) => ({ ...previous, questionTitle: event.target.value }))}
-                      className={inputClass}
+                      className={`${inputClass} ${createQuestionMissingFields.includes('questionTitle') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
                     />
                   </div>
                   <div>
@@ -1240,7 +1300,7 @@ export default function ChecklistPanelBuilderPage() {
                     <input
                       value={newQuestionDraft.questionId}
                       onChange={(event) => setNewQuestionDraft((previous) => ({ ...previous, questionId: event.target.value }))}
-                      className={inputClass}
+                      className={`${inputClass} ${createQuestionMissingFields.includes('questionId') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
                     />
                   </div>
                   <div>
@@ -1275,7 +1335,7 @@ export default function ChecklistPanelBuilderPage() {
                       onChange={(event) =>
                         setNewQuestionDraft((previous) => ({ ...previous, legalRequirementTitle: event.target.value }))
                       }
-                      className={inputClass}
+                      className={`${inputClass} ${createQuestionMissingFields.includes('legalRequirementTitle') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -1287,6 +1347,7 @@ export default function ChecklistPanelBuilderPage() {
                       }
                       placeholder="Describe the legal or regulatory basis..."
                       minHeight={80}
+                      hasError={createQuestionMissingFields.includes('legalRequirementDescription')}
                     />
                   </div>
                   <div className={sectionHeadingClass + ' md:col-span-2'}>Content & guidance</div>
@@ -1297,6 +1358,7 @@ export default function ChecklistPanelBuilderPage() {
                       onChange={(next) => setNewQuestionDraft((previous) => ({ ...previous, explanation: next }))}
                       placeholder="Why this control matters..."
                       minHeight={90}
+                      hasError={createQuestionMissingFields.includes('explanation')}
                     />
                   </div>
                   <div>
@@ -1308,6 +1370,7 @@ export default function ChecklistPanelBuilderPage() {
                       }
                       placeholder="• Step 1"
                       minHeight={90}
+                      hasError={createQuestionMissingFields.includes('expectedImplementation')}
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -1501,6 +1564,8 @@ export default function ChecklistPanelBuilderPage() {
 
             {selected.type === 'question' && selectedSection && selectedQuestion ? (
               <div className={`${cardClass} space-y-4`}>
+                {isReadOnly ? <p className="rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2 text-xs text-[#5f7395]">Read-only mode: editing actions are disabled for auditor.</p> : null}
+                <fieldset disabled={isReadOnly} className="space-y-4">
                 <div className="flex items-start justify-between gap-3 border-b border-[#e2e8f5] pb-3">
                   <div>
                     <h2 className="text-lg font-semibold">Edit question</h2>
@@ -1516,7 +1581,7 @@ export default function ChecklistPanelBuilderPage() {
                       onChange={(event) =>
                         updateQuestion(selectedSection.id, selectedQuestion.id, { questionTitle: event.target.value })
                       }
-                      className={inputClass}
+                      className={`${inputClass} ${editQuestionMissingFields.includes('questionTitle') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
                     />
                   </div>
                   <div>
@@ -1526,7 +1591,7 @@ export default function ChecklistPanelBuilderPage() {
                       onChange={(event) =>
                         updateQuestion(selectedSection.id, selectedQuestion.id, { questionId: event.target.value })
                       }
-                      className={inputClass}
+                      className={`${inputClass} ${editQuestionMissingFields.includes('questionId') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
                     />
                   </div>
                   <div>
@@ -1567,7 +1632,7 @@ export default function ChecklistPanelBuilderPage() {
                         legalRequirementTitle: event.target.value,
                       })
                     }
-                    className={inputClass}
+                    className={`${inputClass} ${editQuestionMissingFields.includes('legalRequirementTitle') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
                   />
                 </div>
                 <div>
@@ -1581,6 +1646,7 @@ export default function ChecklistPanelBuilderPage() {
                     }
                     placeholder="Describe the legal or regulatory basis..."
                     minHeight={80}
+                    hasError={editQuestionMissingFields.includes('legalRequirementDescription')}
                   />
                 </div>
                 <div className={sectionHeadingClass}>Content & guidance</div>
@@ -1594,6 +1660,7 @@ export default function ChecklistPanelBuilderPage() {
                       }
                       placeholder="Why this control matters..."
                       minHeight={90}
+                      hasError={editQuestionMissingFields.includes('explanation')}
                     />
                   </div>
                   <div>
@@ -1607,6 +1674,7 @@ export default function ChecklistPanelBuilderPage() {
                       }
                       placeholder="• Step 1"
                       minHeight={90}
+                      hasError={editQuestionMissingFields.includes('expectedImplementation')}
                     />
                   </div>
                 </div>
@@ -1782,39 +1850,42 @@ export default function ChecklistPanelBuilderPage() {
                     </div>
                   ) : null}
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void handleSaveQuestion(selectedSection.id, selectedQuestion.id)}
-                    disabled={questionActionLoading === 'save'}
-                    className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
-                  >
-                    {questionActionLoading === 'save' ? 'Saving...' : 'Save question'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setConfirmDeleteQuestionTarget({
-                        sectionId: selectedSection.id,
-                        questionId: selectedQuestion.id,
-                        isSubQuestion: Boolean(selectedQuestion.parentQuestionId),
-                      })
-                    }
-                    disabled={questionActionLoading === 'delete'}
-                    className="rounded-lg border border-[#d45f6b] bg-[#fff1f3] px-3 py-2 text-xs font-semibold text-[#a73a46] disabled:opacity-60"
-                  >
-                    {questionActionLoading === 'delete'
-                      ? 'Deleting...'
-                      : selectedQuestion.parentQuestionId
-                        ? 'Delete subquestion'
-                        : 'Delete question'}
-                  </button>
-                </div>
+                {!isReadOnly ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveQuestion(selectedSection.id, selectedQuestion.id)}
+                      disabled={questionActionLoading === 'save'}
+                      className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
+                    >
+                      {questionActionLoading === 'save' ? 'Saving...' : 'Save question'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setConfirmDeleteQuestionTarget({
+                          sectionId: selectedSection.id,
+                          questionId: selectedQuestion.id,
+                          isSubQuestion: Boolean(selectedQuestion.parentQuestionId),
+                        })
+                      }
+                      disabled={questionActionLoading === 'delete'}
+                      className="rounded-lg border border-[#d45f6b] bg-[#fff1f3] px-3 py-2 text-xs font-semibold text-[#a73a46] disabled:opacity-60"
+                    >
+                      {questionActionLoading === 'delete'
+                        ? 'Deleting...'
+                        : selectedQuestion.parentQuestionId
+                          ? 'Delete subquestion'
+                          : 'Delete question'}
+                    </button>
+                  </div>
+                ) : null}
+                </fieldset>
               </div>
             ) : null}
           </main>
         </div>
-        {confirmDeleteSectionId ? (
+        {!isReadOnly && confirmDeleteSectionId ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4">
             <div className="w-full max-w-md rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl">
               <h2 className="text-lg font-semibold text-[#1f2d45]">Delete section?</h2>
@@ -1842,7 +1913,7 @@ export default function ChecklistPanelBuilderPage() {
             </div>
           </div>
         ) : null}
-        {confirmDeleteQuestionTarget ? (
+        {!isReadOnly && confirmDeleteQuestionTarget ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4">
             <div className="w-full max-w-md rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl">
               <h2 className="text-lg font-semibold text-[#1f2d45]">
