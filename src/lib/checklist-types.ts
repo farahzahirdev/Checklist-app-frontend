@@ -1,12 +1,21 @@
 export type RiskLevel = 'low' | 'medium' | 'high';
 export type AnswerStatus = 'not_started' | 'in_progress' | 'completed' | 'needs_review';
-export type AuditType = 'compliance';
+export type AuditType = string;
 
 export type ChecklistStatus = 'draft' | 'published';
 
 export interface EvidenceRule {
   allowedMimeTypes: string[];
   maxFileSizeBytes: number;
+}
+
+export interface ChecklistAnswerOption {
+  position: number;
+  label: string;
+  score: number;
+  choiceCode: string;
+  description: string;
+  illustrativeImageId?: string | null;
 }
 
 export interface Checklist {
@@ -18,6 +27,20 @@ export interface Checklist {
   status: ChecklistStatus;
   createdAt: string;
   updatedAt: string;
+  pricing?: {
+    priceId: string;
+    amountCents: number;
+    currency: string;
+  } | null;
+  warning?: string | null;
+  stripeInfo?: {
+    productId: string | null;
+    priceId: string | null;
+    priceAmountCents: number | null;
+    priceCurrency: string | null;
+    priceAvailable: boolean;
+    priceStatus: string;
+  } | null;
 }
 
 export interface ChecklistSection {
@@ -32,16 +55,31 @@ export interface ChecklistQuestion {
   checklistId: string;
   sectionId: string;
   questionId: string;
+  questionTitle?: string;
+  parentQuestionId?: string | null;
+  illustrativeImageId?: string | null;
   securityLevel: RiskLevel;
+  answerLogic?: 'answer_only' | 'answer_with_adjustment';
   auditType: AuditType;
+  legalRequirementTitle?: string;
+  legalRequirementDescription?: string;
   legalRequirement: string;
   explanation: string;
   expectedImplementation: string;
+  howItWorks?: string;
+  guidanceScore4?: string;
+  guidanceScore3?: string;
+  guidanceScore2?: string;
+  guidanceScore1?: string;
+  recommendationTemplate?: string;
+  evidenceEnabled?: boolean;
+  noteEnabled?: boolean;
   points: number;
   customerAnswer: string | null;
   customerAnswerStatus: AnswerStatus;
   note: string | null;
   evidenceRule: EvidenceRule;
+  answerOptions?: ChecklistAnswerOption[];
 }
 
 export interface EvidenceItem {

@@ -11,13 +11,23 @@ const statusClass: Record<string, string> = {
   Published: 'bg-[#e9f8ef] text-[#2f9960]',
 };
 
-export default function AdminReportsPage() {
+type ReportsPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function AdminReportsPage({ searchParams }: ReportsPageProps) {
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const statusFilterRaw = resolvedSearchParams.status;
+  const statusFilter = (Array.isArray(statusFilterRaw) ? statusFilterRaw[0] : statusFilterRaw)?.trim() ?? '';
+  const filteredRows = statusFilter ? reportRows.filter((row) => row.status.toLowerCase() === statusFilter.toLowerCase()) : reportRows;
+
   return (
     <section className="space-y-4">
       <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Reports</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#1f2d45]">Report Center</h1>
         <p className="mt-1 text-sm text-[#607594]">Review generated assessment reports and publish approved versions.</p>
+        {statusFilter ? <p className="mt-2 text-sm font-semibold text-[#3e69b0]">Filtered by status: {statusFilter}</p> : null}
       </header>
 
       <div className="grid gap-3 md:grid-cols-3">
@@ -54,7 +64,7 @@ export default function AdminReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {reportRows.map((row) => (
+              {filteredRows.map((row) => (
                 <tr key={`${row.company}-${row.completedOn}`} className="border-b border-[#edf2f9] last:border-0">
                   <td className="py-3 pr-4 font-semibold text-[#25375a]">{row.company}</td>
                   <td className="py-3 pr-4 text-[#5f7395]">{row.checklist}</td>
@@ -70,6 +80,13 @@ export default function AdminReportsPage() {
                   </td>
                 </tr>
               ))}
+              {!filteredRows.length ? (
+                <tr>
+                  <td className="py-3 text-[#607594]" colSpan={6}>
+                    No reports match the selected status.
+                  </td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>

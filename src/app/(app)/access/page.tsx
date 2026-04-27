@@ -38,11 +38,22 @@ export default function AccessPage() {
 
   const remaining = useMemo(() => (assessment ? formatTimeRemaining(assessment.expires_at) : ''), [assessment]);
   const assessmentAlreadyStarted = Boolean(assessment && assessment.status !== 'not_started');
+  const canLoadCurrent = assessmentAlreadyStarted;
   const checklistLocked = assessmentAlreadyStarted || Boolean(checklistIdFromQuery);
   const selectedChecklistName = useMemo(
     () => checklists.find((checklist) => checklist.id === checklistId)?.title ?? '',
     [checklistId, checklists],
   );
+  const orderedChecklists = useMemo(() => {
+    if (!checklistId) {
+      return checklists;
+    }
+    const selected = checklists.find((checklist) => checklist.id === checklistId);
+    if (!selected) {
+      return checklists;
+    }
+    return [selected, ...checklists.filter((checklist) => checklist.id !== checklistId)];
+  }, [checklistId, checklists]);
 
   useEffect(() => {
     if (checklistIdFromQuery) {
@@ -117,7 +128,12 @@ export default function AccessPage() {
       setAssessment(response);
       setMessage('Active assessment loaded.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load assessment.');
+      const message = err instanceof Error ? err.message : 'Unable to load assessment.';
+      if (message.toLowerCase().includes('assessment not found')) {
+        setMessage('No active assessment found yet. Start assessment to begin.');
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -159,11 +175,19 @@ export default function AccessPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#4a6ea8]">Remaining time</p>
           <p className="mt-1 text-3xl font-semibold text-[#1f2d45]">{remaining}</p>
           <div className="mt-3 grid gap-2 text-sm text-[#445c7e] md:grid-cols-3">
+            {selectedChecklistName ? (
+              <p>
+                <span className="font-semibold">Checklist:</span> {selectedChecklistName}
+              </p>
+            ) : null}
             <p>
               <span className="font-semibold">Status:</span> {assessment.status}
             </p>
             <p>
               <span className="font-semibold">Completion:</span> {assessment.completion_percent}%
+            </p>
+            <p>
+              <span className="font-semibold">Started:</span> {new Date(assessment.started_at).toLocaleString()}
             </p>
             <p>
               <span className="font-semibold">Expires:</span> {new Date(assessment.expires_at).toLocaleString()}
@@ -172,81 +196,79 @@ export default function AccessPage() {
         </article>
       ) : null}
 
-      <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-[#243555]">Before you start</h2>
-        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#4f6281]">
-          <li>The 7-day completion window starts only when you click Start Assessment.</li>
-          <li>Evidence uploads are optional but recommended for better auditor review.</li>
-          <li>Final report is published in-app after manual auditor review.</li>
-        </ul>
-      </article>
+      {!assessmentAlreadyStarted ? (
+        <>
+          <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-[#243555]">Before you start</h2>
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#4f6281]">
+              <li>The 7-day completion window starts only when you click Start Assessment.</li>
+              <li>Evidence uploads are optional but recommended for better auditor review.</li>
+              <li>Final report is published in-app after manual auditor review.</li>
+            </ul>
+          </article>
 
-      <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-        {checklistLocked ? (
-          <div className="space-y-2 text-sm">
-            <p className="text-[#3f5677]">Checklist</p>
-            <p className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555]">
-              {selectedChecklistName || checklistId || 'Selected checklist'}
-            </p>
-          </div>
-        ) : (
-          <label className="block space-y-2 text-sm">
-            <span className="text-[#3f5677]">Checklist</span>
-            <select
-              value={checklistId}
-              onChange={(event) => setChecklistId(event.target.value)}
-              className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
-            >
-              <option value="">Select checklist</option>
-              {checklists.map((checklist) => (
-                <option key={checklist.id} value={checklist.id}>
-                  {checklist.title}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        <div className="mt-3 flex flex-wrap gap-2">
-          {!assessmentAlreadyStarted ? (
-            <button
-              type="button"
-              onClick={start}
-              disabled={loading}
-              className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading ? 'Processing…' : 'Start Assessment'}
-            </button>
-          ) : (
-            <Link
-              href="/assessment"
-              className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white"
-            >
+          <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+            {checklistLocked ? (
+              <div className="space-y-2 text-sm">
+                <p className="text-[#3f5677]">Checklist</p>
+                <p className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555]">
+                  {selectedChecklistName || checklistId || 'Selected checklist'}
+                </p>
+              </div>
+            ) : (
+              <label className="block space-y-2 text-sm">
+                <span className="text-[#3f5677]">Checklist</span>
+                <select
+                  value={checklistId}
+                  onChange={(event) => setChecklistId(event.target.value)}
+                  className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
+                >
+                  {!checklistId ? <option value="">Select checklist</option> : null}
+                  {orderedChecklists.map((checklist) => (
+                    <option key={checklist.id} value={checklist.id}>
+                      {checklist.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={start}
+                disabled={loading}
+                className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? 'Processing…' : 'Start Assessment'}
+              </button>
+            </div>
+
+            {message ? <p className="mt-3 text-sm text-[#2f9960]">{message}</p> : null}
+            {error ? <p className="mt-3 text-sm text-[#c43e53]">{error}</p> : null}
+          </article>
+        </>
+      ) : (
+        <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap gap-2">
+            <Link href="/assessment" className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white">
               Continue Assessment
             </Link>
-          )}
-          <button
-            type="button"
-            onClick={loadCurrent}
-            disabled={loading}
-            className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Load Current
-          </button>
-        </div>
-
-        {assessment ? (
-          <div className="mt-4 space-y-1 text-sm text-[#445c7e]">
-            {selectedChecklistName ? <p>Checklist: {selectedChecklistName}</p> : null}
-            <p>Status: {assessment.status}</p>
-            <p>Started At: {assessment.started_at}</p>
-            <p>Expires At: {assessment.expires_at}</p>
-            <p>Completion: {assessment.completion_percent}%</p>
-            <p className="font-semibold text-[#2f4f83]">{remaining}</p>
+            {canLoadCurrent ? (
+              <button
+                type="button"
+                onClick={loadCurrent}
+                disabled={loading}
+                className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Load Current
+              </button>
+            ) : null}
           </div>
-        ) : null}
-        {message ? <p className="mt-3 text-sm text-[#2f9960]">{message}</p> : null}
-        {error ? <p className="mt-3 text-sm text-[#c43e53]">{error}</p> : null}
-      </article>
+
+          {message ? <p className="mt-3 text-sm text-[#2f9960]">{message}</p> : null}
+          {error ? <p className="mt-3 text-sm text-[#c43e53]">{error}</p> : null}
+        </article>
+      )}
     </section>
   );
 }

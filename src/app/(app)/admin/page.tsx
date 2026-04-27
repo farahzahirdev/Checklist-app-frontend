@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
   getAdminActivity,
@@ -89,15 +90,15 @@ export default function AdminDashboardPage() {
         { label: 'Findings total', value: auditorSummary?.findings_total },
       ]
     : [
-    { label: 'Users total', value: data.summary?.users_total },
-    { label: 'Customers total', value: data.summary?.customers_total },
-    { label: 'Checklists published', value: data.summary?.checklists_published },
-    { label: 'Assessments submitted', value: data.summary?.assessments_submitted },
-    { label: 'Reports published', value: data.summary?.reports_published },
-    { label: 'Payments succeeded', value: data.summary?.payments_succeeded },
-    { label: 'Pending review', value: data.summary?.pending_review },
-    { label: 'Expired assessments', value: data.summary?.expired_assessments },
-  ];
+        { label: 'Users total', value: data.summary?.users_total },
+        { label: 'Customers total', value: data.summary?.customers_total },
+        { label: 'Checklists published', value: data.summary?.checklists_published },
+        { label: 'Assessments submitted', value: data.summary?.assessments_submitted, href: '/admin/assessments' },
+        { label: 'Reports published', value: data.summary?.reports_published, href: '/admin/reports?status=Published' },
+        { label: 'Payments succeeded', value: data.summary?.payments_succeeded },
+        { label: 'Pending review', value: data.summary?.pending_review, href: '/admin/assessments?status=Awaiting%20Review' },
+        { label: 'Expired assessments', value: data.summary?.expired_assessments, href: '/admin/assessments?status=Expired' },
+      ];
 
   return (
     <section className="space-y-4">
@@ -116,19 +117,29 @@ export default function AdminDashboardPage() {
       {error ? <p className="rounded-xl border border-[#ffccd3] bg-[#fff3f5] px-3 py-2 text-sm text-[#c43e53]">{error}</p> : null}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map((card) => (
-          <article key={card.label} className="rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm">
-            <p className="text-sm text-[#5b6f91]">{card.label}</p>
-            <p className="mt-1 text-2xl font-semibold text-[#273a5a]">{card.value ?? (loading ? '...' : 0)}</p>
-          </article>
-        ))}
+        {summaryCards.map((card) =>
+          card.href ? (
+            <Link key={card.label} href={card.href as any} className="rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm transition-colors hover:bg-[#f7f9fe]">
+              <p className="text-sm text-[#5b6f91]">{card.label}</p>
+              <p className="mt-1 text-2xl font-semibold text-[#273a5a]">{card.value ?? (loading ? '...' : 0)}</p>
+            </Link>
+          ) : (
+            <article key={card.label} className="rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm">
+              <p className="text-sm text-[#5b6f91]">{card.label}</p>
+              <p className="mt-1 text-2xl font-semibold text-[#273a5a]">{card.value ?? (loading ? '...' : 0)}</p>
+            </article>
+          ),
+        )}
       </div>
 
       {!isReadOnly ? (
       <div className="grid gap-3 xl:grid-cols-2">
         <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
-          <div className="border-b border-[#ecf0f8] px-4 py-3">
+          <div className="flex items-center justify-between border-b border-[#ecf0f8] px-4 py-3">
             <h2 className="text-xl font-semibold text-[#243555]">Awaiting Review</h2>
+            <Link href="/admin/assessments?status=Awaiting%20Review" className="text-xs font-semibold text-[#3e69b0] hover:text-[#274b84]">
+              Open full list
+            </Link>
           </div>
           <div className="divide-y divide-[#edf2f9] px-4">
             {data.awaitingReview.length ? (
@@ -175,11 +186,31 @@ export default function AdminDashboardPage() {
         <article className="rounded-2xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
           <h3 className="text-lg font-semibold text-[#243555]">Distribution</h3>
           <ul className="mt-3 space-y-2 text-sm text-[#2f4264]">
-            <li>Ready to start: {data.distribution?.ready_to_start ?? (loading ? '...' : 0)}</li>
-            <li>In progress: {data.distribution?.in_progress ?? (loading ? '...' : 0)}</li>
-            <li>Waiting review: {data.distribution?.waiting_for_review ?? (loading ? '...' : 0)}</li>
-            <li>Published: {data.distribution?.published ?? (loading ? '...' : 0)}</li>
-            <li>Expired: {data.distribution?.expired ?? (loading ? '...' : 0)}</li>
+            <li>
+              <Link href="/admin/assessments?status=Ready%20to%20Start" className="hover:text-[#274b84] hover:underline">
+                Ready to start: {data.distribution?.ready_to_start ?? (loading ? '...' : 0)}
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin/assessments?status=In%20Progress" className="hover:text-[#274b84] hover:underline">
+                In progress: {data.distribution?.in_progress ?? (loading ? '...' : 0)}
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin/assessments?status=Awaiting%20Review" className="hover:text-[#274b84] hover:underline">
+                Waiting review: {data.distribution?.waiting_for_review ?? (loading ? '...' : 0)}
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin/reports?status=Published" className="hover:text-[#274b84] hover:underline">
+                Published: {data.distribution?.published ?? (loading ? '...' : 0)}
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin/assessments?status=Expired" className="hover:text-[#274b84] hover:underline">
+                Expired: {data.distribution?.expired ?? (loading ? '...' : 0)}
+              </Link>
+            </li>
           </ul>
         </article>
 

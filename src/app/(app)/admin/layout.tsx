@@ -17,8 +17,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   const navItems = [
     { href: '/admin', label: 'Dashboard', icon: 'home' },
-    { href: '/admin/assessments', label: 'Assessments', icon: 'clipboard' },
-    { href: '/admin/reports', label: 'Reports', icon: 'report' },
     { href: '/admin/checklists', label: 'Checklist Content', icon: 'checklist' },
     { href: '/admin/products', label: 'Products', icon: 'box' },
     { href: '/admin/users', label: 'Users', icon: 'users' },
@@ -28,6 +26,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   ] as const;
   const isReadOnly = role !== 'admin';
   const visibleNavItems = navItems;
+  const isChecklistPanelRoute = /^\/admin\/checklists\/[^/]+\/?$/.test(pathname);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,6 +80,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   // 2) Keep checklist management as top priority domain in admin nav.
   return (
     <section className="relative h-screen w-full overflow-hidden bg-[#f4f6fb] text-[#182843]">
+      {isChecklistPanelRoute ? (
+        <div className="h-full w-full overflow-hidden">
+          <AdminAccessProvider isReadOnly={isReadOnly}>
+            <div className="h-full w-full">{children}</div>
+          </AdminAccessProvider>
+        </div>
+      ) : null}
+
+      {!isChecklistPanelRoute ? (
+        <>
       {mobileNavOpen ? (
         <button
           type="button"
@@ -172,6 +181,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </div>
+        </>
+      ) : null}
     </section>
   );
 }
