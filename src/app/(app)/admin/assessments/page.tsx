@@ -22,7 +22,8 @@ const statusClass: Record<string, string> = {
 function formatStatus(status: string | null | undefined) {
   if (!status) return 'Unknown';
   return status
-    .replaceAll('_', ' ')
+    .split('_')
+    .join(' ')
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 

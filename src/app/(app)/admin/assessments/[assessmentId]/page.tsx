@@ -302,7 +302,8 @@ export default function AdminAssessmentReviewDetailPage() {
 
   function formatActionType(actionType: string) {
     return actionType
-      .replaceAll('_', ' ')
+      .split('_')
+      .join(' ')
       .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
@@ -317,7 +318,7 @@ export default function AdminAssessmentReviewDetailPage() {
             <h1 className="text-3xl font-semibold tracking-tight text-[#1f2d45]">Assessment Awaiting Review</h1>
             <p className="mt-1 text-sm text-[#607594]">{detail?.customer_name || detail?.customer_email || '-'} — {detail?.checklist_title || '-'}</p>
             <p className="mt-1 text-xs text-[#6f82a3]">
-              {String(reviewStatusLabel || detail?.assessment_status || 'pending_review').replaceAll('_', ' ')} · {formatDateTime(detail?.submitted_at)}
+              {String(reviewStatusLabel || detail?.assessment_status || 'pending_review').split('_').join(' ')} · {formatDateTime(detail?.submitted_at)}
             </p>
           </div>
           <button type="button" disabled={finalizing || loading} onClick={() => void finalizeReview()} className="rounded-xl border border-[#2d4f83] bg-[#2f7dff] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">

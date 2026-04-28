@@ -102,7 +102,7 @@ export default function AdminAuditLogsPage() {
       log.created_at,
     ]);
     const csv = [header, ...rows]
-      .map((cols) => cols.map((col) => `"${String(col).replaceAll('"', '""')}"`).join(','))
+      .map((cols) => cols.map((col) => `"${String(col).replace(/"/g, '""')}"`).join(','))
       .join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
