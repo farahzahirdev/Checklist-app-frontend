@@ -29,13 +29,19 @@ export default function AppLayout({
   const [role, setRole] = useState<UserRoleKey | ''>('');
   const [displayName, setDisplayName] = useState('User');
   const [roleSwitchActive, setRoleSwitchActive] = useState(false);
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaEnabled, setMfaEnabled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAdminPath = pathname?.startsWith('/admin') ?? false;
-  const isPaymentPath = pathname?.startsWith('/payment') ?? false;
+  const isPaymentPath = pathname === '/payment' || pathname?.startsWith('/payment/') || false;
+  const isPaymentsPath = pathname?.startsWith('/payments') ?? false;
   const dashboardActive = pathname === '/dashboard';
   const assessmentActive = pathname?.startsWith('/assessment') ?? false;
   const accessActive = pathname?.startsWith('/access') ?? false;
+  const purchaseActive = isPaymentPath;
+  const paymentsActive = isPaymentsPath;
   const isCustomerShell = role === 'customer';
+  const needsCustomerMfa = isCustomerShell && mfaRequired && !mfaEnabled;
 
   function canAccessPath(currentRole: UserRoleKey, currentPath: string): boolean {
     if (currentPath.startsWith('/admin')) {
@@ -47,6 +53,10 @@ export default function AppLayout({
     if (currentPath.startsWith('/reports')) {
       return currentRole === 'admin' || currentRole === 'auditor';
     }
+    // Customer onboarding gate: until MFA is enabled, allow only the payment onboarding flow.
+    if (currentRole === 'customer' && mfaRequired && !mfaEnabled) {
+      return currentPath.startsWith('/payment');
+    }
     if (currentPath.startsWith('/assessment')) {
       return currentRole === 'customer';
     }
@@ -54,6 +64,9 @@ export default function AppLayout({
       return currentRole === 'customer';
     }
     if (currentPath.startsWith('/payment')) {
+      return currentRole === 'customer';
+    }
+    if (currentPath.startsWith('/payments')) {
       return currentRole === 'customer';
     }
     return true;
@@ -87,6 +100,8 @@ export default function AppLayout({
         setRole(getRoleKey(response.user.role));
         setDisplayName(getUserDisplayName(response.user));
         setRoleSwitchActive(isRoleSwitchSessionActive());
+        setMfaRequired(Boolean(response.mfa_required));
+        setMfaEnabled(Boolean(response.mfa_enabled));
         setAuthReady(true);
       } catch {
         window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
@@ -128,6 +143,16 @@ export default function AppLayout({
   }, [authReady, pathname, role, router]);
 
   useEffect(() => {
+    if (!authReady) return;
+    if (!pathname) return;
+    if (!needsCustomerMfa) return;
+    // Ensure customer cannot land on protected routes without completing MFA.
+    if (!pathname.startsWith('/payment')) {
+      router.replace('/payment');
+    }
+  }, [authReady, needsCustomerMfa, pathname, router]);
+
+  useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
@@ -149,7 +174,11 @@ export default function AppLayout({
     isAdminPath ? (
       <main className="min-h-screen bg-[#e9eef8] text-[#ffffff]">{children}</main>
     ) : (
-      isCustomerShell ? (
+      isCustomerShell && isPaymentPath ? (
+        <main className="min-h-screen bg-white text-[#1f2d45]">
+          <div className="py-8 md:py-10">{children}</div>
+        </main>
+      ) : isCustomerShell ? (
         <main className="relative h-screen w-full overflow-hidden bg-[#f4f6fb] text-[#182843]">
           {mobileMenuOpen ? (
             <button
@@ -171,7 +200,7 @@ export default function AppLayout({
                     <path d="M12 2 4 5v6c0 5.3 3.4 9.6 8 11 4.6-1.4 8-5.7 8-11V5l-8-3Z" stroke="currentColor" strokeWidth="1.8" />
                   </svg>
                 </span>
-                <span className="text-xl font-semibold text-white">Customer Space</span>
+                <span className="text-xl font-semibold text-white">Checklist KB</span>
               </Link>
               <nav className="mt-4 flex flex-col gap-1.5 text-[15px]">
                 <Link
@@ -197,6 +226,22 @@ export default function AppLayout({
                   }`}
                 >
                   Access
+                </Link>
+                <Link
+                  href="/payment"
+                  className={`flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
+                    purchaseActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
+                  }`}
+                >
+                  Purchase
+                </Link>
+                <Link
+                  href="/payments"
+                  className={`flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
+                    paymentsActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
+                  }`}
+                >
+                  Payments
                 </Link>
                 <LogoutButton />
                 {roleSwitchActive ? (

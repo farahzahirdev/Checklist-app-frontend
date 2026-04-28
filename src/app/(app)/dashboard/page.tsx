@@ -2,10 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getCustomerDashboardSummary, type CustomerDashboardSummary } from '@/lib/dashboard';
+import {
+  getCustomerDashboardEnhanced,
+  getCustomerDashboardSummary,
+  type CustomerDashboardEnhanced,
+  type CustomerDashboardSummary,
+} from '@/lib/dashboard';
+import { listCustomerAssessments, type CustomerAssessmentListItem } from '@/lib/customer-assessments';
+import { formatStatusLabel } from '@/lib/status-format';
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState<CustomerDashboardSummary | null>(null);
+  const [enhanced, setEnhanced] = useState<CustomerDashboardEnhanced | null>(null);
+  const [assessments, setAssessments] = useState<CustomerAssessmentListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [permissionBlocked, setPermissionBlocked] = useState(false);
@@ -15,8 +24,14 @@ export default function DashboardPage() {
     setError('');
     setPermissionBlocked(false);
     try {
-      const response = await getCustomerDashboardSummary();
-      setSummary(response);
+      const [summaryResponse, enhancedResponse, assessmentsResponse] = await Promise.all([
+        getCustomerDashboardSummary(),
+        getCustomerDashboardEnhanced().catch(() => null),
+        listCustomerAssessments({ sort_by: 'updated_at', sort_order: 'desc', limit: 20 }).catch(() => null),
+      ]);
+      setSummary(summaryResponse);
+      setEnhanced(enhancedResponse);
+      setAssessments(assessmentsResponse?.assessments ?? []);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load customer dashboard';
       setError(msg);
@@ -92,6 +107,120 @@ export default function DashboardPage() {
 
       {summary?.generated_at ? (
         <p className="text-xs text-[#607594]">Last generated at: {new Date(summary.generated_at).toLocaleString()}</p>
+      ) : null}
+
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-[#1f2d45]">Assessments</h2>
+          <Link
+            href="/access"
+            className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#2a3d5f] hover:bg-[#f6f9ff]"
+          >
+            Manage access
+          </Link>
+        </div>
+
+        {!assessments.length ? (
+          <p className="rounded-xl border border-[#dbe4f4] bg-white p-4 text-sm text-[#607594] shadow-sm">
+            {loading ? 'Loading assessments…' : 'No assessments found yet.'}
+          </p>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-[#dbe4f4] bg-white shadow-sm">
+            <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-[#eef2fa] bg-[#f7f9fe] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#607594]">
+              <span>Checklist</span>
+              <span className="text-right">Action</span>
+            </div>
+            <ul className="divide-y divide-[#eef2fa]">
+              {assessments.slice(0, 20).map((item) => (
+                <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-[#1f2d45]">{item.checklist_title}</p>
+                    <p className="mt-0.5 truncate text-xs text-[#607594]">
+                      {formatStatusLabel(item.status)} • {item.completion_percent}% • last activity{' '}
+                      {item.last_activity ? new Date(item.last_activity).toLocaleString() : 'n/a'}
+                    </p>
+                  </div>
+                  {item.status === 'submitted' ? (
+                    <span className="shrink-0 rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-1.5 text-xs font-semibold text-[#2a3d5f]">
+                      Submitted
+                    </span>
+                  ) : (
+                    <Link
+                      className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white"
+                      href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}`}
+                    >
+                      Open
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
+      {enhanced ? (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-[#1f2d45]">Your assessments</h2>
+            <p className="text-xs text-[#607594]">Updated: {new Date(enhanced.generated_at).toLocaleString()}</p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-[#243555]">Active</h3>
+              {enhanced.active_assessments?.length ? (
+                <ul className="mt-3 space-y-2 text-sm text-[#3f5677]">
+                  {enhanced.active_assessments.slice(0, 5).map((item) => (
+                    <li key={item.id} className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-[#1f2d45]">{item.checklist_title}</p>
+                        <p className="truncate text-xs text-[#607594]">
+                          {formatStatusLabel(item.status)} • {item.completion_percent}% • expires{' '}
+                          {item.expires_at ? new Date(item.expires_at).toLocaleDateString() : 'n/a'}
+                        </p>
+                      </div>
+                      <Link
+                        className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white"
+                        href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}`}
+                      >
+                        Open
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm text-[#607594]">No active assessments yet.</p>
+              )}
+            </article>
+
+            <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-[#243555]">Expiring soon</h3>
+              {enhanced.expiring_soon?.length ? (
+                <ul className="mt-3 space-y-2 text-sm text-[#3f5677]">
+                  {enhanced.expiring_soon.slice(0, 5).map((item) => (
+                    <li key={item.id} className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-[#1f2d45]">{item.checklist_title}</p>
+                        <p className="truncate text-xs text-[#607594]">
+                          {item.days_until_expiry ?? 'n/a'} days left • {formatStatusLabel(item.status)} • {item.completion_percent}%
+                        </p>
+                      </div>
+                      <Link
+                        className="shrink-0 rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#2a3d5f] hover:bg-[#f6f9ff]"
+                        href={`/access?checklist_id=${encodeURIComponent(item.checklist_id)}`}
+                      >
+                        View
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm text-[#607594]">Nothing expiring in the next week.</p>
+              )}
+            </article>
+          </div>
+        </section>
       ) : null}
     </section>
   );
