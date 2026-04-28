@@ -174,9 +174,9 @@ export default function AppLayout({
     isAdminPath ? (
       <main className="min-h-screen bg-[#e9eef8] text-[#ffffff]">{children}</main>
     ) : (
-      isCustomerShell && isPaymentPath ? (
+      isCustomerShell && isPaymentPath && needsCustomerMfa ? (
         <main className="min-h-screen bg-white text-[#1f2d45]">
-          <div className="py-8 md:py-10">{children}</div>
+          <div className="px-6 py-8 md:px-8 md:py-10">{children}</div>
         </main>
       ) : isCustomerShell ? (
         <main className="relative h-screen w-full overflow-hidden bg-[#f4f6fb] text-[#182843]">
