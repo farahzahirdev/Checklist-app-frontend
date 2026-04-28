@@ -79,16 +79,15 @@ export default function PaymentPage() {
   }
 
   const checkoutCancelled = searchParams.get('checkout') === 'cancelled';
-  const selectedChecklist = checklists.find((item) => item.id === selectedChecklistId) ?? null;
 
   return (
-    <section className="mx-auto flex min-h-[70vh] w-full max-w-3xl flex-col justify-start space-y-6 px-4 pt-4 text-[#1f2d45]">
+    <section className="flex min-h-[70vh] w-full flex-col justify-start space-y-6 px-1 pt-1 text-[#1f2d45]">
       <header className="space-y-2">
         <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Customer</p>
         <h1 className="text-3xl font-semibold text-[#1f2d45]">Select checklist to purchase</h1>
         <p className="text-sm text-[#4f6281]">Choose a checklist first, then proceed to Stripe checkout.</p>
       </header>
-      <article className="rounded-2xl border border-[#13305c] bg-[linear-gradient(140deg,#071733_0%,#0c2144_50%,#13356d_100%)] p-5 text-sm text-[#d8e6ff] shadow-sm">
+      <article className="rounded-2xl border border-[#13305c] bg-[linear-gradient(140deg,#071733_0%,#0c2144_50%,#13356d_100%)] p-6 text-sm text-[#d8e6ff] shadow-[0_10px_30px_rgba(6,20,47,0.25)]">
         {catalogLoading ? <p>Loading available checklists...</p> : null}
         {checkoutCancelled ? (
           <p className="text-amber-200">Checkout was cancelled. You can try again below.</p>
@@ -97,51 +96,50 @@ export default function PaymentPage() {
         {!catalogLoading ? (
           <div className="mt-4 flex flex-col gap-3">
             {checklists.length ? (
-              <label className="min-w-[320px] flex-1 space-y-2">
+              <div className="space-y-2">
                 <span className="text-xs uppercase tracking-[0.2em] text-[#9db8e6]">Checklist to purchase</span>
-                <select
-                  value={selectedChecklistId}
-                  onChange={(event) => setSelectedChecklistId(event.target.value)}
-                  className="w-full rounded-lg border border-[#2d4f83] bg-[#10284f] px-3 py-2 text-white outline-none ring-[#8bb4ff]/50 focus:ring"
-                >
-                  <option value="">Select checklist</option>
-                  {checklists.map((checklist) => (
-                    <option key={checklist.id} value={checklist.id}>
-                      {checklist.title} [{checklist.checklist_type?.code || 'type'}]
-                      {checklist.pricing
-                        ? ` - ${(checklist.pricing.amount_cents / 100).toFixed(2)} ${checklist.pricing.currency.toUpperCase()}`
-                        : ''}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {checklists.map((checklist) => {
+                    const isSelected = selectedChecklistId === checklist.id;
+                    const priceLabel = checklist.pricing
+                      ? `${(checklist.pricing.amount_cents / 100).toFixed(2)} ${checklist.pricing.currency.toUpperCase()}`
+                      : 'Price unavailable';
+                    const description =
+                      checklist.checklist_type?.description?.trim() || checklist.warning?.trim() || 'No description available.';
+                    return (
+                      <button
+                        key={checklist.id}
+                        type="button"
+                        onClick={() => setSelectedChecklistId(checklist.id)}
+                        className={`rounded-xl border p-3 text-left transition ${
+                          isSelected
+                            ? 'border-[#8bb4ff] bg-[linear-gradient(160deg,#16305d,#1c3d76)] text-white ring-2 ring-[#8bb4ff]/70 shadow-[0_8px_20px_rgba(16,40,79,0.45)]'
+                            : 'border-[#2d4f83] bg-[linear-gradient(160deg,#10284f,#123263)] text-[#d8e6ff] hover:border-[#5e86c8] hover:shadow-[0_6px_16px_rgba(16,40,79,0.35)]'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-semibold leading-tight">{checklist.title}</p>
+                          {isSelected ? (
+                            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-[#a9c8ff] bg-[#0b2144] px-1 text-[10px] font-semibold text-[#cfe0ff]">
+                              ✓
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-1.5 text-xs text-[#9db8e6]">
+                          {(checklist.checklist_type?.name || checklist.checklist_type?.code || 'Checklist type') +
+                            (checklist.version ? ` • v${checklist.version}` : '')}
+                        </p>
+                        <p className="mt-2 line-clamp-3 text-xs text-[#c6d8fb]">{description}</p>
+                        <p className="mt-3 text-base font-semibold tracking-wide">{priceLabel}</p>
+                        {checklist.warning ? <p className="mt-2 text-xs text-amber-200">{checklist.warning}</p> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             ) : (
               <p className="text-amber-200">No purchasable checklists are currently available.</p>
             )}
-
-            {selectedChecklist ? (
-              <div className="rounded-xl border border-[#2d4f83] bg-[#10284f] p-3 text-[#d8e6ff]">
-                <p className="text-xs uppercase tracking-[0.2em] text-[#9db8e6]">Selected checklist details</p>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                  <p className="text-sm">
-                    <span className="text-[#9db8e6]">Title:</span> {selectedChecklist.title}
-                  </p>
-                  <p className="text-sm">
-                    <span className="text-[#9db8e6]">Version:</span> {selectedChecklist.version || 'N/A'}
-                  </p>
-                  <p className="text-sm">
-                    <span className="text-[#9db8e6]">Type code:</span> {selectedChecklist.checklist_type?.code || 'N/A'}
-                  </p>
-                  <p className="text-sm">
-                    <span className="text-[#9db8e6]">Type name:</span> {selectedChecklist.checklist_type?.name || 'N/A'}
-                  </p>
-                </div>
-                <p className="mt-2 text-sm">
-                  <span className="text-[#9db8e6]">Description:</span>{' '}
-                  {selectedChecklist.checklist_type?.description?.trim() || selectedChecklist.warning?.trim() || 'Not available'}
-                </p>
-              </div>
-            ) : null}
             <button
               type="button"
               onClick={() => void beginCheckout()}
