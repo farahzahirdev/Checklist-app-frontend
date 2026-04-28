@@ -27,15 +27,13 @@ export default function PaymentPage() {
         setChecklists(catalog);
         setSelectedChecklistId('');
 
-        const user = await getCurrentUser();
+        // NOTE: Customers can purchase multiple checklists.
+        // Do not redirect away from `/payment` just because an earlier payment succeeded.
+        // Stripe success flow already lands on `/payment/success`.
         try {
-          const paymentState = await getUserPaymentStatus(user.user.id);
-          if (paymentState.payment_status === 'succeeded') {
-            window.location.assign('/payment/success');
-            return;
-          }
+          await getCurrentUser();
         } catch {
-          // Continue showing checklist selection when status lookup is unavailable.
+          // Ignore; layout auth gate will handle unauthenticated users.
         }
       } catch (err) {
         if (!mounted) {

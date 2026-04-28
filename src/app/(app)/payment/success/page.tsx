@@ -8,6 +8,22 @@ import { listPublishedCustomerChecklists, selectChecklistAfterPayment, type Cust
 import { getUserPaymentStatus, type PaymentStatusResponse } from '@/lib/payments';
 
 const CHECKOUT_CHECKLIST_ID_STORAGE_KEY = 'checklist_checkout_selected_id';
+const PURCHASED_CHECKLIST_IDS_STORAGE_KEY = 'checklist_purchased_ids';
+
+function rememberPurchasedChecklistId(checklistId: string) {
+  if (typeof window === 'undefined') return;
+  const id = checklistId.trim();
+  if (!id) return;
+  try {
+    const raw = window.localStorage.getItem(PURCHASED_CHECKLIST_IDS_STORAGE_KEY);
+    const existing = raw ? (JSON.parse(raw) as unknown) : [];
+    const list = Array.isArray(existing) ? existing.filter((x): x is string => typeof x === 'string') : [];
+    const next = Array.from(new Set([...list, id]));
+    window.localStorage.setItem(PURCHASED_CHECKLIST_IDS_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // ignore storage failures
+  }
+}
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
@@ -96,6 +112,7 @@ export default function PaymentSuccessPage() {
           setMfaSetupRequired(!me.mfa_enabled);
 
           if (response.checklist) {
+            rememberPurchasedChecklistId(response.checklist.id);
             setStatusMessage(
               me.mfa_enabled
                 ? 'Payment confirmed and checklist access is active. You can continue to dashboard.'
@@ -113,6 +130,7 @@ export default function PaymentSuccessPage() {
             if (preferredChecklistId) {
               try {
                 await selectChecklistAfterPayment(preferredChecklistId);
+                rememberPurchasedChecklistId(preferredChecklistId);
                 const refreshed = await getUserPaymentStatus(currentUserId);
                 window.localStorage.removeItem(CHECKOUT_CHECKLIST_ID_STORAGE_KEY);
                 setSelectedChecklistFromStatus(refreshed.checklist ?? null);
@@ -131,6 +149,7 @@ export default function PaymentSuccessPage() {
                 const message = selectErr instanceof Error ? selectErr.message : 'Failed to activate checklist access.';
                 if (message.includes('checklist_already_selected')) {
                   window.localStorage.removeItem(CHECKOUT_CHECKLIST_ID_STORAGE_KEY);
+                  rememberPurchasedChecklistId(preferredChecklistId);
                   setStatusMessage(
                     me.mfa_enabled
                       ? 'Payment confirmed and checklist access is active. You can continue to dashboard.'
@@ -218,6 +237,7 @@ export default function PaymentSuccessPage() {
     setSubmitting(true);
     try {
       const grant = await selectChecklistAfterPayment(selectedChecklistId);
+      rememberPurchasedChecklistId(selectedChecklistId);
       setSuccessMessage(`Access granted until ${new Date(grant.expires_at).toLocaleString()}.`);
       window.location.assign(`/access?checklist_id=${encodeURIComponent(selectedChecklistId)}`);
     } catch (err) {

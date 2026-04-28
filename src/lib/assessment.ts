@@ -1,5 +1,5 @@
 import { ACCESS_TOKEN_STORAGE_KEY } from '@/lib/auth';
-import { apiGetWithAuth, apiPost, apiPut, getApiBaseUrl } from '@/lib/api';
+import { apiGetWithAuth, apiPatch, apiPost, apiPut, getApiBaseUrl } from '@/lib/api';
 
 export type AssessmentStatus = 'not_started' | 'in_progress' | 'submitted' | 'closed' | 'expired';
 
@@ -93,13 +93,49 @@ export type AssessmentAnswerResponse = {
   answer_score: number;
   weighted_priority: 'low' | 'medium' | 'high';
   completion_percent: number;
+  note_text?: string | null;
 };
+
+export async function getAssessmentAnswers(assessmentId: string) {
+  return apiGetWithAuth<AssessmentAnswerResponse[]>(`/assessment/${assessmentId}/answers`);
+}
+
+export async function createAssessmentAnswer(
+  assessmentId: string,
+  payload: { question_id: string; answer: string; note_text?: string },
+) {
+  return apiPost<AssessmentAnswerResponse, typeof payload>(`/assessment/${assessmentId}/answers`, payload);
+}
+
+export async function updateAssessmentAnswer(
+  assessmentId: string,
+  payload: { question_id: string; answer: string; note_text?: string },
+) {
+  try {
+    return await apiPatch<AssessmentAnswerResponse, typeof payload>(`/assessment/${assessmentId}/answers`, payload);
+  } catch {
+    return apiPut<AssessmentAnswerResponse, typeof payload>(`/assessment/${assessmentId}/answers`, payload);
+  }
+}
 
 export async function saveAssessmentAnswer(
   assessmentId: string,
   payload: { question_id: string; answer: string; note_text?: string },
 ) {
-  return apiPut<AssessmentAnswerResponse, typeof payload>(`/assessment/${assessmentId}/answers`, payload);
+  try {
+    // New API behavior supports POST create/update (upsert-like) for answers.
+    return await createAssessmentAnswer(assessmentId, payload);
+  } catch {
+    // Backward compatibility: fallback to PATCH/PUT update endpoint style.
+    return updateAssessmentAnswer(assessmentId, payload);
+  }
+}
+
+export async function saveAssessmentAnswersBulk(
+  assessmentId: string,
+  payload: Array<{ question_id: string; answer: string; note_text?: string }>,
+) {
+  return apiPost<AssessmentAnswerResponse[], typeof payload>(`/assessment/${assessmentId}/answers/bulk`, payload);
 }
 
 export type AssessmentSubmitResponse = {

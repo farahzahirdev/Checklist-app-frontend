@@ -13,6 +13,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [role, setRole] = useState<UserRoleKey | ''>('');
+  const [roleLoaded, setRoleLoaded] = useState(false);
   const [displayName, setDisplayName] = useState('User');
 
   const navItems = [
@@ -31,12 +32,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const isChecklistPanelRoute = /^\/admin\/checklists\/[^/]+\/?$/.test(pathname);
 
   useEffect(() => {
+    if (!roleLoaded) return;
     if (!isReadOnly) return;
     const isAllowedAuditorRoute = pathname === '/admin' || pathname.startsWith('/admin/checklists') || pathname.startsWith('/admin/rbac');
     if (!isAllowedAuditorRoute) {
       router.replace('/admin/checklists');
     }
-  }, [isReadOnly, pathname, router]);
+  }, [isReadOnly, pathname, roleLoaded, router]);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,9 +48,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         if (!cancelled) {
           setRole(getRoleKey(response.user.role));
           setDisplayName(getUserDisplayName(response.user));
+          setRoleLoaded(true);
         }
       } catch {
-        // Keep default if role cannot be loaded.
+        if (!cancelled) {
+          setRoleLoaded(true);
+        }
       }
     }
     void loadRole();

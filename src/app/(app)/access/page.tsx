@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getCurrentAssessment, startAssessment } from '@/lib/assessment';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
+import { listPurchasedChecklistIds } from '@/lib/customer-payments';
+import { formatStatusLabel } from '@/lib/status-format';
 
 function formatTimeRemaining(expiresAt: string): string {
   const expires = new Date(expiresAt).getTime();
@@ -26,34 +28,56 @@ export default function AccessPage() {
   const checklistIdFromQuery = searchParams.get('checklist_id') ?? '';
   const [checklistId, setChecklistId] = useState('');
   const [checklists, setChecklists] = useState<CustomerChecklist[]>([]);
+  const [purchasedChecklistIds, setPurchasedChecklistIds] = useState<string[]>([]);
+  const [checklistsLoading, setChecklistsLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [assessmentsByChecklistId, setAssessmentsByChecklistId] = useState<
+    Record<
+      string,
+      {
+        status: string;
+        started_at: string;
+        expires_at: string;
+        completion_percent: number;
+        checklist_id?: string;
+      }
+    >
+  >({});
   const [assessment, setAssessment] = useState<{
     status: string;
     started_at: string;
     expires_at: string;
     completion_percent: number;
+    checklist_id?: string;
   } | null>(null);
   const [loading, setLoading] = useState(false);
 
   const remaining = useMemo(() => (assessment ? formatTimeRemaining(assessment.expires_at) : ''), [assessment]);
-  const assessmentAlreadyStarted = Boolean(assessment && assessment.status !== 'not_started');
-  const canLoadCurrent = assessmentAlreadyStarted;
-  const checklistLocked = assessmentAlreadyStarted || Boolean(checklistIdFromQuery);
+  const isSubmittedAssessment = assessment?.status === 'submitted';
+  const assessmentAlreadyStarted = Boolean(assessment && assessment.status === 'in_progress');
+  const checklistLocked = Boolean(checklistIdFromQuery);
   const selectedChecklistName = useMemo(
     () => checklists.find((checklist) => checklist.id === checklistId)?.title ?? '',
     [checklistId, checklists],
   );
+
+  const purchasedOnlyChecklists = useMemo(() => {
+    if (!purchasedChecklistIds.length) return [];
+    const ids = new Set(purchasedChecklistIds);
+    return checklists.filter((item) => ids.has(item.id));
+  }, [checklists, purchasedChecklistIds]);
+
   const orderedChecklists = useMemo(() => {
     if (!checklistId) {
-      return checklists;
+      return purchasedOnlyChecklists;
     }
-    const selected = checklists.find((checklist) => checklist.id === checklistId);
+    const selected = purchasedOnlyChecklists.find((checklist) => checklist.id === checklistId);
     if (!selected) {
-      return checklists;
+      return purchasedOnlyChecklists;
     }
-    return [selected, ...checklists.filter((checklist) => checklist.id !== checklistId)];
-  }, [checklistId, checklists]);
+    return [selected, ...purchasedOnlyChecklists.filter((checklist) => checklist.id !== checklistId)];
+  }, [checklistId, purchasedOnlyChecklists]);
 
   useEffect(() => {
     if (checklistIdFromQuery) {
@@ -64,26 +88,23 @@ export default function AccessPage() {
   useEffect(() => {
     let mounted = true;
 
-    async function preloadCurrentAssessment() {
+    async function preloadSelectedAssessment() {
+      if (!checklistIdFromQuery) return;
       try {
-        const response = await getCurrentAssessment();
-        if (!mounted) {
-          return;
-        }
+        const response = await getCurrentAssessment(checklistIdFromQuery);
+        if (!mounted) return;
         setAssessment(response);
-        if (response.checklist_id) {
-          setChecklistId(response.checklist_id);
-        }
+        setAssessmentsByChecklistId((previous) => ({ ...previous, [checklistIdFromQuery]: response }));
       } catch {
-        // No active assessment yet; keep manual checklist input flow.
+        // No active assessment for this checklist yet.
       }
     }
 
-    void preloadCurrentAssessment();
+    void preloadSelectedAssessment();
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [checklistIdFromQuery]);
 
   useEffect(() => {
     let mounted = true;
@@ -97,6 +118,10 @@ export default function AccessPage() {
         setChecklists(sorted);
       } catch {
         // keep access flow functional even when checklist catalog fails
+      } finally {
+        if (mounted) {
+          setChecklistsLoading(false);
+        }
       }
     }
     void loadPublishedChecklists();
@@ -104,6 +129,29 @@ export default function AccessPage() {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadPurchasedIds() {
+      setChecklistsLoading(true);
+      try {
+        const ids = await listPurchasedChecklistIds();
+        if (!mounted) return;
+        const next = Array.from(new Set([...(ids ?? []), ...(checklistIdFromQuery ? [checklistIdFromQuery] : [])]));
+        setPurchasedChecklistIds(next);
+      } catch {
+        // ignore and keep fallback behavior
+      } finally {
+        if (mounted) {
+          setChecklistsLoading(false);
+        }
+      }
+    }
+    void loadPurchasedIds();
+    return () => {
+      mounted = false;
+    };
+  }, [checklistIdFromQuery]);
 
   useEffect(() => {
     let intervalId: number | undefined;
@@ -126,6 +174,9 @@ export default function AccessPage() {
     try {
       const response = await getCurrentAssessment(checklistId.trim() || undefined);
       setAssessment(response);
+      if (checklistId.trim()) {
+        setAssessmentsByChecklistId((previous) => ({ ...previous, [checklistId.trim()]: response }));
+      }
       setMessage('Active assessment loaded.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to load assessment.';
@@ -139,6 +190,32 @@ export default function AccessPage() {
     }
   }
 
+  useEffect(() => {
+    if (!checklistId.trim() || checklistLocked) {
+      return;
+    }
+    const cached = assessmentsByChecklistId[checklistId.trim()];
+    if (cached) {
+      setAssessment(cached);
+      return;
+    }
+    // Lazy-load current assessment for the selected checklist to support managing multiple checklists.
+    let cancelled = false;
+    void getCurrentAssessment(checklistId.trim())
+      .then((response) => {
+        if (cancelled) return;
+        setAssessment(response);
+        setAssessmentsByChecklistId((previous) => ({ ...previous, [checklistId.trim()]: response }));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setAssessment(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [assessmentsByChecklistId, checklistId, checklistLocked]);
+
   async function start() {
     setError('');
     setMessage('');
@@ -150,6 +227,7 @@ export default function AccessPage() {
     try {
       const response = await startAssessment({ checklist_id: checklistId.trim() });
       setAssessment(response);
+      setAssessmentsByChecklistId((previous) => ({ ...previous, [checklistId.trim()]: response }));
       setMessage('Assessment started. The 7-day completion window is now active.');
     } catch (err) {
       const text = err instanceof Error ? err.message : 'Unable to start assessment.';
@@ -181,7 +259,7 @@ export default function AccessPage() {
               </p>
             ) : null}
             <p>
-              <span className="font-semibold">Status:</span> {assessment.status}
+              <span className="font-semibold">Status:</span> {formatStatusLabel(assessment.status)}
             </p>
             <p>
               <span className="font-semibold">Completion:</span> {assessment.completion_percent}%
@@ -196,7 +274,7 @@ export default function AccessPage() {
         </article>
       ) : null}
 
-      {!assessmentAlreadyStarted ? (
+      {!assessmentAlreadyStarted && !isSubmittedAssessment ? (
         <>
           <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
             <h2 className="text-lg font-semibold text-[#243555]">Before you start</h2>
@@ -218,51 +296,70 @@ export default function AccessPage() {
             ) : (
               <label className="block space-y-2 text-sm">
                 <span className="text-[#3f5677]">Checklist</span>
-                <select
-                  value={checklistId}
-                  onChange={(event) => setChecklistId(event.target.value)}
-                  className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
-                >
-                  {!checklistId ? <option value="">Select checklist</option> : null}
-                  {orderedChecklists.map((checklist) => (
-                    <option key={checklist.id} value={checklist.id}>
-                      {checklist.title}
-                    </option>
-                  ))}
-                </select>
+                {checklistsLoading ? (
+                  <div className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#607594]">
+                    Loading purchased checklists...
+                  </div>
+                ) : (
+                  <select
+                    value={checklistId}
+                    onChange={(event) => setChecklistId(event.target.value)}
+                    className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
+                    disabled={!orderedChecklists.length}
+                  >
+                    {!checklistId ? (
+                      <option value="">{orderedChecklists.length ? 'Select purchased checklist' : 'No purchased checklists found'}</option>
+                    ) : null}
+                    {orderedChecklists.map((checklist) => (
+                      <option key={checklist.id} value={checklist.id}>
+                        {checklist.title}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <p className="text-xs text-[#607594]">
+                  Showing your purchased checklists only. To add more, click <span className="font-semibold">Buy another checklist</span>.
+                </p>
               </label>
             )}
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={start}
-                disabled={loading}
+                disabled={loading || isSubmittedAssessment}
                 className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Processing…' : 'Start Assessment'}
               </button>
+              <Link
+                href="/payment"
+                className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff]"
+              >
+                Buy another checklist
+              </Link>
             </div>
 
             {message ? <p className="mt-3 text-sm text-[#2f9960]">{message}</p> : null}
             {error ? <p className="mt-3 text-sm text-[#c43e53]">{error}</p> : null}
           </article>
         </>
+      ) : isSubmittedAssessment ? (
+        <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+          <p className="text-sm text-[#3f5677]">
+            This assessment is already submitted and cannot be started or submitted again.
+          </p>
+          {message ? <p className="mt-3 text-sm text-[#2f9960]">{message}</p> : null}
+          {error ? <p className="mt-3 text-sm text-[#c43e53]">{error}</p> : null}
+        </article>
       ) : (
         <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
           <div className="flex flex-wrap gap-2">
-            <Link href="/assessment" className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white">
+            <Link
+              href={checklistId.trim() ? `/assessment?checklist_id=${encodeURIComponent(checklistId.trim())}` : '/assessment'}
+              className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white"
+            >
               Continue Assessment
             </Link>
-            {canLoadCurrent ? (
-              <button
-                type="button"
-                onClick={loadCurrent}
-                disabled={loading}
-                className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Load Current
-              </button>
-            ) : null}
           </div>
 
           {message ? <p className="mt-3 text-sm text-[#2f9960]">{message}</p> : null}

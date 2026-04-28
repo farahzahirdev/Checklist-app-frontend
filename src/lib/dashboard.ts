@@ -79,6 +79,62 @@ export type CustomerDashboardSummary = {
   generated_at: string;
 };
 
+export type CustomerDashboardEnhanced = {
+  summary: {
+    total_purchased_checklists: number;
+    active_assessments_count: number;
+    submitted_assessments_count: number;
+    completed_assessments_count: number;
+    expired_assessments_count: number;
+    reports_available: number;
+    average_completion_time_days: number;
+    overall_completion_rate: number;
+  };
+  active_assessments: Array<{
+    id: string;
+    checklist_id: string;
+    checklist_title: string;
+    checklist_type_code: string;
+    checklist_version: string;
+    status: string;
+    completion_percent: number;
+    started_at: string | null;
+    submitted_at: string | null;
+    expires_at: string | null;
+    days_until_expiry: number | null;
+    has_report: boolean;
+    report_status: string | null;
+    last_activity: string | null;
+  }>;
+  recent_submissions: CustomerDashboardEnhanced['active_assessments'];
+  expiring_soon: CustomerDashboardEnhanced['active_assessments'];
+  available_checklists: Array<{
+    checklist_id: string;
+    title: string;
+    checklist_type_code: string;
+    checklist_type_name: string;
+    version: string;
+    description: string | null;
+    estimated_duration_minutes: number | null;
+    price_cents: number | null;
+    currency: string | null;
+    is_purchased: boolean;
+    can_start: boolean;
+    access_window_id: string | null;
+  }>;
+  quick_actions: Array<{
+    action_id: string;
+    action_type: string;
+    label: string;
+    description: string | null;
+    assessment_id: string | null;
+    checklist_id: string | null;
+    is_enabled: boolean;
+    priority: number;
+  }>;
+  generated_at: string;
+};
+
 type DashboardAuth = {
   token?: string | null;
 };
@@ -113,4 +169,8 @@ export async function getAuditorDashboardSummary(auth?: DashboardAuth) {
 
 export async function getCustomerDashboardSummary(auth?: DashboardAuth) {
   return apiGetWithAuth<CustomerDashboardSummary>('/dashboard/customer', auth);
+}
+
+export async function getCustomerDashboardEnhanced(auth?: DashboardAuth) {
+  return apiGetWithAuth<CustomerDashboardEnhanced>('/dashboard/customer/enhanced', auth);
 }
