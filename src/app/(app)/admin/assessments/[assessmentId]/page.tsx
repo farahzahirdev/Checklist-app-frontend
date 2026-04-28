@@ -61,6 +61,7 @@ export default function AdminAssessmentReviewDetailPage() {
   const [summaryNotes, setSummaryNotes] = useState('');
   const [recommendations, setRecommendations] = useState('');
   const [drafts, setDrafts] = useState<Record<string, ReviewDraft>>({});
+  const [suggestionErrors, setSuggestionErrors] = useState<Record<string, string>>({});
   const [reviewStatusLabel, setReviewStatusLabel] = useState('pending_review');
   const [historyByReviewId, setHistoryByReviewId] = useState<Record<string, AssessmentReviewHistoryEntry[]>>({});
   const [loadingHistoryId, setLoadingHistoryId] = useState('');
@@ -145,6 +146,14 @@ export default function AdminAssessmentReviewDetailPage() {
       ...prev,
       [answerId]: { ...(prev[answerId] || defaultDraft), ...patch },
     }));
+    if (patch.suggestion_text !== undefined) {
+      setSuggestionErrors((prev) => {
+        if (!prev[answerId]) return prev;
+        const next = { ...prev };
+        delete next[answerId];
+        return next;
+      });
+    }
   }
 
   function selectedAnswerLabel(answerValue: string | null | undefined): string | null {
@@ -164,8 +173,10 @@ export default function AdminAssessmentReviewDetailPage() {
       priority_level: draft.priority_level,
       score_adjustment: draft.score_adjustment,
     };
-    if (!payload.suggestion_text) {
-      toast.error('Suggestion text is required.');
+    if (!payload.suggestion_text || payload.suggestion_text.length < 10) {
+      const message = 'Suggestion text should be at least 10 characters.';
+      setSuggestionErrors((prev) => ({ ...prev, [answer.answer_id]: message }));
+      toast.error(message);
       return;
     }
     setSavingAnswerId(answer.answer_id);
@@ -406,7 +417,18 @@ export default function AdminAssessmentReviewDetailPage() {
                       <input value={draft.reference_materials} onChange={(event) => setDraft(answer.answer_id, { reference_materials: event.target.value })} className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm" placeholder="Reference materials" />
                       <label className="inline-flex items-center gap-2 rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#425f8f]"><input type="checkbox" checked={draft.is_action_required} onChange={(event) => setDraft(answer.answer_id, { is_action_required: event.target.checked })} />Action required</label>
                     </div>
-                    <textarea value={draft.suggestion_text} onChange={(event) => setDraft(answer.answer_id, { suggestion_text: event.target.value })} rows={2} className="mt-2 w-full rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm" placeholder="Suggestion text" />
+                    <textarea
+                      value={draft.suggestion_text}
+                      onChange={(event) => setDraft(answer.answer_id, { suggestion_text: event.target.value })}
+                      rows={2}
+                      className={`mt-2 w-full rounded-lg border bg-white px-3 py-2 text-sm ${
+                        suggestionErrors[answer.answer_id] ? 'border-[#c43e53] ring-1 ring-[#c43e53]' : 'border-[#d4dced]'
+                      }`}
+                      placeholder="Suggestion text"
+                    />
+                    {suggestionErrors[answer.answer_id] ? (
+                      <p className="text-xs font-medium text-[#c43e53]">{suggestionErrors[answer.answer_id]}</p>
+                    ) : null}
                     <div className="mt-2 flex flex-wrap gap-2">
                       <button type="button" disabled={isSaving} onClick={() => void saveAnswerReview(answer)} className="rounded-xl border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">{isSaving ? 'Saving...' : answer.review?.id ? 'Update Review' : 'Save Review'}</button>
                       {answer.review?.id ? <button type="button" disabled={isSaving} onClick={() => void removeAnswerReview(answer)} className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">Delete Review</button> : null}
