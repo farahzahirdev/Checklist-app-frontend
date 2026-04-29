@@ -106,6 +106,7 @@ export default function AssessmentPage() {
   const [message, setMessage] = useState('');
   const [selectedEvidenceFile, setSelectedEvidenceFile] = useState<File | null>(null);
   const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const [evidencePreviewUrl, setEvidencePreviewUrl] = useState<string | null>(null);
   const [submittingAssessment, setSubmittingAssessment] = useState(false);
   const [previewUrlsByMediaId, setPreviewUrlsByMediaId] = useState<Record<string, string>>({});
   const [previewErrorsByMediaId, setPreviewErrorsByMediaId] = useState<Record<string, string>>({});
@@ -476,6 +477,18 @@ export default function AssessmentPage() {
     setSelectedEvidenceFile(null);
     setMessage('');
   }, [activeQuestionId]);
+
+  useEffect(() => {
+    if (!selectedEvidenceFile) {
+      setEvidencePreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(selectedEvidenceFile);
+    setEvidencePreviewUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [selectedEvidenceFile]);
 
   useEffect(() => {
     if (!selectedSectionId) return;
@@ -881,7 +894,7 @@ export default function AssessmentPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#607594]">Example Evidence</p>
                     {(isHttpUrl(activeQuestion.illustrative_image_id) ||
                       (activeQuestion.illustrative_image_id && previewUrlsByMediaId[activeQuestion.illustrative_image_id])) ? (
-                      <div className="mt-2 overflow-hidden rounded-md border border-[#dbe4f4] bg-white">
+                      <div className="mt-2 w-full max-w-[220px] overflow-hidden rounded-md border border-[#dbe4f4] bg-white">
                         <img
                           src={
                             isHttpUrl(activeQuestion.illustrative_image_id)
@@ -985,9 +998,37 @@ export default function AssessmentPage() {
                         {evidenceLoading ? 'Uploading…' : 'Upload evidence'}
                       </button>
                     </div>
-                    {selectedEvidenceFile ? (
-                      <div className="mt-2 inline-flex items-center gap-2 rounded-md border border-[#d8e7d8] bg-[#f1f8f1] px-2 py-1 text-xs text-[#2f5c38]">
-                        <span className="font-medium">{selectedEvidenceFile.name}</span>
+                    {selectedEvidenceFile && evidencePreviewUrl ? (
+                      <div className="mt-2 max-w-[160px] overflow-visible rounded-md border border-[#dbe4f4] bg-white">
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedEvidenceFile(null);
+                            }}
+                            aria-label="Remove evidence preview"
+                            className="absolute right-[-4px] top-[-4px] z-50 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#ffffff]/90 text-lg font-semibold text-[#243555] shadow hover:bg-[#ffffff]"
+                          >
+                            ×
+                          </button>
+                        {selectedEvidenceFile.type.startsWith('image/') ? (
+                          <img
+                            src={evidencePreviewUrl}
+                            alt="Evidence preview"
+                            className="h-12 w-full object-cover"
+                          />
+                        ) : selectedEvidenceFile.type === 'application/pdf' ? (
+                          <iframe
+                            src={evidencePreviewUrl}
+                            title="Evidence preview (PDF)"
+                            className="h-20 w-full"
+                          />
+                        ) : (
+                          <p className="p-2 text-xs text-[#607594]">
+                            Preview not available. {selectedEvidenceFile.name}
+                          </p>
+                        )}
+                        </div>
                       </div>
                     ) : null}
                   </div>

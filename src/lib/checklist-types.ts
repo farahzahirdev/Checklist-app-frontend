@@ -48,6 +48,7 @@ export interface ChecklistSection {
   checklistId: string;
   title: string;
   order: number;
+  sourceRef?: string;
 }
 
 export interface ChecklistQuestion {

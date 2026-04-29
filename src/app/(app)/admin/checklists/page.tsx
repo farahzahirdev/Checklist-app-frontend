@@ -4,7 +4,22 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { createChecklist, deleteChecklist, getAdminChecklists, publishChecklist, updateChecklist } from '@/lib/checklist-api';
+import { getApiBaseUrl } from '@/lib/api';
+import {
+  createChecklist,
+  createChecklistBulkImport,
+  deleteChecklist,
+  getAdminChecklists,
+  getChecklistBulkImportTaskStatus,
+  getChecklistBulkTemplateMapping,
+  publishChecklist,
+  updateChecklist,
+  verifyChecklistBulkImport,
+  type BulkImportColumnMapping,
+  type BulkImportTaskStatus,
+  type BulkImportTemplateSpec,
+  type BulkImportVerifyResponse,
+} from '@/lib/checklist-api';
 import type { Checklist } from '@/lib/checklist-types';
 import { useAdminAccess } from '@/lib/admin-access';
 
@@ -18,6 +33,40 @@ type ChecklistCardItem = {
   description: string;
   version: string;
 };
+
+type ParsedHeaderOption = {
+  letter: string;
+  displayLabel: string;
+  row1: string;
+  row2: string;
+};
+
+const BULK_MAPPING_LABELS: Record<keyof BulkImportColumnMapping, string> = {
+  section_name_col: 'Section Name Column',
+  question_id_col: 'Parent Question ID Column',
+  child_question_col: 'Child Question ID Column',
+  grandchild_question_col: 'Grandchild Question ID Column',
+  legal_requirement_col: 'Legal Requirement Column',
+  question_text_col: 'Question Text Column',
+  severity_col: 'Severity Column',
+  explanation_col: 'Explanation Column',
+  expected_implementation_col: 'Expected Implementation Column',
+  source_ref_col: 'Source Reference Column',
+  guidance_score_4_col: 'Guidance Score 4 Column',
+  guidance_score_3_col: 'Guidance Score 3 Column',
+  guidance_score_2_col: 'Guidance Score 2 Column',
+  guidance_score_1_col: 'Guidance Score 1 Column',
+};
+
+function getColumnBadge(
+  key: keyof BulkImportColumnMapping,
+  templateSpec: BulkImportTemplateSpec | null,
+): 'required' | 'optional' | null {
+  if (!templateSpec) return null;
+  if (templateSpec.required_columns?.includes(key)) return 'required';
+  if (templateSpec.optional_columns?.includes(key)) return 'optional';
+  return null;
+}
 
 export default function ChecklistPanelListPage() {
   const router = useRouter();
@@ -40,6 +89,47 @@ export default function ChecklistPanelListPage() {
   const [editLawDecree, setEditLawDecree] = useState('');
   const [editStatus, setEditStatus] = useState<'draft' | 'published'>('draft');
   const [editLoading, setEditLoading] = useState(false);
+  const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
+  const [bulkTemplateSpec, setBulkTemplateSpec] = useState<BulkImportTemplateSpec | null>(null);
+  const [bulkImportFile, setBulkImportFile] = useState<File | null>(null);
+  const [bulkImportFileBase64, setBulkImportFileBase64] = useState('');
+  const [bulkImportTitle, setBulkImportTitle] = useState('');
+  const [bulkImportDescription, setBulkImportDescription] = useState('');
+  const [bulkImportMapping, setBulkImportMapping] = useState<BulkImportColumnMapping>({
+    section_name_col: 'B',
+    question_id_col: 'C',
+    child_question_col: 'D',
+    grandchild_question_col: 'E',
+    legal_requirement_col: 'F',
+    question_text_col: 'H',
+    severity_col: 'I',
+    explanation_col: 'J',
+    expected_implementation_col: 'K',
+    source_ref_col: 'L',
+    guidance_score_4_col: 'M',
+    guidance_score_3_col: 'N',
+    guidance_score_2_col: 'O',
+    guidance_score_1_col: 'P',
+  });
+  const [bulkVerifyResult, setBulkVerifyResult] = useState<BulkImportVerifyResponse | null>(null);
+  const [bulkImportTaskStatus, setBulkImportTaskStatus] = useState<BulkImportTaskStatus | null>(null);
+  const [bulkLoading, setBulkLoading] = useState<'template' | 'verify' | 'create' | 'poll' | 'download' | ''>('');
+  const [bulkVerifiedSignature, setBulkVerifiedSignature] = useState<string>('');
+  const [bulkHeaderOptions, setBulkHeaderOptions] = useState<ParsedHeaderOption[]>([]);
+  const [bulkHeaderPreviewRows, setBulkHeaderPreviewRows] = useState<string[][]>([]);
+  const currentBulkSignature = useMemo(() => {
+    const filePart = bulkImportFile ? `${bulkImportFile.name}:${bulkImportFile.size}:${bulkImportFile.lastModified}` : '';
+    const mappingPart = JSON.stringify(bulkImportMapping);
+    return `${filePart}::${mappingPart}`;
+  }, [bulkImportFile, bulkImportMapping]);
+  const canCreateFromFile = Boolean(
+    bulkImportFile &&
+      bulkVerifyResult?.is_valid &&
+      bulkVerifiedSignature &&
+      bulkVerifiedSignature === currentBulkSignature &&
+      bulkLoading !== 'verify' &&
+      bulkLoading !== 'create',
+  );
 
   async function loadChecklists() {
     setLoading(true);
@@ -56,6 +146,41 @@ export default function ChecklistPanelListPage() {
   useEffect(() => {
     void loadChecklists();
   }, []);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    async function pollTaskStatus(taskId: string) {
+      setBulkLoading('poll');
+      try {
+        const data = await getChecklistBulkImportTaskStatus(taskId);
+        setBulkImportTaskStatus(data);
+        const doneStates = ['success', 'failed', 'error', 'completed'];
+        const isDone = doneStates.includes((data.status || '').toLowerCase()) || doneStates.includes((data.celery_state || '').toLowerCase());
+        if (!isDone) {
+          timer = setTimeout(() => {
+            void pollTaskStatus(taskId);
+          }, 2500);
+          return;
+        }
+        if ((data.result?.status || '').toLowerCase() === 'success') {
+          toast.success('Checklist import completed.');
+          await loadChecklists();
+        } else if (data.error) {
+          toast.error(data.error);
+        }
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to poll import task');
+      } finally {
+        setBulkLoading('');
+      }
+    }
+    if (bulkImportTaskStatus?.task_id && ['pending', 'processing', 'started'].includes((bulkImportTaskStatus.status || '').toLowerCase())) {
+      void pollTaskStatus(bulkImportTaskStatus.task_id);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [bulkImportTaskStatus?.task_id, bulkImportTaskStatus?.status]);
 
   const filtered = useMemo(
     () =>
@@ -85,6 +210,9 @@ export default function ChecklistPanelListPage() {
     if (normalized === 'not_set' || normalized === 'missing' || normalized === 'not_available') {
       return { label: 'Price needed', className: 'bg-[#5f3d1f] text-[#ffd8a0]' };
     }
+    if (normalized === 'below_minimum') {
+      return { label: 'Price invalid', className: 'bg-[#6a1f2c] text-[#ffd5dd]' };
+    }
     if (normalized === 'archived' || normalized === 'inactive') {
       return { label: 'Price inactive', className: 'bg-[#4a3a62] text-[#e0ccff]' };
     }
@@ -96,6 +224,183 @@ export default function ChecklistPanelListPage() {
     setCreateLawDecree('');
     setCreateStatus('draft');
     setIsCreateChecklistModalOpen(true);
+  }
+
+  async function fileToBase64WithoutPrefix(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result ?? '');
+        const split = result.split(',');
+        resolve(split.length > 1 ? split[1] : result);
+      };
+      reader.onerror = () => reject(new Error('Failed to read file.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function columnLetterFromIndex(index: number): string {
+    let n = index + 1;
+    let out = '';
+    while (n > 0) {
+      const rem = (n - 1) % 26;
+      out = String.fromCharCode(65 + rem) + out;
+      n = Math.floor((n - 1) / 26);
+    }
+    return out;
+  }
+
+  async function parseHeaderOptionsFromFile(file: File): Promise<{ options: ParsedHeaderOption[]; previewRows: string[][] }> {
+    const XLSX = await import('xlsx');
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: 'array' });
+    const firstSheetName = workbook.SheetNames[0];
+    if (!firstSheetName) {
+      return { options: [], previewRows: [] };
+    }
+    const worksheet = workbook.Sheets[firstSheetName];
+    const rows = XLSX.utils.sheet_to_json<string[]>(worksheet, {
+      header: 1,
+      raw: false,
+      blankrows: false,
+      defval: '',
+    }) as string[][];
+    const row1 = Array.isArray(rows[0]) ? rows[0].map((value) => String(value ?? '').trim()) : [];
+    const row2 = Array.isArray(rows[1]) ? rows[1].map((value) => String(value ?? '').trim()) : [];
+    const maxCols = Math.max(row1.length, row2.length);
+    const options: ParsedHeaderOption[] = [];
+    for (let index = 0; index < maxCols; index += 1) {
+      const letter = columnLetterFromIndex(index);
+      const main = row1[index] || '';
+      const sub = row2[index] || '';
+      const display = sub
+        ? main && main !== sub
+          ? `${main} -> ${sub}`
+          : sub
+        : main || `Column ${letter}`;
+      options.push({
+        letter,
+        displayLabel: display,
+        row1: main || '-',
+        row2: sub || '-',
+      });
+    }
+    return { options, previewRows: [row1, row2] };
+  }
+
+  async function openBulkImportModal() {
+    setIsBulkImportModalOpen(true);
+    setBulkVerifyResult(null);
+    setBulkImportTaskStatus(null);
+    if (bulkTemplateSpec) return;
+    setBulkLoading('template');
+    try {
+      const spec = await getChecklistBulkTemplateMapping();
+      setBulkTemplateSpec(spec);
+      if (spec.column_mapping_template) {
+        setBulkImportMapping(spec.column_mapping_template);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load bulk template mapping');
+    } finally {
+      setBulkLoading('');
+    }
+  }
+
+  async function handleDownloadTemplate(format: 'csv' | 'xlsx') {
+    setBulkLoading('download');
+    try {
+      const token = typeof window === 'undefined' ? '' : window.localStorage.getItem('checklist_access_token') || '';
+      const response = await fetch(`${getApiBaseUrl()}/admin/checklists/bulk/template/download?format=${format}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to download template (${response.status})`);
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `checklist-import-template.${format}`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to download template');
+    } finally {
+      setBulkLoading('');
+    }
+  }
+
+  async function handleVerifyBulkImport() {
+    if (!bulkImportFile) {
+      toast.error('Select an import file first.');
+      return;
+    }
+    setBulkLoading('verify');
+    try {
+      const base64 = bulkImportFileBase64 || (await fileToBase64WithoutPrefix(bulkImportFile));
+      setBulkImportFileBase64(base64);
+      const result = await verifyChecklistBulkImport({
+        file_content: base64,
+        file_name: bulkImportFile.name,
+        column_mapping: bulkImportMapping,
+        preview_rows: 10,
+      });
+      setBulkVerifyResult(result);
+      setBulkVerifiedSignature(result.is_valid ? currentBulkSignature : '');
+      toast.success('File verified.');
+    } catch (err) {
+      setBulkVerifyResult(null);
+      setBulkVerifiedSignature('');
+      toast.error(err instanceof Error ? err.message : 'Failed to verify import file');
+    } finally {
+      setBulkLoading('');
+    }
+  }
+
+  async function handleCreateBulkChecklist() {
+    if (!bulkImportFile) {
+      toast.error('Select an import file first.');
+      return;
+    }
+    if (!canCreateFromFile) {
+      toast.error('Verify mapping successfully before creating checklist.');
+      return;
+    }
+    if (!bulkImportTitle.trim()) {
+      toast.error('Checklist title is required.');
+      return;
+    }
+    if (!bulkImportDescription.trim()) {
+      toast.error('Law decree is required.');
+      return;
+    }
+    setBulkLoading('create');
+    try {
+      const base64 = bulkImportFileBase64 || (await fileToBase64WithoutPrefix(bulkImportFile));
+      setBulkImportFileBase64(base64);
+      const created = await createChecklistBulkImport({
+        file_content: base64,
+        file_name: bulkImportFile.name,
+        column_mapping: bulkImportMapping,
+        checklist_title: bulkImportTitle.trim(),
+        checklist_description: bulkImportDescription.trim(),
+        checklist_type_code: 'compliance',
+      });
+      setBulkImportTaskStatus({
+        task_id: created.task_id,
+        celery_state: created.status,
+        status: created.status,
+        detail: created.detail,
+      });
+      toast.success('Import started. Task is queued.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to start bulk import');
+    } finally {
+      setBulkLoading('');
+    }
   }
 
   async function handleCreateChecklist() {
@@ -125,6 +430,10 @@ export default function ChecklistPanelListPage() {
   async function handlePublish(checklistId: string) {
     const checklist = checklists.find((item) => item.id === checklistId);
     if (!checklist?.stripeInfo?.priceAvailable) {
+      if ((checklist?.stripeInfo?.priceStatus || '').toLowerCase() === 'below_minimum') {
+        toast.error('Price is not valid. Price cannot be below 0.5 USD.');
+        return;
+      }
       toast.error('Price needed. Set Stripe price before publishing this checklist.');
       return;
     }
@@ -198,6 +507,13 @@ export default function ChecklistPanelListPage() {
           </div>
           {!isReadOnly ? (
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void openBulkImportModal()}
+                className="rounded-lg border border-[#2d4f83] bg-[#10284f] px-3 py-2 text-xs font-semibold text-white hover:bg-[#16345f]"
+              >
+                Import CSV/Excel
+              </button>
               <button
                 type="button"
                 onClick={openCreateChecklistModal}
@@ -513,6 +829,258 @@ export default function ChecklistPanelListPage() {
                   {editLoading ? 'Saving...' : 'Save changes'}
                 </button>
               </div>
+            </div>
+          </div>
+        ) : null}
+
+        {!isReadOnly && isBulkImportModalOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4 py-6">
+            <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-[#1f2d45]">Bulk checklist import</h2>
+                  <p className="mt-1 text-sm text-[#607594]">Upload CSV/Excel, verify mappings, then create checklist in background.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsBulkImportModalOpen(false)}
+                  className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-sm font-semibold text-[#3e69b0] hover:bg-[#edf4ff]"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <label className="block space-y-2 text-sm text-[#3b4d6c]">
+                  <span className="font-medium">Checklist title *</span>
+                  <input
+                    value={bulkImportTitle}
+                    onChange={(event) => setBulkImportTitle(event.target.value)}
+                    className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2"
+                    placeholder="Imported checklist title"
+                  />
+                </label>
+              </div>
+
+              <label className="mt-3 block space-y-2 text-sm text-[#3b4d6c]">
+                <span className="font-medium">Law decree *</span>
+                <textarea
+                  value={bulkImportDescription}
+                  onChange={(event) => setBulkImportDescription(event.target.value)}
+                  className="min-h-[84px] w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2"
+                />
+              </label>
+
+              <div className="mt-3 grid gap-3 rounded-xl border border-[#dbe4f4] bg-[#f8fbff] p-3 md:grid-cols-3">
+                <button
+                  type="button"
+                  onClick={() => void handleDownloadTemplate('csv')}
+                  disabled={bulkLoading === 'download'}
+                  className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#2a3d5f] hover:bg-[#edf4ff] disabled:opacity-60"
+                >
+                  Download CSV template
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleDownloadTemplate('xlsx')}
+                  disabled={bulkLoading === 'download'}
+                  className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#2a3d5f] hover:bg-[#edf4ff] disabled:opacity-60"
+                >
+                  Download Excel template
+                </button>
+                <label className="flex cursor-pointer items-center justify-center rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white hover:bg-[#223657]">
+                  Select file
+                  <input
+                    type="file"
+                    accept=".csv,.xlsx,.xls"
+                    className="hidden"
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0] ?? null;
+                      setBulkImportFile(file);
+                      setBulkVerifyResult(null);
+                      setBulkVerifiedSignature('');
+                      setBulkImportTaskStatus(null);
+                      setBulkHeaderOptions([]);
+                      setBulkHeaderPreviewRows([]);
+                      if (!file) {
+                        setBulkImportFileBase64('');
+                        return;
+                      }
+                      try {
+                        const base64 = await fileToBase64WithoutPrefix(file);
+                        setBulkImportFileBase64(base64);
+                        const parsed = await parseHeaderOptionsFromFile(file);
+                        setBulkHeaderOptions(parsed.options);
+                        setBulkHeaderPreviewRows(parsed.previewRows);
+                      } catch {
+                        setBulkImportFileBase64('');
+                        setBulkHeaderOptions([]);
+                        setBulkHeaderPreviewRows([]);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+
+              {bulkImportFile ? (
+                <p className="mt-2 text-xs text-[#5f7395]">
+                  File: <span className="font-semibold text-[#25375a]">{bulkImportFile.name}</span>
+                </p>
+              ) : null}
+              {bulkHeaderPreviewRows.length ? (
+                <div className="mt-2 rounded-xl border border-[#dbe4f4] bg-[#f8fbff] p-3">
+                  <p className="text-xs font-semibold text-[#3b4d6c]">Detected header rows preview</p>
+                  <div className="mt-2 overflow-x-auto">
+                    <table className="min-w-full border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-[#eef3fb] text-left text-[#4a6187]">
+                          <th className="border border-[#dbe4f4] px-2 py-1">Row</th>
+                          {bulkHeaderPreviewRows[0].map((_, colIndex) => (
+                            <th key={`col-${colIndex}`} className="border border-[#dbe4f4] px-2 py-1">
+                              Column {colIndex + 1}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bulkHeaderPreviewRows.map((row, rowIndex) => (
+                          <tr key={`header-row-${rowIndex}`} className="text-[#334866]">
+                            <td className="border border-[#dbe4f4] px-2 py-1">Header row {rowIndex + 1}</td>
+                            {row.map((value, colIndex) => (
+                              <td key={`header-cell-${rowIndex}-${colIndex}`} className="border border-[#dbe4f4] px-2 py-1">
+                                {value || '-'}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="mt-4 rounded-xl border border-[#dbe4f4] p-4">
+                <h3 className="text-sm font-semibold text-[#25375a]">Column mapping</h3>
+                {bulkTemplateSpec?.description ? <p className="mt-1 text-xs text-[#607594]">{bulkTemplateSpec.description}</p> : null}
+                <div className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  {(Object.entries(bulkImportMapping) as Array<[keyof BulkImportColumnMapping, string]>).map(([key, value]) => (
+                    <label key={key} className="block space-y-1 text-xs text-[#566b8d]">
+                      <span className="flex items-center gap-2">
+                        <span>{BULK_MAPPING_LABELS[key]}</span>
+                        {getColumnBadge(key, bulkTemplateSpec) === 'required' ? (
+                          <span className="rounded-full bg-[#ffe9ec] px-2 py-0.5 text-[10px] font-semibold text-[#a73a46]">
+                            Required
+                          </span>
+                        ) : null}
+                        {getColumnBadge(key, bulkTemplateSpec) === 'optional' ? (
+                          <span className="rounded-full bg-[#eaf2ff] px-2 py-0.5 text-[10px] font-semibold text-[#355a96]">
+                            Optional
+                          </span>
+                        ) : null}
+                      </span>
+                      <select
+                        value={value}
+                        onChange={(event) =>
+                          setBulkImportMapping((previous) => ({ ...previous, [key]: event.target.value }))
+                        }
+                        className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2 py-1.5 text-sm"
+                      >
+                        {bulkHeaderOptions.length ? (
+                          bulkHeaderOptions.map((option) => (
+                            <option key={`${key}-${option.letter}`} value={option.letter}>
+                              {option.displayLabel}
+                            </option>
+                          ))
+                        ) : (
+                          <option value={value}>{value}</option>
+                        )}
+                      </select>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleVerifyBulkImport()}
+                    disabled={bulkLoading === 'verify' || !bulkImportFile}
+                    className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
+                  >
+                    {bulkLoading === 'verify' ? 'Verifying...' : 'Verify mapping'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleCreateBulkChecklist()}
+                    disabled={!canCreateFromFile}
+                    className="rounded-lg border border-[#2d4f83] bg-[#10284f] px-3 py-2 text-xs font-semibold text-[#9bf5be] hover:bg-[#16345f] disabled:opacity-60"
+                  >
+                    {bulkLoading === 'create' ? 'Creating...' : 'Create checklist from file'}
+                  </button>
+                </div>
+              </div>
+
+              {bulkVerifyResult ? (
+                <div className="mt-4 rounded-xl border border-[#dbe4f4] p-4">
+                  <h3 className="text-sm font-semibold text-[#25375a]">Verification result</h3>
+                  <p className="mt-1 text-xs text-[#607594]">
+                    Valid rows: {bulkVerifyResult.valid_rows}/{bulkVerifyResult.total_rows} | Invalid rows: {bulkVerifyResult.invalid_rows}
+                  </p>
+                  {bulkVerifyResult.warnings?.length ? (
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-amber-700">
+                      {bulkVerifyResult.warnings.map((warning, index) => (
+                        <li key={`${warning}-${index}`}>{warning}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {bulkVerifyResult.preview_rows?.length ? (
+                    <div className="mt-3 overflow-x-auto">
+                      <table className="min-w-full border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-[#f7f9fe] text-left text-[#4a6187]">
+                            <th className="border border-[#e2e8f5] px-2 py-1">Row</th>
+                            <th className="border border-[#e2e8f5] px-2 py-1">Section</th>
+                            <th className="border border-[#e2e8f5] px-2 py-1">Question ID</th>
+                            <th className="border border-[#e2e8f5] px-2 py-1">Severity</th>
+                            <th className="border border-[#e2e8f5] px-2 py-1">Valid</th>
+                            <th className="border border-[#e2e8f5] px-2 py-1">Errors</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {bulkVerifyResult.preview_rows.map((row) => (
+                            <tr key={row.row_number} className="text-[#334866]">
+                              <td className="border border-[#e2e8f5] px-2 py-1">{row.row_number}</td>
+                              <td className="border border-[#e2e8f5] px-2 py-1">{row.section_name}</td>
+                              <td className="border border-[#e2e8f5] px-2 py-1">{row.parent_question_id}</td>
+                              <td className="border border-[#e2e8f5] px-2 py-1">{row.severity}</td>
+                              <td className="border border-[#e2e8f5] px-2 py-1">{row.is_valid ? 'Yes' : 'No'}</td>
+                              <td className="border border-[#e2e8f5] px-2 py-1">{row.errors?.join(', ') || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {bulkImportTaskStatus ? (
+                <div className="mt-4 rounded-xl border border-[#dbe4f4] p-4">
+                  <h3 className="text-sm font-semibold text-[#25375a]">Import task status</h3>
+                  <p className="mt-1 text-xs text-[#607594]">
+                    Task: {bulkImportTaskStatus.task_id} | Status: {bulkImportTaskStatus.status} | Celery: {bulkImportTaskStatus.celery_state}
+                  </p>
+                  {bulkImportTaskStatus.detail ? <p className="mt-1 text-xs text-[#607594]">{bulkImportTaskStatus.detail}</p> : null}
+                  {bulkImportTaskStatus.result ? (
+                    <div className="mt-2 rounded-lg border border-[#e2e8f5] bg-[#f8fbff] p-3 text-xs text-[#334866]">
+                      <p>Checklist: {bulkImportTaskStatus.result.checklist_title}</p>
+                      <p>Sections: {bulkImportTaskStatus.result.sections_created}</p>
+                      <p>Questions: {bulkImportTaskStatus.result.questions_created}</p>
+                      <p>Sub-questions: {bulkImportTaskStatus.result.sub_questions_created}</p>
+                      <p>Rows processed: {bulkImportTaskStatus.result.total_rows_processed}</p>
+                    </div>
+                  ) : null}
+                  {bulkImportTaskStatus.error ? <p className="mt-2 text-xs text-[#a73a46]">{bulkImportTaskStatus.error}</p> : null}
+                </div>
+              ) : null}
             </div>
           </div>
         ) : null}
