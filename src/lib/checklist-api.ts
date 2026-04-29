@@ -53,6 +53,7 @@ type SectionApiModel = {
   checklist_id: string;
   title: string;
   order: number;
+  source_ref?: string | null;
 };
 
 type QuestionApiModel = {
@@ -120,6 +121,85 @@ type ListQueryOptions<TSortBy extends string> = {
   sortBy?: TSortBy;
   sortOrder?: SortOrder;
   search?: string;
+};
+
+export type BulkImportColumnMapping = {
+  section_name_col: string;
+  question_id_col: string;
+  child_question_col: string;
+  grandchild_question_col: string;
+  legal_requirement_col: string;
+  question_text_col: string;
+  severity_col: string;
+  explanation_col: string;
+  expected_implementation_col: string;
+  source_ref_col: string;
+  guidance_score_4_col: string;
+  guidance_score_3_col: string;
+  guidance_score_2_col: string;
+  guidance_score_1_col: string;
+};
+
+export type BulkImportTemplateSpec = {
+  description: string;
+  required_columns: string[];
+  optional_columns: string[];
+  column_mapping_template: BulkImportColumnMapping;
+  example_format: Record<string, unknown>;
+};
+
+export type BulkImportPreviewRow = {
+  row_number: number;
+  section_name: string;
+  parent_question_id: string;
+  parent_question_text: string;
+  child_question_id: string;
+  child_question_text: string;
+  grandchild_question_id: string;
+  grandchild_question_text: string;
+  legal_requirement: string;
+  severity: 'low' | 'medium' | 'high' | string;
+  explanation: string;
+  expected_implementation: string;
+  is_valid: boolean;
+  errors: string[];
+};
+
+export type BulkImportVerifyResponse = {
+  is_valid: boolean;
+  total_rows: number;
+  valid_rows: number;
+  invalid_rows: number;
+  preview_rows: BulkImportPreviewRow[];
+  column_headers: string[];
+  warnings: string[];
+};
+
+export type BulkImportCreateResponse = {
+  task_id: string;
+  status: string;
+  detail: string;
+};
+
+export type BulkImportTaskResult = {
+  checklist_id: string;
+  checklist_title: string;
+  sections_created: number;
+  questions_created: number;
+  sub_questions_created: number;
+  total_rows_processed: number;
+  warnings: string[];
+  status: string;
+  message: string;
+};
+
+export type BulkImportTaskStatus = {
+  task_id: string;
+  celery_state: string;
+  status: string;
+  detail: string;
+  result?: BulkImportTaskResult | null;
+  error?: string | null;
 };
 
 function buildDefaultAnswerOptions(illustrativeImageId?: string): QuestionAnswerOptionPayload[] {
@@ -229,6 +309,7 @@ function mapSection(data: SectionApiModel): ChecklistSection {
     checklistId: data.checklist_id,
     title: data.title,
     order: data.order,
+    sourceRef: data.source_ref ?? '',
   };
 }
 
@@ -417,9 +498,9 @@ export async function getQuestionsBySection(
 }
 
 export async function createSection(checklistId: string, payload: Partial<ChecklistSection>): Promise<ChecklistSection> {
-  const data = await apiPost<SectionApiModel, { title: string; order: number }>(
+  const data = await apiPost<SectionApiModel, { title: string; order: number; source_ref?: string }>(
     `/admin/checklists/${checklistId}/sections`,
-    { title: payload.title ?? '', order: payload.order ?? 1 },
+    { title: payload.title ?? '', order: payload.order ?? 1, source_ref: payload.sourceRef?.trim() || undefined },
   );
   return mapSection(data);
 }
@@ -429,9 +510,9 @@ export async function updateSection(
   sectionId: string,
   payload: Partial<ChecklistSection>,
 ): Promise<ChecklistSection> {
-  const data = await apiPatch<SectionApiModel, { title?: string; order?: number }>(
+  const data = await apiPatch<SectionApiModel, { title?: string; order?: number; source_ref?: string }>(
     `/admin/checklists/${checklistId}/sections/${sectionId}`,
-    { title: payload.title, order: payload.order },
+    { title: payload.title, order: payload.order, source_ref: payload.sourceRef?.trim() || undefined },
   );
   return mapSection(data);
 }
@@ -683,4 +764,63 @@ export async function selectChecklistAfterPayment(checklistId: string) {
   const query = new URLSearchParams();
   query.set('checklist_id', checklistId);
   return apiPost<ChecklistAccessGrant, Record<string, never>>(`/access/select-checklist?${query.toString()}`, {});
+}
+
+export async function getChecklistBulkTemplateMapping(): Promise<BulkImportTemplateSpec> {
+  return apiGetWithAuth<BulkImportTemplateSpec>('/admin/checklists/bulk/template/mapping');
+}
+
+export async function verifyChecklistBulkImport(payload: {
+  file_content: string;
+  file_name: string;
+  column_mapping: BulkImportColumnMapping;
+  preview_rows?: number;
+}): Promise<BulkImportVerifyResponse> {
+  return apiPost<BulkImportVerifyResponse, typeof payload>('/admin/checklists/bulk/verify', {
+    ...payload,
+    preview_rows: payload.preview_rows ?? 10,
+  });
+}
+
+export async function createChecklistBulkImport(payload: {
+  file_content: string;
+  file_name: string;
+  column_mapping: BulkImportColumnMapping;
+  checklist_title: string;
+  checklist_description?: string;
+  checklist_type_code?: 'compliance';
+  checklist_version?: number;
+}): Promise<BulkImportCreateResponse> {
+  return apiPost<BulkImportCreateResponse, typeof payload>('/admin/checklists/bulk/create', {
+    ...payload,
+    checklist_type_code: payload.checklist_type_code ?? 'compliance',
+    checklist_version: payload.checklist_version ?? 1,
+  });
+}
+
+export async function getChecklistBulkImportTaskStatus(taskId: string): Promise<BulkImportTaskStatus> {
+  return apiGetWithAuth<BulkImportTaskStatus>(`/admin/checklists/bulk/tasks/${taskId}`);
+}
+
+export async function uploadAndVerifyChecklistBulkImport(payload: {
+  file: File;
+  section_col?: string;
+  question_id_col?: string;
+  child_question_col?: string;
+  grandchild_question_col?: string;
+  legal_req_col?: string;
+  question_text_col?: string;
+  severity_col?: string;
+}): Promise<BulkImportVerifyResponse> {
+  const query = new URLSearchParams();
+  query.set('section_col', payload.section_col ?? 'B');
+  query.set('question_id_col', payload.question_id_col ?? 'C');
+  query.set('child_question_col', payload.child_question_col ?? 'D');
+  query.set('grandchild_question_col', payload.grandchild_question_col ?? 'E');
+  query.set('legal_req_col', payload.legal_req_col ?? 'F');
+  query.set('question_text_col', payload.question_text_col ?? 'H');
+  query.set('severity_col', payload.severity_col ?? 'I');
+  const formData = new FormData();
+  formData.append('file', payload.file);
+  return apiPostFormData<BulkImportVerifyResponse>(`/admin/checklists/bulk/upload-and-verify?${query.toString()}`, formData);
 }

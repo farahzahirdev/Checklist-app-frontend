@@ -61,6 +61,7 @@ type PanelSection = {
   id: string;
   title: string;
   order: number;
+  sourceRef: string;
   questions: PanelQuestion[];
 };
 
@@ -293,6 +294,7 @@ export default function ChecklistPanelBuilderPage() {
       id: 's-1',
       title: 'Section 1',
       order: 1,
+      sourceRef: '',
       questions: [makeQuestion(1)],
     },
   ]);
@@ -304,6 +306,7 @@ export default function ChecklistPanelBuilderPage() {
   const [addingQuestionSectionId, setAddingQuestionSectionId] = useState('');
   const [newSectionTitle, setNewSectionTitle] = useState('');
   const [newSectionOrder, setNewSectionOrder] = useState('1');
+  const [newSectionSourceRef, setNewSectionSourceRef] = useState('');
   const [addQuestionSectionId, setAddQuestionSectionId] = useState('');
   const [newQuestionDraft, setNewQuestionDraft] = useState<PanelQuestion>(makeQuestion(1));
   const [confirmDeleteSectionId, setConfirmDeleteSectionId] = useState<string | null>(null);
@@ -411,6 +414,7 @@ export default function ChecklistPanelBuilderPage() {
           id: section.id,
           title: section.title,
           order: section.order,
+          sourceRef: section.sourceRef ?? '',
           questions: questionMap[section.id] ?? [],
         }));
         setSections(nextSections);
@@ -510,6 +514,7 @@ export default function ChecklistPanelBuilderPage() {
     const nextOrder = sections.reduce((max, section) => Math.max(max, section.order), 0) + 1;
     setNewSectionTitle(`Section ${nextOrder}`);
     setNewSectionOrder(String(nextOrder));
+    setNewSectionSourceRef('');
     setSelected({ type: 'createSection' });
   }
 
@@ -522,17 +527,19 @@ export default function ChecklistPanelBuilderPage() {
     }
     setSectionActionLoading('create');
     try {
-      const created = await createSection(checklistId, { title, order });
+      const created = await createSection(checklistId, { title, order, sourceRef: newSectionSourceRef.trim() });
       const newSection: PanelSection = {
         id: created.id,
         title: created.title,
         order: created.order,
+        sourceRef: created.sourceRef ?? '',
         questions: [],
       };
       setSections((previous) => [...previous, newSection]);
       setSelected({ type: 'section', sectionId: newSection.id });
       setNewSectionTitle('');
       setNewSectionOrder('1');
+      setNewSectionSourceRef('');
       toast.success('Section created.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to create section');
@@ -549,10 +556,13 @@ export default function ChecklistPanelBuilderPage() {
       const saved = await updateSectionApi(checklistId, sectionId, {
         title: section.title,
         order: section.order,
+        sourceRef: section.sourceRef,
       });
       setSections((previous) =>
         previous.map((item) =>
-          item.id === sectionId ? { ...item, title: saved.title, order: saved.order } : item,
+          item.id === sectionId
+            ? { ...item, title: saved.title, order: saved.order, sourceRef: saved.sourceRef ?? '' }
+            : item,
         ),
       );
       toast.success('Section saved.');
@@ -684,8 +694,6 @@ export default function ChecklistPanelBuilderPage() {
     const derivedPoints = draftQuestion.securityLevel === 'low' ? 1 : draftQuestion.securityLevel === 'medium' ? 3 : 4;
     const missingFields = [
       !draftQuestion.questionId.trim() ? 'questionId' : null,
-      !draftQuestion.questionTitle.trim() ? 'questionTitle' : null,
-      !draftQuestion.legalRequirementTitle.trim() ? 'legalRequirementTitle' : null,
       !draftQuestion.legalRequirementDescription.trim() ? 'legalRequirementDescription' : null,
       !draftQuestion.explanation.trim() ? 'explanation' : null,
       !draftQuestion.expectedImplementation.trim() ? 'expectedImplementation' : null,
@@ -747,8 +755,6 @@ export default function ChecklistPanelBuilderPage() {
     if (!question) return;
     const missingFields = [
       !question.questionId.trim() ? 'questionId' : null,
-      !question.questionTitle.trim() ? 'questionTitle' : null,
-      !question.legalRequirementTitle.trim() ? 'legalRequirementTitle' : null,
       !question.legalRequirementDescription.trim() ? 'legalRequirementDescription' : null,
       !question.explanation.trim() ? 'explanation' : null,
       !question.expectedImplementation.trim() ? 'expectedImplementation' : null,
@@ -1204,6 +1210,15 @@ export default function ChecklistPanelBuilderPage() {
                     className={inputClass}
                   />
                 </div>
+                <div>
+                  <label className={labelClass}>Source</label>
+                  <input
+                    value={selectedSection.sourceRef}
+                    onChange={(event) => updateSection(selectedSection.id, { sourceRef: event.target.value })}
+                    className={inputClass}
+                    placeholder="Source reference"
+                  />
+                </div>
                 {!isReadOnly ? (
                   <div className="flex items-center gap-2">
                     <button
@@ -1250,6 +1265,15 @@ export default function ChecklistPanelBuilderPage() {
                     placeholder="1"
                   />
                 </div>
+                <div>
+                  <label className={labelClass}>Source</label>
+                  <input
+                    value={newSectionSourceRef}
+                    onChange={(event) => setNewSectionSourceRef(event.target.value)}
+                    className={inputClass}
+                    placeholder="Source reference"
+                  />
+                </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -1288,14 +1312,6 @@ export default function ChecklistPanelBuilderPage() {
                 <div className={sectionHeadingClass}>Basic information</div>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className={labelClass}>Question title *</label>
-                    <input
-                      value={newQuestionDraft.questionTitle}
-                      onChange={(event) => setNewQuestionDraft((previous) => ({ ...previous, questionTitle: event.target.value }))}
-                      className={`${inputClass} ${createQuestionMissingFields.includes('questionTitle') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
-                    />
-                  </div>
-                  <div>
                     <label className={labelClass}>Question ID *</label>
                     <input
                       value={newQuestionDraft.questionId}
@@ -1329,13 +1345,13 @@ export default function ChecklistPanelBuilderPage() {
                   </div>
                   <div className={sectionHeadingClass + ' md:col-span-2'}>Legal requirement</div>
                   <div className="md:col-span-2">
-                    <label className={labelClass}>Legal requirement title *</label>
+                    <label className={labelClass}>Legal requirement title</label>
                     <input
                       value={newQuestionDraft.legalRequirementTitle}
                       onChange={(event) =>
                         setNewQuestionDraft((previous) => ({ ...previous, legalRequirementTitle: event.target.value }))
                       }
-                      className={`${inputClass} ${createQuestionMissingFields.includes('legalRequirementTitle') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
+                      className={inputClass}
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -1575,16 +1591,6 @@ export default function ChecklistPanelBuilderPage() {
                 <div className={sectionHeadingClass}>Basic information</div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className={labelClass}>Question title *</label>
-                    <input
-                      value={selectedQuestion.questionTitle}
-                      onChange={(event) =>
-                        updateQuestion(selectedSection.id, selectedQuestion.id, { questionTitle: event.target.value })
-                      }
-                      className={`${inputClass} ${editQuestionMissingFields.includes('questionTitle') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
-                    />
-                  </div>
-                  <div>
                     <label className={labelClass}>Question ID *</label>
                     <input
                       value={selectedQuestion.questionId}
@@ -1624,7 +1630,7 @@ export default function ChecklistPanelBuilderPage() {
 
                 <div className={sectionHeadingClass}>Legal requirement</div>
                 <div>
-                  <label className={labelClass}>Legal requirement title *</label>
+                  <label className={labelClass}>Legal requirement title</label>
                   <input
                     value={selectedQuestion.legalRequirementTitle}
                     onChange={(event) =>
@@ -1632,7 +1638,7 @@ export default function ChecklistPanelBuilderPage() {
                         legalRequirementTitle: event.target.value,
                       })
                     }
-                    className={`${inputClass} ${editQuestionMissingFields.includes('legalRequirementTitle') ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
+                    className={inputClass}
                   />
                 </div>
                 <div>

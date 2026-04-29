@@ -186,6 +186,12 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+              <ul className="ml-4 list-disc space-y-1 text-xs text-[#97a5bb]">
+                <li>At least 8 characters</li>
+                <li>At least one uppercase letter (A-Z)</li>
+                <li>At least one lowercase letter (a-z)</li>
+                <li>No spaces</li>
+              </ul>
             </label>
 
             <button
