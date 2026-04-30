@@ -42,6 +42,10 @@ export default function AdminUsersPage() {
   const [switchDuration, setSwitchDuration] = useState(30);
   const [customerReason, setCustomerReason] = useState('Support action');
   const [isPermanentDeactivation, setIsPermanentDeactivation] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState<'all' | 'admin' | 'auditor'>('all');
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+  const [customerActiveFilter, setCustomerActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<
     | ''
@@ -56,6 +60,7 @@ export default function AdminUsersPage() {
     | 'switch-role'
     | 'end-switch'
   >('');
+  const [activeTab, setActiveTab] = useState<'users' | 'customers' | 'roleswitch'>('users');
 
   const dashboardRecentAssessments = Array.isArray(customerDashboardData?.recent_assessments)
     ? (customerDashboardData.recent_assessments as Array<Record<string, unknown>>)
@@ -70,7 +75,20 @@ export default function AdminUsersPage() {
 
   async function loadLists() {
     try {
-      const [usersResponse, customersResponse] = await Promise.all([listAdminUsers(), listCustomers()]);
+      const [usersResponse, customersResponse] = await Promise.all([
+        listAdminUsers({
+          search: userSearchQuery.trim() || undefined,
+          role: userRoleFilter === 'all' ? undefined : userRoleFilter,
+          sort_by: 'updated_at',
+          sort_order: 'desc',
+        }),
+        listCustomers({
+          search: customerSearchQuery.trim() || undefined,
+          is_active: customerActiveFilter === 'all' ? undefined : customerActiveFilter === 'active',
+          sort_by: 'updated_at',
+          sort_order: 'desc',
+        }),
+      ]);
       setUsers(usersResponse.users);
       setCustomers(customersResponse.customers);
     } catch (err) {
@@ -86,7 +104,7 @@ export default function AdminUsersPage() {
       return;
     }
     void loadLists();
-  }, [isReadOnly]);
+  }, [isReadOnly, userSearchQuery, userRoleFilter, customerSearchQuery, customerActiveFilter]);
 
   if (isReadOnly) {
     return (
@@ -344,327 +362,374 @@ export default function AdminUsersPage() {
   return (
     <section className="space-y-4">
       <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Users</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#1f2d45]">Users & Role Assignment</h1>
-        <p className="mt-1 text-sm text-[#607594]">
-          Assign platform roles using the backend admin endpoint. This controls access for admin, auditor, and customer
-          experiences.
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Admin panel</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#1f2d45]">Users & Role Assignment</h1>
+        <p className="mt-1 text-sm text-[#607594]">Manage admin users, customer accounts, and test role switching.</p>
       </header>
 
-      <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm">
-        <h2 className="text-xl font-semibold text-[#243555]">Admin & Auditor Users</h2>
-        <div className="mt-3 overflow-x-auto rounded-xl border border-[#e3e9f6]">
-          <table className="min-w-full text-sm">
-            <thead className="bg-[#f3f6fc] text-[#607594]">
-              <tr>
-                <th className="px-4 py-3 text-left font-semibold">Email</th>
-                <th className="px-4 py-3 text-left font-semibold">Role</th>
-                <th className="px-4 py-3 text-left font-semibold">Active</th>
-                <th className="px-4 py-3 text-left font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.id} className="border-t border-[#edf2f9]">
-                  <td className="px-4 py-3 font-semibold text-[#2a3d5f]">{user.email}</td>
-                  <td className="px-4 py-3 text-[#607594]">{user.role}</td>
-                  <td className="px-4 py-3 text-[#607594]">{user.is_active ? 'Yes' : 'No'}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedUserId(user.id)}
-                        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${
-                          selectedUserId === user.id ? 'border-[#2f7dff] bg-[#edf4ff] text-[#2f7dff]' : 'border-[#d4dced] text-[#3e69b0] hover:bg-[#edf4ff]'
-                        }`}
-                      >
-                        Select
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </article>
-
-      <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm">
-        <h2 className="text-xl font-semibold text-[#243555]">User Detail & Role Change</h2>
-
-        <form onSubmit={onLoadUser} className="mt-4 space-y-3">
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium text-[#566b8d]">Selected user ID <span className="text-[#c43e53]">*</span></span>
-            <input
-              type="text"
-              value={selectedUserId}
-              onChange={(event) => setSelectedUserId(event.target.value)}
-              placeholder="UUID"
-              className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
-            />
-          </label>
+      <div className="flex gap-1 border-b border-[#dbe4f4]">
+        {[
+          { key: 'users', label: 'Admin users' },
+          { key: 'customers', label: 'Customers' },
+          { key: 'roleswitch', label: 'Role switch' },
+        ].map((tab) => (
           <button
-            type="submit"
-            disabled={loading}
-            className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:cursor-not-allowed disabled:opacity-60"
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key as 'users' | 'customers' | 'roleswitch')}
+            className={`border-b-2 px-4 py-2 text-sm transition ${
+              activeTab === tab.key
+                ? 'border-[#1f2d45] text-[#1f2d45] font-medium'
+                : 'border-transparent text-[#607594] hover:text-[#1f2d45]'
+            }`}
           >
-            {actionLoading === 'load-user' ? 'Loading user…' : 'Load user detail'}
+            {tab.label}
           </button>
-        </form>
+        ))}
+      </div>
 
-        {selectedUserDetail ? (
-          <div className="mt-3 rounded-lg border border-[#e3e9f6] bg-[#f9fbff] px-3 py-2 text-sm text-[#556b8f]">
-            <p>Email: {selectedUserDetail.email}</p>
-            <p>Role: {selectedUserDetail.role}</p>
-            <p>Permissions: {selectedUserDetail.permissions.map((item) => `${item.resource}:${item.action}`).join(', ') || 'None'}</p>
+      {activeTab === 'users' ? (
+        <>
+          <div className="flex flex-wrap gap-2">
+            {['Select a user below', 'Load their details', 'Change role or permissions'].map((step, index) => (
+              <span key={step} className="inline-flex items-center gap-1.5 rounded-full bg-[#f3f6fc] px-2.5 py-1 text-xs text-[#607594]">
+                <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#607594] text-[10px] text-white">{index + 1}</span>
+                {step}
+              </span>
+            ))}
           </div>
-        ) : null}
 
-        <form onSubmit={onChangeRole} className="mt-4 space-y-3">
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium text-[#566b8d]">New role code</span>
-            <select
-              value={newRoleCode}
-              onChange={(event) => setNewRoleCode(event.target.value as 'admin' | 'auditor')}
-              className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
-            >
-              <option value="auditor">auditor</option>
-              <option value="admin">admin</option>
-            </select>
-          </label>
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium text-[#566b8d]">Reason <span className="text-[#c43e53]">*</span></span>
-            <input
-              type="text"
-              value={roleReason}
-              onChange={(event) => setRoleReason(event.target.value)}
-              className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
-            />
-          </label>
+          <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm">
+            <h2 className="text-base font-semibold text-[#243555]">Admin & auditor users</h2>
+            <p className="mt-1 text-sm text-[#607594]">Click Select next to a user to use them in the forms below.</p>
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              <input
+                type="text"
+                value={userSearchQuery}
+                onChange={(event) => setUserSearchQuery(event.target.value)}
+                placeholder="Search users by email or role"
+                className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
+              />
+              <select
+                value={userRoleFilter}
+                onChange={(event) => setUserRoleFilter(event.target.value as 'all' | 'admin' | 'auditor')}
+                className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
+              >
+                <option value="all">All roles</option>
+                <option value="admin">Admin only</option>
+                <option value="auditor">Auditor only</option>
+              </select>
+            </div>
+            <div className="mt-3 overflow-x-auto rounded-xl border border-[#e3e9f6]">
+              <table className="min-w-full text-sm">
+                <thead className="bg-[#f8faff] text-[#607594]">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold">Email</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold">Role</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user.id} className={`border-t border-[#edf2f9] ${selectedUserId === user.id ? 'bg-[#f5f9ff]' : ''}`}>
+                      <td className="px-4 py-3 font-medium text-[#2a3d5f]">{user.email}</td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full bg-[#f1f4fa] px-2 py-0.5 text-xs text-[#607594]">{user.role}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2 py-0.5 text-xs ${user.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {user.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedUserId(user.id)}
+                          className={`rounded-md border px-3 py-1.5 text-xs font-semibold ${
+                            selectedUserId === user.id ? 'border-[#2f7dff] bg-[#edf4ff] text-[#2f7dff]' : 'border-[#d4dced] text-[#3e69b0] hover:bg-[#edf4ff]'
+                          }`}
+                        >
+                          {selectedUserId === user.id ? 'Selected' : 'Select'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </article>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {actionLoading === 'change-role' ? 'Changing role…' : 'Change role'}
-          </button>
-        </form>
+          <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm space-y-4">
+            <div>
+              <h2 className="text-base font-semibold text-[#243555]">User details</h2>
+              <p className="mt-1 text-sm text-[#607594]">Load current role and permissions before making any changes.</p>
+            </div>
+            <form onSubmit={onLoadUser} className="space-y-3">
+              <label className="block space-y-2 text-sm">
+                <span className="font-medium text-[#566b8d]">Selected user ID</span>
+                <input
+                  type="text"
+                  value={selectedUserId}
+                  onChange={(event) => setSelectedUserId(event.target.value)}
+                  placeholder="Select from table above, or paste UUID"
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
+                />
+              </label>
+              <button type="submit" disabled={loading} className="rounded-xl border border-[#1f2d45] bg-[#1f2d45] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">
+                {actionLoading === 'load-user' ? 'Loading user…' : 'Load user'}
+              </button>
+            </form>
 
-        <form onSubmit={onAssignPermissions} className="mt-4 space-y-3">
-          <h3 className="text-lg font-semibold text-[#243555]">Custom permissions (auditor only)</h3>
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium text-[#566b8d]">Permissions</span>
-            <input
-              type="text"
-              value={permissionsInput}
-              onChange={(event) => setPermissionsInput(event.target.value)}
-              placeholder="dashboard:read,report:read"
-              className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
-            />
-          </label>
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {actionLoading === 'assign-permissions' ? 'Assigning…' : 'Assign permissions'}
-            </button>
-            <button
-              type="button"
-              onClick={() => void onResetPermissions()}
-              disabled={loading}
-              className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-4 py-2 text-sm font-semibold text-[#2a3d5f] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {actionLoading === 'reset-permissions' ? 'Resetting…' : 'Reset permissions'}
-            </button>
-          </div>
-        </form>
-      </article>
-
-      <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm">
-        <h2 className="text-xl font-semibold text-[#243555]">Customers</h2>
-        <div className="mt-3 overflow-x-auto rounded-xl border border-[#e3e9f6]">
-          <table className="min-w-full text-sm">
-            <thead className="bg-[#f3f6fc] text-[#607594]">
-              <tr>
-                <th className="px-4 py-3 text-left font-semibold">Email</th>
-                <th className="px-4 py-3 text-left font-semibold">Active</th>
-                <th className="px-4 py-3 text-left font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {customers.map((customer) => (
-                <tr key={customer.id} className="border-t border-[#edf2f9]">
-                  <td className="px-4 py-3 font-semibold text-[#2a3d5f]">{customer.email}</td>
-                  <td className="px-4 py-3 text-[#607594]">{customer.is_active ? 'Yes' : 'No'}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCustomerId(customer.id)}
-                      className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${
-                        selectedCustomerId === customer.id ? 'border-[#2f7dff] bg-[#edf4ff] text-[#2f7dff]' : 'border-[#d4dced] text-[#3e69b0] hover:bg-[#edf4ff]'
-                      }`}
-                    >
-                      Select
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <form onSubmit={onLoadCustomer} className="mt-4 space-y-3">
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium text-[#566b8d]">Selected customer ID <span className="text-[#c43e53]">*</span></span>
-            <input
-              type="text"
-              value={selectedCustomerId}
-              onChange={(event) => setSelectedCustomerId(event.target.value)}
-              placeholder="UUID"
-              className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {actionLoading === 'load-customer' ? 'Loading customer…' : 'Load customer detail'}
-          </button>
-        </form>
-
-        {selectedCustomerDetail ? (
-          <div className="mt-3 rounded-lg border border-[#e3e9f6] bg-[#f9fbff] px-3 py-2 text-sm text-[#556b8f]">
-            <p>Email: {selectedCustomerDetail.email}</p>
-            <p>
-              Permissions:{' '}
-              {selectedCustomerDetail.permissions.map((item) => `${item.resource}:${item.action}`).join(', ') || 'None'}
-            </p>
-          </div>
-        ) : null}
-
-        <div className="mt-4 space-y-3">
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium text-[#566b8d]">Reason <span className="text-[#c43e53]">*</span></span>
-            <input
-              type="text"
-              value={customerReason}
-              onChange={(event) => setCustomerReason(event.target.value)}
-              className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
-            />
-          </label>
-          <label className="inline-flex items-center gap-2 text-sm text-[#566b8d]">
-            <input
-              type="checkbox"
-              checked={isPermanentDeactivation}
-              onChange={(event) => setIsPermanentDeactivation(event.target.checked)}
-              className="h-4 w-4 accent-[#2f7dff]"
-            />
-            Permanent deactivation
-          </label>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => void onDeactivateCustomer()}
-              disabled={loading}
-              className="rounded-xl border border-[#d45f6b] bg-[#fff1f3] px-4 py-2 text-sm font-semibold text-[#a73a46] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {actionLoading === 'deactivate-customer' ? 'Deactivating…' : 'Deactivate'}
-            </button>
-            <button
-              type="button"
-              onClick={() => void onActivateCustomer()}
-              disabled={loading}
-              className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {actionLoading === 'activate-customer' ? 'Activating…' : 'Activate'}
-            </button>
-            <button
-              type="button"
-              onClick={() => void onViewCustomerDashboard()}
-              disabled={loading}
-              className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-4 py-2 text-sm font-semibold text-[#2a3d5f] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {actionLoading === 'view-customer-dashboard' ? 'Loading dashboard…' : 'View Dashboard'}
-            </button>
-          </div>
-          {customerDashboardData ? (
-            <article className="rounded-xl border border-[#e3e9f6] bg-[#f9fbff] p-3">
-              <h3 className="text-sm font-semibold text-[#243555]">Customer Dashboard Preview</h3>
-              <div className="mt-3 grid gap-3 md:grid-cols-3">
-                <div className="rounded-lg border border-[#e3e9f6] bg-white p-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">Payment Status</p>
-                  <p className="mt-1 text-sm font-semibold text-[#243555]">{dashboardPaymentStatus ?? 'Not available'}</p>
-                </div>
-                <div className="rounded-lg border border-[#e3e9f6] bg-white p-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">Recent Assessments</p>
-                  <p className="mt-1 text-sm font-semibold text-[#243555]">{dashboardRecentAssessments.length}</p>
-                </div>
-                <div className="rounded-lg border border-[#e3e9f6] bg-white p-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">Available Checklists</p>
-                  <p className="mt-1 text-sm font-semibold text-[#243555]">{dashboardAvailableChecklists.length}</p>
+            {selectedUserDetail ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="rounded-lg bg-[#f7f9fe] px-3 py-2"><p className="text-[11px] uppercase text-[#607594]">Email</p><p className="text-sm font-medium text-[#243555]">{selectedUserDetail.email}</p></div>
+                <div className="rounded-lg bg-[#f7f9fe] px-3 py-2"><p className="text-[11px] uppercase text-[#607594]">Role</p><p className="text-sm font-medium text-[#243555]">{selectedUserDetail.role}</p></div>
+                <div className="rounded-lg bg-[#f7f9fe] px-3 py-2 sm:col-span-2">
+                  <p className="text-[11px] uppercase text-[#607594]">Permissions</p>
+                  <p className="text-sm text-[#243555]">{selectedUserDetail.permissions.map((item) => `${item.resource}:${item.action}`).join(', ') || 'None'}</p>
                 </div>
               </div>
+            ) : null}
 
-              <div className="mt-3 grid gap-3 lg:grid-cols-2">
-                <div className="rounded-lg border border-[#e3e9f6] bg-white p-3">
-                  <p className="text-sm font-semibold text-[#243555]">Recent Assessments</p>
-                  {dashboardRecentAssessments.length ? (
-                    <div className="mt-2 overflow-x-auto">
-                      <table className="min-w-full text-xs">
-                        <thead className="text-[#607594]">
-                          <tr className="border-b border-[#edf2f9]">
-                            <th className="py-1 text-left font-semibold">Assessment</th>
-                            <th className="py-1 text-left font-semibold">Status</th>
-                            <th className="py-1 text-left font-semibold">Updated</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {dashboardRecentAssessments.map((assessment, index) => (
-                            <tr key={`${String(assessment.id ?? index)}-${index}`} className="border-b border-[#f1f4fa] last:border-0">
-                              <td className="py-1 text-[#2a3d5f]">{String(assessment.title ?? assessment.name ?? assessment.id ?? 'Assessment')}</td>
-                              <td className="py-1 text-[#607594]">{String(assessment.status ?? '-')}</td>
-                              <td className="py-1 text-[#607594]">{String(assessment.updated_at ?? assessment.created_at ?? '-')}</td>
+            <hr className="border-[#e6edf8]" />
+
+            <form onSubmit={onChangeRole} className="space-y-3">
+              <h3 className="text-base font-semibold text-[#243555]">Change role</h3>
+              <label className="block space-y-2 text-sm">
+                <span className="font-medium text-[#566b8d]">New role</span>
+                <select
+                  value={newRoleCode}
+                  onChange={(event) => setNewRoleCode(event.target.value as 'admin' | 'auditor')}
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
+                >
+                  <option value="auditor">auditor</option>
+                  <option value="admin">admin</option>
+                </select>
+              </label>
+              <label className="block space-y-2 text-sm">
+                <span className="font-medium text-[#566b8d]">Reason <span className="text-[#c43e53]">*</span></span>
+                <input type="text" value={roleReason} onChange={(event) => setRoleReason(event.target.value)} className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]" />
+              </label>
+              <button type="submit" disabled={loading} className="rounded-xl border border-[#1f2d45] bg-[#1f2d45] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">
+                {actionLoading === 'change-role' ? 'Changing role…' : 'Save role change'}
+              </button>
+            </form>
+
+            <hr className="border-[#e6edf8]" />
+
+            <form onSubmit={onAssignPermissions} className="space-y-3">
+              <h3 className="text-base font-semibold text-[#243555]">
+                Custom permissions
+                <span className="ml-2 rounded-full bg-[#eaf2ff] px-2 py-0.5 text-xs font-medium text-[#3e69b0]">Auditors only</span>
+              </h3>
+              <p className="text-xs text-[#607594]">Use `resource:action` format, comma-separated. Example: `dashboard:read,report:read`.</p>
+              <label className="block space-y-2 text-sm">
+                <span className="font-medium text-[#566b8d]">Permissions</span>
+                <input
+                  type="text"
+                  value={permissionsInput}
+                  onChange={(event) => setPermissionsInput(event.target.value)}
+                  placeholder="dashboard:read,report:read"
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
+                />
+              </label>
+              <div className="flex gap-2">
+                <button type="submit" disabled={loading} className="rounded-xl border border-[#1f2d45] bg-[#1f2d45] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">
+                  {actionLoading === 'assign-permissions' ? 'Assigning…' : 'Assign permissions'}
+                </button>
+                <button type="button" onClick={() => void onResetPermissions()} disabled={loading} className="rounded-xl border border-[#d4dced] bg-white px-4 py-2 text-sm font-semibold text-[#2a3d5f] disabled:opacity-60">
+                  {actionLoading === 'reset-permissions' ? 'Resetting…' : 'Reset to defaults'}
+                </button>
+              </div>
+            </form>
+          </article>
+        </>
+      ) : null}
+
+      {activeTab === 'customers' ? (
+        <>
+          <div className="flex flex-wrap gap-2">
+            {['Select a customer', 'Load details', 'Take action with a reason'].map((step, index) => (
+              <span key={step} className="inline-flex items-center gap-1.5 rounded-full bg-[#f3f6fc] px-2.5 py-1 text-xs text-[#607594]">
+                <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#607594] text-[10px] text-white">{index + 1}</span>
+                {step}
+              </span>
+            ))}
+          </div>
+
+          <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm">
+            <h2 className="text-base font-semibold text-[#243555]">Customer accounts</h2>
+            <p className="mt-1 text-sm text-[#607594]">Select a customer to manage account status or preview dashboard data.</p>
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              <input
+                type="text"
+                value={customerSearchQuery}
+                onChange={(event) => setCustomerSearchQuery(event.target.value)}
+                placeholder="Search customers by email"
+                className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
+              />
+              <select
+                value={customerActiveFilter}
+                onChange={(event) => setCustomerActiveFilter(event.target.value as 'all' | 'active' | 'inactive')}
+                className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
+              >
+                <option value="all">All statuses</option>
+                <option value="active">Active only</option>
+                <option value="inactive">Inactive only</option>
+              </select>
+            </div>
+            <div className="mt-3 overflow-x-auto rounded-xl border border-[#e3e9f6]">
+              <table className="min-w-full text-sm">
+                <thead className="bg-[#f8faff] text-[#607594]">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold">Email</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {customers.map((customer) => (
+                    <tr key={customer.id} className={`border-t border-[#edf2f9] ${selectedCustomerId === customer.id ? 'bg-[#f5f9ff]' : ''}`}>
+                      <td className="px-4 py-3 font-medium text-[#2a3d5f]">{customer.email}</td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2 py-0.5 text-xs ${customer.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {customer.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCustomerId(customer.id)}
+                          className={`rounded-md border px-3 py-1.5 text-xs font-semibold ${
+                            selectedCustomerId === customer.id ? 'border-[#2f7dff] bg-[#edf4ff] text-[#2f7dff]' : 'border-[#d4dced] text-[#3e69b0] hover:bg-[#edf4ff]'
+                          }`}
+                        >
+                          {selectedCustomerId === customer.id ? 'Selected' : 'Select'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm space-y-4">
+            <h2 className="text-base font-semibold text-[#243555]">Customer details</h2>
+            <form onSubmit={onLoadCustomer} className="space-y-3">
+              <label className="block space-y-2 text-sm">
+                <span className="font-medium text-[#566b8d]">Selected customer ID</span>
+                <input
+                  type="text"
+                  value={selectedCustomerId}
+                  onChange={(event) => setSelectedCustomerId(event.target.value)}
+                  placeholder="Select from table above, or paste UUID"
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
+                />
+              </label>
+              <button type="submit" disabled={loading} className="rounded-xl border border-[#1f2d45] bg-[#1f2d45] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">
+                {actionLoading === 'load-customer' ? 'Loading customer…' : 'Load customer'}
+              </button>
+            </form>
+
+            {selectedCustomerDetail ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="rounded-lg bg-[#f7f9fe] px-3 py-2"><p className="text-[11px] uppercase text-[#607594]">Email</p><p className="text-sm font-medium text-[#243555]">{selectedCustomerDetail.email}</p></div>
+                <div className="rounded-lg bg-[#f7f9fe] px-3 py-2 sm:col-span-2"><p className="text-[11px] uppercase text-[#607594]">Permissions</p><p className="text-sm text-[#243555]">{selectedCustomerDetail.permissions.map((item) => `${item.resource}:${item.action}`).join(', ') || 'None'}</p></div>
+              </div>
+            ) : null}
+
+            <hr className="border-[#e6edf8]" />
+
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-[#243555]">Account actions</h3>
+              <label className="block space-y-2 text-sm">
+                <span className="font-medium text-[#566b8d]">Reason <span className="text-[#c43e53]">*</span></span>
+                <input type="text" value={customerReason} onChange={(event) => setCustomerReason(event.target.value)} className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]" />
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm text-[#566b8d]">
+                <input type="checkbox" checked={isPermanentDeactivation} onChange={(event) => setIsPermanentDeactivation(event.target.checked)} className="h-4 w-4 accent-[#c43e53]" />
+                Permanent deactivation (cannot be undone)
+              </label>
+              <div className="flex gap-2 flex-wrap">
+                <button type="button" onClick={() => void onActivateCustomer()} disabled={loading} className="rounded-xl border border-[#d4dced] bg-white px-4 py-2 text-sm font-semibold text-[#2a3d5f] disabled:opacity-60">
+                  {actionLoading === 'activate-customer' ? 'Activating…' : 'Activate'}
+                </button>
+                <button type="button" onClick={() => void onDeactivateCustomer()} disabled={loading} className="rounded-xl border border-[#f1c6cd] bg-[#fff1f3] px-4 py-2 text-sm font-semibold text-[#a73a46] disabled:opacity-60">
+                  {actionLoading === 'deactivate-customer' ? 'Deactivating…' : 'Deactivate'}
+                </button>
+                <button type="button" onClick={() => void onViewCustomerDashboard()} disabled={loading} className="rounded-xl border border-[#d4dced] bg-white px-4 py-2 text-sm font-semibold text-[#2a3d5f] disabled:opacity-60">
+                  {actionLoading === 'view-customer-dashboard' ? 'Loading dashboard…' : 'Preview dashboard'}
+                </button>
+              </div>
+            </div>
+
+            {customerDashboardData ? (
+              <article className="rounded-xl border border-[#e3e9f6] bg-[#f9fbff] p-3">
+                <h3 className="text-sm font-semibold text-[#243555]">Dashboard preview</h3>
+                <div className="mt-3 grid gap-3 md:grid-cols-3">
+                  <div className="rounded-lg border border-[#e3e9f6] bg-white p-3"><p className="text-xs uppercase text-[#6f82a3]">Payment</p><p className="mt-1 text-sm font-semibold text-[#243555]">{dashboardPaymentStatus ?? 'Not available'}</p></div>
+                  <div className="rounded-lg border border-[#e3e9f6] bg-white p-3"><p className="text-xs uppercase text-[#6f82a3]">Assessments</p><p className="mt-1 text-sm font-semibold text-[#243555]">{dashboardRecentAssessments.length}</p></div>
+                  <div className="rounded-lg border border-[#e3e9f6] bg-white p-3"><p className="text-xs uppercase text-[#6f82a3]">Checklists</p><p className="mt-1 text-sm font-semibold text-[#243555]">{dashboardAvailableChecklists.length}</p></div>
+                </div>
+                <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                  <div className="rounded-lg border border-[#e3e9f6] bg-white p-3">
+                    <p className="text-sm font-semibold text-[#243555]">Recent assessments</p>
+                    {dashboardRecentAssessments.length ? (
+                      <div className="mt-2 overflow-x-auto">
+                        <table className="min-w-full text-xs">
+                          <thead className="text-[#607594]">
+                            <tr className="border-b border-[#edf2f9]">
+                              <th className="py-1 text-left font-semibold">Assessment</th>
+                              <th className="py-1 text-left font-semibold">Status</th>
+                              <th className="py-1 text-left font-semibold">Updated</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-xs text-[#607594]">No recent assessments.</p>
-                  )}
+                          </thead>
+                          <tbody>
+                            {dashboardRecentAssessments.map((assessment, index) => (
+                              <tr key={`${String(assessment.id ?? index)}-${index}`} className="border-b border-[#f1f4fa] last:border-0">
+                                <td className="py-1 text-[#2a3d5f]">{String(assessment.title ?? assessment.name ?? assessment.id ?? 'Assessment')}</td>
+                                <td className="py-1 text-[#607594]">{String(assessment.status ?? '-')}</td>
+                                <td className="py-1 text-[#607594]">{String(assessment.updated_at ?? assessment.created_at ?? '-')}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-xs text-[#607594]">No recent assessments.</p>
+                    )}
+                  </div>
+                  <div className="rounded-lg border border-[#e3e9f6] bg-white p-3">
+                    <p className="text-sm font-semibold text-[#243555]">Available checklists</p>
+                    {dashboardAvailableChecklists.length ? (
+                      <ul className="mt-2 space-y-1 text-xs text-[#2a3d5f]">
+                        {dashboardAvailableChecklists.map((checklist, index) => (
+                          <li key={`${String(checklist.id ?? index)}-${index}`} className="rounded border border-[#edf2f9] px-2 py-1">
+                            {String(checklist.title ?? checklist.name ?? checklist.id ?? 'Checklist')}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-2 text-xs text-[#607594]">No available checklists.</p>
+                    )}
+                  </div>
                 </div>
+              </article>
+            ) : null}
+          </article>
+        </>
+      ) : null}
 
-                <div className="rounded-lg border border-[#e3e9f6] bg-white p-3">
-                  <p className="text-sm font-semibold text-[#243555]">Available Checklists</p>
-                  {dashboardAvailableChecklists.length ? (
-                    <ul className="mt-2 space-y-1 text-xs text-[#2a3d5f]">
-                      {dashboardAvailableChecklists.map((checklist, index) => (
-                        <li key={`${String(checklist.id ?? index)}-${index}`} className="rounded border border-[#edf2f9] px-2 py-1">
-                          {String(checklist.title ?? checklist.name ?? checklist.id ?? 'Checklist')}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="mt-2 text-xs text-[#607594]">No available checklists.</p>
-                  )}
-                </div>
-              </div>
-            </article>
-          ) : null}
-        </div>
-      </article>
-
-      <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm">
-        <h2 className="text-xl font-semibold text-[#243555]">Role Switch For Testing</h2>
-        <p className="mt-1 text-sm text-[#607594]">
-          This temporarily changes your active session from admin to the selected role for testing. Use <span className="font-semibold">End switch</span> to return to admin.
-        </p>
-        <form onSubmit={onSwitchRole} className="mt-4 space-y-3">
+      {activeTab === 'roleswitch' ? (
+        <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm">
+          <div className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            For QA/testing only. Temporarily changes your active session to another role. Use End switch to return to admin.
+          </div>
+          <h2 className="text-base font-semibold text-[#243555]">Switch to role</h2>
+          <p className="mt-1 text-sm text-[#607594]">Choose role and session duration for testing.</p>
+          <form onSubmit={onSwitchRole} className="mt-4 space-y-3">
           <label className="block space-y-2 text-sm">
             <span className="font-medium text-[#566b8d]">Switch to role <span className="text-[#c43e53]">*</span></span>
             <select
@@ -699,7 +764,7 @@ export default function AdminUsersPage() {
             <button
               type="submit"
               disabled={loading}
-              className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-xl border border-[#1f2d45] bg-[#1f2d45] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {actionLoading === 'switch-role' ? 'Switching role…' : 'Switch role'}
             </button>
@@ -707,13 +772,14 @@ export default function AdminUsersPage() {
               type="button"
               onClick={() => void onEndRoleSwitch()}
               disabled={loading}
-              className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-4 py-2 text-sm font-semibold text-[#2a3d5f] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-xl border border-[#d4dced] bg-white px-4 py-2 text-sm font-semibold text-[#2a3d5f] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {actionLoading === 'end-switch' ? 'Ending switch…' : 'End switch'}
             </button>
           </div>
         </form>
-      </article>
+        </article>
+      ) : null}
 
     </section>
   );

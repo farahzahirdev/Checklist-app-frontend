@@ -9,6 +9,19 @@ import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/c
 const LATEST_PAYMENT_ID_STORAGE_KEY = 'checklist_latest_payment_id';
 const CHECKOUT_CHECKLIST_ID_STORAGE_KEY = 'checklist_checkout_selected_id';
 
+function formatCheckoutError(err: unknown): string {
+  const rawMessage = err instanceof Error ? err.message : '';
+  if (!rawMessage) {
+    return 'Unable to start checkout. Please try again.';
+  }
+
+  if (/failed to fetch/i.test(rawMessage) || /networkerror/i.test(rawMessage)) {
+    return 'Unable to reach payment service right now. Please check your connection and try again.';
+  }
+
+  return rawMessage;
+}
+
 export default function PaymentPage() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -73,7 +86,7 @@ export default function PaymentPage() {
       }
       window.location.assign(checkoutUrl.checkoutUrl);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start checkout.');
+      setError(formatCheckoutError(err));
       setLoading(false);
     }
   }

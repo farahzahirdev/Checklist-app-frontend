@@ -19,11 +19,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const navItems = [
     { href: '/admin', label: 'Dashboard', icon: 'home' },
     { href: '/admin/checklists', label: 'Checklist Content', icon: 'checklist' },
-    { href: '/admin/products', label: 'Products', icon: 'box' },
     { href: '/admin/users', label: 'Users', icon: 'users' },
     { href: '/admin/rbac', label: 'RBAC', icon: 'shield' },
     { href: '/admin/logs', label: 'Audit Logs', icon: 'shield' },
-    { href: '/admin/settings', label: 'Settings', icon: 'settings' },
   ] as const;
   const isReadOnly = role !== 'admin';
   const visibleNavItems = isReadOnly

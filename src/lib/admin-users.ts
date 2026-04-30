@@ -40,13 +40,44 @@ export type AdminCustomerDetail = AdminCustomer & {
   permissions: Array<{ resource: string; action: string }>;
 };
 
-function withPagination(path: string, skip = 0, limit = 100) {
-  const query = new URLSearchParams({ skip: String(skip), limit: String(limit) });
+type ListAdminUsersParams = {
+  skip?: number;
+  limit?: number;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
+  search?: string;
+  role?: string;
+};
+
+type ListCustomersParams = {
+  skip?: number;
+  limit?: number;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
+  search?: string;
+  is_active?: boolean;
+};
+
+function withPagination(path: string, params?: Record<string, string | number | boolean | undefined>) {
+  const query = new URLSearchParams();
+  Object.entries(params ?? {}).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    query.set(key, String(value));
+  });
   return `${path}?${query.toString()}`;
 }
 
-export function listAdminUsers(skip = 0, limit = 100) {
-  return apiGetWithAuth<AdminManagedUsersResponse>(withPagination('/admin/users', skip, limit));
+export function listAdminUsers(params?: ListAdminUsersParams) {
+  return apiGetWithAuth<AdminManagedUsersResponse>(
+    withPagination('/admin/users', {
+      skip: params?.skip ?? 0,
+      limit: params?.limit ?? 100,
+      sort_by: params?.sort_by,
+      sort_order: params?.sort_order,
+      search: params?.search,
+      role: params?.role,
+    }),
+  );
 }
 
 export function getAdminUser(userId: string) {
@@ -67,8 +98,17 @@ export function resetUserPermissions(userId: string) {
   return apiPost<Record<string, unknown>, { confirm: boolean }>(`/admin/users/${userId}/permissions/reset`, { confirm: true });
 }
 
-export function listCustomers(skip = 0, limit = 100) {
-  return apiGetWithAuth<AdminCustomersResponse>(withPagination('/admin/customers', skip, limit));
+export function listCustomers(params?: ListCustomersParams) {
+  return apiGetWithAuth<AdminCustomersResponse>(
+    withPagination('/admin/customers', {
+      skip: params?.skip ?? 0,
+      limit: params?.limit ?? 100,
+      sort_by: params?.sort_by,
+      sort_order: params?.sort_order,
+      search: params?.search,
+      is_active: params?.is_active,
+    }),
+  );
 }
 
 export function getCustomer(customerId: string) {

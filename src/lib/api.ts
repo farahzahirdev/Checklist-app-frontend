@@ -1,8 +1,13 @@
 const DEFAULT_API_BASE_URL = 'https://checklist-app-backend-wine.vercel.app/api/v1';
-// const DEFAULT_API_BASE_URL = 'http://localhost:8000/api/v1';
 
 export function getApiBaseUrl() {
-  return process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
+  const url = process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL;
+
+  if (!url) {
+    throw new Error('API base URL is not defined');
+  }
+
+  return url;
 }
 
 type ApiAuth =
@@ -21,6 +26,12 @@ function messageFromApiDetail(detail: unknown): string | null {
     }
     if (detail === 'mfa_code_invalid') {
       return 'The MFA code is invalid. Please try again.';
+    }
+    if (detail === 'missing_uppercase') {
+      return 'Password should include at least one uppercase letter.';
+    }
+    if (detail === 'missing_lowercase') {
+      return 'Password should include at least one lowercase letter.';
     }
     if (/^[a-z0-9_]+$/.test(detail)) {
       const sentence = detail.replace(/_/g, ' ');

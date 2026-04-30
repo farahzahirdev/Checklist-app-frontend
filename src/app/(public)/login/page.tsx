@@ -240,7 +240,7 @@ export default function LoginPage() {
           <p className="mt-2 text-sm text-[#97a5bb]">Use your registered account credentials.</p>
           {step === 'customer-mfa-verify' ? (
             <p className="mt-2 text-sm text-amber-300">
-              MFA is enabled. Enter your OTP to complete sign in.
+              MFA is enabled. Enter your MFA code to complete sign in.
             </p>
           ) : null}
           {step === 'customer-mfa-setup' ? (

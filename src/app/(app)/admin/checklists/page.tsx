@@ -10,13 +10,13 @@ import {
   createChecklistBulkImport,
   deleteChecklist,
   getAdminChecklists,
-  getChecklistBulkImportTaskStatus,
+  getChecklistBulkImportTasks,
   getChecklistBulkTemplateMapping,
   publishChecklist,
   updateChecklist,
   verifyChecklistBulkImport,
   type BulkImportColumnMapping,
-  type BulkImportTaskStatus,
+  type BulkImportTaskListItem,
   type BulkImportTemplateSpec,
   type BulkImportVerifyResponse,
 } from '@/lib/checklist-api';
@@ -112,7 +112,7 @@ export default function ChecklistPanelListPage() {
     guidance_score_1_col: 'P',
   });
   const [bulkVerifyResult, setBulkVerifyResult] = useState<BulkImportVerifyResponse | null>(null);
-  const [bulkImportTaskStatus, setBulkImportTaskStatus] = useState<BulkImportTaskStatus | null>(null);
+  const [bulkImportTasks, setBulkImportTasks] = useState<BulkImportTaskListItem[]>([]);
   const [bulkLoading, setBulkLoading] = useState<'template' | 'verify' | 'create' | 'poll' | 'download' | ''>('');
   const [bulkVerifiedSignature, setBulkVerifiedSignature] = useState<string>('');
   const [bulkHeaderOptions, setBulkHeaderOptions] = useState<ParsedHeaderOption[]>([]);
@@ -148,39 +148,32 @@ export default function ChecklistPanelListPage() {
   }, []);
 
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    async function pollTaskStatus(taskId: string) {
-      setBulkLoading('poll');
+    let cancelled = false;
+    async function loadBulkTaskStatus() {
       try {
-        const data = await getChecklistBulkImportTaskStatus(taskId);
-        setBulkImportTaskStatus(data);
-        const doneStates = ['success', 'failed', 'error', 'completed'];
-        const isDone = doneStates.includes((data.status || '').toLowerCase()) || doneStates.includes((data.celery_state || '').toLowerCase());
-        if (!isDone) {
-          timer = setTimeout(() => {
-            void pollTaskStatus(taskId);
-          }, 2500);
-          return;
-        }
-        if ((data.result?.status || '').toLowerCase() === 'success') {
-          toast.success('Checklist import completed.');
-          await loadChecklists();
-        } else if (data.error) {
-          toast.error(data.error);
-        }
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Failed to poll import task');
-      } finally {
-        setBulkLoading('');
+        const data = await getChecklistBulkImportTasks();
+        if (cancelled) return;
+        const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+        const sorted = tasks
+          .slice()
+          .sort(
+            (a, b) =>
+              new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
+          );
+        setBulkImportTasks(sorted);
+      } catch {
+        // Ignore task list hydration errors.
       }
     }
-    if (bulkImportTaskStatus?.task_id && ['pending', 'processing', 'started'].includes((bulkImportTaskStatus.status || '').toLowerCase())) {
-      void pollTaskStatus(bulkImportTaskStatus.task_id);
-    }
+    void loadBulkTaskStatus();
+    const intervalId = setInterval(() => {
+      void loadBulkTaskStatus();
+    }, 3000);
     return () => {
-      if (timer) clearTimeout(timer);
+      cancelled = true;
+      clearInterval(intervalId);
     };
-  }, [bulkImportTaskStatus?.task_id, bulkImportTaskStatus?.status]);
+  }, []);
 
   const filtered = useMemo(
     () =>
@@ -291,7 +284,6 @@ export default function ChecklistPanelListPage() {
   async function openBulkImportModal() {
     setIsBulkImportModalOpen(true);
     setBulkVerifyResult(null);
-    setBulkImportTaskStatus(null);
     if (bulkTemplateSpec) return;
     setBulkLoading('template');
     try {
@@ -389,12 +381,19 @@ export default function ChecklistPanelListPage() {
         checklist_description: bulkImportDescription.trim(),
         checklist_type_code: 'compliance',
       });
-      setBulkImportTaskStatus({
-        task_id: created.task_id,
-        celery_state: created.status,
-        status: created.status,
-        detail: created.detail,
+      setBulkImportTasks((previous) => {
+        const pendingTask: BulkImportTaskListItem = {
+          task_id: created.task_id,
+          celery_state: created.status,
+          status: created.status,
+          detail: created.detail,
+          checklist_title: bulkImportTitle.trim(),
+          checklist_description: bulkImportDescription.trim(),
+          created_at: new Date().toISOString(),
+        };
+        return [pendingTask, ...previous.filter((task) => task.task_id !== created.task_id)];
       });
+      setIsBulkImportModalOpen(false);
       toast.success('Import started. Task is queued.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to start bulk import');
@@ -594,8 +593,8 @@ export default function ChecklistPanelListPage() {
               {filtered.map((item) => (
                 <article key={item.id} className="rounded-2xl border border-[#13305c] bg-[linear-gradient(140deg,#071733_0%,#0c2144_50%,#13356d_100%)] p-4 shadow-sm">
                   <div className="mb-2 flex items-start justify-between gap-2">
-                    <h2 className="text-base font-semibold text-white">{item.title}</h2>
-                    <div className="relative flex items-center gap-2">
+                    <h2 className="text-base font-semibold text-white xl:min-w-0 xl:flex-1 xl:truncate">{item.title}</h2>
+                    <div className="relative flex items-center gap-2 xl:shrink-0 xl:flex-wrap xl:justify-end">
                       {item.stripeInfo ? (
                         <span className={`rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] ${getFriendlyStripeStatus(item.stripeInfo.priceStatus).className}`}>
                           {getFriendlyStripeStatus(item.stripeInfo.priceStatus).label}
@@ -690,6 +689,40 @@ export default function ChecklistPanelListPage() {
           ) : null}
         </div>
 
+        {bulkImportTasks.length ? (
+          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {bulkImportTasks.map((task) => (
+              <div key={task.task_id} className="rounded-2xl border border-[#13305c] bg-[linear-gradient(140deg,#071733_0%,#0c2144_50%,#13356d_100%)] p-4 shadow-sm">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9db8e6]">Import progress</p>
+                    <p className="mt-1 text-sm font-semibold text-white">
+                      {task.checklist_title && task.checklist_title !== 'Unknown'
+                        ? task.checklist_title
+                        : 'Bulk checklist creation'}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="rounded-md bg-[#e6f1fb] px-2 py-1 text-[11px] font-semibold text-[#185fa5]">
+                        Status: {task.status}
+                      </span>
+                    </div>
+                    {task.detail ? (
+                      <p className="mt-2 text-xs text-[#d8e6ff]">{task.detail}</p>
+                    ) : (
+                      <p className="mt-2 text-xs text-[#9db8e6]">Task is pending execution.</p>
+                    )}
+                    {task.result?.status?.toLowerCase() === 'success' ? (
+                      <p className="mt-2 text-xs font-medium text-[#9bf5be]">
+                        Checklist created: {task.result.checklist_title} ({task.result.total_rows_processed} rows)
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
         {!isReadOnly && confirmDeleteChecklistId ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4">
             <div className="w-full max-w-md rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl">
@@ -750,8 +783,8 @@ export default function ChecklistPanelListPage() {
                     onChange={(event) => setCreateStatus(event.target.value as 'draft' | 'published')}
                     className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2"
                   >
-                    <option value="draft">draft</option>
-                    <option value="published">published</option>
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
                   </select>
                 </label>
               </div>
@@ -835,7 +868,7 @@ export default function ChecklistPanelListPage() {
 
         {!isReadOnly && isBulkImportModalOpen ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4 py-6">
-            <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl">
+            <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold text-[#1f2d45]">Bulk checklist import</h2>
@@ -899,7 +932,6 @@ export default function ChecklistPanelListPage() {
                       setBulkImportFile(file);
                       setBulkVerifyResult(null);
                       setBulkVerifiedSignature('');
-                      setBulkImportTaskStatus(null);
                       setBulkHeaderOptions([]);
                       setBulkHeaderPreviewRows([]);
                       if (!file) {
@@ -930,7 +962,7 @@ export default function ChecklistPanelListPage() {
               {bulkHeaderPreviewRows.length ? (
                 <div className="mt-2 rounded-xl border border-[#dbe4f4] bg-[#f8fbff] p-3">
                   <p className="text-xs font-semibold text-[#3b4d6c]">Detected header rows preview</p>
-                  <div className="mt-2 overflow-x-auto">
+                  <div className="mt-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                     <table className="min-w-full border-collapse text-xs">
                       <thead>
                         <tr className="bg-[#eef3fb] text-left text-[#4a6187]">
@@ -1062,25 +1094,6 @@ export default function ChecklistPanelListPage() {
                 </div>
               ) : null}
 
-              {bulkImportTaskStatus ? (
-                <div className="mt-4 rounded-xl border border-[#dbe4f4] p-4">
-                  <h3 className="text-sm font-semibold text-[#25375a]">Import task status</h3>
-                  <p className="mt-1 text-xs text-[#607594]">
-                    Task: {bulkImportTaskStatus.task_id} | Status: {bulkImportTaskStatus.status} | Celery: {bulkImportTaskStatus.celery_state}
-                  </p>
-                  {bulkImportTaskStatus.detail ? <p className="mt-1 text-xs text-[#607594]">{bulkImportTaskStatus.detail}</p> : null}
-                  {bulkImportTaskStatus.result ? (
-                    <div className="mt-2 rounded-lg border border-[#e2e8f5] bg-[#f8fbff] p-3 text-xs text-[#334866]">
-                      <p>Checklist: {bulkImportTaskStatus.result.checklist_title}</p>
-                      <p>Sections: {bulkImportTaskStatus.result.sections_created}</p>
-                      <p>Questions: {bulkImportTaskStatus.result.questions_created}</p>
-                      <p>Sub-questions: {bulkImportTaskStatus.result.sub_questions_created}</p>
-                      <p>Rows processed: {bulkImportTaskStatus.result.total_rows_processed}</p>
-                    </div>
-                  ) : null}
-                  {bulkImportTaskStatus.error ? <p className="mt-2 text-xs text-[#a73a46]">{bulkImportTaskStatus.error}</p> : null}
-                </div>
-              ) : null}
             </div>
           </div>
         ) : null}

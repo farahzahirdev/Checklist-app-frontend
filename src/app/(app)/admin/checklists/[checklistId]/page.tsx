@@ -525,6 +525,11 @@ export default function ChecklistPanelBuilderPage() {
       toast.error('Please provide valid section title and order.');
       return;
     }
+    const hasDuplicateOrder = sections.some((section) => section.order === order);
+    if (hasDuplicateOrder) {
+      toast.error(`Display order ${order} already exists. Please choose a different order.`);
+      return;
+    }
     setSectionActionLoading('create');
     try {
       const created = await createSection(checklistId, { title, order, sourceRef: newSectionSourceRef.trim() });
@@ -1511,15 +1516,15 @@ export default function ChecklistPanelBuilderPage() {
                         onChange={(event) => {
                           const file = event.target.files?.[0];
                           if (!file) return;
-                          const previewUrl = URL.createObjectURL(file);
-                          setNewQuestionImagePreviewUrl((previous) => {
-                            if (previous) URL.revokeObjectURL(previous);
-                            return previewUrl;
-                          });
                           const mediaKey = 'create-question-image';
                           setUploadingMediaKey(mediaKey);
                           void uploadQuestionImage(file)
                             .then((mediaId) => {
+                              const previewUrl = URL.createObjectURL(file);
+                              setNewQuestionImagePreviewUrl((previous) => {
+                                if (previous) URL.revokeObjectURL(previous);
+                                return previewUrl;
+                              });
                               setNewQuestionDraft((previous) => ({ ...previous, illustrativeImageId: mediaId }));
                               toast.success('Question image uploaded.');
                             })
@@ -1811,15 +1816,15 @@ export default function ChecklistPanelBuilderPage() {
                       onChange={(event) => {
                         const file = event.target.files?.[0];
                         if (!file) return;
-                        const previewUrl = URL.createObjectURL(file);
-                        setEditQuestionImagePreview((previous) => {
-                          if (previous?.url) URL.revokeObjectURL(previous.url);
-                          return { questionId: selectedQuestion.id, url: previewUrl };
-                        });
                         const mediaKey = `edit-question-${selectedQuestion.id}`;
                         setUploadingMediaKey(mediaKey);
                         void uploadQuestionImage(file)
                           .then((mediaId) => {
+                            const previewUrl = URL.createObjectURL(file);
+                            setEditQuestionImagePreview((previous) => {
+                              if (previous?.url) URL.revokeObjectURL(previous.url);
+                              return { questionId: selectedQuestion.id, url: previewUrl };
+                            });
                             updateQuestion(selectedSection.id, selectedQuestion.id, { illustrativeImageId: mediaId });
                             toast.success('Question image uploaded.');
                           })

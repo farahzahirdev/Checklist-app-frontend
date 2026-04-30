@@ -258,6 +258,7 @@ export default function PaymentSuccessPage() {
     paymentStatus === 'succeeded' && (mfaResolving || (mfaSetupRequired && (mfaSetupLoading || (!mfaQrSvg && !error))));
   const shouldShowPageLoader = initializing || shouldHoldSelectionUi || shouldHoldMfaUi;
   const shouldShowRecoveryLinks = paymentStatus === 'failed' || (Boolean(error) && !(paymentStatus === 'succeeded' && mfaSetupRequired));
+  const isPaymentRecordMissingError = /payment record not found/i.test(error);
 
   return (
     <section className="mx-auto w-full max-w-5xl space-y-6 px-6 md:px-8">
@@ -401,8 +402,11 @@ export default function PaymentSuccessPage() {
           <Link href="/payment" className="border border-[#d4dced] px-3 py-2 text-[#2a3d5f] hover:bg-[#f6f9ff]">
             Start checkout
           </Link>
-          <Link href="/dashboard" className="border border-[#d4dced] px-3 py-2 text-[#2a3d5f] hover:bg-[#f6f9ff]">
-            Dashboard
+          <Link
+            href={isPaymentRecordMissingError ? '/register' : '/dashboard'}
+            className="border border-[#d4dced] px-3 py-2 text-[#2a3d5f] hover:bg-[#f6f9ff]"
+          >
+            {isPaymentRecordMissingError ? 'Complete registration' : 'Dashboard'}
           </Link>
         </div>
       ) : null}
