@@ -39,6 +39,7 @@ type ParsedHeaderOption = {
   displayLabel: string;
   row1: string;
   row2: string;
+  columnName: string; // Actual column name for backend
 };
 
 const BULK_MAPPING_LABELS: Record<keyof BulkImportColumnMapping, string> = {
@@ -96,20 +97,20 @@ export default function ChecklistPanelListPage() {
   const [bulkImportTitle, setBulkImportTitle] = useState('');
   const [bulkImportDescription, setBulkImportDescription] = useState('');
   const [bulkImportMapping, setBulkImportMapping] = useState<BulkImportColumnMapping>({
-    section_name_col: 'B',
-    question_id_col: 'C',
-    child_question_col: 'D',
-    grandchild_question_col: 'E',
-    legal_requirement_col: 'F',
-    question_text_col: 'H',
-    severity_col: 'I',
-    explanation_col: 'J',
-    expected_implementation_col: 'K',
-    source_ref_col: 'L',
-    guidance_score_4_col: 'M',
-    guidance_score_3_col: 'N',
-    guidance_score_2_col: 'O',
-    guidance_score_1_col: 'P',
+    section_name_col: 'Unnamed: 1',
+    question_id_col: 'Question ID',
+    child_question_col: 'Unnamed: 5',
+    grandchild_question_col: 'Unnamed: 6',
+    legal_requirement_col: 'Legal Requirement',
+    question_text_col: 'paragraph title',
+    severity_col: 'Severity',
+    explanation_col: 'Explanation',
+    expected_implementation_col: 'Expected Implementation',
+    source_ref_col: 'Source',
+    guidance_score_4_col: 'Answers yes / 4 points',
+    guidance_score_3_col: 'Answers yes / 3 points',
+    guidance_score_2_col: 'Answers yes / 2 points',
+    guidance_score_1_col: 'Answers yes / 1 points',
   });
   const [bulkVerifyResult, setBulkVerifyResult] = useState<BulkImportVerifyResponse | null>(null);
   const [bulkImportTasks, setBulkImportTasks] = useState<BulkImportTaskListItem[]>([]);
@@ -271,11 +272,50 @@ export default function ChecklistPanelListPage() {
           ? `${main} -> ${sub}`
           : sub
         : main || `Column ${letter}`;
+      
+      // Generate column name that matches backend expectations
+      let columnName = '';
+      if (index === 0) {
+        columnName = '#';
+      } else if (index === 1 && sub === 'Section') {
+        columnName = 'Unnamed: 1';
+      } else if (index === 2 && main === 'Source') {
+        columnName = 'Source';
+      } else if (index === 3 && main === 'paragraph title') {
+        columnName = 'paragraph title';
+      } else if (index === 4 && sub === '1') {
+        columnName = 'Question ID';
+      } else if (index === 5 && sub === '2') {
+        columnName = 'Unnamed: 5';
+      } else if (index === 6 && sub === '3') {
+        columnName = 'Unnamed: 6';
+      } else if (index === 7 && main === 'Legal Requirement') {
+        columnName = 'Legal Requirement';
+      } else if (index === 8 && main === 'Severity') {
+        columnName = 'Severity';
+      } else if (index === 9 && main === 'Explanation') {
+        columnName = 'Explanation';
+      } else if (index === 10 && main === 'Expected Implementation') {
+        columnName = 'Expected Implementation';
+      } else if (index === 11 && main === 'Answers yes / 4 points') {
+        columnName = 'Answers yes / 4 points';
+      } else if (index === 12 && main === 'Answers yes / 3 points') {
+        columnName = 'Answers yes / 3 points';
+      } else if (index === 13 && main === 'Answers yes / 2 points') {
+        columnName = 'Answers yes / 2 points';
+      } else if (index === 14 && main === 'Answers yes / 1 points') {
+        columnName = 'Answers yes / 1 points';
+      } else {
+        // Fallback to Excel-style letter for unknown columns
+        columnName = letter;
+      }
+      
       options.push({
         letter,
         displayLabel: display,
         row1: main || '-',
         row2: sub || '-',
+        columnName,
       });
     }
     return { options, previewRows: [row1, row2] };
@@ -1019,7 +1059,7 @@ export default function ChecklistPanelListPage() {
                       >
                         {bulkHeaderOptions.length ? (
                           bulkHeaderOptions.map((option) => (
-                            <option key={`${key}-${option.letter}`} value={option.letter}>
+                            <option key={`${key}-${option.columnName}`} value={option.columnName}>
                               {option.displayLabel}
                             </option>
                           ))
