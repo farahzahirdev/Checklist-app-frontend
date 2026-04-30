@@ -2,6 +2,8 @@ import { apiDelete, apiGetWithAuth, apiPatch, apiPost, apiPostFormData } from '@
 import { mockReportSummary } from '@/lib/checklist-mocks';
 import type { Checklist, ChecklistAnswerOption, ChecklistQuestion, ChecklistSection, ReportSummary } from '@/lib/checklist-types';
 
+const IMAGE_FILE_EXTENSION_REGEX = /\.(avif|bmp|gif|heic|heif|jpe?g|png|svg|webp)$/i;
+
 type ChecklistApiModel = {
   id: string;
   title: string;
@@ -200,6 +202,22 @@ export type BulkImportTaskStatus = {
   detail: string;
   result?: BulkImportTaskResult | null;
   error?: string | null;
+};
+
+export type BulkImportTaskListItem = BulkImportTaskStatus & {
+  checklist_title?: string;
+  checklist_description?: string;
+  file_name?: string;
+  checklist_type_code?: string;
+  created_at?: string;
+  started_at?: string | null;
+  completed_at?: string | null;
+  actor_id?: number;
+};
+
+export type BulkImportTaskListResponse = {
+  total: number;
+  tasks: BulkImportTaskListItem[];
 };
 
 function buildDefaultAnswerOptions(illustrativeImageId?: string): QuestionAnswerOptionPayload[] {
@@ -408,6 +426,12 @@ function withListQuery<TSortBy extends string>(path: string, options?: ListQuery
 }
 
 export async function uploadChecklistQuestionMedia(file: File): Promise<UploadedMedia> {
+  const hasImageMimeType = file.type.startsWith('image/');
+  const hasImageExtension = IMAGE_FILE_EXTENSION_REGEX.test(file.name);
+  if (!hasImageMimeType && !hasImageExtension) {
+    throw new Error('Only image files are allowed (for example: JPG, PNG, WEBP, or SVG).');
+  }
+
   const formData = new FormData();
   formData.append('file', file);
   return apiPostFormData<UploadedMedia>('/media/upload', formData);
@@ -800,6 +824,10 @@ export async function createChecklistBulkImport(payload: {
 
 export async function getChecklistBulkImportTaskStatus(taskId: string): Promise<BulkImportTaskStatus> {
   return apiGetWithAuth<BulkImportTaskStatus>(`/admin/checklists/bulk/tasks/${taskId}`);
+}
+
+export async function getChecklistBulkImportTasks(): Promise<BulkImportTaskListResponse> {
+  return apiGetWithAuth<BulkImportTaskListResponse>('/admin/checklists/bulk/tasks');
 }
 
 export async function uploadAndVerifyChecklistBulkImport(payload: {
