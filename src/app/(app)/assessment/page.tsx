@@ -88,6 +88,49 @@ function isAssessmentNotFoundMessage(message: string) {
   return normalized.includes('assessment not found') || normalized.includes('404');
 }
 
+function sanitizeRichHtml(input?: string | null) {
+  const raw = String(input ?? '').trim();
+  if (!raw) return '';
+  if (typeof window === 'undefined') return raw;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(raw, 'text/html');
+  const allowedTags = new Set(['p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'b', 'i', 'u', 'a']);
+  const walk = (node: Element) => {
+    const children = Array.from(node.children);
+    children.forEach((child) => {
+      const tag = child.tagName.toLowerCase();
+      if (!allowedTags.has(tag)) {
+        const textNode = doc.createTextNode(child.textContent ?? '');
+        child.replaceWith(textNode);
+        return;
+      }
+      const attrs = Array.from(child.attributes);
+      attrs.forEach((attr) => {
+        const name = attr.name.toLowerCase();
+        if (tag === 'a') {
+          if (name !== 'href' && name !== 'target' && name !== 'rel') {
+            child.removeAttribute(attr.name);
+          }
+          return;
+        }
+        child.removeAttribute(attr.name);
+      });
+      if (tag === 'a') {
+        const href = child.getAttribute('href') ?? '';
+        if (!/^https?:\/\//i.test(href)) {
+          child.removeAttribute('href');
+        } else {
+          child.setAttribute('target', '_blank');
+          child.setAttribute('rel', 'noreferrer noopener');
+        }
+      }
+      walk(child);
+    });
+  };
+  walk(doc.body);
+  return doc.body.innerHTML.trim();
+}
+
 export default function AssessmentPage() {
   const searchParams = useSearchParams();
   const checklistIdFromQuery = searchParams.get('checklist_id') ?? '';
@@ -131,6 +174,14 @@ export default function AssessmentPage() {
     return allQuestions[0];
   }, [activeQuestionId, allQuestions, selectedSectionId]);
   const activeAnswer = activeQuestion ? answers[activeQuestion.id] : undefined;
+  const sanitizedExplanationHtml = useMemo(
+    () => sanitizeRichHtml(activeQuestion?.explanation),
+    [activeQuestion?.explanation],
+  );
+  const sanitizedExpectedImplementationHtml = useMemo(
+    () => sanitizeRichHtml(activeQuestion?.expected_implementation),
+    [activeQuestion?.expected_implementation],
+  );
   const effectiveChecklistId = checklistIdFromQuery || assessmentDetail?.checklist_id || '';
 
   useEffect(() => {
@@ -870,25 +921,28 @@ export default function AssessmentPage() {
                   </div>
                   <div className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#607594]">Explanation</p>
-                    <p className="mt-2 text-sm text-[#2a3d5f]">
-                      {activeQuestion.explanation || '-'}
-                    </p>
+                    {sanitizedExplanationHtml ? (
+                      <div
+                        className="mt-2 space-y-1 text-sm text-[#2a3d5f] [&_li]:ml-4 [&_ol]:list-decimal [&_p]:leading-6 [&_ul]:list-disc"
+                        dangerouslySetInnerHTML={{ __html: sanitizedExplanationHtml }}
+                      />
+                    ) : (
+                      <p className="mt-2 text-sm text-[#2a3d5f]">-</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="mt-3 grid gap-3 md:grid-cols-[2fr_1fr]">
                   <div className="rounded-lg border border-[#d7e7d9] bg-[#eef7ef] p-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#3f7a4b]">Expected Implementation</p>
-                    <ul className="mt-2 list-disc pl-5 text-sm text-[#2f5c38]">
-                      {(activeQuestion.expected_implementation || '')
-                        .split('\n')
-                        .filter((line) => line.trim().length > 0)
-                        .slice(0, 6)
-                        .map((line, idx) => (
-                          <li key={`expected-${idx}`}>{line}</li>
-                        ))}
-                      {!activeQuestion.expected_implementation ? <li>No expected implementation details provided.</li> : null}
-                    </ul>
+                    {sanitizedExpectedImplementationHtml ? (
+                      <div
+                        className="mt-2 space-y-1 text-sm text-[#2f5c38] [&_li]:ml-4 [&_ol]:list-decimal [&_p]:leading-6 [&_ul]:list-disc"
+                        dangerouslySetInnerHTML={{ __html: sanitizedExpectedImplementationHtml }}
+                      />
+                    ) : (
+                      <p className="mt-2 text-sm text-[#2f5c38]">No expected implementation details provided.</p>
+                    )}
                   </div>
                   <div className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#607594]">Example Evidence</p>
