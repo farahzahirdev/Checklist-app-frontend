@@ -19,7 +19,6 @@ export default function AuditorAssessmentPage() {
   const [error, setError] = useState('');
   const [previewUrlsByMediaId, setPreviewUrlsByMediaId] = useState<Record<string, string>>({});
   const [previewErrorsByMediaId, setPreviewErrorsByMediaId] = useState<Record<string, string>>({});
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
   // Auditor is always read-only
   const isReadOnly = true;
@@ -401,6 +400,7 @@ export default function AuditorAssessmentPage() {
                     </div>
                   </div>
                 </div>
+              </div>
             ) : null}
           </div>
         </div>

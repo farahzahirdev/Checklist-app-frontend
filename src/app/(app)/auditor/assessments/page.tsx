@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { useAuditorAccess } from '@/lib/auditor-access';
 import {
   getCurrentAssessment,
   getAssessmentAnswers,
@@ -12,22 +12,26 @@ import {
   saveAssessmentAnswer,
   submitAssessment,
   uploadAssessmentEvidence,
+  type AssessmentAnswerResponse,
+  type AssessmentCurrentDetailResponse,
+  type AssessmentDetailAnswer,
+  type AssessmentDetailQuestion,
+  type AssessmentDetailSection,
+  type AssessmentSessionResponse,
 } from '@/lib/assessment';
+import { useAuditorAccess } from '@/lib/auditor-access';
 
-interface AssessmentAnswer {
-  answer: string;
-  note_text?: string;
-}
+type AssessmentStatus = 'not_started' | 'in_progress' | 'submitted' | 'closed' | 'expired';
 
-interface AssessmentQuestion {
+type AssessmentQuestion = {
   id: string;
   question_text?: string;
   question_id?: string;
-  legal_requirement_title?: string;
-  legal_requirement_description?: string;
-  explanation?: string;
-  expected_implementation?: string;
-  illustrative_image_id?: string;
+  legal_requirement_title?: string | null;
+  legal_requirement_description?: string | null;
+  explanation?: string | null;
+  expected_implementation?: string | null;
+  illustrative_image_id?: string | null;
   evidence_enabled?: boolean;
   answer_options?: Array<{
     label?: string;
@@ -36,7 +40,7 @@ interface AssessmentQuestion {
     description?: string;
   }>;
   sub_questions?: AssessmentQuestion[];
-}
+};
 
 interface AssessmentSection {
   id: string;
@@ -45,6 +49,7 @@ interface AssessmentSection {
 }
 
 interface AssessmentDetail {
+  assessment_id?: string;
   checklist_title?: string;
   sections?: AssessmentSection[];
 }
@@ -55,12 +60,7 @@ export default function AuditorAssessmentsPage() {
   const [selectedSectionId, setSelectedSectionId] = useState('');
   const [activeQuestionId, setActiveQuestionId] = useState('');
   const [activeQuestionCursor, setActiveQuestionCursor] = useState(-1);
-  const [answers, setAnswers] = useState<Record<string, AssessmentAnswer>>({});
-  const [persistedAnswerByQuestionId, setPersistedAnswerByQuestionId] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [answers, setAnswers] = useState<Record<string, AssessmentDetailAnswer>>({});
   const [autoSaving, setAutoSaving] = useState<Record<string, boolean>>({});
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [evidencePreviewUrl, setEvidencePreviewUrl] = useState<string | null>(null);
@@ -68,7 +68,9 @@ export default function AuditorAssessmentsPage() {
   const [previewUrlsByMediaId, setPreviewUrlsByMediaId] = useState<Record<string, string>>({});
   const [previewErrorsByMediaId, setPreviewErrorsByMediaId] = useState<Record<string, string>>({});
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
-  const [isSubmittedChecklist, setIsSubmittedChecklist] = useState(false);
+  const [message, setMessage] = useState('');
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState('');
 
   // Helper function to check if string is a UUID
   function isUuid(str: string): boolean {
@@ -95,35 +97,9 @@ export default function AuditorAssessmentsPage() {
     }
   }
 
-  // Auto-save answer function (read-only mode - just shows feedback)
-  async function handleAutoSaveAnswer(answerValue: string) {
-    if (!activeQuestion) {
-      return;
-    }
-    
-    // In read-only mode, just show visual feedback
-    setAutoSaving((prev) => ({ ...prev, [activeQuestion.id]: true }));
-    
-    // Update local state immediately
-    setAnswers((prev) => ({
-      ...prev,
-      [activeQuestion.id]: {
-        answer: answerValue,
-        note_text: prev[activeQuestion.id]?.note_text ?? '',
-      },
-    }));
-    
-    // Clear auto-saving indicator after a short delay
-    setTimeout(() => {
-      setAutoSaving((prev) => {
-        const next = { ...prev };
-        delete next[activeQuestion.id];
-        return next;
-      });
-    }, 1000);
-    
-    // Show read-only message
-    toast.info('Assessment is in read-only mode for auditors');
+  // Show read-only feedback when user tries to interact
+  function handleReadOnlyAction(action: string) {
+    toast.info(`${action} is not available in auditor read-only mode`);
   }
 
   useEffect(() => {
@@ -140,7 +116,7 @@ export default function AuditorAssessmentsPage() {
   );
 
   const activeQuestion = useMemo(() => {
-    return allQuestions.find((q) => q.id === activeQuestionId) || null;
+    return allQuestions.find((q: any) => q.id === activeQuestionId) || null;
   }, [allQuestions, activeQuestionId]);
 
   const activeAnswer = useMemo(() => {
@@ -150,16 +126,6 @@ export default function AuditorAssessmentsPage() {
   const isNoteEnabledForActiveQuestion = useMemo(() => {
     return activeQuestion?.evidence_enabled ?? false;
   }, [activeQuestion]);
-
-  const isOnLastQuestion = useMemo(() => {
-    if (!allQuestions.length || !activeQuestion) return false;
-    const currentIndex = allQuestions.findIndex((q) => q.id === activeQuestion.id);
-    return currentIndex === allQuestions.length - 1;
-  }, [allQuestions, activeQuestion]);
-
-  const areAllQuestionsAnswered = useMemo(() => {
-    return allQuestions.every((q) => answers[q.id]?.answer);
-  }, [allQuestions, answers]);
 
   const questionsBySection = useMemo(() => {
     const bySection = new Map();
@@ -176,12 +142,12 @@ export default function AuditorAssessmentsPage() {
   function flattenSectionQuestions(
     sectionId: string,
     sectionTitle: string,
-    questions: any[],
-  ): any[] {
-    const flat: any[] = [];
-    const questionStack: { question: any; depth: number }[] = [];
+    questions: AssessmentQuestion[],
+  ): (AssessmentQuestion & { sectionId: string; sectionTitle: string; depth: number })[] {
+    const flat: (AssessmentQuestion & { sectionId: string; sectionTitle: string; depth: number })[] = [];
+    const questionStack: { question: AssessmentQuestion; depth: number }[] = [];
     
-    questions.forEach((question) => {
+    questions.forEach((question: AssessmentQuestion) => {
       questionStack.push({ question, depth: 0 });
     });
 
@@ -193,37 +159,22 @@ export default function AuditorAssessmentsPage() {
         sectionTitle,
         depth,
       });
-
-      if (question.sub_questions && question.sub_questions.length > 0) {
-        question.sub_questions.forEach((subQ: any) => {
-          questionStack.push({ question: subQ, depth: depth + 1 });
-        });
-      }
     }
-
     return flat;
   }
 
   // Generate answer options
   const answerOptionsForActive = useMemo(() => {
-    const options = activeQuestion?.answer_options ?? [];
-    if (options.length) {
-      return options.map((option, index) => ({
-        key: String(index + 1),
-        value: String(
-          typeof option.score === 'number' && Number.isFinite(option.score) ? option.score : Math.max(1, 4 - index),
-        ),
-        label: normalizeAnswerOptionLabel(option.label ?? option.choice_code ?? `Option ${index + 1}`),
-        description: option.description ?? '',
-      }));
-    }
-    return [
-      { key: '4', value: '4', label: 'Yes', description: 'Control is fully implemented.' },
-      { key: '3', value: '3', label: 'Partially', description: 'Control is partially implemented.' },
-      { key: '2', value: '2', label: "Don't know", description: 'Not sure' },
-      { key: '1', value: '1', label: 'No', description: 'Not implemented' },
-    ];
-  }, [activeQuestion?.answer_options]);
+    if (!activeQuestion?.answer_options) return [];
+    return activeQuestion.answer_options.map((option: any, index: number) => ({
+      key: String(index + 1),
+      value: String(
+        typeof option.score === 'number' ? option.score : Math.max(1, 4 - index),
+      ),
+      label: option.label || option.choice_code || `Option ${index + 1}`,
+      description: option.description || '',
+    }));
+  }, [activeQuestion]);
 
   function normalizeAnswerOptionLabel(value: string) {
     const v = value.trim().toLowerCase();
@@ -293,6 +244,11 @@ export default function AuditorAssessmentsPage() {
     );
   }
 
+  const isSubmittedChecklist = assessmentDetail && (
+    assessmentDetail.assessment_id && 
+    ['submitted', 'closed'].includes(getAssessmentStatus(assessmentDetail.assessment_id))
+  );
+
   return (
     <div className="min-h-screen bg-[#0d1d3a]">
       <header className="border-b border-[#1e3a5f] bg-[#182843]">
@@ -302,7 +258,7 @@ export default function AuditorAssessmentsPage() {
               <p className="text-xs uppercase tracking-[0.3em] text-[#9dc5ff]">Assessment</p>
               <h1 className="text-xl font-semibold text-white">
                 {assessmentDetail?.checklist_title || 'Assessment'} 
-                <span className="ml-2 rounded-full bg-yellow-500 px-2 py-1 text-xs text-white">Auditor View</span>
+                <span className="ml-2 rounded-full bg-orange-500 px-2 py-1 text-xs text-white">Auditor View</span>
               </h1>
             </div>
             <div className="flex items-center gap-2">
@@ -338,7 +294,6 @@ export default function AuditorAssessmentsPage() {
                       const sectionQuestions = flattenSectionQuestions(section.id, section.title, section.questions);
                       if (sectionQuestions.length > 0) {
                         setActiveQuestionId(sectionQuestions[0].id);
-                        setActiveQuestionCursor(0);
                       }
                     }}
                     className={`w-full text-left rounded-lg border px-3 py-2 text-sm ${
@@ -349,7 +304,7 @@ export default function AuditorAssessmentsPage() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-medium">{section.title}</span>
-                      <span className="text-xs opacity-70">({flattenSectionQuestions(section.id, section.title, section.questions).length})</span>
+                      <span className="text-xs opacity-70">({(section.questions || []).length})</span>
                     </div>
                   </button>
                 ))}
@@ -369,10 +324,7 @@ export default function AuditorAssessmentsPage() {
                       <button
                         key={question.id}
                         type="button"
-                        onClick={() => {
-                          setActiveQuestionId(question.id);
-                          setActiveQuestionCursor(index);
-                        }}
+                        onClick={() => setActiveQuestionId(question.id)}
                         className={`w-full text-left rounded-lg border px-3 py-2 text-sm ${
                           activeQuestionId === question.id
                             ? 'border-[#95c9a0] bg-[#eff8f0] text-[#2f5c38]'
@@ -395,7 +347,7 @@ export default function AuditorAssessmentsPage() {
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            {activeQuestion && !isSubmittedChecklist ? (
+            {activeQuestion ? (
               <div className="space-y-6">
                 {/* Question Header */}
                 <div className="rounded-lg border border-[#345793] bg-[#0d1d3a] p-6">
@@ -447,37 +399,22 @@ export default function AuditorAssessmentsPage() {
                     <div className="space-y-3">
                       <p className="text-sm font-semibold text-[#1f2d45]">Your answer</p>
                       <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4 text-sm">
-                        {answerOptionsForActive.map((option) => (
+                        {answerOptionsForActive.map((option: any) => (
                           <button
                             key={option.key}
                             type="button"
                             onClick={() => {
-                              // Update UI immediately for better UX
-                              setAnswers((prev) => ({
-                                ...prev,
-                                [activeQuestion.id]: {
-                                  answer: option.value,
-                                  note_text: prev[activeQuestion.id]?.note_text ?? '',
-                                },
-                              }));
-                              
-                              // Auto-save with read-only feedback
-                              void handleAutoSaveAnswer(option.value);
+                              handleReadOnlyAction('Answer selection');
                             }}
-                            className={`rounded-lg border px-3 py-3 text-left relative ${
+                            className={`rounded-lg border px-3 py-3 text-left ${
                               activeAnswer?.answer === option.value
                                 ? 'border-[#95c9a0] bg-[#eff8f0] text-[#2f5c38]'
                                 : 'border-[#345793] bg-[#0d1d3a] text-[#3f5677] hover:bg-[#f6f9ff]'
                             }`}
-                            disabled={autoSaving[activeQuestion.id] || false}
+                            disabled={isReadOnly}
                           >
                             <p className="font-semibold">{option.label}</p>
                             <p className="text-xs opacity-80">{option.description || 'Select this answer'}</p>
-                            {autoSaving[activeQuestion.id] && (
-                              <div className="absolute top-1 right-1">
-                                <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
-                              </div>
-                            )}
                           </button>
                         ))}
                       </div>
@@ -485,26 +422,15 @@ export default function AuditorAssessmentsPage() {
                       {/* Note Section */}
                       {isNoteEnabledForActiveQuestion && (
                         <div className="mt-4 space-y-3">
-                          <p className="text-sm font-semibold text-[#1f2d45]">Add a note <span className="font-normal text-[#7b88a3]">(optional)</span></p>
+                          <p className="text-sm font-semibold text-[#1f2d45]">Add a note <span className="font-normal text-[#7b88a3]">(read-only)</span></p>
                           <textarea
                             value={activeAnswer?.note_text ?? ''}
-                            onChange={(event) => {
-                              if (isReadOnly) {
-                                toast.info('Notes are read-only in auditor mode');
-                                return;
-                              }
-                              setAnswers((prev) => ({
-                                ...prev,
-                                [activeQuestion.id]: {
-                                  answer: prev[activeQuestion.id]?.answer || '',
-                                  note_text: event.target.value,
-                                },
-                              }));
-                            }}
-                            className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-sm text-white placeholder-[#718096]"
+                            onChange={() => handleReadOnlyAction('Note editing')}
+                            className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-sm text-white placeholder-[#718096] opacity-75"
                             rows={3}
-                            placeholder="Add any additional notes or context..."
-                            disabled={isReadOnly}
+                            placeholder="Notes are read-only in auditor mode..."
+                            disabled={true}
+                            readOnly
                           />
                         </div>
                       )}
@@ -512,55 +438,10 @@ export default function AuditorAssessmentsPage() {
                       {/* Evidence Section */}
                       {isNoteEnabledForActiveQuestion && (
                         <div className="mt-4 space-y-3">
-                          <p className="text-sm font-semibold text-[#1f2d45]">Upload evidence</p>
-                          <label className="flex cursor-pointer items-center justify-between rounded-lg border border-dashed border-[#4d5f7a] bg-[#fbfcff] px-3 py-2 text-sm text-[#607594] hover:bg-[#f0f9ff]">
-                            <span>Choose file or drag & drop</span>
-                            <input
-                              type="file"
-                              accept="image/*,.pdf,.doc,.doc,.docx"
-                              onChange={async (event) => {
-                                if (isReadOnly) {
-                                  toast.info('File uploads are read-only in auditor mode');
-                                  return;
-                                }
-                                const file = event.target.files?.[0];
-                                if (!file) return;
-                                setEvidenceLoading(true);
-                                try {
-                                  const result = await uploadAssessmentEvidence(file);
-                                  setEvidencePreviewUrl(URL.createObjectURL(file));
-                                  toast.success('Evidence uploaded successfully');
-                                } catch (err) {
-                                  toast.error(err instanceof Error ? err.message : 'Failed to upload evidence');
-                                } finally {
-                                  setEvidenceLoading(false);
-                                }
-                              }}
-                              className="hidden"
-                              disabled={isReadOnly}
-                            />
-                          </label>
-                          {evidenceLoading && (
-                            <p className="text-xs text-[#607594]">Uploading evidence...</p>
-                          )}
-                          {evidencePreviewUrl && (
-                            <div className="relative mt-2 w-full max-w-[280px] overflow-hidden rounded-xl border border-[#dbe4f4] bg-white">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (isReadOnly) {
-                                    toast.info('Evidence management is read-only in auditor mode');
-                                    return;
-                                  }
-                                  setEvidencePreviewUrl(null);
-                                }}
-                                className="absolute right-2 top-2 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#0b1220]/70 text-sm font-semibold text-white hover:bg-[#0b1220]"
-                              >
-                                ×
-                              </button>
-                              <img src={evidencePreviewUrl} alt="Evidence preview" className="h-20 w-full object-cover" />
-                            </div>
-                          )}
+                          <p className="text-sm font-semibold text-[#1f2d45]">Evidence <span className="font-normal text-[#7b88a3]">(read-only)</span></p>
+                          <div className="text-sm text-[#607594]">
+                            Evidence uploads are disabled in auditor mode
+                          </div>
                         </div>
                       )}
                     </div>
@@ -572,7 +453,7 @@ export default function AuditorAssessmentsPage() {
                       <button
                         type="button"
                         onClick={() => {
-                          const currentIndex = allQuestions.findIndex((q) => q.id === activeQuestionId);
+                          const currentIndex = allQuestions.findIndex((q: any) => q.id === activeQuestionId);
                           if (currentIndex > 0) {
                             const prevQuestion = allQuestions[currentIndex - 1];
                             setActiveQuestionId(prevQuestion.id);
@@ -587,7 +468,7 @@ export default function AuditorAssessmentsPage() {
                       <button
                         type="button"
                         onClick={() => {
-                          const currentIndex = allQuestions.findIndex((q) => q.id === activeQuestionId);
+                          const currentIndex = allQuestions.findIndex((q: any) => q.id === activeQuestionId);
                           if (currentIndex < allQuestions.length - 1) {
                             const nextQuestion = allQuestions[currentIndex + 1];
                             setActiveQuestionId(nextQuestion.id);
@@ -603,35 +484,42 @@ export default function AuditorAssessmentsPage() {
                     
                     {/* Read-only indicator */}
                     <div className="flex items-center gap-2 text-sm text-[#fbbf24]">
-                      <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                      <div className="h-2 w-2 rounded-full bg-orange-500"></div>
                       <span>Auditor Read-Only Mode</span>
                     </div>
                   </div>
                 </div>
-              ) : null}
-
-              {/* Assessment Complete */}
-              {isSubmittedChecklist && (
-                <div className="text-center py-12">
-                  <div className="rounded-lg border border-[#345793] bg-[#0d1d3a] p-8">
-                    <h2 className="text-2xl font-semibold text-white mb-4">Assessment Complete</h2>
-                    <p className="text-[#d8e2f2] mb-6">Thank you for completing this assessment.</p>
-                    <div className="flex justify-center gap-4">
-                      <button
-                        type="button"
-                        onClick={() => window.location.reload()}
-                        className="rounded-lg border border-[#345793] bg-[#182843] px-4 py-2 text-sm text-white hover:bg-[#223657]"
-                      >
-                        Start New Assessment
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             ) : null}
           </div>
         </div>
       </main>
+
+      {/* Assessment Complete */}
+      {isSubmittedChecklist && (
+        <div className="text-center py-12">
+          <div className="rounded-lg border border-[#345793] bg-[#0d1d3a] p-8">
+            <h2 className="text-2xl font-semibold text-white mb-4">Assessment Complete</h2>
+            <p className="text-[#d8e2f2] mb-6">Thank you for completing this assessment.</p>
+            <div className="flex justify-center gap-4">
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="rounded-lg border border-[#345793] bg-[#182843] px-4 py-2 text-sm text-white hover:bg-[#223657]"
+              >
+                Start New Assessment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+// Helper function to get assessment status
+function getAssessmentStatus(assessmentId: string): AssessmentStatus {
+  // This would typically come from an API call or be stored in state
+  // For now, return a default status
+  return 'in_progress' as AssessmentStatus;
 }

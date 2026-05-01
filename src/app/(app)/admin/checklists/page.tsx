@@ -84,7 +84,6 @@ export default function ChecklistPanelListPage() {
   const [isCreateChecklistModalOpen, setIsCreateChecklistModalOpen] = useState(false);
   const [createTitle, setCreateTitle] = useState('');
   const [createLawDecree, setCreateLawDecree] = useState('');
-  const [createStatus, setCreateStatus] = useState<'draft' | 'published'>('draft');
   const [editChecklistId, setEditChecklistId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editLawDecree, setEditLawDecree] = useState('');
@@ -216,7 +215,6 @@ export default function ChecklistPanelListPage() {
   function openCreateChecklistModal() {
     setCreateTitle('');
     setCreateLawDecree('');
-    setCreateStatus('draft');
     setIsCreateChecklistModalOpen(true);
   }
 
@@ -452,7 +450,6 @@ export default function ChecklistPanelListPage() {
       const created = await createChecklist({
         title: createTitle.trim(),
         lawDecree: createLawDecree.trim(),
-        status: createStatus,
       });
       toast.success('Checklist created.');
       setChecklists((previous) => [created, ...previous]);
@@ -816,18 +813,7 @@ export default function ChecklistPanelListPage() {
                     placeholder="Law decree"
                   />
                 </label>
-                <label className="block space-y-2 text-sm text-[#3b4d6c]">
-                  <span className="font-medium">Status *</span>
-                  <select
-                    value={createStatus}
-                    onChange={(event) => setCreateStatus(event.target.value as 'draft' | 'published')}
-                    className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2"
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                  </select>
-                </label>
-              </div>
+                              </div>
               <div className="mt-5 flex items-center justify-end gap-2">
                 <button
                   type="button"
