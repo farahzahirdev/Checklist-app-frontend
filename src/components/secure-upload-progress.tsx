@@ -85,28 +85,28 @@ export default function SecureUploadProgress({ fileName, fileSize, onComplete, o
       icon: <ShieldIcon className="w-5 h-5 text-blue-500 animate-pulse" />,
       title: 'Scanning for threats',
       description: 'Analyzing file for malware and security threats...',
-      duration: 2000,
+      duration: 4000, // Increased from 2000 to 4000ms
       progress: 20
     },
     encrypting: {
       icon: <LockIcon className="w-5 h-5 text-purple-500 animate-pulse" />,
       title: 'Encrypting file',
       description: 'Applying AES-256 encryption for secure storage...',
-      duration: 1500,
+      duration: 3000, // Increased from 1500 to 3000ms
       progress: 50
     },
     storing: {
       icon: <CloudIcon className="w-5 h-5 text-green-500 animate-pulse" />,
       title: 'Storing in secure vault',
       description: 'Saving encrypted file to tamper-proof storage...',
-      duration: 1800,
+      duration: 2500, // Increased from 1800 to 2500ms
       progress: 75
     },
     decrypting: {
       icon: <KeyIcon className="w-5 h-5 text-orange-500 animate-pulse" />,
       title: 'Preparing secure preview',
       description: 'Decrypting file for authorized preview access...',
-      duration: 1200,
+      duration: 2000, // Increased from 1200 to 2000ms
       progress: 90
     },
     complete: {
@@ -161,14 +161,8 @@ export default function SecureUploadProgress({ fileName, fileSize, onComplete, o
             } else if (currentStage === 'decrypting') {
               setTimeout(() => {
                 setCurrentStage('complete');
-                onComplete({
-                  fileName,
-                  fileSize,
-                  scanStatus: 'clean',
-                  encryptionStatus: 'encrypted',
-                  previewAvailable: true
-                });
-              }, 500);
+                // Don't call onComplete automatically - wait for user to click OK
+              }, 300);
             }
           }
           return next;
@@ -177,7 +171,7 @@ export default function SecureUploadProgress({ fileName, fileSize, onComplete, o
       
       return () => clearInterval(progressInterval);
     }
-  }, [currentStage, fileName, fileSize, onComplete, onError]);
+  }, [currentStage, fileName, fileSize, onError]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -286,9 +280,24 @@ export default function SecureUploadProgress({ fileName, fileSize, onComplete, o
       )}
 
       {currentStage === 'complete' && (
-        <div className="flex items-center gap-2 p-3 bg-green-500/20 border border-green-500/50 rounded-lg">
-          <EyeIcon className="w-4 h-4 text-green-400" />
-          <p className="text-green-400 text-sm">Secure preview available for authorized users</p>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 p-3 bg-green-500/20 border border-green-500/50 rounded-lg">
+            <EyeIcon className="w-4 h-4 text-green-400" />
+            <p className="text-green-400 text-sm">Secure preview available for authorized users</p>
+          </div>
+          <button
+            onClick={() => onComplete({
+              fileName,
+              fileSize,
+              scanStatus: 'clean',
+              encryptionStatus: 'encrypted',
+              previewAvailable: true
+            })}
+            className="w-full py-3 px-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium rounded-lg border border-green-500/50 shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+          >
+            <CheckCircleIcon className="w-5 h-5" />
+            OK - Continue with Assessment
+          </button>
         </div>
       )}
 

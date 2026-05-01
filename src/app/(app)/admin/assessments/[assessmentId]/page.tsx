@@ -73,7 +73,7 @@ function sectionKey(answer: AssessmentAnswerForReview) {
   return answer.section_code || answer.section_name || 'uncategorized';
 }
 
-function getAttachmentDisplay(answer: AssessmentAnswerForReview): string {
+function getAttachmentDisplay(answer: AssessmentAnswerForReview): { text: string; files: any[] } {
   const answerWithAttachment = answer as AssessmentAnswerForReview & {
     evidence_file_name?: string | null;
     evidence_file_url?: string | null;
@@ -81,14 +81,36 @@ function getAttachmentDisplay(answer: AssessmentAnswerForReview): string {
     attachment_name?: string | null;
     attachment_url?: string | null;
     media_id?: string | null;
-    evidence_files?: Array<{ filename?: string | null; name?: string | null }>;
+    evidence_files?: Array<{
+      id: string;
+      media_id: string;
+      filename: string;
+      mime_type: string;
+      file_size: number;
+      scan_status: string;
+      encryption_status: string;
+      uploaded_at?: string;
+    }>;
   };
+
+  // Check for new evidence_files format
+  if (answerWithAttachment.evidence_files && answerWithAttachment.evidence_files.length > 0) {
+    return {
+      text: `${answerWithAttachment.evidence_files.length} file(s) uploaded`,
+      files: answerWithAttachment.evidence_files
+    };
+  }
 
   const directName =
     answerWithAttachment.evidence_file_name ||
     answerWithAttachment.attachment_name ||
     null;
-  if (directName && directName.trim().length > 0) return directName;
+  if (directName && directName.trim().length > 0) {
+    return {
+      text: directName,
+      files: []
+    };
+  }
 
   const directRef =
     answerWithAttachment.evidence_file_url ||
@@ -96,13 +118,17 @@ function getAttachmentDisplay(answer: AssessmentAnswerForReview): string {
     answerWithAttachment.evidence_media_id ||
     answerWithAttachment.media_id ||
     null;
-  if (directRef && directRef.trim().length > 0) return 'File uploaded';
+  if (directRef && directRef.trim().length > 0) {
+    return {
+      text: 'File uploaded',
+      files: []
+    };
+  }
 
-  const firstEvidenceFile = answerWithAttachment.evidence_files?.[0];
-  if (firstEvidenceFile?.filename && firstEvidenceFile.filename.trim().length > 0) return firstEvidenceFile.filename;
-  if (firstEvidenceFile?.name && firstEvidenceFile.name.trim().length > 0) return firstEvidenceFile.name;
-
-  return 'No file uploaded';
+  return {
+    text: 'No file uploaded',
+    files: []
+  };
 }
 
 export default function AdminAssessmentReviewDetailPage() {
@@ -482,7 +508,66 @@ export default function AdminAssessmentReviewDetailPage() {
                     <div className="rounded-lg border border-[#dfe7f6] bg-white p-3 text-sm text-[#2f4264]">
                       {answer.note_text || 'No note added'}
                     </div>
-                    <div className="rounded-lg border border-[#dfe7f6] bg-white p-3 text-sm text-[#2f4264]">{getAttachmentDisplay(answer)}</div>
+                    <div className="rounded-lg border border-[#dfe7f6] bg-white p-3">
+                      {(() => {
+                        const attachmentInfo = getAttachmentDisplay(answer);
+                        if (attachmentInfo.files.length === 0) {
+                          return <p className="text-sm text-[#2f4264]">{attachmentInfo.text}</p>;
+                        }
+                        
+                        return (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-[#1f2d45]">{attachmentInfo.text}</p>
+                            {attachmentInfo.files.map((file) => (
+                              <div key={file.id} className="flex items-center justify-between rounded-lg border border-[#dbe4f4] bg-[#f8fafc] p-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="truncate text-sm font-medium text-[#1f2d45]">{file.filename}</p>
+                                  <p className="text-xs text-[#607594]">
+                                    {(file.file_size / 1024 / 1024).toFixed(2)} MB • {file.mime_type}
+                                  </p>
+                                  <div className="mt-1 flex items-center gap-2">
+                                    <span className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-xs font-semibold ${
+                                      file.scan_status === 'clean' 
+                                        ? 'bg-green-100 text-green-800' 
+                                        : 'bg-red-100 text-red-800'
+                                    }`} title={`Scan status: ${file.scan_status}`}>
+                                      {file.scan_status === 'clean' ? '✓' : '⚠'}
+                                    </span>
+                                    <span className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-xs font-semibold ${
+                                      file.encryption_status === 'encrypted' 
+                                        ? 'bg-blue-100 text-blue-800' 
+                                        : 'bg-gray-100 text-gray-800'
+                                    }`} title={`Encryption: ${file.encryption_status}`}>
+                                      {file.encryption_status === 'encrypted' ? '🔒' : '🔓'}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 ml-2">
+                                  {file.mime_type.startsWith('image/') && (
+                                    <button
+                                      type="button"
+                                      onClick={() => window.open(`/api/api/v1/media/${file.media_id}/preview`, '_blank')}
+                                      className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f1f5f9]"
+                                      title="Preview"
+                                    >
+                                      👁
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => window.open(`/api/api/v1/media/${file.media_id}/download`, '_blank')}
+                                    className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f1f5f9]"
+                                    title="Download"
+                                  >
+                                    ⬇
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </div>
                   <div className="mt-3 rounded-lg border border-[#e3e9f6] bg-[#f8fbff] p-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7a8ca8]">Reviewer Actions</p>
