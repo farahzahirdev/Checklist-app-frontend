@@ -109,8 +109,15 @@ export type AssessmentReviewPayload = {
   recommendations?: string;
 };
 
+export type AnswerSuggestionType =
+  | 'improvement'
+  | 'required_change'
+  | 'best_practice'
+  | 'reference'
+  | 'clarification';
+
 export type AnswerReviewPayload = {
-  suggestion_type: string;
+  suggestion_type: AnswerSuggestionType | string;
   suggestion_text: string;
   reference_materials?: string;
   is_action_required: boolean;
