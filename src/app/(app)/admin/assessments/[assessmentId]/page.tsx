@@ -159,6 +159,9 @@ export default function AdminAssessmentReviewDetailPage() {
   function selectedAnswerLabel(answerValue: string | null | undefined): string | null {
     if (!answerValue) return null;
     const normalized = answerValue.trim().toLowerCase();
+    // Accept numeric codes from API (AnswerChoice values) and map to display labels
+    const codeMap: Record<string, string> = { '4': 'Yes', '3': 'Partially', '2': 'Partially', '1': 'No' };
+    if (codeMap[normalized]) return codeMap[normalized];
     const match = answerOptions.find((option) => option.toLowerCase() === normalized);
     return match || answerValue;
   }
