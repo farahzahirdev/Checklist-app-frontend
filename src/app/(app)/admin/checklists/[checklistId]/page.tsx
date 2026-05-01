@@ -19,6 +19,7 @@ import {
   updateQuestion as updateQuestionApi,
   updateSection as updateSectionApi,
 } from '@/lib/checklist-api';
+import { getMediaPreviewUrl } from '@/lib/assessment';
 
 type RiskLevel = 'low' | 'medium' | 'high';
 type AnswerLogic = 'answer_only' | 'answer_with_adjustment';
@@ -320,6 +321,8 @@ export default function ChecklistPanelBuilderPage() {
   const [uploadingMediaKey, setUploadingMediaKey] = useState<string | null>(null);
   const [newQuestionImagePreviewUrl, setNewQuestionImagePreviewUrl] = useState('');
   const [editQuestionImagePreview, setEditQuestionImagePreview] = useState<{ questionId: string; url: string } | null>(null);
+  const [previewUrlsByMediaId, setPreviewUrlsByMediaId] = useState<Record<string, string>>({});
+  const [previewErrorsByMediaId, setPreviewErrorsByMediaId] = useState<Record<string, string>>({});
   const [collapsedSectionIds, setCollapsedSectionIds] = useState<string[]>([]);
   const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
   const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
@@ -833,6 +836,55 @@ export default function ChecklistPanelBuilderPage() {
     const uploaded = await uploadChecklistQuestionMedia(file);
     return uploaded.id;
   }
+
+  function isHttpUrl(url: string): boolean {
+    return url.startsWith('http://') || url.startsWith('https://');
+  }
+
+  // Generate preview URLs for illustrative images when questions are loaded
+  useEffect(() => {
+    const allQuestions = sections.flatMap(section => section.questions);
+    const mediaIds = new Set<string>();
+    
+    // Collect all unique illustrative image IDs
+    allQuestions.forEach(question => {
+      if (question.illustrativeImageId && !isHttpUrl(question.illustrativeImageId)) {
+        mediaIds.add(question.illustrativeImageId);
+      }
+      question.answerOptions.forEach(option => {
+        if (option.illustrativeImageId && !isHttpUrl(option.illustrativeImageId)) {
+          mediaIds.add(option.illustrativeImageId);
+        }
+      });
+    });
+
+    // Load preview URLs for media IDs that aren't already loaded
+    mediaIds.forEach(mediaId => {
+      if (!previewUrlsByMediaId[mediaId]) {
+        let cancelled = false;
+        getMediaPreviewUrl(mediaId)
+          .then((previewUrl) => {
+            if (cancelled || !previewUrl) return;
+            setPreviewUrlsByMediaId(previous => ({ ...previous, [mediaId]: previewUrl }));
+            setPreviewErrorsByMediaId(previous => {
+              if (!previous[mediaId]) return previous;
+              const next = { ...previous };
+              delete next[mediaId];
+              return next;
+            });
+          })
+          .catch((err) => {
+            if (cancelled) return;
+            const errorMessage = err instanceof Error ? err.message : 'Failed to load preview image.';
+            setPreviewErrorsByMediaId(previous => ({ ...previous, [mediaId]: errorMessage }));
+          });
+        
+        return () => {
+          cancelled = true;
+        };
+      }
+    });
+  }, [sections, previewUrlsByMediaId]);
 
   async function handleSectionDrop(targetSectionId: string) {
     if (!draggedSectionId || draggedSectionId === targetSectionId || reorderingSections) {
@@ -1844,7 +1896,7 @@ export default function ChecklistPanelBuilderPage() {
                     <p className="text-xs text-[#607594]">Uploading...</p>
                   ) : null}
                   {editQuestionImagePreview?.questionId === selectedQuestion.id ? (
-                    <div className="relative mt-2 w-full max-w-[280px] overflow-hidden rounded-xl border border-[#d4dced] bg-white">
+                    <div className="relative mt-2 w-full max-w-[280px] overflow-hidden rounded-xl border border-[#dced] bg-white">
                       <button
                         type="button"
                         onClick={() => {
@@ -1860,6 +1912,32 @@ export default function ChecklistPanelBuilderPage() {
                         ×
                       </button>
                       <img src={editQuestionImagePreview.url} alt="Example image preview" className="h-20 w-full object-cover" />
+                    </div>
+                  ) : selectedQuestion.illustrativeImageId && (isHttpUrl(selectedQuestion.illustrativeImageId) || previewUrlsByMediaId[selectedQuestion.illustrativeImageId]) ? (
+                    <div className="relative mt-2 w-full max-w-[280px] overflow-hidden rounded-xl border border-[#dced] bg-white">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateQuestion(selectedSection.id, selectedQuestion.id, { illustrativeImageId: '' });
+                        }}
+                        className="absolute right-2 top-2 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#0b1220]/70 text-sm font-semibold text-white hover:bg-[#0b1220]"
+                        aria-label="Remove example image"
+                      >
+                        ×
+                      </button>
+                      <img 
+                        src={
+                          isHttpUrl(selectedQuestion.illustrativeImageId)
+                            ? selectedQuestion.illustrativeImageId
+                            : previewUrlsByMediaId[selectedQuestion.illustrativeImageId]
+                        } 
+                        alt="Example image preview" 
+                        className="h-20 w-full object-cover" 
+                      />
+                    </div>
+                  ) : previewErrorsByMediaId[selectedQuestion.illustrativeImageId || ''] ? (
+                    <div className="mt-2 text-xs text-[#d45f6b]">
+                      Failed to load image: {previewErrorsByMediaId[selectedQuestion.illustrativeImageId || '']}
                     </div>
                   ) : null}
                 </div>
