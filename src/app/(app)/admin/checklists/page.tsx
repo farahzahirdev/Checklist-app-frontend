@@ -470,7 +470,7 @@ export default function ChecklistPanelListPage() {
         toast.error('Price is not valid. Price cannot be below 0.5 USD.');
         return;
       }
-      toast.error('Price needed. Set Stripe price before publishing this checklist.');
+      toast.error('Please add price on Stripe first before publishing this checklist.');
       return;
     }
     setActionLoading('publish');
@@ -699,9 +699,9 @@ export default function ChecklistPanelListPage() {
                       <button
                         type="button"
                         onClick={() => void handlePublish(item.id)}
-                        disabled={(actionLoading === 'publish' && activeChecklistId === item.id) || !item.stripeInfo?.priceAvailable}
+                        disabled={actionLoading === 'publish' && activeChecklistId === item.id}
                         className="rounded-lg border border-[#2d4f83] bg-[#10284f] px-3 py-2 text-xs font-semibold text-[#9bf5be] hover:bg-[#16345f] disabled:opacity-60"
-                        title={item.stripeInfo?.priceAvailable ? 'Publish checklist' : 'Price needed before publishing'}
+                        title={item.stripeInfo?.priceAvailable ? 'Publish checklist' : 'Click to see price requirements'}
                       >
                         {actionLoading === 'publish' && activeChecklistId === item.id ? 'Publishing...' : 'Publish'}
                       </button>
