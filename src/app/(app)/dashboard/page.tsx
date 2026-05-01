@@ -9,12 +9,14 @@ import {
   type CustomerDashboardSummary,
 } from '@/lib/dashboard';
 import { listCustomerAssessments, type CustomerAssessmentListItem } from '@/lib/customer-assessments';
+import { getCustomerReports, type ReportResponse } from '@/lib/reports';
 import { formatStatusLabel } from '@/lib/status-format';
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState<CustomerDashboardSummary | null>(null);
   const [enhanced, setEnhanced] = useState<CustomerDashboardEnhanced | null>(null);
   const [assessments, setAssessments] = useState<CustomerAssessmentListItem[]>([]);
+  const [reports, setReports] = useState<ReportResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [permissionBlocked, setPermissionBlocked] = useState(false);
@@ -24,14 +26,16 @@ export default function DashboardPage() {
     setError('');
     setPermissionBlocked(false);
     try {
-      const [summaryResponse, enhancedResponse, assessmentsResponse] = await Promise.all([
+      const [summaryResponse, enhancedResponse, assessmentsResponse, reportsResponse] = await Promise.all([
         getCustomerDashboardSummary(),
         getCustomerDashboardEnhanced().catch(() => null),
         listCustomerAssessments({ sort_by: 'updated_at', sort_order: 'desc', limit: 20 }).catch(() => null),
+        getCustomerReports().catch(() => []),
       ]);
       setSummary(summaryResponse);
       setEnhanced(enhancedResponse);
       setAssessments(assessmentsResponse?.assessments ?? []);
+      setReports(reportsResponse);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load customer dashboard';
       setError(msg);
@@ -108,6 +112,58 @@ export default function DashboardPage() {
       {summary?.generated_at ? (
         <p className="text-xs text-[#607594]">Last generated at: {new Date(summary.generated_at).toLocaleString()}</p>
       ) : null}
+
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-[#1f2d45]">Reports</h2>
+          {reports.length > 0 && (
+            <Link
+              href="/reports"
+              className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#2a3d5f] hover:bg-[#f6f9ff]"
+            >
+              View All Reports
+            </Link>
+          )}
+        </div>
+
+        {!reports.length ? (
+          <p className="rounded-xl border border-[#dbe4f4] bg-white p-4 text-sm text-[#607594] shadow-sm">
+            {loading ? 'Loading reports…' : 'No reports available yet. Reports will appear here after your assessments are reviewed and approved.'}
+          </p>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-[#dbe4f4] bg-white shadow-sm">
+            <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-[#eef2fa] bg-[#f7f9fe] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#607594]">
+              <span>Assessment</span>
+              <span className="text-right">Status</span>
+            </div>
+            <ul className="divide-y divide-[#eef2fa]">
+              {reports.slice(0, 5).map((report) => (
+                <li key={report.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-[#1f2d45]">Report for Assessment</p>
+                    <p className="mt-0.5 truncate text-xs text-[#607594]">
+                      {report.status === 'published' ? 'Published' : 
+                       report.status === 'approved' ? 'Approved' :
+                       report.status === 'under_review' ? 'Under Review' :
+                       report.status === 'changes_requested' ? 'Changes Requested' : 'Draft'}
+                      {' • '}
+                      {report.approved_at ? `Approved ${new Date(report.approved_at).toLocaleDateString()}` : 
+                       report.reviewed_at ? `Reviewed ${new Date(report.reviewed_at).toLocaleDateString()}` :
+                       report.draft_generated_at ? `Generated ${new Date(report.draft_generated_at).toLocaleDateString()}` : 'Recent'}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/reports/${report.id}` as any}
+                    className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
+                  >
+                    View Report
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
 
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
