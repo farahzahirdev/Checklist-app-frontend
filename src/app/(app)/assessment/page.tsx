@@ -20,6 +20,7 @@ import {
   type AssessmentDetailQuestion,
 } from '@/lib/assessment';
 import { isAllowedEvidenceFileSize, isAllowedEvidenceMimeType } from '@/lib/upload-rules';
+import SecureUploadProgress from '@/components/secure-upload-progress';
 
 type LocalAnswer = {
   answer: string;
@@ -177,9 +178,10 @@ export default function AssessmentPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [autoSaving, setAutoSaving] = useState<Record<string, boolean>>({});
-  const [evidenceLoading, setEvidenceLoading] = useState(false);
-  const [evidencePreviewUrl, setEvidencePreviewUrl] = useState<string | null>(null);
-  const [selectedEvidenceFile, setSelectedEvidenceFile] = useState<File | null>(null);
+  const [evidenceLoading, setEvidenceLoading] = useState<Record<string, boolean>>({});
+  const [evidencePreviewUrls, setEvidencePreviewUrls] = useState<Record<string, string>>({});
+  const [selectedEvidenceFiles, setSelectedEvidenceFiles] = useState<Record<string, File | null>>({});
+  const [showUploadProgress, setShowUploadProgress] = useState<string | null>(null);
   const [submittingAssessment, setSubmittingAssessment] = useState(false);
   const [previewUrlsByMediaId, setPreviewUrlsByMediaId] = useState<Record<string, string>>({});
   const [previewErrorsByMediaId, setPreviewErrorsByMediaId] = useState<Record<string, string>>({});
@@ -505,10 +507,10 @@ export default function AssessmentPage() {
       const persistedAnswers: Record<string, boolean> = {};
       detail.sections.forEach((section) => {
         flattenSectionQuestions(section.id, section.title, section.questions).forEach((question) => {
-          const normalizedAnswer = normalizeAnswerValue(question.current_answer?.answer);
+          const normalizedAnswer = normalizeAnswerValue(question.customer_answer);
           initialAnswers[question.id] = {
             answer: normalizedAnswer,
-            note_text: question.current_answer?.note_text ?? question.user_note ?? '',
+            note_text: question.user_note ?? '',
           };
           if (normalizedAnswer) {
             persistedAnswers[question.id] = true;
@@ -572,21 +574,29 @@ export default function AssessmentPage() {
   }, [checklistIdFromQuery]);
 
   useEffect(() => {
-    setSelectedEvidenceFile(null);
+    setSelectedEvidenceFiles({});
+    setEvidencePreviewUrls({});
     setMessage('');
   }, [activeQuestionId]);
 
   useEffect(() => {
-    if (!selectedEvidenceFile) {
-      setEvidencePreviewUrl(null);
+    if (!activeQuestion?.id) return;
+    
+    const selectedFile = selectedEvidenceFiles[activeQuestion.id];
+    if (!selectedFile) {
+      setEvidencePreviewUrls(prev => {
+        const newUrls = { ...prev };
+        delete newUrls[activeQuestion.id];
+        return newUrls;
+      });
       return;
     }
-    const url = URL.createObjectURL(selectedEvidenceFile);
-    setEvidencePreviewUrl(url);
+    const url = URL.createObjectURL(selectedFile);
+    setEvidencePreviewUrls(prev => ({ ...prev, [activeQuestion.id]: url }));
     return () => {
       URL.revokeObjectURL(url);
     };
-  }, [selectedEvidenceFile]);
+  }, [selectedEvidenceFiles, activeQuestion?.id]);
 
   useEffect(() => {
     if (!selectedSectionId) return;
@@ -739,15 +749,16 @@ export default function AssessmentPage() {
       setError('No active question found.');
       return;
     }
-    if (!selectedEvidenceFile) {
+    const selectedFile = selectedEvidenceFiles[activeQuestion.id];
+    if (!selectedFile) {
       setError('Choose an evidence file before uploading.');
       return;
     }
-    if (!isAllowedEvidenceMimeType(selectedEvidenceFile.type)) {
+    if (!isAllowedEvidenceMimeType(selectedFile.type)) {
       setError('Unsupported evidence file type.');
       return;
     }
-    if (!isAllowedEvidenceFileSize(selectedEvidenceFile.size)) {
+    if (!isAllowedEvidenceFileSize(selectedFile.size)) {
       setError('Evidence file is too large.');
       return;
     }
@@ -758,19 +769,19 @@ export default function AssessmentPage() {
 
     setError('');
     setMessage('');
-    setEvidenceLoading(true);
+    setShowUploadProgress(activeQuestion.id);
     try {
       const currentAssessmentId = await ensureCurrentAssessmentId();
-      await uploadAssessmentEvidence(currentAssessmentId, activeQuestion.id, selectedEvidenceFile);
+      await uploadAssessmentEvidence(currentAssessmentId, activeQuestion.id, selectedFile);
       setMessage('Evidence uploaded successfully.');
       toast.success('Evidence uploaded successfully.');
-      setSelectedEvidenceFile(null);
+      setSelectedEvidenceFiles(prev => ({ ...prev, [activeQuestion.id]: null }));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to upload evidence.';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
-      setEvidenceLoading(false);
+      setShowUploadProgress(null);
     }
   }
 
@@ -933,7 +944,7 @@ export default function AssessmentPage() {
                               >
                                 <span className={question.depth === 1 ? 'pl-3' : ''}>
                                   {question.depth === 1 ? '↳ ' : ''}
-                                  {numberLabel}. {question.question_title || question.questions_title || question.question_id || 'Question'}
+                                  {numberLabel}. {question.question_title || question.question_id || 'Question'}
                                 </span>
                               </button>
                             </li>
@@ -1007,7 +1018,7 @@ export default function AssessmentPage() {
 
                 <div className="rounded-lg border border-[#e2e8f5] bg-white p-2">
                   <p className="px-2 py-1 text-[44px] leading-[1.1] font-semibold text-[#1f2d45]">
-                    {activeQuestion.questions_title || activeQuestion.question_title || activeQuestion.legal_requirement_title || 'Question'}
+                    {activeQuestion.question_title || activeQuestion.legal_requirement || 'Question'}
                   </p>
                   <div className="mt-3 grid gap-2 md:grid-cols-4">
                     <div className="rounded-md bg-[#f7f9fe] p-2 text-xs">
@@ -1036,7 +1047,7 @@ export default function AssessmentPage() {
                   <div className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#607594]">Legal Requirement</p>
                     <p className="mt-2 text-sm text-[#2a3d5f]">
-                      {activeQuestion.legal_requirement_title || activeQuestion.legal_requirement_description || activeQuestion.legal_requirement || '-'}
+                      {activeQuestion.legal_requirement || '-'}
                     </p>
                   </div>
                   <div className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-3">
@@ -1170,51 +1181,60 @@ export default function AssessmentPage() {
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <input
                         type="file"
-                        onChange={(event) => setSelectedEvidenceFile(event.target.files?.[0] ?? null)}
+                        onChange={(event) => setSelectedEvidenceFiles(prev => ({ 
+                          ...prev, 
+                          [activeQuestion.id]: event.target.files?.[0] ?? null 
+                        }))}
                         className="max-w-full rounded-lg border border-[#d4dced] bg-white px-2 py-1 text-xs text-[#3f5677]"
                       />
                       <button
                         type="button"
                         onClick={() => void onUploadEvidence()}
-                        disabled={evidenceLoading || !selectedEvidenceFile}
+                        disabled={!!showUploadProgress || !selectedEvidenceFiles[activeQuestion.id]}
                         className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
                       >
-                        {evidenceLoading ? 'Uploading…' : 'Upload evidence'}
+                        {showUploadProgress === activeQuestion.id ? 'Uploading…' : 'Upload evidence'}
                       </button>
                     </div>
-                    {selectedEvidenceFile && evidencePreviewUrl ? (
-                      <div className="mt-2 max-w-[160px] overflow-visible rounded-md border border-[#dbe4f4] bg-white">
-                        <div className="relative">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedEvidenceFile(null);
-                            }}
-                            aria-label="Remove evidence preview"
-                            className="absolute right-[-4px] top-[-4px] z-50 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#ffffff]/90 text-lg font-semibold text-[#243555] shadow hover:bg-[#ffffff]"
-                          >
-                            ×
-                          </button>
-                        {selectedEvidenceFile.type.startsWith('image/') ? (
-                          <img
-                            src={evidencePreviewUrl}
-                            alt="Evidence preview"
-                            className="h-12 w-full object-cover"
-                          />
-                        ) : selectedEvidenceFile.type === 'application/pdf' ? (
-                          <iframe
-                            src={evidencePreviewUrl}
-                            title="Evidence preview (PDF)"
-                            className="h-20 w-full"
-                          />
-                        ) : (
-                          <p className="p-2 text-xs text-[#607594]">
-                            Preview not available. {selectedEvidenceFile.name}
-                          </p>
-                        )}
+                    {(() => {
+                      const selectedFile = selectedEvidenceFiles[activeQuestion.id];
+                      const previewUrl = evidencePreviewUrls[activeQuestion.id];
+                      if (!selectedFile || !previewUrl) return null;
+                      
+                      return (
+                        <div className="mt-2 max-w-[160px] overflow-visible rounded-md border border-[#dbe4f4] bg-white">
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedEvidenceFiles(prev => ({ ...prev, [activeQuestion.id]: null }));
+                              }}
+                              aria-label="Remove evidence preview"
+                              className="absolute right-[-4px] top-[-4px] z-50 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#ffffff]/90 text-lg font-semibold text-[#243555] shadow hover:bg-[#ffffff]"
+                            >
+                              ×
+                            </button>
+                            {selectedFile.type.startsWith('image/') ? (
+                              <img
+                                src={previewUrl}
+                                alt="Evidence preview"
+                                className="h-12 w-full object-cover"
+                              />
+                            ) : selectedFile.type === 'application/pdf' ? (
+                              <iframe
+                                src={previewUrl}
+                                title="Evidence preview (PDF)"
+                                className="h-20 w-full"
+                              />
+                            ) : (
+                              <p className="p-2 text-xs text-[#607594]">
+                                Preview not available. {selectedFile.name}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ) : null}
+                      );
+                    })()}
                   </div>
                 ) : null}
 
@@ -1294,6 +1314,33 @@ export default function AssessmentPage() {
 
         </div>
       </section>
+
+      {/* Secure Upload Progress Modal */}
+      {showUploadProgress && (() => {
+        const currentQuestionId = showUploadProgress;
+        const selectedFile = selectedEvidenceFiles[currentQuestionId];
+        if (!selectedFile) return null;
+        
+        return (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="w-full max-w-md">
+              <SecureUploadProgress
+                fileName={selectedFile.name}
+                fileSize={selectedFile.size}
+                onComplete={(result) => {
+                  setShowUploadProgress(null);
+                  toast.success('Evidence uploaded successfully!');
+                  setSelectedEvidenceFiles(prev => ({ ...prev, [currentQuestionId]: null }));
+                }}
+                onError={(error) => {
+                  setShowUploadProgress(null);
+                  toast.error(error);
+                }}
+              />
+            </div>
+          </div>
+        );
+      })()}
     </section>
   );
 }

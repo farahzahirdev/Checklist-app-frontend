@@ -40,28 +40,43 @@ export type AssessmentDetailAnswerOption = {
 
 export type AssessmentDetailQuestion = {
   id: string;
-  question_id?: string;
+  checklist_id: string;
+  section_id: string;
+  parent_question_id?: string | null;
+  question_id: string;
   question_title?: string | null;
-  questions_title?: string | null;
-  security_level?: 'low' | 'medium' | 'high' | string;
+  security_level: string;
   audit_type?: string;
-  legal_requirement_title?: string | null;
-  legal_requirement_description?: string | null;
-  legal_requirement?: string;
-  explanation?: string;
+  answer_logic?: string;
+  legal_requirement: string;
+  explanation: string;
+  expected_implementation: string;
   how_it_works?: string | null;
-  expected_implementation?: string;
+  points: number;
+  report_domain?: string | null;
+  report_chapter?: string | null;
   illustrative_image_id?: string | null;
-  answer_options?: AssessmentDetailAnswerOption[];
-  current_answer?: AssessmentDetailAnswer | null;
-  admin_note?: string | null;
-  user_note?: string | null;
   note_enabled?: boolean;
   evidence_enabled?: boolean;
+  customer_answer?: string | null;
+  customer_answer_status?: string;
+  admin_note?: string | null;
+  user_note?: string | null;
   evidence_rule?: {
     allowed_mime_types?: string[];
     max_file_size_bytes?: number;
   } | null;
+  evidence_files?: Array<{
+    id: string;
+    media_id: string;
+    filename: string;
+    mime_type: string;
+    file_size: number;
+    scan_status: string;
+    encryption_status: string;
+    uploaded_at?: string;
+  }>;
+  answer_options?: AssessmentDetailAnswerOption[];
   sub_questions?: AssessmentDetailQuestion[];
 };
 
@@ -150,7 +165,7 @@ export async function submitAssessment(assessmentId: string) {
   return apiPost<AssessmentSubmitResponse, Record<string, never>>(`/assessment/${assessmentId}/submit`, {});
 }
 
-export async function uploadAssessmentEvidence(assessmentId: string, questionId: string, file: File): Promise<string> {
+export async function uploadAssessmentEvidence(assessmentId: string, questionId: string, file: File): Promise<any> {
   const formData = new FormData();
   formData.append('file', file);
   const token = typeof window !== 'undefined' ? window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) : null;
@@ -166,5 +181,5 @@ export async function uploadAssessmentEvidence(assessmentId: string, questionId:
   if (!response.ok) {
     throw new Error(raw || `Request failed with status ${response.status}`);
   }
-  return raw ? (JSON.parse(raw) as string) : '';
+  return raw ? JSON.parse(raw) : null;
 }
