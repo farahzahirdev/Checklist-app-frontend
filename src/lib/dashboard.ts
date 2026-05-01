@@ -71,6 +71,7 @@ export type AuditorDashboardSummary = {
   generated_at: string;
 };
 
+
 export type CustomerDashboardSummary = {
   paid_checklists_count: number;
   active_assessments_count: number;
@@ -166,6 +167,7 @@ export async function getAdminSystemHealth(auth?: DashboardAuth) {
 export async function getAuditorDashboardSummary(auth?: DashboardAuth) {
   return apiGetWithAuth<AuditorDashboardSummary>('/dashboard/auditor', auth);
 }
+
 
 export async function getCustomerDashboardSummary(auth?: DashboardAuth) {
   return apiGetWithAuth<CustomerDashboardSummary>('/dashboard/customer', auth);
