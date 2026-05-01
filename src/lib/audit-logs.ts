@@ -54,6 +54,12 @@ export type ListAuditLogsParams = {
   order_direction?: 'asc' | 'desc';
 };
 
+export type AuditLogFilterOptions = {
+  actions: Record<string, Array<{ value: string; label: string }>>;
+  actor_roles: Array<{ value: string; label: string }>;
+  target_entities: Array<{ value: string; label: string }>;
+};
+
 export function listAuditLogs(params?: ListAuditLogsParams) {
   const query = new URLSearchParams();
   if (params?.actor_user_id) query.set('actor_user_id', params.actor_user_id);
@@ -75,4 +81,8 @@ export function listAuditLogs(params?: ListAuditLogsParams) {
 
   const qs = query.toString();
   return apiGetWithAuth<AuditLogsListResponse>(`/admin/audit-logs/${qs ? `?${qs}` : ''}`);
+}
+
+export function getAuditLogFilterOptions() {
+  return apiGetWithAuth<AuditLogFilterOptions>('/admin/audit-logs/filter-options');
 }

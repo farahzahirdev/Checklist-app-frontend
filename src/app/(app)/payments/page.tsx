@@ -5,7 +5,9 @@ import {
   getCustomerPaymentAnalyticsOverview,
   getCustomerRecentPayments,
   listCustomerPayments,
+  getPaymentFilterOptions,
   type CustomerPaymentRecord,
+  type CustomerPaymentFilterOptions,
 } from '@/lib/customer-payments';
 import { formatStatusLabel } from '@/lib/status-format';
 
@@ -25,6 +27,8 @@ export default function PaymentsPage() {
   const [paymentsLoading, setPaymentsLoading] = useState(true);
   const [error, setError] = useState('');
   const [paymentsError, setPaymentsError] = useState('');
+  const [filterOptions, setFilterOptions] = useState<CustomerPaymentFilterOptions | null>(null);
+  const [loadingFilterOptions, setLoadingFilterOptions] = useState(true);
 
   const [statusFilter, setStatusFilter] = useState('');
   const [searchFilter, setSearchFilter] = useState('');
@@ -42,6 +46,18 @@ export default function PaymentsPage() {
     if (typeof raw === 'number') return raw.toLocaleString();
     return null;
   }, [analytics]);
+
+  async function loadFilterOptions() {
+    setLoadingFilterOptions(true);
+    try {
+      const options = await getPaymentFilterOptions();
+      setFilterOptions(options);
+    } catch (err) {
+      console.error('Failed to load filter options:', err);
+    } finally {
+      setLoadingFilterOptions(false);
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -89,6 +105,7 @@ export default function PaymentsPage() {
   useEffect(() => {
     void load();
     void loadPayments({ skip: 0 });
+    void loadFilterOptions();
   }, []);
 
   useEffect(() => {
@@ -209,12 +226,19 @@ export default function PaymentsPage() {
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
             <label className="space-y-1 text-sm xl:col-span-1">
               <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#607594]">Status</span>
-              <input
+              <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                placeholder="succeeded"
-                className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
-              />
+                disabled={loadingFilterOptions}
+                className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring disabled:opacity-50"
+              >
+                <option value="">All statuses</option>
+                {filterOptions?.statuses.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="space-y-1 text-sm xl:col-span-2">
               <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#607594]">Search</span>

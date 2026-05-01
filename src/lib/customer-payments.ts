@@ -44,6 +44,11 @@ export type CustomerPaymentsListParams = {
   order_direction?: 'asc' | 'desc';
 };
 
+export type CustomerPaymentFilterOptions = {
+  statuses: Array<{ value: string; label: string }>;
+  sort_options: Array<{ value: string; label: string }>;
+};
+
 function buildPaymentsQuery(params?: CustomerPaymentsListParams): string {
   if (!params) return '';
   const query = new URLSearchParams();
@@ -166,5 +171,9 @@ export async function getActiveAccessWindows() {
 
 export async function getUpcomingAccessExpirations() {
   return apiGetWithAuth<string[]>('/customer/payments/access/upcoming-expirations');
+}
+
+export async function getPaymentFilterOptions() {
+  return apiGetWithAuth<CustomerPaymentFilterOptions>('/customer/payments/filter-options');
 }
 

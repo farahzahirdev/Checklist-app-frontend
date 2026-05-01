@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { toast } from 'sonner';
-import { listAuditLogs, type AuditLog, type ListAuditLogsParams } from '@/lib/audit-logs';
+import { listAuditLogs, getAuditLogFilterOptions, type AuditLog, type ListAuditLogsParams, type AuditLogFilterOptions } from '@/lib/audit-logs';
 
 const severityClass: Record<string, string> = {
   Info: 'bg-[#eaf2ff] text-[#3f74df]',
@@ -37,6 +37,8 @@ export default function AdminAuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [filterOptions, setFilterOptions] = useState<AuditLogFilterOptions | null>(null);
+  const [loadingFilterOptions, setLoadingFilterOptions] = useState(true);
   const [search, setSearch] = useState('');
   const [action, setAction] = useState('');
   const [actorRole, setActorRole] = useState('');
@@ -65,6 +67,22 @@ export default function AdminAuditLogsPage() {
     }),
     [action, actorRole, dateFrom, dateTo, limit, orderDirection, search, skip, successFilter],
   );
+
+  useEffect(() => {
+    async function loadFilterOptions() {
+      setLoadingFilterOptions(true);
+      try {
+        const options = await getAuditLogFilterOptions();
+        setFilterOptions(options);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to load filter options');
+      } finally {
+        setLoadingFilterOptions(false);
+      }
+    }
+
+    void loadFilterOptions();
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -146,8 +164,36 @@ export default function AdminAuditLogsPage() {
 
         <div className="grid gap-2 border-b border-[#ecf0f8] bg-[#f8fbff] px-4 py-3 md:grid-cols-6">
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search summary" className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm" />
-          <input value={action} onChange={(e) => setAction(e.target.value)} placeholder="Action" className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm" />
-          <input value={actorRole} onChange={(e) => setActorRole(e.target.value)} placeholder="Actor role" className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm" />
+          <select 
+            value={action} 
+            onChange={(e) => setAction(e.target.value)} 
+            disabled={loadingFilterOptions}
+            className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm disabled:opacity-50"
+          >
+            <option value="">All actions</option>
+            {filterOptions && Object.entries(filterOptions.actions).map(([category, actions]) => (
+              <optgroup key={category} label={category}>
+                {actions.map((actionOption) => (
+                  <option key={actionOption.value} value={actionOption.value}>
+                    {actionOption.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          <select 
+            value={actorRole} 
+            onChange={(e) => setActorRole(e.target.value)} 
+            disabled={loadingFilterOptions}
+            className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm disabled:opacity-50"
+          >
+            <option value="">All roles</option>
+            {filterOptions?.actor_roles.map((role) => (
+              <option key={role.value} value={role.value}>
+                {role.label}
+              </option>
+            ))}
+          </select>
           <select value={successFilter} onChange={(e) => setSuccessFilter(e.target.value as 'all' | 'success' | 'failed')} className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm">
             <option value="all">All status</option>
             <option value="success">Success only</option>
