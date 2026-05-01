@@ -20,6 +20,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { href: '/admin', label: 'Dashboard', icon: 'home' },
     { href: '/admin/checklists', label: 'Checklist Content', icon: 'checklist' },
     { href: '/admin/users', label: 'Users', icon: 'users' },
+    { href: '/admin/support', label: 'Support', icon: 'report' },
     { href: '/admin/rbac', label: 'RBAC', icon: 'shield' },
     { href: '/admin/logs', label: 'Audit Logs', icon: 'shield' },
   ] as const;

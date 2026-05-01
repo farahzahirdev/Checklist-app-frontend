@@ -38,6 +38,7 @@ export default function AppLayout({
   const dashboardActive = pathname === '/dashboard';
   const assessmentActive = pathname?.startsWith('/assessment') ?? false;
   const accessActive = pathname?.startsWith('/access') ?? false;
+  const supportActive = pathname?.startsWith('/support') ?? false;
   const purchaseActive = isPaymentPath;
   const paymentsActive = isPaymentsPath;
   const isCustomerShell = role === 'customer';
@@ -226,6 +227,14 @@ export default function AppLayout({
                   }`}
                 >
                   Access
+                </Link>
+                <Link
+                  href={'/support' as Route}
+                  className={`flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
+                    supportActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
+                  }`}
+                >
+                  Support
                 </Link>
                 <Link
                   href="/payment"

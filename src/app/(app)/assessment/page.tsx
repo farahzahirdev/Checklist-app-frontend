@@ -50,6 +50,16 @@ function flattenSectionQuestions(
       });
     });
   });
+  // Debug: Check for duplicate IDs
+  const idCount = new Map<string, number>();
+  rows.forEach((row) => {
+    const idStr = String(row.id);
+    idCount.set(idStr, (idCount.get(idStr) ?? 0) + 1);
+  });
+  const duplicates = Array.from(idCount.entries()).filter(([_, count]) => count > 1);
+  if (duplicates.length > 0) {
+    console.warn(`[Assessment] Found ${duplicates.length} duplicate question IDs:`, duplicates.map(([id]) => id));
+  }
   return rows;
 }
 
@@ -166,12 +176,21 @@ export default function AssessmentPage() {
   const activeQuestion = useMemo(() => {
     const explicit = allQuestions.find((question) => question.id === activeQuestionId);
     if (explicit) {
+      console.log(`[Assessment] Active question: ${explicit.question_id} (id: ${String(explicit.id)})`);
       return explicit;
     }
     if (selectedSectionId) {
-      return allQuestions.find((question) => question.sectionId === selectedSectionId);
+      const fallback = allQuestions.find((question) => question.sectionId === selectedSectionId);
+      if (fallback) {
+        console.log(`[Assessment] Using fallback (section match): ${fallback.question_id} (id: ${String(fallback.id)})`);
+      }
+      return fallback;
     }
-    return allQuestions[0];
+    const first = allQuestions[0];
+    if (first) {
+      console.log(`[Assessment] Using first question: ${first.question_id} (id: ${String(first.id)})`);
+    }
+    return first;
   }, [activeQuestionId, allQuestions, selectedSectionId]);
   const activeAnswer = activeQuestion ? answers[activeQuestion.id] : undefined;
   const sanitizedExplanationHtml = useMemo(
@@ -810,12 +829,18 @@ export default function AssessmentPage() {
                               <button
                                 type="button"
                                 onClick={() => {
+                                  console.log(`[Assessment] Clicked question: ${question.question_id} (id: ${String(question.id)})`);
                                   setSelectedSectionId(section.id);
                                   setActiveQuestionId(question.id);
                                 }}
                                 className={`w-full rounded-md px-2 py-1.5 text-left text-xs transition ${
                                   activeQuestion?.id === question.id
-                                    ? 'bg-[#eaf1fb] text-[#20457b]'
+                                    ? (() => {
+                                        if (activeQuestion?.id !== question.id) {
+                                          console.warn(`[Assessment] Mismatch: activeQuestion.id (${String(activeQuestion?.id)}) !== question.id (${String(question.id)}) but className thinks they match!`);
+                                        }
+                                        return 'bg-[#eaf1fb] text-[#20457b]';
+                                      })()
                                     : 'text-[#4f6281] hover:bg-[#f6f9ff]'
                                 }`}
                               >

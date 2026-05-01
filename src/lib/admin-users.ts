@@ -98,6 +98,13 @@ export function resetUserPermissions(userId: string) {
   return apiPost<Record<string, unknown>, { confirm: boolean }>(`/admin/users/${userId}/permissions/reset`, { confirm: true });
 }
 
+export function resetAdminUserPassword(userId: string, payload: { new_password: string; reason?: string }) {
+  return apiPost<{ user_id: string; email: string; message: string; reset_at: string; reset_by_user_id: string }, typeof payload>(
+    `/admin/users/${userId}/password/reset`,
+    payload,
+  );
+}
+
 export function listCustomers(params?: ListCustomersParams) {
   return apiGetWithAuth<AdminCustomersResponse>(
     withPagination('/admin/customers', {

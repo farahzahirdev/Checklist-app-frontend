@@ -13,6 +13,7 @@ import {
   getCustomer,
   listAdminUsers,
   listCustomers,
+  resetAdminUserPassword,
   resetUserPermissions,
   switchAdminRole,
   viewCustomerDashboardAsAdmin,
@@ -37,6 +38,8 @@ export default function AdminUsersPage() {
   const [newRoleCode, setNewRoleCode] = useState<'admin' | 'auditor'>('auditor');
   const [roleReason, setRoleReason] = useState('Role update requested by admin');
   const [permissionsInput, setPermissionsInput] = useState('dashboard:read,report:read');
+  const [resetPasswordValue, setResetPasswordValue] = useState('');
+  const [resetPasswordReason, setResetPasswordReason] = useState('Admin requested password reset');
   const [switchRole, setSwitchRole] = useState<'customer' | 'auditor'>('customer');
   const [switchReason, setSwitchReason] = useState('Testing flow');
   const [switchDuration, setSwitchDuration] = useState(30);
@@ -53,6 +56,7 @@ export default function AdminUsersPage() {
     | 'change-role'
     | 'assign-permissions'
     | 'reset-permissions'
+    | 'reset-password'
     | 'load-customer'
     | 'deactivate-customer'
     | 'activate-customer'
@@ -207,6 +211,38 @@ export default function AdminUsersPage() {
       toast.success('Permissions reset to role defaults.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to reset permissions.');
+    } finally {
+      setActionLoading('');
+      setLoading(false);
+    }
+  }
+
+  async function onResetPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedUserId.trim()) {
+      toast.error('User ID is required.');
+      return;
+    }
+    if (!resetPasswordValue.trim()) {
+      toast.error('New password is required.');
+      return;
+    }
+    if (!resetPasswordReason.trim()) {
+      toast.error('Reason is required.');
+      return;
+    }
+    setActionLoading('reset-password');
+    setLoading(true);
+    try {
+      const response = await resetAdminUserPassword(selectedUserId, {
+        new_password: resetPasswordValue,
+        reason: resetPasswordReason,
+      });
+      toast.success(`Password reset for ${response.email}.`);
+      setResetPasswordValue('');
+      await loadLists();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to reset password.');
     } finally {
       setActionLoading('');
       setLoading(false);
@@ -542,6 +578,34 @@ export default function AdminUsersPage() {
                   {actionLoading === 'reset-permissions' ? 'Resetting…' : 'Reset to defaults'}
                 </button>
               </div>
+            </form>
+
+            <hr className="border-[#e6edf8]" />
+
+            <form onSubmit={onResetPassword} className="space-y-3">
+              <h3 className="text-base font-semibold text-[#243555]">Reset password</h3>
+              <label className="block space-y-2 text-sm">
+                <span className="font-medium text-[#566b8d]">New password</span>
+                <input
+                  type="password"
+                  value={resetPasswordValue}
+                  onChange={(event) => setResetPasswordValue(event.target.value)}
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
+                  placeholder="Enter a temporary or permanent new password"
+                />
+              </label>
+              <label className="block space-y-2 text-sm">
+                <span className="font-medium text-[#566b8d]">Reason <span className="text-[#c43e53]">*</span></span>
+                <input
+                  type="text"
+                  value={resetPasswordReason}
+                  onChange={(event) => setResetPasswordReason(event.target.value)}
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
+                />
+              </label>
+              <button type="submit" disabled={loading} className="rounded-xl border border-[#c43e53] bg-[#c43e53] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">
+                {actionLoading === 'reset-password' ? 'Resetting…' : 'Reset password'}
+              </button>
             </form>
           </article>
         </>
