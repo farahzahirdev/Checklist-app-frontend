@@ -161,10 +161,11 @@ export default function AdminAssessmentReviewDetailPage() {
   const filteredAnswers = useMemo(() => {
     let items = detail?.answers || [];
     if (sectionFilter !== 'all') items = items.filter((answer) => sectionKey(answer) === sectionFilter);
-    if (followUpFilter === 'marked') items = items.filter((answer) => answer.is_action_required || Boolean(answer.review?.is_action_required));
+    // NOTE: Changed follow-up filter to NOT hide sections, but rather we'll highlight marked answers in the UI
+    // if (followUpFilter === 'marked') items = items.filter((answer) => answer.is_action_required || Boolean(answer.review?.is_action_required));
     if (answerStateFilter === 'not_answered') items = items.filter((answer) => !answer.customer_answer || answer.customer_answer.trim().length === 0);
     return items;
-  }, [answerStateFilter, detail?.answers, followUpFilter, sectionFilter]);
+  }, [answerStateFilter, detail?.answers, sectionFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAnswers.length / pageSize));
   const paginatedAnswers = useMemo(() => filteredAnswers.slice((page - 1) * pageSize, page * pageSize), [filteredAnswers, page]);
@@ -400,7 +401,7 @@ export default function AdminAssessmentReviewDetailPage() {
             {sectionOptions.map((section) => <option key={section} value={section}>{section}</option>)}
           </select>
           <button type="button" onClick={() => setFollowUpFilter((prev) => (prev === 'all' ? 'marked' : 'all'))} className={`rounded-xl border px-3 py-2 text-sm font-semibold ${followUpFilter === 'marked' ? 'border-[#f2d49f] bg-[#fff3de] text-[#b6862f]' : 'border-[#d4dced] bg-white text-[#425f8f]'}`}>
-            Marked for Follow-up
+            {followUpFilter === 'marked' ? 'Highlighting Follow-ups' : 'Highlight Follow-ups'}
           </button>
           <select value={answerStateFilter} onChange={(event) => setAnswerStateFilter(event.target.value as 'all' | 'not_answered')} className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm font-semibold text-[#2a3d5f]">
             <option value="all">All Answer States</option>
@@ -440,8 +441,17 @@ export default function AdminAssessmentReviewDetailPage() {
               : answer.is_action_required || answer.review?.is_action_required
                 ? 'Marked for Follow-up'
                 : 'Answered';
+            const isMarkedForFollowUp = answer.is_action_required || Boolean(answer.review?.is_action_required);
+            const shouldHighlight = followUpFilter === 'marked' && isMarkedForFollowUp;
+            const shouldDim = followUpFilter === 'marked' && !isMarkedForFollowUp;
             return (
-              <article key={answer.answer_id} className="rounded-xl border border-[#e2e8f5] bg-[#fbfcff] p-4">
+              <article key={answer.answer_id} className={`rounded-xl border p-4 transition-all ${
+                shouldHighlight 
+                  ? 'border-[#f2d49f] bg-[#fff3de] shadow-md scale-[1.02]' 
+                  : shouldDim
+                  ? 'border-[#e2e8f5] bg-[#fbfcff] opacity-50'
+                  : 'border-[#e2e8f5] bg-[#fbfcff]'
+              }`}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-semibold text-[#25375a]">{answer.question_code || 'Q'}: {answer.question_text || 'Question'}</p>
                   <span className={`rounded-md px-2 py-1 text-xs font-semibold ${badgeClass}`}>{badgeText}</span>
