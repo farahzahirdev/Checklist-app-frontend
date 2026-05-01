@@ -193,7 +193,8 @@ export default function LoginPage() {
       }
       persistAccessToken(data.access_token);
       toast.success('MFA verified successfully.');
-      await redirectCustomerAfterAuth(data.user.id);
+      router.push('/dashboard');
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to verify OTP code.');
     } finally {
@@ -216,7 +217,8 @@ export default function LoginPage() {
         persistAccessToken(data.access_token);
       }
       toast.success('MFA setup completed.');
-      await redirectCustomerAfterAuth(data.user.id);
+      router.push('/dashboard');
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to complete MFA setup.');
     } finally {

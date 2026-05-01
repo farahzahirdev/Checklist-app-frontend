@@ -99,6 +99,8 @@ export default function AdminDashboardPage() {
         { label: 'Pending review', value: data.summary?.pending_review, href: '/admin/assessments?status=Awaiting%20Review' },
         { label: 'Expired assessments', value: data.summary?.expired_assessments, href: '/admin/assessments?status=Expired' },
       ];
+  const awaitingReviewPreview = data.awaitingReview.slice(0, 4);
+  const hasMoreAwaitingReview = data.awaitingReview.length > awaitingReviewPreview.length;
 
   return (
     <section className="space-y-4">
@@ -143,7 +145,7 @@ export default function AdminDashboardPage() {
           </div>
           <div className="divide-y divide-[#edf2f9] px-4">
             {data.awaitingReview.length ? (
-              data.awaitingReview.slice(0, 8).map((item) => (
+              awaitingReviewPreview.map((item) => (
                 <div key={item.assessment_id} className="py-3 text-sm text-[#2f4264]">
                   <p className="font-semibold text-[#25375a]">{item.customer_email}</p>
                   <p className="text-[#5f7395]">{item.checklist_label}</p>
@@ -153,6 +155,14 @@ export default function AdminDashboardPage() {
             ) : (
               <p className="py-4 text-sm text-[#6f82a3]">{loading ? 'Loading...' : 'No pending assessments.'}</p>
             )}
+            {hasMoreAwaitingReview ? (
+              <div className="flex items-center justify-between py-3 text-xs text-[#6f82a3]">
+                <span className="tracking-[0.35em]" aria-hidden="true">
+                  ...
+                </span>
+                <span>{data.awaitingReview.length - awaitingReviewPreview.length} more</span>
+              </div>
+            ) : null}
           </div>
         </article>
 

@@ -39,6 +39,29 @@ const defaultDraft: ReviewDraft = {
   score_adjustment: 0,
 };
 
+/** Must match backend AnswerReviewPayload.suggestion_type enum. */
+const SUGGESTION_TYPE_VALUES = ['improvement', 'required_change', 'best_practice', 'reference', 'clarification'] as const;
+type SuggestionTypeValue = (typeof SUGGESTION_TYPE_VALUES)[number];
+
+const SUGGESTION_TYPE_LABELS: Record<SuggestionTypeValue, string> = {
+  improvement: 'Improvement',
+  required_change: 'Required change',
+  best_practice: 'Best practice',
+  reference: 'Reference',
+  clarification: 'Clarification',
+};
+
+function normalizeSuggestionType(raw: string | null | undefined): SuggestionTypeValue {
+  const v = (raw ?? '').trim().toLowerCase().replace(/-/g, '_');
+  const legacy: Record<string, SuggestionTypeValue> = {
+    correction: 'required_change',
+    approved: 'best_practice',
+  };
+  if (legacy[v]) return legacy[v];
+  if ((SUGGESTION_TYPE_VALUES as readonly string[]).includes(v)) return v as SuggestionTypeValue;
+  return 'improvement';
+}
+
 function formatDateTime(value: string | null | undefined) {
   if (!value) return '-';
   const date = new Date(value);
@@ -48,6 +71,38 @@ function formatDateTime(value: string | null | undefined) {
 
 function sectionKey(answer: AssessmentAnswerForReview) {
   return answer.section_code || answer.section_name || 'uncategorized';
+}
+
+function getAttachmentDisplay(answer: AssessmentAnswerForReview): string {
+  const answerWithAttachment = answer as AssessmentAnswerForReview & {
+    evidence_file_name?: string | null;
+    evidence_file_url?: string | null;
+    evidence_media_id?: string | null;
+    attachment_name?: string | null;
+    attachment_url?: string | null;
+    media_id?: string | null;
+    evidence_files?: Array<{ filename?: string | null; name?: string | null }>;
+  };
+
+  const directName =
+    answerWithAttachment.evidence_file_name ||
+    answerWithAttachment.attachment_name ||
+    null;
+  if (directName && directName.trim().length > 0) return directName;
+
+  const directRef =
+    answerWithAttachment.evidence_file_url ||
+    answerWithAttachment.attachment_url ||
+    answerWithAttachment.evidence_media_id ||
+    answerWithAttachment.media_id ||
+    null;
+  if (directRef && directRef.trim().length > 0) return 'File uploaded';
+
+  const firstEvidenceFile = answerWithAttachment.evidence_files?.[0];
+  if (firstEvidenceFile?.filename && firstEvidenceFile.filename.trim().length > 0) return firstEvidenceFile.filename;
+  if (firstEvidenceFile?.name && firstEvidenceFile.name.trim().length > 0) return firstEvidenceFile.name;
+
+  return 'No file uploaded';
 }
 
 export default function AdminAssessmentReviewDetailPage() {
@@ -132,7 +187,7 @@ export default function AdminAssessmentReviewDetailPage() {
     if (drafts[answer.answer_id]) return drafts[answer.answer_id];
     if (!answer.review) return defaultDraft;
     return {
-      suggestion_type: answer.review.suggestion_type || 'improvement',
+      suggestion_type: normalizeSuggestionType(answer.review.suggestion_type),
       suggestion_text: answer.review.suggestion_text || '',
       reference_materials: answer.review.reference_materials || '',
       is_action_required: answer.review.is_action_required,
@@ -169,7 +224,7 @@ export default function AdminAssessmentReviewDetailPage() {
   async function saveAnswerReview(answer: AssessmentAnswerForReview) {
     const draft = getDraft(answer);
     const payload: AnswerReviewPayload = {
-      suggestion_type: draft.suggestion_type,
+      suggestion_type: normalizeSuggestionType(draft.suggestion_type),
       suggestion_text: draft.suggestion_text.trim(),
       reference_materials: draft.reference_materials.trim(),
       is_action_required: draft.is_action_required,
@@ -263,7 +318,7 @@ export default function AdminAssessmentReviewDetailPage() {
     const entries = Object.entries(drafts)
       .map(([answerId, draft]) => ({
         answer_id: answerId,
-        suggestion_type: draft.suggestion_type,
+        suggestion_type: normalizeSuggestionType(draft.suggestion_type),
         suggestion_text: draft.suggestion_text.trim(),
         reference_materials: draft.reference_materials.trim(),
         is_action_required: draft.is_action_required,
@@ -410,14 +465,22 @@ export default function AdminAssessmentReviewDetailPage() {
                     <div className="rounded-lg border border-[#dfe7f6] bg-white p-3 text-sm text-[#2f4264]">
                       {answer.note_text || 'No note added'}
                     </div>
-                    <div className="rounded-lg border border-[#dfe7f6] bg-white p-3 text-sm text-[#2f4264]">
-                      {draft.reference_materials || 'No file uploaded'}
-                    </div>
+                    <div className="rounded-lg border border-[#dfe7f6] bg-white p-3 text-sm text-[#2f4264]">{getAttachmentDisplay(answer)}</div>
                   </div>
                   <div className="mt-3 rounded-lg border border-[#e3e9f6] bg-[#f8fbff] p-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7a8ca8]">Reviewer Actions</p>
                     <div className="mt-2 grid gap-2 md:grid-cols-3">
-                      <select value={draft.suggestion_type} onChange={(event) => setDraft(answer.answer_id, { suggestion_type: event.target.value })} className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm"><option value="improvement">Improvement</option><option value="correction">Correction</option><option value="approved">Approved</option></select>
+                      <select
+                        value={normalizeSuggestionType(draft.suggestion_type)}
+                        onChange={(event) => setDraft(answer.answer_id, { suggestion_type: event.target.value })}
+                        className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm"
+                      >
+                        {SUGGESTION_TYPE_VALUES.map((value) => (
+                          <option key={value} value={value}>
+                            {SUGGESTION_TYPE_LABELS[value]}
+                          </option>
+                        ))}
+                      </select>
                       <input value={draft.reference_materials} onChange={(event) => setDraft(answer.answer_id, { reference_materials: event.target.value })} className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm" placeholder="Reference materials" />
                       <label className="inline-flex items-center gap-2 rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#425f8f]"><input type="checkbox" checked={draft.is_action_required} onChange={(event) => setDraft(answer.answer_id, { is_action_required: event.target.checked })} />Action required</label>
                     </div>

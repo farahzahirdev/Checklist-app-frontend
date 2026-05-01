@@ -78,6 +78,8 @@ const inputClass = 'w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 
 const textAreaClass = `${inputClass} min-h-[96px]`;
 const sectionHeadingClass =
   'mb-3 border-b border-[#e2e8f5] pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6a7f9d]';
+const checkboxClass =
+  'h-4 w-4 cursor-pointer rounded border-[#9db2d6] bg-white text-[#2f7dff] accent-[#2f7dff] [color-scheme:light] focus:ring-2 focus:ring-[#2f7dff]/30 focus:ring-offset-0';
 
 function RichTextEditor({
   label,
@@ -1417,7 +1419,7 @@ export default function ChecklistPanelBuilderPage() {
                         onChange={(event) =>
                           setNewQuestionDraft((previous) => ({ ...previous, evidenceEnabled: event.target.checked }))
                         }
-                        className="h-4 w-4"
+                        className={checkboxClass}
                       />
                     </div>
                     <div className="flex items-center justify-between rounded-xl border border-[#e2e8f5] bg-[#f8fbff] px-3 py-2">
@@ -1435,7 +1437,7 @@ export default function ChecklistPanelBuilderPage() {
                             note: previous.note,
                           }))
                         }
-                        className="h-4 w-4"
+                        className={checkboxClass}
                       />
                     </div>
                   </div>
@@ -1717,7 +1719,7 @@ export default function ChecklistPanelBuilderPage() {
                             evidenceEnabled: event.target.checked,
                           })
                         }
-                        className="h-4 w-4"
+                        className={checkboxClass}
                       />
                     </div>
                     <div className="flex items-center justify-between rounded-xl border border-[#e2e8f5] bg-[#f8fbff] px-3 py-2">
@@ -1734,7 +1736,7 @@ export default function ChecklistPanelBuilderPage() {
                             note: selectedQuestion.note,
                           })
                         }
-                        className="h-4 w-4"
+                        className={checkboxClass}
                       />
                     </div>
                   </div>

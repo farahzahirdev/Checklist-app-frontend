@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
@@ -164,6 +165,7 @@ export default function AssessmentPage() {
   const [assessmentDetail, setAssessmentDetail] = useState<AssessmentCurrentDetailResponse | null>(null);
   const [selectedSectionId, setSelectedSectionId] = useState('');
   const [activeQuestionId, setActiveQuestionId] = useState('');
+  const [activeQuestionCursor, setActiveQuestionCursor] = useState(-1);
   const [answers, setAnswers] = useState<Record<string, LocalAnswer>>({});
   const [persistedAnswerByQuestionId, setPersistedAnswerByQuestionId] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
@@ -187,6 +189,9 @@ export default function AssessmentPage() {
     [assessmentDetail],
   );
   const activeQuestion = useMemo(() => {
+    if (activeQuestionCursor >= 0 && activeQuestionCursor < allQuestions.length) {
+      return allQuestions[activeQuestionCursor];
+    }
     const explicit = allQuestions.find((question) => question.id === activeQuestionId);
     if (explicit) {
       console.log(`[Assessment] Active question: ${explicit.question_id} (id: ${String(explicit.id)})`);
@@ -370,8 +375,11 @@ export default function AssessmentPage() {
 
   const activeQuestionIndex = useMemo(() => {
     if (!activeQuestion) return -1;
+    if (activeQuestionCursor >= 0 && activeQuestionCursor < allQuestions.length) {
+      return activeQuestionCursor;
+    }
     return allQuestions.findIndex((question) => question.id === activeQuestion.id);
-  }, [allQuestions, activeQuestion]);
+  }, [activeQuestionCursor, allQuestions, activeQuestion]);
 
   const hasPreviousQuestion = activeQuestionIndex > 0;
   const hasNextQuestion = activeQuestionIndex >= 0 && activeQuestionIndex < allQuestions.length - 1;
@@ -527,6 +535,7 @@ export default function AssessmentPage() {
       if (preferred) {
         setSelectedSectionId(preferred.sectionId);
         setActiveQuestionId(preferred.id);
+        setActiveQuestionCursor(flattened.indexOf(preferred));
       } else {
         const preferredSection = options?.preferredSectionId
           ? detail.sections.find((section) => section.id === options.preferredSectionId)
@@ -535,6 +544,7 @@ export default function AssessmentPage() {
         const fallbackQuestion = flattened.find((question) => question.sectionId === fallbackSection?.id);
         setSelectedSectionId(fallbackSection?.id ?? '');
         setActiveQuestionId(fallbackQuestion?.id ?? '');
+        setActiveQuestionCursor(fallbackQuestion ? flattened.indexOf(fallbackQuestion) : -1);
       }
       setError('');
     } catch (err) {
@@ -712,6 +722,7 @@ export default function AssessmentPage() {
     if (!nextQuestion) return;
     setSelectedSectionId(nextQuestion.sectionId);
     setActiveQuestionId(nextQuestion.id);
+    setActiveQuestionCursor(nextIndex);
   }
 
   function goToNextSection() {
@@ -720,6 +731,7 @@ export default function AssessmentPage() {
     if (!firstQuestionInSection) return;
     setSelectedSectionId(nextSectionWithQuestions.id);
     setActiveQuestionId(firstQuestionInSection.id);
+    setActiveQuestionCursor(allQuestions.indexOf(firstQuestionInSection));
   }
 
   return (
@@ -782,8 +794,10 @@ export default function AssessmentPage() {
                           const firstQuestionInSection = (questionsBySection.get(section.id) ?? [])[0];
                           if (firstQuestionInSection) {
                             setActiveQuestionId(firstQuestionInSection.id);
+                            setActiveQuestionCursor(allQuestions.indexOf(firstQuestionInSection));
                       } else {
                         setActiveQuestionId('');
+                        setActiveQuestionCursor(-1);
                           }
                         }}
                         className="flex min-w-0 flex-1 items-center gap-2 text-left"
@@ -828,7 +842,8 @@ export default function AssessmentPage() {
                       {(() => {
                         let topLevelCounter = 0;
                         let subCounter = 0;
-                        return (questionsBySection.get(section.id) ?? []).map((question) => {
+                        return (questionsBySection.get(section.id) ?? []).map((question, index) => {
+                          const questionGlobalIndex = allQuestions.indexOf(question);
                           if (question.depth === 0) {
                             topLevelCounter += 1;
                             subCounter = 0;
@@ -838,13 +853,14 @@ export default function AssessmentPage() {
                           const numberLabel =
                             question.depth === 0 ? `${topLevelCounter}` : `${topLevelCounter}.${subCounter}`;
                           return (
-                            <li key={question.id}>
+                            <li key={`${section.id}-${question.id}-${index}`}>
                               <button
                                 type="button"
                                 onClick={() => {
                                   console.log(`[Assessment] Clicked question: ${question.question_id} (id: ${String(question.id)})`);
                                   setSelectedSectionId(section.id);
                                   setActiveQuestionId(question.id);
+                                  setActiveQuestionCursor(questionGlobalIndex);
                                 }}
                                 className={`w-full rounded-md px-2 py-1.5 text-left text-xs transition ${
                                   activeQuestion?.id === question.id
@@ -882,7 +898,15 @@ export default function AssessmentPage() {
               </div>
             ) : isSubmittedChecklist ? (
               <div className="mt-3 rounded-lg border border-[#d8e7d8] bg-[#f1f8f1] px-3 py-3 text-sm text-[#2f5c38]">
-                This assessment is submitted and cannot be submitted again.
+                <p>This assessment is submitted and cannot be submitted again.</p>
+                <div className="mt-3">
+                  <Link
+                    href="/payment"
+                    className="inline-flex items-center rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
+                  >
+                    Purchase new checklist
+                  </Link>
+                </div>
               </div>
             ) : activeQuestion ? (
               <>

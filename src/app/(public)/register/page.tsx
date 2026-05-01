@@ -8,6 +8,15 @@ import { toast } from 'sonner';
 import { getRoleHomePath, getRoleKey, persistAccessToken, registerAccount, startMfaSetup, verifyMfaCode } from '@/lib/auth';
 import authBackground from '@/assets/cybersecurity-background.jpg';
 
+function getPasswordPolicyError(password: string): string | null {
+  if (password.length < 12) return 'Password must be at least 12 characters.';
+  if (!/[a-z]/.test(password)) return 'Password must include at least one lowercase letter (a-z).';
+  if (!/[A-Z]/.test(password)) return 'Password must include at least one uppercase letter (A-Z).';
+  if (!/\d/.test(password)) return 'Password must include at least one number (0-9).';
+  if (!/[^A-Za-z0-9]/.test(password)) return 'Password must include at least one special character.';
+  return null;
+}
+
 export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -32,6 +41,11 @@ export default function RegisterPage() {
       }
       if (/\s/.test(password)) {
         toast.error('Password cannot contain spaces.');
+        return;
+      }
+      const passwordPolicyError = getPasswordPolicyError(normalizedPassword);
+      if (passwordPolicyError) {
+        toast.error(passwordPolicyError);
         return;
       }
       const data = await registerAccount({ email: normalizedEmail, password: normalizedPassword });
@@ -122,7 +136,7 @@ export default function RegisterPage() {
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-[#9dc5ff]">Account</p>
           <h1 className="mt-2 text-3xl font-semibold text-white">Create an account</h1>
-          <p className="mt-2 text-sm text-[#97a5bb]">Password must be at least 8 characters.</p>
+          <p className="mt-2 text-sm text-[#97a5bb]">Use a strong password with at least 12 characters and mixed character types.</p>
           {step === 'customer-mfa-verify' ? (
             <p className="mt-2 text-sm text-amber-300">MFA is enabled. Enter your OTP to complete account setup.</p>
           ) : null}
@@ -153,7 +167,7 @@ export default function RegisterPage() {
                   name="password"
                   autoComplete="new-password"
                   required
-                  minLength={8}
+                  minLength={12}
                   value={password}
                   onChange={(e) => setPassword(e.target.value.replace(/\s/g, ''))}
                   className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 pr-10 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
@@ -187,9 +201,11 @@ export default function RegisterPage() {
                 </button>
               </div>
               <ul className="ml-4 list-disc space-y-1 text-xs text-[#97a5bb]">
-                <li>At least 8 characters</li>
+                <li>At least 12 characters</li>
                 <li>At least one uppercase letter (A-Z)</li>
                 <li>At least one lowercase letter (a-z)</li>
+                <li>At least one number (0-9)</li>
+                <li>At least one special character</li>
                 <li>No spaces</li>
               </ul>
             </label>

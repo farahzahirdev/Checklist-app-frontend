@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import bgImage from '@/assets/enhancing-company-security-with-devsecops-1cd3ef018cfd4451906d426172a2ecae.jpg';
+import bgImage from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { PublicFooter } from '@/components/public-footer';
 
 function ArrowRightIcon({ className = 'h-4 w-4' }: { className?: string }) {
@@ -12,7 +12,7 @@ function ArrowRightIcon({ className = 'h-4 w-4' }: { className?: string }) {
 
 export default function ContactPage() {
   const heroStyle = {
-    backgroundImage: `linear-gradient(rgba(243, 246, 255, 0.68), rgba(243, 246, 255, 0.74)), url(${bgImage.src})`,
+    backgroundImage: `linear-gradient(rgba(243, 246, 255, 0.88), rgba(243, 246, 255, 0.92)), url(${bgImage.src})`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
@@ -31,26 +31,26 @@ export default function ContactPage() {
               </p>
             </div>
 
-            <form className="max-w-xl space-y-4 rounded-2xl border border-[#d4dced] bg-white/70 p-4 shadow-sm backdrop-blur transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:delay-300 motion-safe:hover:shadow-md sm:p-5">
+            <form className="max-w-xl space-y-4 rounded-2xl border border-[#d7deeb] bg-white p-5 shadow-sm transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:delay-300 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg sm:p-6">
               <label className="block">
                 <span className="text-sm font-medium text-[#2d3f62]">Name</span>
                 <input
                   type="text"
-                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-white/85 px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 transition-shadow duration-200 focus:ring-2"
+                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-[#f7f9ff] px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 transition-shadow duration-200 focus:bg-white focus:ring-2"
                 />
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-[#2d3f62]">Email</span>
                 <input
                   type="email"
-                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-white/85 px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 transition-shadow duration-200 focus:ring-2"
+                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-[#f7f9ff] px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 transition-shadow duration-200 focus:bg-white focus:ring-2"
                 />
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-[#2d3f62]">Company (optional)</span>
                 <input
                   type="text"
-                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-white/85 px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 transition-shadow duration-200 focus:ring-2"
+                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-[#f7f9ff] px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 transition-shadow duration-200 focus:bg-white focus:ring-2"
                 />
               </label>
               <label className="block">
@@ -58,7 +58,7 @@ export default function ContactPage() {
                 <textarea
                   rows={3}
                   placeholder="Describe your situation (e.g., upcoming audit, missing documentation, unclear requirements)"
-                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-white/85 px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 transition-shadow duration-200 focus:ring-2"
+                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-[#f7f9ff] px-3 py-2 text-[#1d2a42] outline-none ring-[#2f7dff]/35 transition-shadow duration-200 focus:bg-white focus:ring-2"
                 />
               </label>
               <button
@@ -72,8 +72,8 @@ export default function ContactPage() {
           </div>
 
           <div className="flex items-start lg:pt-[86px]">
-            <div className="w-full max-w-xl rounded-2xl border border-[#d4dced] bg-white/72 p-6 shadow-sm backdrop-blur transition-shadow duration-300 motion-safe:animate-fade-in-right motion-safe:delay-200 motion-safe:hover:shadow-md sm:p-8">
-              <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#e8efff] text-[#2f7dff]">
+            <div className="w-full max-w-xl rounded-2xl border border-[#d7deeb] bg-white p-6 shadow-sm transition-shadow duration-300 ease-out motion-safe:animate-fade-in-right motion-safe:delay-200 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg sm:p-8">
+              <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#e7eeff] text-[#2f7dff]">
                 <svg viewBox="0 0 24 24" className="h-9 w-9" fill="none" aria-hidden="true">
                   <rect x="3" y="5.5" width="18" height="13" rx="2.4" stroke="currentColor" strokeWidth="1.8" />
                   <path d="M4 7l8 6 8-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -82,7 +82,7 @@ export default function ContactPage() {
               <h2 className="mt-5 text-2xl font-semibold text-[#1f2741] sm:text-3xl">Prefer direct contact?</h2>
               <p className="mt-2 text-lg text-[#4c5f80] sm:text-xl">Feel free to email us anytime.</p>
               <p className="mt-6 inline-flex max-w-full items-center gap-3 break-all text-lg font-semibold text-[#1f2741] sm:text-2xl lg:text-3xl">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#e8efff] text-[#2f7dff]">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#e7eeff] text-[#2f7dff]">
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
                     <path d="M3 7.5h18v9H3z" stroke="currentColor" strokeWidth="1.8" />
                     <path d="m3.5 8 8.5 6 8.5-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
