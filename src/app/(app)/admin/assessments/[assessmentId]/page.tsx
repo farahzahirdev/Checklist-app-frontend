@@ -546,7 +546,19 @@ export default function AdminAssessmentReviewDetailPage() {
                                   {file.mime_type.startsWith('image/') && (
                                     <button
                                       type="button"
-                                      onClick={() => window.open(`/api/api/v1/media/${file.media_id}/preview`, '_blank')}
+                                      onClick={() => {
+                                        // Get preview URL and open in new window
+                                        fetch(`/api/api/v1/media/${file.media_id}/preview`)
+                                          .then(response => response.json())
+                                          .then(data => {
+                                            window.open(data.preview_url, '_blank');
+                                          })
+                                          .catch(error => {
+                                            console.error('Error getting preview URL:', error);
+                                            // Fallback to direct preview
+                                            window.open(`/api/api/v1/media/${file.media_id}/preview`, '_blank');
+                                          });
+                                      }}
                                       className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f1f5f9]"
                                       title="Preview"
                                     >
@@ -555,7 +567,24 @@ export default function AdminAssessmentReviewDetailPage() {
                                   )}
                                   <button
                                     type="button"
-                                    onClick={() => window.open(`/api/api/v1/media/${file.media_id}/download`, '_blank')}
+                                    onClick={() => {
+                                      // Get preview URL for download (it returns the actual file)
+                                      fetch(`/api/api/v1/media/${file.media_id}/preview`)
+                                        .then(response => response.json())
+                                        .then(data => {
+                                          // Create download link
+                                          const link = document.createElement('a');
+                                          link.href = data.preview_url;
+                                          link.download = file.filename;
+                                          link.target = '_blank';
+                                          document.body.appendChild(link);
+                                          link.click();
+                                          document.body.removeChild(link);
+                                        })
+                                        .catch(error => {
+                                          console.error('Error getting download URL:', error);
+                                        });
+                                    }}
                                     className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f1f5f9]"
                                     title="Download"
                                   >
