@@ -50,7 +50,7 @@ function flattenSectionQuestions(
       });
     });
   });
-  // Debug: Check for duplicate IDs
+  // Debug: Check for duplicate IDs and dedupe (keep first occurrence)
   const idCount = new Map<string, number>();
   rows.forEach((row) => {
     const idStr = String(row.id);
@@ -58,8 +58,21 @@ function flattenSectionQuestions(
   });
   const duplicates = Array.from(idCount.entries()).filter(([_, count]) => count > 1);
   if (duplicates.length > 0) {
+    // Log duplicates for telemetry/debugging
     console.warn(`[Assessment] Found ${duplicates.length} duplicate question IDs:`, duplicates.map(([id]) => id));
+    // Dedupe rows by keeping the first occurrence of each id to avoid rendering/state issues
+    const seen = new Set<string>();
+    const deduped: FlattenedQuestion[] = [];
+    rows.forEach((r) => {
+      const id = String(r.id);
+      if (!seen.has(id)) {
+        seen.add(id);
+        deduped.push(r);
+      }
+    });
+    return deduped;
   }
+
   return rows;
 }
 
