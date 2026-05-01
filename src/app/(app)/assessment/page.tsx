@@ -176,9 +176,10 @@ export default function AssessmentPage() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [selectedEvidenceFile, setSelectedEvidenceFile] = useState<File | null>(null);
+  const [autoSaving, setAutoSaving] = useState<Record<string, boolean>>({});
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [evidencePreviewUrl, setEvidencePreviewUrl] = useState<string | null>(null);
+  const [selectedEvidenceFile, setSelectedEvidenceFile] = useState<File | null>(null);
   const [submittingAssessment, setSubmittingAssessment] = useState(false);
   const [previewUrlsByMediaId, setPreviewUrlsByMediaId] = useState<Record<string, string>>({});
   const [previewErrorsByMediaId, setPreviewErrorsByMediaId] = useState<Record<string, string>>({});
@@ -619,6 +620,59 @@ export default function AssessmentPage() {
     };
   }, [activeQuestion?.illustrative_image_id, previewUrlsByMediaId]);
 
+  async function handleAutoSaveAnswer(answerValue: string) {
+    if (!activeQuestion) {
+      return;
+    }
+    
+    try {
+      const currentAssessmentId = await ensureCurrentAssessmentId();
+      if (!isUuid(activeQuestion.id)) {
+        return;
+      }
+      
+      // Show auto-saving indicator
+      setAutoSaving((prev) => ({ ...prev, [activeQuestion.id]: true }));
+      
+      // Save the answer silently (no loading states)
+      await saveAssessmentAnswer(currentAssessmentId, {
+        question_id: activeQuestion.id,
+        answer: answerValue,
+        note_text: answers[activeQuestion.id]?.note_text || undefined,
+      });
+      
+      // Mark as persisted and update active answer
+      setPersistedAnswerByQuestionId((previous) => ({ ...previous, [activeQuestion.id]: true }));
+      setAnswers((prev) => ({
+        ...prev,
+        [activeQuestion.id]: {
+          answer: answerValue,
+          note_text: prev[activeQuestion.id]?.note_text ?? '',
+        },
+      }));
+      
+      // Clear auto-saving indicator after a short delay
+      setTimeout(() => {
+        setAutoSaving((prev) => {
+          const next = { ...prev };
+          delete next[activeQuestion.id];
+          return next;
+        });
+      }, 1000);
+      
+    } catch (err) {
+      // Clear auto-saving indicator on error
+      setAutoSaving((prev) => {
+        const next = { ...prev };
+        delete next[activeQuestion.id];
+        return next;
+      });
+      
+      // Silently handle errors for auto-save (don't disrupt UX)
+      console.error('Auto-save failed:', err);
+    }
+  }
+
   async function onSaveAnswer() {
     if (!activeQuestion) {
       setError('No active question found.');
@@ -1058,6 +1112,7 @@ export default function AssessmentPage() {
                         key={option.key}
                         type="button"
                         onClick={() => {
+                          // Update UI immediately for better UX
                           setAnswers((prev) => ({
                             ...prev,
                             [activeQuestion.id]: {
@@ -1065,15 +1120,24 @@ export default function AssessmentPage() {
                               note_text: prev[activeQuestion.id]?.note_text ?? '',
                             },
                           }));
+                          
+                          // Auto-save the answer to backend
+                          void handleAutoSaveAnswer(option.value);
                         }}
-                        className={`rounded-lg border px-3 py-3 text-left ${
+                        className={`rounded-lg border px-3 py-3 text-left relative ${
                           activeAnswer?.answer === option.value
                             ? 'border-[#95c9a0] bg-[#eff8f0] text-[#2f5c38]'
                             : 'border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f6f9ff]'
                         }`}
+                        disabled={autoSaving[activeQuestion.id] || false}
                       >
                         <p className="font-semibold">{option.label}</p>
                         <p className="text-xs opacity-80">{option.description || 'Select this answer'}</p>
+                        {autoSaving[activeQuestion.id] && (
+                          <div className="absolute top-1 right-1">
+                            <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -1156,18 +1220,27 @@ export default function AssessmentPage() {
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void onSaveAnswer()}
-                      disabled={loading}
-                      className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {loading
-                        ? 'Saving…'
-                        : activeQuestion && persistedAnswerByQuestionId[activeQuestion.id]
-                          ? 'Update Answer'
-                          : 'Save Answer'}
-                    </button>
+                    {/* Only show save button if auto-save failed or for manual override */}
+                    {!autoSaving[activeQuestion.id] && (
+                      <button
+                        type="button"
+                        onClick={() => void onSaveAnswer()}
+                        disabled={loading}
+                        className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {loading
+                          ? 'Saving…'
+                          : activeQuestion && persistedAnswerByQuestionId[activeQuestion.id]
+                            ? 'Update Answer'
+                            : 'Save Answer'}
+                      </button>
+                    )}
+                    {autoSaving[activeQuestion.id] && (
+                      <div className="flex items-center gap-2 text-sm text-[#607594]">
+                        <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
+                        <span>Auto-saving...</span>
+                      </div>
+                    )}
                     {isOnLastQuestion ? (
                       <button
                         type="button"
