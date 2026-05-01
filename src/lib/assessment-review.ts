@@ -149,6 +149,8 @@ export type AssessmentReviewHistoryEntry = {
   new_values: Record<string, unknown> | null;
   created_at: string;
   reviewer_id: string | null;
+  reviewer_name: string | null;
+  reviewer_email: string | null;
 };
 
 export function getAssessmentReviewSummary() {
