@@ -39,41 +39,45 @@ function flattenSectionQuestions(
   questions: AssessmentDetailQuestion[],
 ): FlattenedQuestion[] {
   const rows: FlattenedQuestion[] = [];
+  const seenIds = new Set<string>();
+  
   questions.forEach((question) => {
-    rows.push({ ...question, sectionId, sectionTitle, depth: 0, parentQuestionTitle: undefined });
-    (question.sub_questions ?? []).forEach((child) => {
-      rows.push({
-        ...child,
-        sectionId,
-        sectionTitle,
-        depth: 1,
-        parentQuestionTitle: question.question_title ?? question.question_id ?? 'Parent question',
+    const questionId = String(question.id);
+    
+    // Only add if we haven't seen this question ID before
+    if (!seenIds.has(questionId)) {
+      seenIds.add(questionId);
+      rows.push({ 
+        ...question, 
+        sectionId, 
+        sectionTitle, 
+        depth: 0, 
+        parentQuestionTitle: undefined 
       });
-    });
-  });
-  // Debug: Check for duplicate IDs and dedupe (keep first occurrence)
-  const idCount = new Map<string, number>();
-  rows.forEach((row) => {
-    const idStr = String(row.id);
-    idCount.set(idStr, (idCount.get(idStr) ?? 0) + 1);
-  });
-  const duplicates = Array.from(idCount.entries()).filter(([_, count]) => count > 1);
-  if (duplicates.length > 0) {
-    // Log duplicates for telemetry/debugging
-    console.warn(`[Assessment] Found ${duplicates.length} duplicate question IDs:`, duplicates.map(([id]) => id));
-    // Dedupe rows by keeping the first occurrence of each id to avoid rendering/state issues
-    const seen = new Set<string>();
-    const deduped: FlattenedQuestion[] = [];
-    rows.forEach((r) => {
-      const id = String(r.id);
-      if (!seen.has(id)) {
-        seen.add(id);
-        deduped.push(r);
+    } else {
+      console.warn(`[Assessment] Skipping duplicate question ${question.question_id} (id: ${questionId}) in section ${sectionTitle}`);
+    }
+    
+    // Process sub-questions
+    (question.sub_questions ?? []).forEach((child) => {
+      const childId = String(child.id);
+      
+      // Only add if we haven't seen this sub-question ID before
+      if (!seenIds.has(childId)) {
+        seenIds.add(childId);
+        rows.push({
+          ...child,
+          sectionId,
+          sectionTitle,
+          depth: 1,
+          parentQuestionTitle: question.question_title ?? question.question_id ?? 'Parent question',
+        });
+      } else {
+        console.warn(`[Assessment] Skipping duplicate sub-question ${child.question_id} (id: ${childId}) in section ${sectionTitle}`);
       }
     });
-    return deduped;
-  }
-
+  });
+  
   return rows;
 }
 
