@@ -83,7 +83,8 @@ export async function getCurrentAssessmentDetail(checklistId?: string) {
 }
 
 export async function getMediaPreviewUrl(mediaId: string) {
-  return apiGetWithAuth<string>(`/media/${encodeURIComponent(mediaId)}/preview`);
+  const response = await apiGetWithAuth<{preview_url: string}>(`/media/${encodeURIComponent(mediaId)}/preview`);
+  return response.preview_url;
 }
 
 export type AssessmentAnswerResponse = {
