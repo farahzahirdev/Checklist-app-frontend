@@ -181,6 +181,16 @@ export default function AssessmentPage() {
   const [evidenceLoading, setEvidenceLoading] = useState<Record<string, boolean>>({});
   const [evidencePreviewUrls, setEvidencePreviewUrls] = useState<Record<string, string>>({});
   const [selectedEvidenceFiles, setSelectedEvidenceFiles] = useState<Record<string, File | null>>({});
+  const [existingEvidenceFiles, setExistingEvidenceFiles] = useState<Record<string, Array<{
+    id: string;
+    media_id: string;
+    filename: string;
+    mime_type: string;
+    file_size: number;
+    scan_status: string;
+    encryption_status: string;
+    uploaded_at?: string;
+  }>>>({});
   const [showUploadProgress, setShowUploadProgress] = useState<string | null>(null);
   const [submittingAssessment, setSubmittingAssessment] = useState(false);
   const [previewUrlsByMediaId, setPreviewUrlsByMediaId] = useState<Record<string, string>>({});
@@ -505,6 +515,17 @@ export default function AssessmentPage() {
       setAssessmentId(detail.assessment_id);
       const initialAnswers: Record<string, LocalAnswer> = {};
       const persistedAnswers: Record<string, boolean> = {};
+      const initialEvidenceFiles: Record<string, Array<{
+        id: string;
+        media_id: string;
+        filename: string;
+        mime_type: string;
+        file_size: number;
+        scan_status: string;
+        encryption_status: string;
+        uploaded_at?: string;
+      }>> = {};
+      
       detail.sections.forEach((section) => {
         flattenSectionQuestions(section.id, section.title, section.questions).forEach((question) => {
           const normalizedAnswer = normalizeAnswerValue(question.customer_answer);
@@ -514,6 +535,12 @@ export default function AssessmentPage() {
           };
           if (normalizedAnswer) {
             persistedAnswers[question.id] = true;
+          }
+          
+          // Load evidence files from backend response
+          if (question.evidence_files && question.evidence_files.length > 0) {
+            // Store existing evidence files from backend
+            initialEvidenceFiles[question.id] = question.evidence_files;
           }
         });
       });
@@ -530,6 +557,10 @@ export default function AssessmentPage() {
             persistedAnswers[answerItem.question_id] = true;
           }
         });
+      
+      // Set the existing evidence files state
+      setExistingEvidenceFiles(initialEvidenceFiles);
+      
       } catch {
         // Detail payload already carries answers for most backends.
       }
@@ -776,6 +807,26 @@ export default function AssessmentPage() {
       setMessage('Evidence uploaded successfully.');
       toast.success('Evidence uploaded successfully.');
       setSelectedEvidenceFiles(prev => ({ ...prev, [activeQuestion.id]: null }));
+      
+      // Refresh assessment detail to get updated evidence files
+      try {
+        const updatedDetail = await getCurrentAssessmentDetail(checklistIdFromQuery);
+        setAssessmentDetail(updatedDetail);
+        
+        // Update existing evidence files for this question
+        const currentQuestion = updatedDetail.sections
+          .flatMap(s => flattenSectionQuestions(s.id, s.title, s.questions))
+          .find(q => q.id === activeQuestion.id);
+          
+        if (currentQuestion?.evidence_files) {
+          setExistingEvidenceFiles(prev => ({
+            ...prev,
+            [activeQuestion.id]: currentQuestion.evidence_files || []
+          }));
+        }
+      } catch (refreshError) {
+        console.error('Failed to refresh evidence files:', refreshError);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to upload evidence.';
       setError(errorMessage);
@@ -1196,6 +1247,33 @@ export default function AssessmentPage() {
                         {showUploadProgress === activeQuestion.id ? 'Uploading…' : 'Upload evidence'}
                       </button>
                     </div>
+                    {/* Display existing evidence files from backend */}
+                    {existingEvidenceFiles[activeQuestion.id]?.map((evidenceFile) => (
+                      <div key={evidenceFile.id} className="mt-2 max-w-[160px] overflow-visible rounded-md border border-[#dbe4f4] bg-white">
+                        <div className="relative">
+                          <div className="absolute right-[-4px] top-[-4px] z-50 flex gap-1">
+                            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-xs font-semibold text-green-800" title={`Scan status: ${evidenceFile.scan_status}`}>
+                              ✓
+                            </span>
+                            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-800" title={`Encryption: ${evidenceFile.encryption_status}`}>
+                              🔒
+                            </span>
+                          </div>
+                          <div className="p-2">
+                            <p className="truncate text-xs font-medium text-[#1f2d45]">{evidenceFile.filename}</p>
+                            <p className="mt-1 text-xs text-[#607594]">{(evidenceFile.file_size / 1024 / 1024).toFixed(2)} MB</p>
+                            <p className="mt-1 text-xs text-[#607594]">{evidenceFile.mime_type}</p>
+                            {evidenceFile.uploaded_at && (
+                              <p className="mt-1 text-xs text-[#607594]">
+                                Uploaded: {new Date(evidenceFile.uploaded_at).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Display new file preview */}
                     {(() => {
                       const selectedFile = selectedEvidenceFiles[activeQuestion.id];
                       const previewUrl = evidencePreviewUrls[activeQuestion.id];
