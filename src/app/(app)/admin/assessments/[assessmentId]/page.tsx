@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
   createBulkAnswerReviews,
@@ -20,6 +20,7 @@ import {
   type AssessmentReviewHistoryEntry,
   type AnswerReviewPayload,
 } from '@/lib/assessment-review';
+import { getReportByAssessment, generateDraftReport } from '@/lib/reports';
 
 type ReviewDraft = {
   suggestion_type: string;
@@ -134,6 +135,7 @@ function getAttachmentDisplay(answer: AssessmentAnswerForReview): { text: string
 export default function AdminAssessmentReviewDetailPage() {
   const params = useParams<{ assessmentId: string }>();
   const assessmentId = params.assessmentId;
+  const router = useRouter();
 
   const [detail, setDetail] = useState<AssessmentAnswersReviewDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -305,6 +307,23 @@ export default function AdminAssessmentReviewDetailPage() {
       });
       toast.success('Assessment review finalized.');
       await loadDetail();
+
+      // Try to open the report for this assessment. If it doesn't exist, create a draft then open it.
+      try {
+        const report = await getReportByAssessment(detail.assessment_id);
+        router.push(`/admin/reports/${report.id}`);
+        return;
+      } catch (err) {
+        // If not found, generate draft and redirect
+        try {
+          const created = await generateDraftReport(detail.assessment_id);
+          router.push(`/admin/reports/${created.id}`);
+          return;
+        } catch (err2) {
+          // fall through and show success toast already displayed
+          toast.error(err2 instanceof Error ? err2.message : 'Failed to open or create report');
+        }
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to finalize review');
     } finally {
