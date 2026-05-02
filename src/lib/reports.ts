@@ -125,7 +125,7 @@ export type UpsertReportSummaryRequest = {
 };
 
 export function generateDraftReport(assessmentId: string) {
-  return apiPost<ReportResponse, { assessment_id: string }>(`/admin/reports/draft`, { assessment_id: assessmentId });
+  return apiPost<ReportResponse, { assessment_id: string }>(`/reports/draft`, { assessment_id: assessmentId });
 }
 
 export function getReportsList(params?: { status?: string; skip?: number; limit?: number }) {
@@ -134,11 +134,11 @@ export function getReportsList(params?: { status?: string; skip?: number; limit?
   if (typeof params?.skip === 'number') query.set('skip', String(params.skip));
   if (typeof params?.limit === 'number') query.set('limit', String(params.limit));
   const qs = query.toString();
-  return apiGetWithAuth<{ reports: ReportListItem[]; total: number }>(`/admin/reports${qs ? `?${qs}` : ''}`);
+  return apiGetWithAuth<{ reports: ReportListItem[]; total: number }>(`/reports${qs ? `?${qs}` : ''}`);
 }
 
 export function getReport(reportId: string) {
-  return apiGetWithAuth<ReportResponse>(`/admin/reports/${reportId}`);
+  return apiGetWithAuth<ReportResponse>(`/reports/${reportId}`);
 }
 
 export function getCustomerReport(reportId: string) {
@@ -146,35 +146,35 @@ export function getCustomerReport(reportId: string) {
 }
 
 export function getReportByAssessment(assessmentId: string) {
-  return apiGetWithAuth<ReportResponse>(`/admin/reports/assessment/${assessmentId}`);
+  return apiGetWithAuth<ReportResponse>(`/reports/assessment/${assessmentId}`);
 }
 
 export function startReportReview(reportId: string, note: string) {
-  return apiPost<ReportResponse, ReviewActionRequest>(`/admin/reports/${reportId}/review/start`, { note });
+  return apiPost<ReportResponse, ReviewActionRequest>(`/reports/${reportId}/review/start`, { note });
 }
 
 export function requestReportChanges(reportId: string, note: string) {
-  return apiPost<ReportResponse, ReviewActionRequest>(`/admin/reports/${reportId}/review/request-changes`, { note });
+  return apiPost<ReportResponse, ReviewActionRequest>(`/reports/${reportId}/review/request-changes`, { note });
 }
 
 export function approveReport(reportId: string, note: string) {
-  return apiPost<ReportResponse, ReviewActionRequest>(`/admin/reports/${reportId}/approve`, { note });
+  return apiPost<ReportResponse, ReviewActionRequest>(`/reports/${reportId}/approve`, { note });
 }
 
 export function publishReport(reportId: string, finalPdfStorageKey: string) {
-  return apiPost<ReportResponse, { final_pdf_storage_key: string }>(`/admin/reports/${reportId}/publish`, { final_pdf_storage_key: finalPdfStorageKey });
+  return apiPost<ReportResponse, { final_pdf_storage_key: string }>(`/reports/${reportId}/publish`, { final_pdf_storage_key: finalPdfStorageKey });
 }
 
 export function getReportFindings(reportId: string) {
-  return apiGetWithAuth<ReportFindingItem[]>(`/admin/reports/${reportId}/findings`);
+  return apiGetWithAuth<ReportFindingItem[]>(`/reports/${reportId}/findings`);
 }
 
 export function getReportSummaries(reportId: string) {
-  return apiGetWithAuth<ReportSummaryItem[]>(`/admin/reports/${reportId}/summaries`);
+  return apiGetWithAuth<ReportSummaryItem[]>(`/reports/${reportId}/summaries`);
 }
 
 export function upsertReportSummary(reportId: string, data: UpsertReportSummaryRequest) {
-  return apiPost<ReportSummaryItem, UpsertReportSummaryRequest>(`/admin/reports/${reportId}/summaries`, data);
+  return apiPost<ReportSummaryItem, UpsertReportSummaryRequest>(`/reports/${reportId}/summaries`, data);
 }
 
 export function getCustomerReports() {

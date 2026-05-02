@@ -86,12 +86,17 @@ export default function AdminDashboardPage() {
     void loadDashboard();
   }, [isReadOnly]);
 
-  const summaryCards = isReadOnly
+  type SummaryCard = { label: string; value: number | undefined | null | any; href?: string };
+
+  const summaryCards: SummaryCard[] = isReadOnly
     ? [
         { label: 'Reports under review', value: auditorSummary?.reports_under_review },
         { label: 'Changes requested', value: auditorSummary?.reports_changes_requested },
         { label: 'Draft reports waiting', value: auditorSummary?.draft_reports_waiting },
         { label: 'Findings total', value: auditorSummary?.findings_total },
+        { label: 'Users total', value: (auditorSummary as any)?.users_total },
+        { label: 'Checklists published', value: (auditorSummary as any)?.checklists_published },
+        { label: 'Assessments submitted', value: (auditorSummary as any)?.assessments_submitted },
       ]
     : [
         { label: 'Users total', value: data.summary?.users_total },

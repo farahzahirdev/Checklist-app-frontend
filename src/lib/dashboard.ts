@@ -71,6 +71,14 @@ export type AuditorDashboardSummary = {
   generated_at: string;
 };
 
+// Optional, additional metrics exposed to auditor summary for visibility
+export type AuditorDashboardSummaryExtended = AuditorDashboardSummary & {
+  users_total?: number | null;
+  checklists_published?: number | null;
+  assessments_submitted?: number | null;
+  total_assessments?: number | null;
+};
+
 
 export type CustomerDashboardSummary = {
   paid_checklists_count: number;
