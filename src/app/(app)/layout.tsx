@@ -51,8 +51,13 @@ export default function AppLayout({
     if (currentPath.startsWith('/auditor')) {
       return currentRole === 'auditor' || currentRole === 'admin';
     }
-    if (currentPath.startsWith('/reports')) {
+    // Admin report views at /admin/reports/* - only for admin/auditor
+    if (currentPath.startsWith('/admin/reports')) {
       return currentRole === 'admin' || currentRole === 'auditor';
+    }
+    // Customer report views at /reports/* - only for customers
+    if (currentPath.startsWith('/reports')) {
+      return currentRole === 'customer';
     }
     // Customer onboarding gate: until MFA is enabled, allow only the payment onboarding flow.
     if (currentRole === 'customer' && mfaRequired && !mfaEnabled) {
