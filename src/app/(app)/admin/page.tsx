@@ -20,11 +20,13 @@ import {
 } from '@/lib/dashboard';
 import { ACCESS_TOKEN_STORAGE_KEY } from '@/lib/auth';
 import { useAdminAccess } from '@/lib/admin-access';
+import { getReportsList, type ReportListItem } from '@/lib/reports';
 
 type AdminDashboardState = {
   summary: AdminDashboardSummary | null;
   awaitingReview: AdminAwaitingReviewItem[];
   activity: AdminActivityItem[];
+  reports: ReportListItem[];
   distribution: AdminDistribution | null;
   retention: AdminRetention | null;
   systemHealth: AdminSystemHealth | null;
@@ -34,6 +36,7 @@ const INITIAL_STATE: AdminDashboardState = {
   summary: null,
   awaitingReview: [],
   activity: [],
+  reports: [],
   distribution: null,
   retention: null,
   systemHealth: null,
@@ -61,15 +64,16 @@ export default function AdminDashboardPage() {
         setData(INITIAL_STATE);
         return;
       }
-      const [summary, awaitingReview, activity, distribution, retention, systemHealth] = await Promise.all([
+      const [summary, awaitingReview, activity, reports, distribution, retention, systemHealth] = await Promise.all([
         getAdminDashboardSummary({ token: accessToken }),
         getAdminAwaitingReview({ token: accessToken }),
         getAdminActivity({ token: accessToken }),
+        getReportsList({ limit: 5 }).then((response) => response.reports),
         getAdminDistribution({ token: accessToken }),
         getAdminRetention({ token: accessToken }),
         getAdminSystemHealth({ token: accessToken }),
       ]);
-      setData({ summary, awaitingReview, activity, distribution, retention, systemHealth });
+      setData({ summary, awaitingReview, activity, reports, distribution, retention, systemHealth });
       setAuditorSummary(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load admin dashboard');
@@ -190,6 +194,43 @@ export default function AdminDashboardPage() {
           Auditor dashboard is read-only by design. You can review admin pages, but editing remains admin-only.
         </article>
       )}
+
+      {!isReadOnly ? (
+        <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-[#ecf0f8] px-4 py-3">
+            <div>
+              <h2 className="text-xl font-semibold text-[#243555]">Reports</h2>
+              <p className="text-sm text-[#6f82a3]">Review and publish assessment reports.</p>
+            </div>
+            <Link href="/admin/reports" className="text-xs font-semibold text-[#3e69b0] hover:text-[#274b84]">
+              Open report center
+            </Link>
+          </div>
+          <div className="divide-y divide-[#edf2f9] px-4">
+            {data.reports.length ? (
+              data.reports.slice(0, 4).map((report) => (
+                <div key={report.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm text-[#2f4264]">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-[#25375a]">{report.customer_name || report.customer_email}</p>
+                    <p className="truncate text-[#5f7395]">{report.checklist_title}</p>
+                    <p className="text-xs text-[#7a8ca8]">
+                      {report.draft_generated_at ? new Date(report.draft_generated_at).toLocaleString() : 'Recently generated'}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/admin/reports/${report.id}` as any}
+                    className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
+                  >
+                    View Report
+                  </Link>
+                </div>
+              ))
+            ) : (
+              <p className="px-4 py-4 text-sm text-[#6f82a3]">{loading ? 'Loading...' : 'No reports available yet.'}</p>
+            )}
+          </div>
+        </article>
+      ) : null}
 
       {!isReadOnly ? (
       <div className="grid gap-3 xl:grid-cols-3">
