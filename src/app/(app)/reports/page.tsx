@@ -40,9 +40,7 @@ export default function ReportsPage() {
   return (
     <section className="space-y-5">
       <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
-        <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Customer</p>
         <h1 className="mt-2 text-3xl font-semibold text-[#1f2d45]">Reports</h1>
-        <p className="mt-1 text-sm text-[#607594]">Only published reports appear here after the admin publishes them.</p>
       </header>
 
       {error ? <p className="rounded-lg border border-[#f0c7cf] bg-[#fff2f4] px-3 py-2 text-sm text-[#b63d51]">{error}</p> : null}
