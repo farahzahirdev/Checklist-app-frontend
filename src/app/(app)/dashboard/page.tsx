@@ -126,6 +126,12 @@ export default function DashboardPage() {
           )}
         </div>
 
+
+        {reports.some((report) => report.status === 'approved') ? (
+          <p className="text-xs text-[#607594]">
+            Approved reports are waiting for publication. Only published reports appear here for customers.
+          </p>
+        ) : null}
         {!reports.length ? (
           <p className="rounded-xl border border-[#dbe4f4] bg-white p-4 text-sm text-[#607594] shadow-sm">
             {loading ? 'Loading reports…' : 'No reports available yet. Reports will appear here after your assessments are reviewed and approved.'}
@@ -137,7 +143,7 @@ export default function DashboardPage() {
               <span className="text-right">Status</span>
             </div>
             <ul className="divide-y divide-[#eef2fa]">
-              {reports.slice(0, 5).map((report) => (
+              {reports.filter((report) => report.status === 'published').slice(0, 5).map((report) => (
                 <li key={report.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-[#1f2d45]">Report for Assessment</p>
@@ -160,6 +166,9 @@ export default function DashboardPage() {
                   </Link>
                 </li>
               ))}
+              {!reports.filter((report) => report.status === 'published').length ? (
+                <li className="px-4 py-3 text-sm text-[#607594]">No published reports yet.</li>
+              ) : null}
             </ul>
           </div>
         )}

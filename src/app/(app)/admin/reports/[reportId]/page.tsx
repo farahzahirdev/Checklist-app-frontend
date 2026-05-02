@@ -9,6 +9,7 @@ import {
   getReportSummaries,
   startReportReview,
   approveReport,
+  publishReport,
   requestReportChanges,
   type ReportResponse,
   type ReportFindingItem,
@@ -69,6 +70,26 @@ export default function AdminReportDetailPage() {
       toast.success('Report approved');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to approve report';
+      toast.error(msg);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handlePublish() {
+    const storageKey = window.prompt(
+      'Enter the final PDF storage key for this report',
+      report?.final_pdf_storage_key ?? '',
+    );
+    if (!storageKey?.trim()) return;
+
+    setActionLoading(true);
+    try {
+      await publishReport(reportId, storageKey.trim());
+      await loadReportData();
+      toast.success('Report published');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to publish report';
       toast.error(msg);
     } finally {
       setActionLoading(false);
@@ -144,6 +165,7 @@ export default function AdminReportDetailPage() {
               Assessment Report
             </h1>
             <p className="mt-1 text-sm text-[#607594]">Report ID: {report.id}</p>
+            <p className="mt-1 text-sm text-[#607594]">Assessment ID: {report.assessment_id}</p>
           </div>
           <div className="flex items-center gap-3">
             <span className={`rounded-md px-3 py-1 text-sm font-semibold ${statusColors[report.status]}`}>
@@ -209,7 +231,27 @@ export default function AdminReportDetailPage() {
             </button>
           </>
         )}
+        {report.status === 'approved' && (
+          <button
+            type="button"
+            onClick={handlePublish}
+            disabled={actionLoading}
+            className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
+          >
+            {actionLoading ? 'Processing...' : 'Publish Report'}
+          </button>
+        )}
       </div>
+
+      {(report.final_pdf_storage_key || report.final_pdf_published_at) && (
+        <article className="rounded-2xl border border-[#dbe4f4] bg-white px-4 py-3 shadow-sm">
+          <h2 className="text-sm font-semibold text-[#243555]">Publication</h2>
+          <div className="mt-2 grid gap-2 text-sm text-[#607594] md:grid-cols-2">
+            <p>PDF key: {report.final_pdf_storage_key || 'Not set'}</p>
+            <p>Published at: {report.final_pdf_published_at ? new Date(report.final_pdf_published_at).toLocaleString() : 'Not published yet'}</p>
+          </div>
+        </article>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-3">

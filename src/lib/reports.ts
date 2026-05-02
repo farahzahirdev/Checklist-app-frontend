@@ -56,6 +56,64 @@ export type ReportFindingItem = {
   created_at: string;
 };
 
+export type CustomerReportSectionScore = {
+  section_name: string;
+  section_id: string;
+  score: number;
+  max_score: number;
+  percentage: number;
+};
+
+export type CustomerReportChapterData = {
+  chapter_code: string;
+  title: string;
+  score: number;
+  max_score: number;
+  percentage: number;
+  findings_count: number;
+  recommendations: string;
+};
+
+export type CustomerReportFinding = {
+  question_text: string;
+  answer: string;
+  priority: 'low' | 'medium' | 'high';
+  recommendation: string;
+};
+
+export type CustomerReportSectionSummary = {
+  section_id: string;
+  chapter_code: string;
+  summary_text: string;
+};
+
+export type CustomerReportSuggestion = {
+  suggestion_text: string;
+  created_at: string;
+  question_id: string | null;
+};
+
+export type CustomerReportDataResponse = {
+  report_id: string;
+  assessment_id: string;
+  customer_name: string;
+  customer_email: string;
+  checklist_title: string;
+  assessment_date: string;
+  report_status: ReportStatus;
+  overall_score: number;
+  max_possible_score: number;
+  completion_percentage: number;
+  section_scores: CustomerReportSectionScore[];
+  chapter_data: CustomerReportChapterData[];
+  findings: CustomerReportFinding[];
+  section_summaries: CustomerReportSectionSummary[];
+  public_suggestions: CustomerReportSuggestion[];
+  generated_at: string;
+  approved_at: string | null;
+  published_at: string | null;
+};
+
 export type ReviewActionRequest = {
   note: string;
 };
@@ -81,6 +139,10 @@ export function getReportsList(params?: { status?: string; skip?: number; limit?
 
 export function getReport(reportId: string) {
   return apiGetWithAuth<ReportResponse>(`/admin/reports/${reportId}`);
+}
+
+export function getCustomerReport(reportId: string) {
+  return apiGetWithAuth<ReportResponse>(`/customer/reports/${reportId}`);
 }
 
 export function getReportByAssessment(assessmentId: string) {
@@ -121,4 +183,8 @@ export function getCustomerReports() {
 
 export function getCustomerReportByAssessment(assessmentId: string) {
   return apiGetWithAuth<ReportResponse>(`/customer/reports/assessment/${assessmentId}`);
+}
+
+export function getCustomerReportData(reportId: string) {
+  return apiGetWithAuth<CustomerReportDataResponse>(`/customer/reports/${reportId}/data`);
 }

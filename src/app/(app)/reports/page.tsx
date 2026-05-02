@@ -1,85 +1,88 @@
-import { DomainScoresPanel } from '@/components/report/domain-scores-panel';
-import { ExecutiveSummarySidebar } from '@/components/report/executive-summary-sidebar';
-import { FindingsTable } from '@/components/report/findings-table';
-import { mockReportSummary } from '@/lib/checklist-mocks';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { toast } from 'sonner';
+import { getCustomerReports, type ReportResponse } from '@/lib/reports';
+
+const statusLabels: Record<ReportResponse['status'], string> = {
+  draft_generated: 'Draft',
+  under_review: 'Under Review',
+  changes_requested: 'Changes Requested',
+  approved: 'Approved',
+  published: 'Published',
+};
 
 export default function ReportsPage() {
-  // Implementation guide for frontend dev:
-  // Purpose: Customer report view with all client-requested sections.
-  // Backend touchpoints (planned):
-  // - GET /api/v1/reports/:assessmentId/summary
-  // - GET /api/v1/reports/:assessmentId/findings
-  // - POST /api/v1/reports/:assessmentId/export/pdf
-  // Acceptance criteria:
-  // - Executive summary sidebar visible
-  // - Maturity score/overview/top priorities displayed
-  // - Domain scores + findings + export actions displayed
-  const summary = mockReportSummary;
+  const [reports, setReports] = useState<ReportResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  async function loadReports() {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await getCustomerReports();
+      setReports(response.filter((report) => report.status === 'published'));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to load reports';
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadReports();
+  }, []);
 
   return (
     <section className="space-y-5">
-      <header>
-        <p className="text-xs uppercase tracking-[0.3em] text-cyan-200/85">Customer</p>
-        <h1 className="text-3xl font-semibold">Reports</h1>
+      <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
+        <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Customer</p>
+        <h1 className="mt-2 text-3xl font-semibold text-[#1f2d45]">Reports</h1>
+        <p className="mt-1 text-sm text-[#607594]">Only published reports appear here after the admin publishes them.</p>
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-        <ExecutiveSummarySidebar summary={summary} />
-        <article className="rounded-2xl border border-white/15 bg-black/25 p-5">
-          <h2 className="text-xl font-semibold">Maturity Overview</h2>
-          <p className="mt-3 text-sm text-zinc-300">Maturity score: {summary.maturityScore}</p>
-          <p className="mt-2 text-sm text-zinc-400">{summary.maturityOverview}</p>
-          <div className="mt-4">
-            <h3 className="font-medium">Top Priorities</h3>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-300">
-              {summary.topPriorities.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
+      {error ? <p className="rounded-lg border border-[#f0c7cf] bg-[#fff2f4] px-3 py-2 text-sm text-[#b63d51]">{error}</p> : null}
+
+      {!reports.length ? (
+        <p className="rounded-xl border border-[#dbe4f4] bg-white p-4 text-sm text-[#607594] shadow-sm">
+          {loading ? 'Loading reports…' : 'No published reports yet. Once an admin publishes a report, it will appear here.'}
+        </p>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-[#dbe4f4] bg-white shadow-sm">
+          <div className="grid grid-cols-[1.1fr_0.9fr_auto] gap-3 border-b border-[#eef2fa] bg-[#f7f9fe] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#607594]">
+            <span>Report</span>
+            <span>Status</span>
+            <span className="text-right">Open</span>
           </div>
-          <div className="mt-4 text-sm text-zinc-300">
-            <p>Total questions answered: {summary.totalQuestionsAnswered}</p>
-            <p>Standard covered: {summary.standardsCovered.join(', ')}</p>
-          </div>
-        </article>
-      </div>
-
-      <DomainScoresPanel domainScores={summary.domainScores} />
-
-      <article className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border border-red-400/35 bg-red-500/10 p-4 text-sm">High risks: {summary.highRisks}</div>
-        <div className="rounded-xl border border-amber-400/35 bg-amber-500/10 p-4 text-sm">Medium risks: {summary.mediumRisks}</div>
-        <div className="rounded-xl border border-emerald-400/35 bg-emerald-500/10 p-4 text-sm">Low risks: {summary.lowRisks}</div>
-      </article>
-
-      <FindingsTable findings={summary.findings} />
-
-      <article className="rounded-2xl border border-white/15 bg-black/25 p-5 text-sm">
-        <h3 className="text-lg font-semibold">Export Options</h3>
-        <div className="mt-3 flex flex-wrap gap-3">
-          <button type="button" className="rounded-lg border border-cyan-300/35 px-3 py-2 text-cyan-100">
-            Export PDF
-          </button>
-          <button type="button" className="rounded-lg border border-white/20 px-3 py-2 text-zinc-200">
-            View Recommendations
-          </button>
+          <ul className="divide-y divide-[#eef2fa]">
+            {reports.map((report) => (
+              <li key={report.id} className="grid grid-cols-[1.1fr_0.9fr_auto] items-center gap-3 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="truncate font-semibold text-[#1f2d45]">Assessment Report</p>
+                  <p className="mt-0.5 truncate text-xs text-[#607594]">
+                    Approved {report.approved_at ? new Date(report.approved_at).toLocaleDateString() : 'recently'}
+                    {' • '}
+                    Published {report.final_pdf_published_at ? new Date(report.final_pdf_published_at).toLocaleDateString() : 'recently'}
+                  </p>
+                </div>
+                <div>
+                  <span className="rounded-md bg-[#e9f8ef] px-2 py-1 text-xs font-semibold text-[#2f9960]">
+                    {statusLabels[report.status]}
+                  </span>
+                </div>
+                <Link
+                  href={`/reports/${report.id}`}
+                  className="justify-self-end rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
+                >
+                  View Report
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
-      </article>
-
-      <article className="rounded-2xl border border-white/15 bg-black/25 p-5 text-sm">
-        <h3 className="text-lg font-semibold">What Next</h3>
-        <ul className="mt-3 list-disc space-y-1 pl-5 text-zinc-300">
-          <li>Review this report with leadership.</li>
-          <li>Take actions for high-risk findings first.</li>
-          <li>Reassess after remediation.</li>
-        </ul>
-        <h4 className="mt-4 font-medium">Highlights Findings</h4>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-zinc-300">
-          {summary.highlights.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      </article>
+      )}
     </section>
   );
 }
