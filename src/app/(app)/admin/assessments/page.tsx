@@ -10,6 +10,7 @@ import {
   type AssessmentReviewItem,
   type AssessmentReviewSummary,
 } from '@/lib/assessment-review';
+import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
 
 const statusClass: Record<string, string> = {
   pending_review: 'bg-[#fff4df] text-[#b6862f]',
@@ -79,6 +80,17 @@ export default function AdminAssessmentsPage() {
   return (
     <section className="space-y-4">
       <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
+        <AdminBreadcrumbs
+          items={[
+            { label: 'Dashboard', href: '/admin' },
+            ...(statusFilter
+              ? [
+                  { label: 'Assessments', href: '/admin/assessments' },
+                  { label: formatStatus(statusFilter) },
+                ]
+              : [{ label: 'Assessments' }]),
+          ]}
+        />
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Assessments</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#1f2d45]">Assessment Management</h1>
         <p className="mt-1 text-sm text-[#607594]">Track review queue, in-progress reviews, and completed assessments.</p>

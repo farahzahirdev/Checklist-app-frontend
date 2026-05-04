@@ -1,6 +1,76 @@
+'use client';
+
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
 import { PublicFooter } from '@/components/public-footer';
 import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
+
+const DOCUMENT_CATEGORIES = [
+  'All',
+  'Access & Identity',
+  'Devices & Endpoints',
+  'Data Protection',
+  'Operations',
+  'Governance',
+  'Response',
+] as const;
+
+export type DocumentationCategory = (typeof DOCUMENT_CATEGORIES)[number];
+
+type DocumentationSection = {
+  name: string;
+  price: string;
+  subtitle: string;
+  badge?: string;
+  points: string[];
+  category: Exclude<DocumentationCategory, 'All'>;
+};
+
+const DOCUMENT_SECTIONS: DocumentationSection[] = [
+  {
+    name: 'Mobile Device Policy',
+    price: '€149',
+    subtitle: 'Define rules for corporate and personal mobile devices.',
+    badge: 'Popular',
+    category: 'Devices & Endpoints',
+    points: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
+  },
+  {
+    name: 'Remote Work Policy',
+    price: '€149',
+    subtitle: 'Secure and productive remote work, clearly defined.',
+    category: 'Operations',
+    points: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
+  },
+  {
+    name: 'Access Control Policy',
+    price: '€179',
+    subtitle: 'Manage who has access to what, and under which conditions.',
+    category: 'Access & Identity',
+    points: ['Policy Document', 'User Guidelines', 'Admin Guidelines', 'Admin Guidelines (Advanced)'],
+  },
+  {
+    name: 'Incident Response Policy',
+    price: '€199',
+    subtitle: 'Be ready when incidents happen. Act fast. Act right.',
+    category: 'Response',
+    points: ['Policy Document', 'User Guidelines', 'Admin Guidelines', 'Response Playbooks'],
+  },
+  {
+    name: 'Data Classification Policy',
+    price: '€149',
+    subtitle: 'Define how data is labeled, handled, and protected.',
+    category: 'Data Protection',
+    points: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
+  },
+  {
+    name: 'Security Governance Policy',
+    price: '€189',
+    subtitle: 'Roles, accountability, and oversight for your information security program.',
+    category: 'Governance',
+    points: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
+  },
+];
 
 function CheckBadgeIcon() {
   return (
@@ -13,6 +83,13 @@ function CheckBadgeIcon() {
 }
 
 export default function ProductsPage() {
+  const [activeCategory, setActiveCategory] = useState<DocumentationCategory>('All');
+
+  const filteredSections = useMemo(() => {
+    if (activeCategory === 'All') return DOCUMENT_SECTIONS;
+    return DOCUMENT_SECTIONS.filter((doc) => doc.category === activeCategory);
+  }, [activeCategory]);
+
   const heroStyle = {
     backgroundImage: `radial-gradient(circle at 20% 20%, rgba(16, 55, 114, 0.62) 0%, rgba(7, 22, 47, 0.72) 45%, rgba(4, 16, 34, 0.78) 100%), url(${heroBackground.src})`,
     backgroundSize: 'cover',
@@ -89,9 +166,12 @@ export default function ProductsPage() {
                 <li>Admin Guidelines (PDF)</li>
               </ul>
               <p className="mt-3 text-lg font-bold text-[#1f355d]">€149</p>
-              <button type="button" className="mt-2 w-full rounded-lg bg-[#1f7bff] px-3 py-2 text-sm font-semibold text-white">
-                Add to Cart
-              </button>
+              <Link
+                href="/register"
+                className="mt-2 flex w-full items-center justify-center rounded-lg bg-[#1f7bff] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2e87ff]"
+              >
+                Get started
+              </Link>
             </div>
           </div>
         </div>
@@ -128,59 +208,40 @@ export default function ProductsPage() {
         <div>
           <h3 className="text-4xl font-semibold text-[#1a2440]">Browse Documentation Sections</h3>
           <p className="mt-2 text-base text-[#5e7293]">Each section includes a policy, user guidelines, and admin guidelines.</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {['All', 'Access & Identity', 'Devices & Endpoints', 'Data Protection', 'Operations', 'Governance', 'Response'].map(
-              (chip) => (
+          <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Documentation categories">
+            {DOCUMENT_CATEGORIES.map((chip) => {
+              const selected = activeCategory === chip;
+              return (
                 <button
                   key={chip}
                   type="button"
-                  className={`rounded-lg border px-3 py-1.5 text-sm font-semibold ${
-                    chip === 'Devices & Endpoints'
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => setActiveCategory(chip)}
+                  className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
+                    selected
                       ? 'border-[#1f7bff] bg-[#1f7bff] text-white'
                       : 'border-[#d7deeb] bg-white text-[#5e7293] hover:bg-[#f7f9ff]'
                   }`}
                 >
                   {chip}
                 </button>
-              ),
-            )}
+              );
+            })}
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
-          {[
-            {
-              name: 'Mobile Device Policy',
-              price: '€149',
-              subtitle: 'Define rules for corporate and personal mobile devices.',
-              badge: 'Popular',
-              points: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
-            },
-            {
-              name: 'Remote Work Policy',
-              price: '€149',
-              subtitle: 'Secure and productive remote work, clearly defined.',
-              points: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
-            },
-            {
-              name: 'Access Control Policy',
-              price: '€179',
-              subtitle: 'Manage who has access to what, and under which conditions.',
-              points: ['Policy Document', 'User Guidelines', 'Admin Guidelines', 'Admin Guidelines (Advanced)'],
-            },
-            {
-              name: 'Incident Response Policy',
-              price: '€199',
-              subtitle: 'Be ready when incidents happen. Act fast. Act right.',
-              points: ['Policy Document', 'User Guidelines', 'Admin Guidelines', 'Response Playbooks'],
-            },
-            {
-              name: 'Data Classification Policy',
-              price: '€149',
-              subtitle: 'Define how data is labeled, handled, and protected.',
-              points: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
-            },
-          ].map((doc) => (
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {filteredSections.length === 0 ? (
+            <p className="col-span-full rounded-2xl border border-dashed border-[#d7deeb] bg-white px-4 py-10 text-center text-sm text-[#5e7293]">
+              No documentation sections in this category yet. Try another filter or view{' '}
+              <button type="button" className="font-semibold text-[#1f7bff] underline hover:no-underline" onClick={() => setActiveCategory('All')}>
+                All
+              </button>
+              .
+            </p>
+          ) : (
+            filteredSections.map((doc) => (
             <article key={doc.name} className="flex h-full flex-col rounded-2xl border border-[#d7deeb] bg-white p-4 shadow-sm transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md">
               <div className="flex items-center justify-between gap-2">
                 <h2 className="text-base font-semibold text-[#1f2741]">{doc.name}</h2>
@@ -200,14 +261,15 @@ export default function ProductsPage() {
                 ))}
               </ul>
               <p className="mt-auto pt-5 text-2xl font-semibold text-[#1f355d]">{doc.price}</p>
-              <button
-                type="button"
-                className="mt-3 w-full rounded-lg border border-[#1f7bff] bg-[#1f7bff]/10 px-3 py-2 text-sm font-semibold text-[#1f7bff] hover:bg-[#1f7bff]/20"
+              <Link
+                href="/register"
+                className="mt-3 flex w-full items-center justify-center rounded-lg border border-[#1f7bff] bg-[#1f7bff]/10 px-3 py-2 text-sm font-semibold text-[#1f7bff] transition-colors hover:bg-[#1f7bff]/20"
               >
-                View Details
-              </button>
+                Get started
+              </Link>
             </article>
-          ))}
+            ))
+          )}
         </div>
 
         <div className="grid gap-3 lg:grid-cols-[1.9fr_1fr]">
@@ -221,9 +283,12 @@ export default function ProductsPage() {
                 <p className="mt-2 text-xs font-semibold text-[#2f9c65]">Save 10%</p>
                 <p className="mt-auto pt-3 text-3xl font-bold text-[#1f355d]">€399</p>
                 <p className="mt-1 text-xs text-[#7e8fa9] line-through">€447</p>
-                <button type="button" className="mt-3 rounded-lg border border-[#b8c9e8] px-3 py-1.5 text-sm font-semibold text-[#355d99]">
-                  Choose Sections
-                </button>
+                <Link
+                  href="/register"
+                  className="mt-3 flex items-center justify-center rounded-lg border border-[#b8c9e8] px-3 py-1.5 text-center text-sm font-semibold text-[#355d99] transition-colors hover:bg-[#f3f7ff]"
+                >
+                  Get started
+                </Link>
               </div>
               <div className="flex h-full flex-col rounded-xl border-2 border-[#2f7dff] bg-white p-4 text-center">
                 <p className="inline-flex rounded-full bg-[#2f7dff] px-3 py-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-white">
@@ -234,9 +299,12 @@ export default function ProductsPage() {
                 <p className="mt-2 text-xs font-semibold text-[#2f9c65]">Save 20%</p>
                 <p className="mt-auto pt-3 text-3xl font-bold text-[#1f355d]">€599</p>
                 <p className="mt-1 text-xs text-[#7e8fa9] line-through">€745</p>
-                <button type="button" className="mt-3 rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#2e87ff]">
-                  Choose Sections
-                </button>
+                <Link
+                  href="/register"
+                  className="mt-3 flex items-center justify-center rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-3 py-1.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[#2e87ff]"
+                >
+                  Get started
+                </Link>
               </div>
               <div className="flex h-full flex-col rounded-xl border border-[#d7deeb] bg-white p-4 text-center">
                 <p className="font-semibold text-[#1f355d]">Complete Bundle</p>
@@ -244,9 +312,12 @@ export default function ProductsPage() {
                 <p className="mt-2 text-xs font-semibold text-[#2f9c65]">Save 25%</p>
                 <p className="mt-auto pt-3 text-3xl font-bold text-[#1f355d]">€999</p>
                 <p className="mt-1 text-xs text-[#7e8fa9] line-through">€1,490</p>
-                <button type="button" className="mt-3 rounded-lg border border-[#b8c9e8] px-3 py-1.5 text-sm font-semibold text-[#355d99]">
-                  Choose Sections
-                </button>
+                <Link
+                  href="/register"
+                  className="mt-3 flex items-center justify-center rounded-lg border border-[#b8c9e8] px-3 py-1.5 text-center text-sm font-semibold text-[#355d99] transition-colors hover:bg-[#f3f7ff]"
+                >
+                  Get started
+                </Link>
               </div>
             </div>
           </article>
@@ -270,33 +341,18 @@ export default function ProductsPage() {
               <p className="mt-1 text-sm text-[#d2e2ff]">Get the right documentation section and move forward with confidence.</p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link href="/products/audit-readiness-checklist" className="rounded-xl border border-white/35 bg-white px-5 py-2.5 font-semibold text-[#123e8b] transition-colors duration-200 hover:bg-[#e9f1ff] active:scale-[0.98] motion-safe:active:transition-transform">
-                View Product Details
-              </Link>
-              <button
-                type="button"
-                aria-label="Open cart"
-                className="rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-4 py-2.5 text-white transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform"
+              <Link
+                href="/products/audit-readiness-checklist"
+                className="rounded-xl border border-white/35 bg-white px-5 py-2.5 font-semibold text-[#123e8b] transition-colors duration-200 hover:bg-[#e9f1ff] active:scale-[0.98] motion-safe:active:transition-transform"
               >
-                <svg viewBox="0 0 90 90" className="h-5 w-5" fill="none" aria-hidden="true">
-                  <path
-                    d="M89.138 21.425c-.824-1.103-2.087-1.736-3.464-1.736H17.129l-.886-3.413c-.704-2.713-3.153-4.607-5.956-4.607H1"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M78.642 60.522H26.441L14.308 13.669M17.648 21.69h68.025c.74 0 1.418.34 1.861.933.443.592.577 1.338.367 2.048l-5.809 19.649c-.518 1.75-2.152 2.972-3.977 2.972h-53.3"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <circle cx="35.47" cy="71.509" r="6.822" stroke="currentColor" strokeWidth="4" />
-                  <circle cx="68.27" cy="71.509" r="6.822" stroke="currentColor" strokeWidth="4" />
-                </svg>
-              </button>
+                View product details
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-5 py-2.5 font-semibold text-white transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform"
+              >
+                Create account
+              </Link>
             </div>
           </div>
         </article>

@@ -39,7 +39,6 @@ export default function AdminAuditLogsPage() {
   const [loading, setLoading] = useState(true);
   const [filterOptions, setFilterOptions] = useState<AuditLogFilterOptions | null>(null);
   const [loadingFilterOptions, setLoadingFilterOptions] = useState(true);
-  const [search, setSearch] = useState('');
   const [action, setAction] = useState('');
   const [actorRole, setActorRole] = useState('');
   const [successFilter, setSuccessFilter] = useState<'all' | 'success' | 'failed'>('all');
@@ -58,14 +57,13 @@ export default function AdminAuditLogsPage() {
       limit,
       order_by: 'created_at',
       order_direction: orderDirection,
-      search: search.trim() || undefined,
       action: action.trim() || undefined,
       actor_role: actorRole.trim() || undefined,
       success: successFilter === 'all' ? undefined : successFilter === 'success',
       date_from: toIsoFromDate(dateFrom),
       date_to: toIsoFromDate(dateTo, true),
     }),
-    [action, actorRole, dateFrom, dateTo, limit, orderDirection, search, skip, successFilter],
+    [action, actorRole, dateFrom, dateTo, limit, orderDirection, skip, successFilter],
   );
 
   useEffect(() => {
@@ -162,8 +160,7 @@ export default function AdminAuditLogsPage() {
           </div>
         </div>
 
-        <div className="grid gap-2 border-b border-[#ecf0f8] bg-[#f8fbff] px-4 py-3 md:grid-cols-6">
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search summary" className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm" />
+        <div className="grid gap-2 border-b border-[#ecf0f8] bg-[#f8fbff] px-4 py-3 md:grid-cols-5">
           <select 
             value={action} 
             onChange={(e) => setAction(e.target.value)} 
@@ -215,7 +212,7 @@ export default function AdminAuditLogsPage() {
             onClick={() => openNativePicker(dateToRef)}
             className="appearance-auto rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm"
           />
-          <div className="md:col-span-6 flex flex-wrap items-center gap-2">
+          <div className="md:col-span-5 flex flex-wrap items-center gap-2">
             <button type="button" onClick={onApplyFilters} className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f]">
               Apply Filters
             </button>
