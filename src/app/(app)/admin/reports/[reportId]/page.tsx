@@ -33,6 +33,8 @@ export default function AdminReportDetailPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
+  const [requestChangesOpen, setRequestChangesOpen] = useState(false);
+  const [requestChangesNote, setRequestChangesNote] = useState('');
 
   async function loadReportData() {
     setLoading(true);
@@ -103,13 +105,18 @@ export default function AdminReportDetailPage() {
     }
   }
 
-  async function handleRequestChanges() {
-    const note = prompt('Please specify the changes requested:');
-    if (!note) return;
-    
+  async function submitRequestChanges() {
+    const note = requestChangesNote.trim();
+    if (!note) {
+      toast.error('Please describe the requested changes.');
+      return;
+    }
+
     setActionLoading(true);
     try {
       await requestReportChanges(reportId, note);
+      setRequestChangesOpen(false);
+      setRequestChangesNote('');
       await loadReportData();
       toast.success('Changes requested');
     } catch (err) {
@@ -123,6 +130,18 @@ export default function AdminReportDetailPage() {
   useEffect(() => {
     void loadReportData();
   }, [reportId]);
+
+  useEffect(() => {
+    if (!requestChangesOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape' && !actionLoading) {
+        setRequestChangesOpen(false);
+        setRequestChangesNote('');
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [requestChangesOpen, actionLoading]);
 
   if (loading) {
     return (
@@ -230,11 +249,14 @@ export default function AdminReportDetailPage() {
             </button>
             <button
               type="button"
-              onClick={handleRequestChanges}
+              onClick={() => {
+                setRequestChangesNote('');
+                setRequestChangesOpen(true);
+              }}
               disabled={actionLoading}
               className="rounded-xl border border-[#b6862f] bg-[#b6862f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#a0772a] disabled:opacity-60"
             >
-              {actionLoading ? 'Processing...' : 'Request Changes'}
+              Request Changes
             </button>
           </>
         )}
@@ -309,6 +331,66 @@ export default function AdminReportDetailPage() {
           </div>
         </section>
       </div>
+
+      {requestChangesOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4 py-8"
+          onClick={() => {
+            if (!actionLoading) {
+              setRequestChangesOpen(false);
+              setRequestChangesNote('');
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="request-changes-title"
+            className="w-full max-w-lg rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="request-changes-title" className="text-lg font-semibold text-[#1f2d45]">
+              Request changes
+            </h2>
+            <p className="mt-1 text-sm text-[#607594]">
+              Describe what should be revised before this report can move forward. This will be sent with the change
+              request.
+            </p>
+            <label className="mt-4 block">
+              <span className="mb-1 block text-xs font-medium text-[#5f7395]">Change details</span>
+              <textarea
+                value={requestChangesNote}
+                onChange={(e) => setRequestChangesNote(e.target.value)}
+                rows={5}
+                className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
+                placeholder="e.g. Update executive summary, clarify finding #3, add missing appendix…"
+                autoFocus
+              />
+            </label>
+            <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => {
+                  setRequestChangesOpen(false);
+                  setRequestChangesNote('');
+                }}
+                className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm font-semibold text-[#3e69b0] hover:bg-[#edf4ff] disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading || !requestChangesNote.trim()}
+                onClick={() => void submitRequestChanges()}
+                className="rounded-lg border border-[#b6862f] bg-[#b6862f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#a0772a] disabled:opacity-60"
+              >
+                {actionLoading ? 'Sending…' : 'Send request'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
