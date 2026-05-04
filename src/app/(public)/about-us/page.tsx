@@ -52,7 +52,7 @@ export default function HomePage() {
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
       <section style={heroStyle}>
-        <div className="mx-auto grid w-full max-w-[1440px] items-start gap-6 px-4 py-6 text-white sm:px-6 sm:py-8 md:gap-8 md:px-6 md:py-10 lg:grid-cols-2 lg:items-center lg:gap-10 lg:py-10">
+        <div className="mx-auto grid min-h-[440px] w-full max-w-[1440px] items-start gap-6 px-4 py-7 text-white sm:min-h-[460px] sm:px-6 sm:py-9 md:gap-8 md:px-6 md:py-11 lg:min-h-[480px] lg:grid-cols-2 lg:items-center lg:gap-10 lg:py-11">
           <div className="space-y-5">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">Home</p>
             <h1 className="max-w-xl text-4xl font-semibold leading-[1.04] motion-safe:animate-fade-in-up motion-safe:delay-100 sm:text-5xl md:text-6xl">
