@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -21,6 +20,7 @@ import {
   type AnswerReviewPayload,
 } from '@/lib/assessment-review';
 import { getReportByAssessment, generateDraftReport } from '@/lib/reports';
+import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
 
 type ReviewDraft = {
   suggestion_type: string;
@@ -418,10 +418,20 @@ export default function AdminAssessmentReviewDetailPage() {
   return (
     <section className="space-y-4">
       <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
-        <Link href="/admin/assessments" className="text-sm font-semibold text-[#3e69b0]">
-          ← Back to Dashboard
-        </Link>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+        <AdminBreadcrumbs
+          items={[
+            { label: 'Dashboard', href: '/admin' },
+            { label: 'Assessments', href: '/admin/assessments' },
+            {
+              label:
+                detail?.checklist_title ||
+                detail?.customer_name ||
+                detail?.customer_email ||
+                (loading ? 'Loading…' : 'Review'),
+            },
+          ]}
+        />
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-[#1f2d45]">Assessment Awaiting Review</h1>
             <p className="mt-1 text-sm text-[#607594]">{detail?.customer_name || detail?.customer_email || '-'} — {detail?.checklist_title || '-'}</p>

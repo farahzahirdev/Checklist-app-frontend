@@ -125,8 +125,7 @@ export default function PaymentsPage() {
   const hasNext = skip + limit < paymentsTotal;
 
   return (
-    <section className="px-2 py-2 sm:px-4 sm:py-4">
-      <div className="mx-auto max-w-6xl space-y-8">
+    <section className="w-full min-w-0 space-y-8">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Customer</p>
@@ -363,7 +362,6 @@ export default function PaymentsPage() {
           </button>
         </div>
         </section>
-      </div>
     </section>
   );
 }

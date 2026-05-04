@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { getApiBaseUrl } from '@/lib/api';
@@ -59,6 +59,23 @@ const BULK_MAPPING_LABELS: Record<keyof BulkImportColumnMapping, string> = {
   guidance_score_1_col: 'Guidance Score 1 Column',
 };
 
+const DEFAULT_BULK_IMPORT_MAPPING: BulkImportColumnMapping = {
+  section_name_col: 'Unnamed: 1',
+  question_id_col: 'Question ID',
+  child_question_col: 'Unnamed: 5',
+  grandchild_question_col: 'Unnamed: 6',
+  legal_requirement_col: 'Legal Requirement',
+  question_text_col: 'paragraph title',
+  severity_col: 'Severity',
+  explanation_col: 'Explanation',
+  expected_implementation_col: 'Expected Implementation',
+  source_ref_col: 'Source',
+  guidance_score_4_col: 'Answers yes / 4 points',
+  guidance_score_3_col: 'Answers yes / 3 points',
+  guidance_score_2_col: 'Answers yes / 2 points',
+  guidance_score_1_col: 'Answers yes / 1 points',
+};
+
 function getColumnBadge(
   key: keyof BulkImportColumnMapping,
   templateSpec: BulkImportTemplateSpec | null,
@@ -90,27 +107,13 @@ export default function ChecklistPanelListPage() {
   const [editStatus, setEditStatus] = useState<'draft' | 'published'>('draft');
   const [editLoading, setEditLoading] = useState(false);
   const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
+  const bulkImportFileInputRef = useRef<HTMLInputElement | null>(null);
   const [bulkTemplateSpec, setBulkTemplateSpec] = useState<BulkImportTemplateSpec | null>(null);
   const [bulkImportFile, setBulkImportFile] = useState<File | null>(null);
   const [bulkImportFileBase64, setBulkImportFileBase64] = useState('');
   const [bulkImportTitle, setBulkImportTitle] = useState('');
   const [bulkImportDescription, setBulkImportDescription] = useState('');
-  const [bulkImportMapping, setBulkImportMapping] = useState<BulkImportColumnMapping>({
-    section_name_col: 'Unnamed: 1',
-    question_id_col: 'Question ID',
-    child_question_col: 'Unnamed: 5',
-    grandchild_question_col: 'Unnamed: 6',
-    legal_requirement_col: 'Legal Requirement',
-    question_text_col: 'paragraph title',
-    severity_col: 'Severity',
-    explanation_col: 'Explanation',
-    expected_implementation_col: 'Expected Implementation',
-    source_ref_col: 'Source',
-    guidance_score_4_col: 'Answers yes / 4 points',
-    guidance_score_3_col: 'Answers yes / 3 points',
-    guidance_score_2_col: 'Answers yes / 2 points',
-    guidance_score_1_col: 'Answers yes / 1 points',
-  });
+  const [bulkImportMapping, setBulkImportMapping] = useState<BulkImportColumnMapping>({ ...DEFAULT_BULK_IMPORT_MAPPING });
   const [bulkVerifyResult, setBulkVerifyResult] = useState<BulkImportVerifyResponse | null>(null);
   const [bulkImportTasks, setBulkImportTasks] = useState<BulkImportTaskListItem[]>([]);
   const [bulkLoading, setBulkLoading] = useState<'template' | 'verify' | 'create' | 'poll' | 'download' | ''>('');
@@ -360,6 +363,26 @@ export default function ChecklistPanelListPage() {
       toast.error(err instanceof Error ? err.message : 'Failed to download template');
     } finally {
       setBulkLoading('');
+    }
+  }
+
+  function clearBulkImportFileAndMapping() {
+    setBulkImportFile(null);
+    setBulkImportFileBase64('');
+    setBulkVerifyResult(null);
+    setBulkVerifiedSignature('');
+    setBulkHeaderOptions([]);
+    setBulkHeaderPreviewRows([]);
+    setBulkImportMapping(
+      bulkTemplateSpec?.column_mapping_template
+        ? { ...bulkTemplateSpec.column_mapping_template }
+        : { ...DEFAULT_BULK_IMPORT_MAPPING },
+    );
+    if (bulkLoading === 'verify' || bulkLoading === 'create') {
+      setBulkLoading('');
+    }
+    if (bulkImportFileInputRef.current) {
+      bulkImportFileInputRef.current.value = '';
     }
   }
 
@@ -900,13 +923,23 @@ export default function ChecklistPanelListPage() {
                   <h2 className="text-lg font-semibold text-[#1f2d45]">Bulk checklist import</h2>
                   <p className="mt-1 text-sm text-[#607594]">Upload CSV/Excel, verify mappings, then create checklist in background.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsBulkImportModalOpen(false)}
-                  className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-sm font-semibold text-[#3e69b0] hover:bg-[#edf4ff]"
-                >
-                  Close
-                </button>
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={clearBulkImportFileAndMapping}
+                    disabled={bulkLoading === 'verify' || bulkLoading === 'create'}
+                    className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-sm font-semibold text-[#5f7395] hover:bg-[#f3f5fb] disabled:opacity-50"
+                  >
+                    Clear Data
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsBulkImportModalOpen(false)}
+                    className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-sm font-semibold text-[#3e69b0] hover:bg-[#edf4ff]"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
 
               <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -950,6 +983,7 @@ export default function ChecklistPanelListPage() {
                 <label className="flex cursor-pointer items-center justify-center rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white hover:bg-[#223657]">
                   Select file
                   <input
+                    ref={bulkImportFileInputRef}
                     type="file"
                     accept=".csv,.xlsx,.xls"
                     className="hidden"

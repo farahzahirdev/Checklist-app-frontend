@@ -166,8 +166,8 @@ export default function HomePage() {
                 </svg>
               </span>
               <div>
-                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-[40px]">What We Do</h3>
-                <p className="mt-2 text-base leading-8 text-[#55627e] md:text-[18px]">
+                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-3xl">What We Do</h3>
+                <p className="mt-2 text-sm leading-7 text-[#55627e] md:text-[15px] md:leading-relaxed">
                   We are cybersecurity professionals with hands-on experience in audits, compliance, and incident response. Over the years, we have worked with organizations across different industries, helping them strengthen their security and prepare for audits with confidence.
                 </p>
               </div>
@@ -183,23 +183,33 @@ export default function HomePage() {
                 </svg>
               </span>
               <div>
-                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-[40px]">Our Experience</h3>
-                <ul className="mt-3 space-y-2 text-base text-[#445675] md:text-[18px]">
-                  <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    Cybersecurity and audit expertise
+                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-3xl">Our Experience</h3>
+                <ul className="mt-3 space-y-2.5 text-sm leading-snug text-[#445675] md:text-[15px] md:leading-relaxed">
+                  <li className="flex items-start gap-2.5">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
+                      ✓
+                    </span>
+                    <span className="min-w-0">Cybersecurity and audit expertise</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    ISO 27001, NIS2, and relevant requirements under the Czech Cybersecurity Act
+                  <li className="flex items-start gap-2.5">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
+                      ✓
+                    </span>
+                    <span className="min-w-0">
+                      ISO 27001, NIS2, and relevant requirements under the Czech Cybersecurity Act
+                    </span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    Security assessments and incident response
+                  <li className="flex items-start gap-2.5">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
+                      ✓
+                    </span>
+                    <span className="min-w-0">Security assessments and incident response</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    Real-world experience across multiple industries
+                  <li className="flex items-start gap-2.5">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
+                      ✓
+                    </span>
+                    <span className="min-w-0">Real-world experience across multiple industries</span>
                   </li>
                 </ul>
               </div>
@@ -220,11 +230,11 @@ export default function HomePage() {
                 </svg>
               </span>
               <div>
-                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-[40px]">Why This Product Exists</h3>
-                <p className="mt-2 text-base leading-8 text-[#55627e] md:text-[18px]">
+                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-3xl">Why This Product Exists</h3>
+                <p className="mt-2 text-sm leading-7 text-[#55627e] md:text-[15px] md:leading-relaxed">
                   We saw that many organizations were not unprepared because of lack of effort, but because of unclear requirements, missing documentation, and the lack of a structured approach. Existing tools were either too complex or not focused on what really matters during an audit.
                 </p>
-                <p className="mt-4 text-base font-semibold text-[#303f60] md:text-[18px]">Checklist KB was created to change that.</p>
+                <p className="mt-4 text-sm font-semibold text-[#303f60] md:text-[15px]">Checklist KB was created to change that.</p>
               </div>
             </div>
           </article>
@@ -240,26 +250,34 @@ export default function HomePage() {
                 </svg>
               </span>
               <div>
-                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-[40px]">Our Approach</h3>
-                <p className="mt-2 text-base leading-8 text-[#55627e] md:text-[18px]">
+                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-3xl">Our Approach</h3>
+                <p className="mt-2 text-sm leading-7 text-[#55627e] md:text-[15px] md:leading-relaxed">
                   We believe audit preparation should be practical, clear, and evidence-based. That&apos;s why we built a solution that focuses on what really matters and guides you step by step.
                 </p>
-                <ul className="mt-3 space-y-2 text-base text-[#445675] md:text-[18px]">
-                  <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    Practical, not theoretical
+                <ul className="mt-3 space-y-2.5 text-sm leading-snug text-[#445675] md:text-[15px] md:leading-relaxed">
+                  <li className="flex items-start gap-2.5">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
+                      ✓
+                    </span>
+                    <span className="min-w-0">Practical, not theoretical</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    Focused on real audit readiness
+                  <li className="flex items-start gap-2.5">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
+                      ✓
+                    </span>
+                    <span className="min-w-0">Focused on real audit readiness</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    Evidence-based approach
+                  <li className="flex items-start gap-2.5">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
+                      ✓
+                    </span>
+                    <span className="min-w-0">Evidence-based approach</span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-white">✓</span>
-                    Simple and structured workflow
+                  <li className="flex items-start gap-2.5">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
+                      ✓
+                    </span>
+                    <span className="min-w-0">Simple and structured workflow</span>
                   </li>
                 </ul>
               </div>
@@ -282,8 +300,8 @@ export default function HomePage() {
                 <path d="M9 9h6M9 13h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </span>
-            <h4 className="mt-3 text-2xl font-semibold text-[#1f2741]">Real-World Experience</h4>
-            <p className="mt-2 text-base leading-7 text-[#55627e]">
+            <h4 className="mt-3 text-xl font-semibold text-[#1f2741] md:text-2xl">Real-World Experience</h4>
+            <p className="mt-2 text-sm leading-6 text-[#55627e] md:text-[15px] md:leading-relaxed">
               Years of hands-on work with audits, security assessments, and incident response.
             </p>
           </article>
@@ -294,8 +312,8 @@ export default function HomePage() {
                 <path d="m4 9 8-5 8 5-8 5-8-5Zm3 2.5v4.5c0 1.6 2.2 3 5 3s5-1.4 5-3v-4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </span>
-            <h4 className="mt-3 text-2xl font-semibold text-[#1f2741]">Certifications</h4>
-            <p className="mt-2 text-base leading-7 text-[#55627e]">
+            <h4 className="mt-3 text-xl font-semibold text-[#1f2741] md:text-2xl">Certifications</h4>
+            <p className="mt-2 text-sm leading-6 text-[#55627e] md:text-[15px] md:leading-relaxed">
               Industry-recognized certifications including CISSP, CySA+, and ISO 27001 Lead Auditor.
             </p>
           </article>
@@ -306,8 +324,8 @@ export default function HomePage() {
                 <path d="M12 2 4 5v6c0 5.3 3.4 9.6 8 11 4.6-1.4 8-5.7 8-11V5l-8-3Z" stroke="currentColor" strokeWidth="1.8" />
               </svg>
             </span>
-            <h4 className="mt-3 text-2xl font-semibold text-[#1f2741]">Security Standards</h4>
-            <p className="mt-2 text-base leading-7 text-[#55627e]">
+            <h4 className="mt-3 text-xl font-semibold text-[#1f2741] md:text-2xl">Security Standards</h4>
+            <p className="mt-2 text-sm leading-6 text-[#55627e] md:text-[15px] md:leading-relaxed">
               Deep knowledge of frameworks such as NIS2, ISO 27001, and other international standards.
             </p>
           </article>
@@ -324,8 +342,8 @@ export default function HomePage() {
                 />
               </svg>
             </span>
-            <h4 className="mt-3 text-2xl font-semibold text-[#1f2741]">Practical Partnerships</h4>
-            <p className="mt-2 text-base leading-7 text-[#55627e]">
+            <h4 className="mt-3 text-xl font-semibold text-[#1f2741] md:text-2xl">Practical Partnerships</h4>
+            <p className="mt-2 text-sm leading-6 text-[#55627e] md:text-[15px] md:leading-relaxed">
               Collaboration with organizations to strengthen their security and achieve compliance goals.
             </p>
           </article>

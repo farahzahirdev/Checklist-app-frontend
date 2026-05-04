@@ -19,21 +19,21 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const navItems = [
     { href: '/admin', label: 'Dashboard', icon: 'home' },
     { href: '/admin/checklists', label: 'Checklist Content', icon: 'checklist' },
-    { href: '/admin/users', label: 'Users', icon: 'users' },
+    { href: '/admin/users', label: 'Users & access', icon: 'users' },
     { href: '/admin/support', label: 'Support', icon: 'report' },
-    { href: '/admin/rbac', label: 'RBAC', icon: 'shield' },
     { href: '/admin/logs', label: 'Audit Logs', icon: 'shield' },
   ] as const;
   const isReadOnly = role !== 'admin';
   const visibleNavItems = isReadOnly
-    ? navItems.filter((item) => item.href === '/admin' || item.href === '/admin/checklists' || item.href === '/admin/rbac')
+    ? navItems.filter((item) => item.href === '/admin' || item.href === '/admin/checklists' || item.href === '/admin/users')
     : navItems;
   const isChecklistPanelRoute = /^\/admin\/checklists\/[^/]+\/?$/.test(pathname);
 
   useEffect(() => {
     if (!roleLoaded) return;
     if (!isReadOnly) return;
-    const isAllowedAuditorRoute = pathname === '/admin' || pathname.startsWith('/admin/checklists') || pathname.startsWith('/admin/rbac');
+    const isAllowedAuditorRoute =
+      pathname === '/admin' || pathname.startsWith('/admin/checklists') || pathname.startsWith('/admin/users');
     if (!isAllowedAuditorRoute) {
       router.replace('/admin/checklists');
     }
