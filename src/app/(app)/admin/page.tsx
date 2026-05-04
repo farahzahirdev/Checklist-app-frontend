@@ -21,6 +21,7 @@ import {
 import { ACCESS_TOKEN_STORAGE_KEY } from '@/lib/auth';
 import { useAdminAccess } from '@/lib/admin-access';
 import { getReportsList, type ReportListItem } from '@/lib/reports';
+import { ADMIN_PAGE_TITLE_CLASS } from '@/app/(app)/admin/admin-page-title';
 
 type AdminDashboardState = {
   summary: AdminDashboardSummary | null;
@@ -41,6 +42,13 @@ const INITIAL_STATE: AdminDashboardState = {
   retention: null,
   systemHealth: null,
 };
+
+/** Matches checklist list + Users & access KPI tiles */
+const kpiCardClass =
+  'rounded-2xl border border-[#13305c] bg-[linear-gradient(140deg,#071733_0%,#0c2144_50%,#13356d_100%)] p-4 shadow-sm transition-colors hover:border-[#1f4a8a] sm:hover:-translate-y-0.5 sm:hover:shadow-md';
+/** Matches UsersAccessMerged `card` / checklist light surfaces */
+const panelCardClass =
+  'rounded-2xl border border-[#d4dced] bg-[linear-gradient(160deg,#ffffff_0%,#f3f7ff_100%)] shadow-sm';
 
 export default function AdminDashboardPage() {
   const { isReadOnly } = useAdminAccess();
@@ -112,9 +120,9 @@ export default function AdminDashboardPage() {
   const hasMoreAwaitingReview = data.awaitingReview.length > awaitingReviewPreview.length;
 
   return (
-    <section className="space-y-4">
+    <section className="-m-4 space-y-4 bg-[linear-gradient(160deg,#eef3fb_0%,#f8fbff_45%,#eef4ff_100%)] p-4 text-[#1f2d45] md:-m-5 md:p-5">
       <header className="flex items-center justify-between gap-3">
-        <h1 className="text-4xl font-semibold tracking-tight text-[#1f2d45]">{isReadOnly ? 'Auditor Dashboard' : 'Admin Dashboard'}</h1>
+        <h1 className={ADMIN_PAGE_TITLE_CLASS}>{isReadOnly ? 'Auditor Dashboard' : 'Admin Dashboard'}</h1>
         <button
           type="button"
           onClick={() => void loadDashboard()}
@@ -130,14 +138,14 @@ export default function AdminDashboardPage() {
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {summaryCards.map((card) =>
           card.href ? (
-            <Link key={card.label} href={card.href as any} className="rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm transition-colors hover:bg-[#f7f9fe]">
-              <p className="text-sm text-[#5b6f91]">{card.label}</p>
-              <p className="mt-1 text-2xl font-semibold text-[#273a5a]">{card.value ?? (loading ? '...' : 0)}</p>
+            <Link key={card.label} href={card.href as any} className={kpiCardClass}>
+              <p className="text-xs uppercase tracking-[0.12em] text-[#9db8e6]">{card.label}</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{card.value ?? (loading ? '...' : 0)}</p>
             </Link>
           ) : (
-            <article key={card.label} className="rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm">
-              <p className="text-sm text-[#5b6f91]">{card.label}</p>
-              <p className="mt-1 text-2xl font-semibold text-[#273a5a]">{card.value ?? (loading ? '...' : 0)}</p>
+            <article key={card.label} className={kpiCardClass}>
+              <p className="text-xs uppercase tracking-[0.12em] text-[#9db8e6]">{card.label}</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{card.value ?? (loading ? '...' : 0)}</p>
             </article>
           ),
         )}
@@ -145,14 +153,14 @@ export default function AdminDashboardPage() {
 
       {!isReadOnly ? (
       <div className="grid gap-3 xl:grid-cols-2">
-        <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-[#ecf0f8] px-4 py-3">
+        <article className={`${panelCardClass} overflow-hidden`}>
+          <div className="flex items-center justify-between border-b border-[#dbe4f4] px-4 py-3">
             <h2 className="text-xl font-semibold text-[#243555]">Awaiting Review</h2>
             <Link href="/admin/assessments?status=Awaiting%20Review" className="text-xs font-semibold text-[#3e69b0] hover:text-[#274b84]">
               Open full list
             </Link>
           </div>
-          <div className="divide-y divide-[#edf2f9] px-4">
+          <div className="divide-y divide-[#dbe4f4] px-4">
             {data.awaitingReview.length ? (
               awaitingReviewPreview.map((item) => (
                 <div key={item.assessment_id} className="py-3 text-sm text-[#2f4264]">
@@ -175,11 +183,11 @@ export default function AdminDashboardPage() {
           </div>
         </article>
 
-        <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
-          <div className="border-b border-[#ecf0f8] px-4 py-3">
+        <article className={`${panelCardClass} overflow-hidden`}>
+          <div className="border-b border-[#dbe4f4] px-4 py-3">
             <h2 className="text-xl font-semibold text-[#243555]">Recent Activity</h2>
           </div>
-          <div className="divide-y divide-[#edf2f9] px-4">
+          <div className="divide-y divide-[#dbe4f4] px-4">
             {data.activity.length ? (
               data.activity.slice(0, 3).map((item, idx) => (
                 <div key={`${item.entity_id}-${idx}`} className="py-3 text-sm text-[#2f4264]">
@@ -195,14 +203,14 @@ export default function AdminDashboardPage() {
         </article>
       </div>
       ) : (
-        <article className="rounded-2xl border border-[#e2e8f5] bg-white p-4 text-sm text-[#2f4264] shadow-sm">
+        <article className={`${panelCardClass} p-4 text-sm text-[#2f4264]`}>
           Auditor dashboard is read-only by design. You can review admin pages, but editing remains admin-only.
         </article>
       )}
 
       {!isReadOnly ? (
-        <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-[#ecf0f8] px-4 py-3">
+        <article className={`${panelCardClass} overflow-hidden`}>
+          <div className="flex items-center justify-between border-b border-[#dbe4f4] px-4 py-3">
             <div>
               <h2 className="text-xl font-semibold text-[#243555]">Reports</h2>
               <p className="text-sm text-[#6f82a3]">Review and publish assessment reports.</p>
@@ -211,7 +219,7 @@ export default function AdminDashboardPage() {
               Open report center
             </Link>
           </div>
-          <div className="divide-y divide-[#edf2f9] px-4">
+          <div className="divide-y divide-[#dbe4f4] px-4">
             {data.reports.length ? (
               data.reports.slice(0, 4).map((report) => (
                 <div key={report.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm text-[#2f4264]">
@@ -239,7 +247,7 @@ export default function AdminDashboardPage() {
 
       {!isReadOnly ? (
       <div className="grid gap-3 xl:grid-cols-3">
-        <article className="rounded-2xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
+        <article className={`${panelCardClass} p-4`}>
           <h3 className="text-lg font-semibold text-[#243555]">Distribution</h3>
           <ul className="mt-3 space-y-2 text-sm text-[#2f4264]">
             <li>
@@ -270,13 +278,13 @@ export default function AdminDashboardPage() {
           </ul>
         </article>
 
-        <article className="rounded-2xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
+        <article className={`${panelCardClass} p-4`}>
           <h3 className="text-lg font-semibold text-[#243555]">Retention</h3>
           <p className="mt-2 text-sm text-[#2f4264]">Pending purge: {data.retention?.pending_purge_count ?? (loading ? '...' : 0)}</p>
           <p className="text-sm text-[#2f4264]">Recently purged: {data.retention?.recent_purged_count ?? (loading ? '...' : 0)}</p>
         </article>
 
-        <article className="rounded-2xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
+        <article className={`${panelCardClass} p-4`}>
           <h3 className="text-lg font-semibold text-[#243555]">System Health</h3>
           <p className="mt-2 text-sm text-[#2f4264]">Payments: {data.systemHealth?.payments_status ?? (loading ? '...' : 'unknown')}</p>
           <p className="text-sm text-[#2f4264]">Storage: {data.systemHealth?.storage_status ?? (loading ? '...' : 'unknown')}</p>

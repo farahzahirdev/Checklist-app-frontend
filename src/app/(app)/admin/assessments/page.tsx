@@ -11,6 +11,14 @@ import {
   type AssessmentReviewSummary,
 } from '@/lib/assessment-review';
 import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
+import {
+  ADMIN_KPI_DARK_CARD_CLASS,
+  ADMIN_KPI_DARK_LABEL_CLASS,
+  ADMIN_PAGE_HERO_EYEBROW_CLASS,
+  ADMIN_PAGE_HERO_HEADER_CLASS,
+  ADMIN_PAGE_HERO_SUBTITLE_CLASS,
+  ADMIN_PAGE_HERO_TITLE_CLASS,
+} from '@/app/(app)/admin/admin-page-title';
 
 const statusClass: Record<string, string> = {
   pending_review: 'bg-[#fff4df] text-[#b6862f]',
@@ -79,8 +87,9 @@ export default function AdminAssessmentsPage() {
 
   return (
     <section className="space-y-4">
-      <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
+      <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
         <AdminBreadcrumbs
+          variant="onDark"
           items={[
             { label: 'Dashboard', href: '/admin' },
             ...(statusFilter
@@ -91,22 +100,42 @@ export default function AdminAssessmentsPage() {
               : [{ label: 'Assessments' }]),
           ]}
         />
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Assessments</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#1f2d45]">Assessment Management</h1>
-        <p className="mt-1 text-sm text-[#607594]">Track review queue, in-progress reviews, and completed assessments.</p>
-        {statusFilter ? <p className="mt-2 text-sm font-semibold text-[#3e69b0]">Filtered by status: {formatStatus(statusFilter)}</p> : null}
+        <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>Assessments</p>
+        <h1 className={ADMIN_PAGE_HERO_TITLE_CLASS}>Assessment Management</h1>
+        <p className={ADMIN_PAGE_HERO_SUBTITLE_CLASS}>Track review queue, in-progress reviews, and completed assessments.</p>
+        {statusFilter ? (
+          <p className="mt-2 text-sm font-semibold text-[#b8d4ff]">Filtered by status: {formatStatus(statusFilter)}</p>
+        ) : null}
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: 'Pending Review', value: summary?.total_assessments_pending_review ?? 0, tone: 'bg-[#fff4df] text-[#b6862f]' },
-          { label: 'In Progress', value: summary?.total_assessments_in_progress ?? 0, tone: 'bg-[#eaf2ff] text-[#3f74df]' },
-          { label: 'Completed', value: summary?.total_assessments_completed ?? 0, tone: 'bg-[#e9f8ef] text-[#2f9960]' },
-          { label: 'Action Required', value: summary?.total_action_required ?? 0, tone: 'bg-[#ffedf0] text-[#cc5163]' },
-        ].map((stat) => (
-          <article key={stat.label} className="rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm">
-            <p className="text-sm font-medium text-[#6a7d9a]">{stat.label}</p>
-            <p className={`mt-2 inline-flex rounded-lg px-2.5 py-1 text-2xl font-semibold ${stat.tone}`}>{stat.value}</p>
+        {(
+          [
+            {
+              label: 'Pending Review',
+              value: summary?.total_assessments_pending_review ?? 0,
+              valueClass: 'text-[#ffd89c]',
+            },
+            {
+              label: 'In Progress',
+              value: summary?.total_assessments_in_progress ?? 0,
+              valueClass: 'text-[#a9c7ff]',
+            },
+            {
+              label: 'Completed',
+              value: summary?.total_assessments_completed ?? 0,
+              valueClass: 'text-[#7cf0aa]',
+            },
+            {
+              label: 'Action Required',
+              value: summary?.total_action_required ?? 0,
+              valueClass: 'text-[#ffb3c9]',
+            },
+          ] as const
+        ).map((stat) => (
+          <article key={stat.label} className={ADMIN_KPI_DARK_CARD_CLASS}>
+            <p className={ADMIN_KPI_DARK_LABEL_CLASS}>{stat.label}</p>
+            <p className={`mt-2 text-2xl font-semibold tabular-nums ${stat.valueClass}`}>{stat.value}</p>
           </article>
         ))}
       </div>

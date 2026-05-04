@@ -20,6 +20,7 @@ import {
   updateSection as updateSectionApi,
 } from '@/lib/checklist-api';
 import { getMediaPreviewUrl } from '@/lib/assessment';
+import { ADMIN_BUILDER_HEADER_TITLE_CLASS } from '@/app/(app)/admin/admin-page-title';
 
 type RiskLevel = 'low' | 'medium' | 'high';
 type AnswerLogic = 'answer_only' | 'answer_with_adjustment';
@@ -332,6 +333,37 @@ export default function ChecklistPanelBuilderPage() {
   const [reorderingQuestionsSectionId, setReorderingQuestionsSectionId] = useState<string | null>(null);
   const [createQuestionMissingFields, setCreateQuestionMissingFields] = useState<string[]>([]);
   const [editQuestionMissingFields, setEditQuestionMissingFields] = useState<string[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches) {
+      setSidebarOpen(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(min-width: 1024px)');
+    function openSidebarOnLargeScreens() {
+      if (mq.matches) setSidebarOpen(true);
+    }
+    openSidebarOnLargeScreens();
+    mq.addEventListener('change', openSidebarOnLargeScreens);
+    return () => mq.removeEventListener('change', openSidebarOnLargeScreens);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!window.matchMedia('(max-width: 1023px)').matches) return;
+    if (
+      selected.type === 'section' ||
+      selected.type === 'question' ||
+      selected.type === 'createSection' ||
+      selected.type === 'createQuestion'
+    ) {
+      setSidebarOpen(false);
+    }
+  }, [selected]);
 
   useEffect(() => {
     return () => {
@@ -1049,13 +1081,13 @@ export default function ChecklistPanelBuilderPage() {
   }
 
   return (
-    <section className="relative h-screen min-h-screen overflow-hidden bg-[linear-gradient(160deg,#eef3fb_0%,#f8fbff_45%,#eef4ff_100%)] text-[#1f2d45]">
-      <div className="flex h-full flex-col">
-        <header className="grid grid-cols-[320px_1fr] items-center gap-5 border-b border-[#1f3f73] bg-[linear-gradient(180deg,#071a39,#0b2a57)] px-5 py-4 shadow-sm">
-          <div className="flex justify-start">
+    <section className="relative flex h-[100dvh] min-h-0 max-h-[100dvh] flex-col overflow-hidden bg-[linear-gradient(160deg,#eef3fb_0%,#f8fbff_45%,#eef4ff_100%)] text-[#1f2d45]">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[#1f3f73] bg-[linear-gradient(180deg,#071a39,#0b2a57)] px-3 py-3 shadow-sm sm:gap-3 sm:px-4 sm:py-3.5 md:px-5 md:py-4">
+          <div className="flex items-center gap-2">
             <Link
               href="/admin/checklists"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#2d4f83] bg-[#10284f] text-sm font-semibold text-white hover:bg-[#16345f]"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#2d4f83] bg-[#10284f] text-sm font-semibold text-white hover:bg-[#16345f]"
               aria-label="Back to checklist dashboard"
             >
               <svg
@@ -1067,14 +1099,64 @@ export default function ChecklistPanelBuilderPage() {
                 <path d="M 0.053 44.915 l 33.782 -19.553 v 13.353 h 56.029 c 0.075 0 0.136 0.061 0.136 0.136 v 12.298 c 0 0.075 -0.061 0.136 -0.136 0.136 H 33.835 v 13.353 L 0.053 45.085 C -0.018 45.05 -0.018 44.95 0.053 44.915 z" />
               </svg>
             </Link>
+            <button
+              type="button"
+              onClick={() => setSidebarOpen((open) => !open)}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#2d4f83] bg-[#10284f] text-white hover:bg-[#16345f] lg:hidden"
+              aria-expanded={sidebarOpen}
+              aria-controls="checklist-builder-nav"
+              title={sidebarOpen ? 'Hide structure panel' : 'Show structure panel'}
+            >
+              {sidebarOpen ? (
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                  <path
+                    d="M9 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M9 12h11"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                  <path
+                    d="M4 6h16M4 12h10M4 18h16M18 9l3 3-3 3"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </button>
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <h1 className="mt-1 text-2xl font-semibold text-white">Checklist Content Builder</h1>
+          <div className="min-w-0 flex-1 basis-[min(100%,12rem)] py-0.5">
+            <h1 className={ADMIN_BUILDER_HEADER_TITLE_CLASS}>Checklist Content Builder</h1>
+            <p className="mt-0.5 truncate text-[11px] text-[#9db8e6] sm:text-xs">{title || 'Untitled checklist'}</p>
           </div>
         </header>
 
-        <div className="flex min-h-0 flex-1">
-          <aside className="flex min-h-0 w-[320px] shrink-0 flex-col border-r border-[#dde6f5] bg-[linear-gradient(180deg,#071a39,#0b2a57)] p-4 text-[#d8e6ff]">
+        <div className="relative flex min-h-0 min-w-0 flex-1">
+          {sidebarOpen ? (
+            <button
+              type="button"
+              aria-label="Close structure panel"
+              className="absolute inset-0 z-30 bg-[#0b1220]/45 backdrop-blur-[1px] transition-opacity lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+          ) : null}
+          <aside
+            id="checklist-builder-nav"
+            inert={!sidebarOpen ? true : undefined}
+            className={[
+              'flex min-h-0 shrink-0 flex-col border-r border-[#dde6f5] bg-[linear-gradient(180deg,#071a39,#0b2a57)] p-4 text-[#d8e6ff]',
+              'transition-[transform,box-shadow] duration-200 ease-out lg:relative lg:z-0 lg:w-[280px] lg:translate-x-0 lg:shadow-none xl:w-[320px]',
+              'max-lg:absolute max-lg:inset-y-0 max-lg:left-0 max-lg:z-40 max-lg:w-[min(100vw-2.5rem,320px)] max-lg:max-w-[320px]',
+              sidebarOpen
+                ? 'max-lg:translate-x-0 max-lg:shadow-[6px_0_28px_rgba(7,26,57,0.28)]'
+                : 'max-lg:pointer-events-none max-lg:-translate-x-full max-lg:shadow-none',
+            ].join(' ')}
+          >
             {!isReadOnly ? (
               <button
                 type="button"
@@ -1295,7 +1377,7 @@ export default function ChecklistPanelBuilderPage() {
             </div>
           </aside>
 
-          <main className="min-h-0 flex-1 overflow-y-auto p-5">
+          <main className="relative z-0 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-5 lg:p-6">
             {selected.type === 'section' && selectedSection ? (
               <div className={`${cardClass} space-y-4`}>
                 {isReadOnly ? <p className="rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2 text-xs text-[#5f7395]">Read-only mode: editing actions are disabled for auditor.</p> : null}

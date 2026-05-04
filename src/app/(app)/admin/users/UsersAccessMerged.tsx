@@ -1,6 +1,5 @@
 'use client';
 
-import { Sora } from 'next/font/google';
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
@@ -45,9 +44,8 @@ import {
   type RbacRole,
 } from '@/lib/rbac';
 import { useAdminAccess } from '@/lib/admin-access';
+import { ADMIN_PAGE_TITLE_CLASS } from '@/app/(app)/admin/admin-page-title';
 import { beginRoleSwitchSession, clearRoleSwitchSession } from '@/lib/auth';
-
-const sora = Sora({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800'] });
 
 const shell =
   'min-h-full rounded-[18px] border border-slate-200 bg-gradient-to-b from-white to-slate-50 text-slate-900 shadow-sm';
@@ -736,9 +734,9 @@ export default function UsersAccessMerged() {
     }`;
 
   return (
-    <div className={`${sora.className} ${shell} p-4 md:p-5`}>
+    <div className={`${shell} p-4 md:p-5`}>
       <div className="pb-5">
-        <h1 className="text-[26px] font-extrabold tracking-[-0.04em] text-slate-900">Users & Access Control</h1>
+        <h1 className={ADMIN_PAGE_TITLE_CLASS}>Users & Access Control</h1>
         <p className={`mt-1 max-w-[560px] text-[13px] ${muted}`}>
           Manage admin users, customers, roles, permissions, and session testing from one place.
         </p>

@@ -22,6 +22,7 @@ import {
 } from '@/lib/checklist-api';
 import type { Checklist } from '@/lib/checklist-types';
 import { useAdminAccess } from '@/lib/admin-access';
+import { ADMIN_PAGE_TITLE_CLASS } from '@/app/(app)/admin/admin-page-title';
 
 type ChecklistStatus = 'draft' | 'published';
 
@@ -562,7 +563,7 @@ export default function ChecklistPanelListPage() {
       <div className="w-full px-6 py-6">
         <header className="mb-5 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-[#1f2d45]">Checklists</h1>
+            <h1 className={ADMIN_PAGE_TITLE_CLASS}>Checklists</h1>
           </div>
           {!isReadOnly ? (
             <div className="flex items-center gap-2">

@@ -49,6 +49,46 @@ export type CustomerPaymentFilterOptions = {
   sort_options: Array<{ value: string; label: string }>;
 };
 
+/** `/customer/payments/analytics/overview` — fields optional for forward compatibility */
+export type CustomerPaymentAnalyticsNumeric = {
+  source?: string;
+  parsedValue?: number;
+};
+
+export type CustomerPaymentSpendingByChecklistRow = {
+  checklist_id?: string;
+  checklist_title?: string;
+  checklist_description?: string | null;
+  total_payments?: number;
+  total_amount?: number;
+  average_amount?: CustomerPaymentAnalyticsNumeric | number;
+  last_payment_date?: string | null;
+  access_windows_granted?: number;
+  is_most_purchased?: boolean;
+};
+
+export type CustomerPaymentSpendingByMonthRow = {
+  month?: string;
+  amount_cents?: number;
+  amount_formatted?: string;
+  payment_count?: number;
+  average_amount?: CustomerPaymentAnalyticsNumeric;
+};
+
+export type CustomerPaymentAnalyticsOverview = {
+  total_spent?: number;
+  total_spent_formatted?: string;
+  payment_frequency?: CustomerPaymentAnalyticsNumeric | number;
+  average_payment_amount?: CustomerPaymentAnalyticsNumeric | number;
+  most_expensive_payment?: CustomerPaymentRecord | null;
+  most_frequent_checklist?: CustomerPaymentSpendingByChecklistRow | null;
+  spending_by_month?: CustomerPaymentSpendingByMonthRow[];
+  spending_by_checklist?: CustomerPaymentSpendingByChecklistRow[];
+  payment_success_rate?: CustomerPaymentAnalyticsNumeric | number;
+  total_access_days?: number;
+  average_access_duration?: CustomerPaymentAnalyticsNumeric | number;
+};
+
 function buildPaymentsQuery(params?: CustomerPaymentsListParams): string {
   if (!params) return '';
   const query = new URLSearchParams();
@@ -85,7 +125,7 @@ export async function getCustomerPaymentDetails(paymentId: string) {
 }
 
 export async function getCustomerPaymentAnalyticsOverview() {
-  return apiGetWithAuth<Record<string, unknown>>('/customer/payments/analytics/overview');
+  return apiGetWithAuth<CustomerPaymentAnalyticsOverview>('/customer/payments/analytics/overview');
 }
 
 export async function getCustomerRecentPayments(limit = 10) {

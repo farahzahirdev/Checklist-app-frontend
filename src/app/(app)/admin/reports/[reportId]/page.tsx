@@ -15,6 +15,13 @@ import {
   type ReportFindingItem,
   type ReportSummaryItem,
 } from '@/lib/reports';
+import {
+  ADMIN_KPI_DARK_CARD_CLASS,
+  ADMIN_KPI_DARK_LABEL_CLASS,
+  ADMIN_PAGE_HERO_EYEBROW_CLASS,
+  ADMIN_PAGE_HERO_HEADER_CLASS,
+  ADMIN_PAGE_HERO_TITLE_CLASS,
+} from '@/app/(app)/admin/admin-page-title';
 
 export default function AdminReportDetailPage() {
   const params = useParams();
@@ -157,17 +164,13 @@ export default function AdminReportDetailPage() {
 
   return (
     <section className="space-y-6">
-      <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Report Details</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#1f2d45]">
-              Assessment Report
-            </h1>
-            <p className="mt-1 text-sm text-[#607594]">Report ID: {report.id}</p>
-            <p className="mt-1 text-sm text-[#607594]">Assessment ID: {report.assessment_id}</p>
+      <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>Report Details</p>
+            <h1 className={ADMIN_PAGE_HERO_TITLE_CLASS}>Assessment Report</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <span className={`rounded-md px-3 py-1 text-sm font-semibold ${statusColors[report.status]}`}>
               {statusLabels[report.status]}
             </span>
@@ -175,27 +178,31 @@ export default function AdminReportDetailPage() {
         </div>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <article className="rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm">
-          <p className="text-sm font-medium text-[#6a7d9a]">Findings</p>
-          <p className="mt-2 text-2xl font-semibold text-[#273a5a]">{report.findings_count}</p>
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+        <article className={ADMIN_KPI_DARK_CARD_CLASS}>
+          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Findings</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums text-[#ffd89c]">{report.findings_count}</p>
         </article>
-        <article className="rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm">
-          <p className="text-sm font-medium text-[#6a7d9a]">Summaries</p>
-          <p className="mt-2 text-2xl font-semibold text-[#273a5a]">{report.summaries_count}</p>
+        <article className={ADMIN_KPI_DARK_CARD_CLASS}>
+          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Summaries</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums text-[#a9c7ff]">{report.summaries_count}</p>
         </article>
-        <article className="rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm">
-          <p className="text-sm font-medium text-[#6a7d9a]">Generated</p>
-          <p className="mt-2 text-sm font-semibold text-[#273a5a]">
+        <article className={ADMIN_KPI_DARK_CARD_CLASS}>
+          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Generated</p>
+          <p className="mt-2 text-base font-semibold leading-snug text-[#c4d6f7]">
             {report.draft_generated_at ? new Date(report.draft_generated_at).toLocaleDateString() : '-'}
           </p>
         </article>
-        <article className="rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm">
-          <p className="text-sm font-medium text-[#6a7d9a]">Last Action</p>
-          <p className="mt-2 text-sm font-semibold text-[#273a5a]">
-            {report.approved_at ? new Date(report.approved_at).toLocaleDateString() :
-             report.reviewed_at ? new Date(report.reviewed_at).toLocaleDateString() :
-             report.draft_generated_at ? new Date(report.draft_generated_at).toLocaleDateString() : '-'}
+        <article className={ADMIN_KPI_DARK_CARD_CLASS}>
+          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Last Action</p>
+          <p className="mt-2 text-base font-semibold leading-snug text-[#c4d6f7]">
+            {report.approved_at
+              ? new Date(report.approved_at).toLocaleDateString()
+              : report.reviewed_at
+                ? new Date(report.reviewed_at).toLocaleDateString()
+                : report.draft_generated_at
+                  ? new Date(report.draft_generated_at).toLocaleDateString()
+                  : '-'}
           </p>
         </article>
       </div>

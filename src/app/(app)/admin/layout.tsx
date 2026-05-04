@@ -128,7 +128,17 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </Link>
           <nav className="mt-4 flex flex-col gap-1.5 text-[15px]">
             {visibleNavItems.map((item) => {
-              const active = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
+              const href = item.href as string;
+              const pathUnderNavHref = (p: string, base: string) =>
+                p === base || p.startsWith(`${base}/`) || p.startsWith(`${base}?`);
+              const pathClaimedByOtherNav = visibleNavItems.some(
+                (other) =>
+                  other.href !== '/admin' && pathUnderNavHref(pathname, other.href as string),
+              );
+              const active =
+                href === '/admin'
+                  ? pathname === '/admin' || (pathname.startsWith('/admin') && !pathClaimedByOtherNav)
+                  : pathUnderNavHref(pathname, href);
               return (
                 <Link
                   key={item.href}

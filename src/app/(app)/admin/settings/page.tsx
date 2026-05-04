@@ -1,9 +1,11 @@
+import { ADMIN_PAGE_TITLE_CLASS } from '@/app/(app)/admin/admin-page-title';
+
 export default function AdminSettingsPage() {
   return (
     <section className="space-y-4">
       <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Settings</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#1f2d45]">Platform Settings</h1>
+        <h1 className={`mt-2 ${ADMIN_PAGE_TITLE_CLASS}`}>Platform Settings</h1>
         <p className="mt-1 text-sm text-[#607594]">Configure organization defaults, security options, and retention policies.</p>
       </header>
 

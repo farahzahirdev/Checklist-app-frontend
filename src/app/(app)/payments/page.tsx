@@ -6,6 +6,7 @@ import {
   getCustomerRecentPayments,
   listCustomerPayments,
   getPaymentFilterOptions,
+  type CustomerPaymentAnalyticsOverview,
   type CustomerPaymentRecord,
   type CustomerPaymentFilterOptions,
 } from '@/lib/customer-payments';
@@ -18,8 +19,21 @@ function formatDate(value?: string | null) {
   return date.toLocaleString();
 }
 
+function formatUsdFromCents(cents?: number | null) {
+  if (typeof cents !== 'number' || Number.isNaN(cents)) return null;
+  return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(cents / 100);
+}
+
+const insightCard =
+  'rounded-2xl border border-[#345793] bg-[#0d1d3a] p-6 shadow-sm';
+const insightLabel = 'text-sm text-[#97a5bb]';
+const insightTitle = 'mt-2 text-lg font-semibold leading-snug text-white';
+const insightMeta = 'mt-1 text-sm text-[#c4d6f7]';
+
+const filterLabelClass = 'text-xs font-medium text-[#5f7395]';
+
 export default function PaymentsPage() {
-  const [analytics, setAnalytics] = useState<Record<string, unknown> | null>(null);
+  const [analytics, setAnalytics] = useState<CustomerPaymentAnalyticsOverview | null>(null);
   const [recentPayments, setRecentPayments] = useState<CustomerPaymentRecord[]>([]);
   const [payments, setPayments] = useState<CustomerPaymentRecord[]>([]);
   const [paymentsTotal, setPaymentsTotal] = useState(0);
@@ -43,8 +57,17 @@ export default function PaymentsPage() {
   const totalSpent = useMemo(() => {
     const raw = analytics?.total_spent_formatted ?? analytics?.total_spent;
     if (typeof raw === 'string') return raw;
-    if (typeof raw === 'number') return raw.toLocaleString();
+    if (typeof raw === 'number') return formatUsdFromCents(raw);
     return null;
+  }, [analytics]);
+
+  const latestChecklistPurchase = useMemo(() => {
+    const rows = analytics?.spending_by_checklist;
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    return [...rows].sort(
+      (a, b) =>
+        new Date(b.last_payment_date ?? 0).getTime() - new Date(a.last_payment_date ?? 0).getTime(),
+    )[0];
   }, [analytics]);
 
   async function loadFilterOptions() {
@@ -128,7 +151,7 @@ export default function PaymentsPage() {
     <section className="w-full min-w-0 space-y-8">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Customer</p>
+            <p className="text-xs font-medium text-[#5f7395]">Customer</p>
             <h1 className="text-3xl font-semibold text-[#1f2d45]">Payments</h1>
           </div>
           <button
@@ -145,65 +168,47 @@ export default function PaymentsPage() {
           <p className="rounded-lg border border-[#f0c7cf] bg-[#fff2f4] px-3 py-2 text-sm text-[#b63d51]">{error}</p>
         ) : null}
 
-        <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          <article className="rounded-2xl border border-[#345793] bg-[#0d1d3a] p-6">
-            <p className="text-sm text-[#97a5bb]">Total spent</p>
+        <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <article className={insightCard}>
+            <p className={insightLabel}>Total spent</p>
             <p className="mt-2 text-2xl font-semibold text-white">{totalSpent ?? (loading ? '...' : 'n/a')}</p>
           </article>
-          <article className="rounded-2xl border border-[#345793] bg-[#0d1d3a] p-6">
-            <p className="text-sm text-[#97a5bb]">Payment success rate</p>
-            <p className="mt-2 text-2xl font-semibold text-white">
-              {typeof analytics?.payment_success_rate === 'number'
-                ? `${analytics.payment_success_rate}%`
-                : loading
-                  ? '...'
-                  : 'n/a'}
-            </p>
-          </article>
-          <article className="rounded-2xl border border-[#345793] bg-[#0d1d3a] p-6">
-            <p className="text-sm text-[#97a5bb]">Average amount</p>
-            <p className="mt-2 text-2xl font-semibold text-white">
-              {typeof analytics?.average_payment_amount === 'number'
-                ? analytics.average_payment_amount.toLocaleString()
-                : loading
-                  ? '...'
-                  : 'n/a'}
-            </p>
-          </article>
-        </section>
 
-        <section className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-[#1f2d45]">Recent payments</h2>
-          </div>
-          {!recentPayments.length ? (
-            <p className="rounded-xl border border-[#dbe4f4] bg-white p-4 text-sm text-[#607594] shadow-sm">
-              {loading ? 'Loading payments…' : 'No payments found yet.'}
-            </p>
-          ) : (
-            <div className="overflow-hidden rounded-xl border border-[#dbe4f4] bg-white shadow-sm">
-              <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-[#eef2fa] bg-[#f7f9fe] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#607594]">
-                <span>Payment</span>
-                <span className="text-right">Status</span>
-              </div>
-              <ul className="divide-y divide-[#eef2fa]">
-                {recentPayments.map((item) => (
-                  <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-[#1f2d45]">{item.checklist_title}</p>
-                      <p className="mt-0.5 truncate text-xs text-[#607594]">
-                        {item.amount_formatted ?? `${item.amount_cents} ${item.currency}`} •{' '}
-                        {formatDate(item.paid_at ?? item.created_at)}
-                      </p>
-                    </div>
-                    <span className="shrink-0 rounded-full border border-[#d4dced] bg-[#f7f9fe] px-3 py-1 text-xs font-semibold text-[#2a3d5f]">
-                    {formatStatusLabel(item.status)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {latestChecklistPurchase?.checklist_title ? (
+            <article className={insightCard}>
+              <p className={insightLabel}>Latest checklist purchase</p>
+              <p className={insightTitle}>{latestChecklistPurchase.checklist_title}</p>
+              <p className={insightMeta}>
+                {formatDate(latestChecklistPurchase.last_payment_date)}
+                {typeof latestChecklistPurchase.total_payments === 'number'
+                  ? ` · ${latestChecklistPurchase.total_payments} payment${
+                      latestChecklistPurchase.total_payments === 1 ? '' : 's'
+                    } total`
+                  : ''}
+              </p>
+              {formatUsdFromCents(latestChecklistPurchase.total_amount) ? (
+                <p className="mt-2 text-sm font-medium text-[#9db8e6]">
+                  On this checklist: {formatUsdFromCents(latestChecklistPurchase.total_amount)}
+                </p>
+              ) : null}
+            </article>
+          ) : null}
+
+          {analytics?.most_expensive_payment?.checklist_title ? (
+            <article className={insightCard}>
+              <p className={insightLabel}>Largest single payment</p>
+              <p className={insightTitle}>{analytics.most_expensive_payment.checklist_title}</p>
+              <p className={insightMeta}>
+                {[
+                  analytics.most_expensive_payment.amount_formatted ??
+                    formatUsdFromCents(analytics.most_expensive_payment.amount_cents),
+                  formatDate(analytics.most_expensive_payment.paid_at),
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+            </article>
+          ) : null}
         </section>
 
         <section className="space-y-3">
@@ -224,7 +229,7 @@ export default function PaymentsPage() {
         <div className="rounded-xl border border-[#dbe4f4] bg-white p-4 shadow-sm">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
             <label className="space-y-1 text-sm xl:col-span-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#607594]">Status</span>
+              <span className={filterLabelClass}>Status</span>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -240,16 +245,16 @@ export default function PaymentsPage() {
               </select>
             </label>
             <label className="space-y-1 text-sm xl:col-span-2">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#607594]">Search</span>
+              <span className={filterLabelClass}>Search</span>
               <input
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
-                placeholder="Search checklist title"
+                placeholder="Search by checklist title"
                 className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
               />
             </label>
             <label className="space-y-1 text-sm xl:col-span-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#607594]">From</span>
+              <span className={filterLabelClass}>From date</span>
               <input
                 type="date"
                 value={dateFromFilter}
@@ -258,7 +263,7 @@ export default function PaymentsPage() {
               />
             </label>
             <label className="space-y-1 text-sm xl:col-span-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#607594]">To</span>
+              <span className={filterLabelClass}>To date</span>
               <input
                 type="date"
                 value={dateToFilter}
@@ -274,7 +279,7 @@ export default function PaymentsPage() {
                   onChange={(e) => setActiveAccessOnly(e.target.checked)}
                   className="h-4 w-4 rounded border-[#b7c7e6]"
                 />
-                Active access only
+                Show active access only
               </label>
             </div>
           </div>
@@ -282,30 +287,30 @@ export default function PaymentsPage() {
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <label className="flex items-center gap-2 text-sm text-[#2a3d5f]">
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#607594]">Order by</span>
+                <span className={filterLabelClass}>Order by</span>
                 <select
                   value={orderBy}
                   onChange={(e) => setOrderBy(e.target.value === 'paid_at' ? 'paid_at' : 'created_at')}
                   className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2 py-2 text-sm text-[#243555]"
                 >
-                  <option value="created_at">Created At</option>
-                  <option value="paid_at">Paid At</option>
+                  <option value="created_at">Record created</option>
+                  <option value="paid_at">Payment date</option>
                 </select>
               </label>
               <label className="flex items-center gap-2 text-sm text-[#2a3d5f]">
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#607594]">Direction</span>
+                <span className={filterLabelClass}>Sort by</span>
                 <select
                   value={orderDirection}
                   onChange={(e) => setOrderDirection(e.target.value === 'asc' ? 'asc' : 'desc')}
                   className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2 py-2 text-sm text-[#243555]"
                 >
-                  <option value="desc">desc</option>
-                  <option value="asc">asc</option>
+                  <option value="desc">Newest first</option>
+                  <option value="asc">Oldest first</option>
                 </select>
               </label>
             </div>
             <p className="text-sm text-[#607594]">
-              {paymentsLoading ? 'Loading…' : `Showing ${pageStart}-${pageEnd} of ${paymentsTotal}`}
+              {paymentsLoading ? 'Loading…' : `Showing ${pageStart}–${pageEnd} of ${paymentsTotal}`}
             </p>
           </div>
         </div>
@@ -315,7 +320,7 @@ export default function PaymentsPage() {
         ) : null}
 
         <div className="overflow-hidden rounded-xl border border-[#dbe4f4] bg-white shadow-sm">
-          <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-[#eef2fa] bg-[#f7f9fe] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#607594]">
+          <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-[#eef2fa] bg-[#f7f9fe] px-4 py-2 text-xs font-medium text-[#5f7395]">
             <span>Payment</span>
             <span className="text-right">Status</span>
           </div>
@@ -360,6 +365,40 @@ export default function PaymentsPage() {
           >
             Next
           </button>
+        </div>
+
+        <div className="border-t border-[#dbe4f4] pt-8">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-[#1f2d45]">Recent payments</h2>
+          </div>
+          {!recentPayments.length ? (
+            <p className="mt-3 rounded-xl border border-[#dbe4f4] bg-white p-4 text-sm text-[#607594] shadow-sm">
+              {loading ? 'Loading payments…' : 'No payments found yet.'}
+            </p>
+          ) : (
+            <div className="mt-3 overflow-hidden rounded-xl border border-[#dbe4f4] bg-white shadow-sm">
+              <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-[#eef2fa] bg-[#f7f9fe] px-4 py-2 text-xs font-medium text-[#5f7395]">
+                <span>Payment</span>
+                <span className="text-right">Status</span>
+              </div>
+              <ul className="divide-y divide-[#eef2fa]">
+                {recentPayments.map((item) => (
+                  <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-[#1f2d45]">{item.checklist_title}</p>
+                      <p className="mt-0.5 truncate text-xs text-[#607594]">
+                        {item.amount_formatted ?? `${item.amount_cents} ${item.currency}`} •{' '}
+                        {formatDate(item.paid_at ?? item.created_at)}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full border border-[#d4dced] bg-[#f7f9fe] px-3 py-1 text-xs font-semibold text-[#2a3d5f]">
+                      {formatStatusLabel(item.status)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
         </section>
     </section>

@@ -11,6 +11,12 @@ import {
   type SupportTicket,
   type SupportTicketStatus,
 } from '@/lib/support-tickets';
+import {
+  ADMIN_PAGE_HERO_EYEBROW_CLASS,
+  ADMIN_PAGE_HERO_HEADER_CLASS,
+  ADMIN_PAGE_HERO_SUBTITLE_CLASS,
+  ADMIN_PAGE_HERO_TITLE_CLASS,
+} from '@/app/(app)/admin/admin-page-title';
 
 const STATUS_OPTIONS: Array<SupportTicketStatus> = ['open', 'waiting_customer', 'resolved', 'closed'];
 
@@ -119,10 +125,10 @@ export default function AdminSupportPage() {
 
   return (
     <section className="space-y-5">
-      <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Admin Support</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#1f2d45]">Support console</h1>
-        <p className="mt-2 text-sm text-[#607594]">Review customer tickets and reply from the support team.</p>
+      <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
+        <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>Admin Support</p>
+        <h1 className={ADMIN_PAGE_HERO_TITLE_CLASS}>Support console</h1>
+        <p className={ADMIN_PAGE_HERO_SUBTITLE_CLASS}>Review customer tickets and reply from the support team.</p>
       </header>
 
       <div className="grid gap-5 xl:grid-cols-[420px_1fr]">

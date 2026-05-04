@@ -3,6 +3,12 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { toast } from 'sonner';
 import { listAuditLogs, getAuditLogFilterOptions, type AuditLog, type ListAuditLogsParams, type AuditLogFilterOptions } from '@/lib/audit-logs';
+import {
+  ADMIN_PAGE_HERO_EYEBROW_CLASS,
+  ADMIN_PAGE_HERO_HEADER_CLASS,
+  ADMIN_PAGE_HERO_SUBTITLE_CLASS,
+  ADMIN_PAGE_HERO_TITLE_CLASS,
+} from '@/app/(app)/admin/admin-page-title';
 
 const severityClass: Record<string, string> = {
   Info: 'bg-[#eaf2ff] text-[#3f74df]',
@@ -144,10 +150,10 @@ export default function AdminAuditLogsPage() {
 
   return (
     <section className="space-y-4">
-      <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Audit Logs</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#1f2d45]">Activity Audit Trail</h1>
-        <p className="mt-1 text-sm text-[#607594]">Security-sensitive actions and system events for compliance review.</p>
+      <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
+        <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>Audit Logs</p>
+        <h1 className={ADMIN_PAGE_HERO_TITLE_CLASS}>Activity Audit Trail</h1>
+        <p className={ADMIN_PAGE_HERO_SUBTITLE_CLASS}>Security-sensitive actions and system events for compliance review.</p>
       </header>
 
       <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">

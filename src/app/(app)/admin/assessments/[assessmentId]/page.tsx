@@ -21,6 +21,14 @@ import {
 } from '@/lib/assessment-review';
 import { getReportByAssessment, generateDraftReport } from '@/lib/reports';
 import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
+import {
+  ADMIN_KPI_DARK_CARD_CLASS,
+  ADMIN_KPI_DARK_LABEL_CLASS,
+  ADMIN_PAGE_HERO_EYEBROW_CLASS,
+  ADMIN_PAGE_HERO_HEADER_CLASS,
+  ADMIN_PAGE_HERO_SUBTITLE_CLASS,
+  ADMIN_PAGE_HERO_TITLE_TEXT_CLASS,
+} from '@/app/(app)/admin/admin-page-title';
 
 type ReviewDraft = {
   suggestion_type: string;
@@ -417,8 +425,9 @@ export default function AdminAssessmentReviewDetailPage() {
 
   return (
     <section className="space-y-4">
-      <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
+      <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
         <AdminBreadcrumbs
+          variant="onDark"
           items={[
             { label: 'Dashboard', href: '/admin' },
             { label: 'Assessments', href: '/admin/assessments' },
@@ -431,25 +440,52 @@ export default function AdminAssessmentReviewDetailPage() {
             },
           ]}
         />
-        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-[#1f2d45]">Assessment Awaiting Review</h1>
-            <p className="mt-1 text-sm text-[#607594]">{detail?.customer_name || detail?.customer_email || '-'} — {detail?.checklist_title || '-'}</p>
-            <p className="mt-1 text-xs text-[#6f82a3]">
-              {String(reviewStatusLabel || detail?.assessment_status || 'pending_review').split('_').join(' ')} · {formatDateTime(detail?.submitted_at)}
+        <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>Assessment review</p>
+        <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h1 className={ADMIN_PAGE_HERO_TITLE_TEXT_CLASS}>Assessment Awaiting Review</h1>
+            <p className={ADMIN_PAGE_HERO_SUBTITLE_CLASS}>
+              {detail?.customer_name || detail?.customer_email || '-'} — {detail?.checklist_title || '-'}
+            </p>
+            <p className="mt-1 text-xs font-medium text-[#9db8e6]">
+              {String(reviewStatusLabel || detail?.assessment_status || 'pending_review').split('_').join(' ')} ·{' '}
+              {formatDateTime(detail?.submitted_at)}
             </p>
           </div>
-          <button type="button" disabled={finalizing || loading} onClick={() => void finalizeReview()} className="rounded-xl border border-[#2d4f83] bg-[#2f7dff] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+          <button
+            type="button"
+            disabled={finalizing || loading}
+            onClick={() => void finalizeReview()}
+            className="shrink-0 rounded-xl border border-[#5ea2ff] bg-[#2f7dff] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#256ceb] disabled:opacity-60"
+          >
             {finalizing ? 'Saving...' : 'Finalize Review'}
           </button>
         </div>
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm"><p className="text-sm font-medium text-[#6a7d9a]">Total Questions</p><p className="mt-2 text-2xl font-semibold text-[#273a5a]">{detail?.total_answers ?? (loading ? '...' : 0)}</p></article>
-        <article className="rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm"><p className="text-sm font-medium text-[#6a7d9a]">Answered</p><p className="mt-2 text-2xl font-semibold text-[#273a5a]">{detail?.total_answers ?? (loading ? '...' : 0)} ({Math.round(detail?.completion_percentage ?? 0)}%)</p></article>
-        <article className="rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm"><p className="text-sm font-medium text-[#6a7d9a]">Client Score</p><p className="mt-2 text-2xl font-semibold text-[#273a5a]">{Math.round(detail?.average_score ?? 0)}/100</p></article>
-        <article className="rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm"><p className="text-sm font-medium text-[#6a7d9a]">Marked for Follow-up</p><p className="mt-2 text-2xl font-semibold text-[#273a5a]">{detail?.action_required_answers ?? (loading ? '...' : 0)}</p></article>
+        <article className={ADMIN_KPI_DARK_CARD_CLASS}>
+          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Total Questions</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums text-white">{detail?.total_answers ?? (loading ? '...' : 0)}</p>
+        </article>
+        <article className={ADMIN_KPI_DARK_CARD_CLASS}>
+          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Answered</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums text-[#7cf0aa]">
+            {detail?.total_answers ?? (loading ? '...' : 0)} ({Math.round(detail?.completion_percentage ?? 0)}%)
+          </p>
+        </article>
+        <article className={ADMIN_KPI_DARK_CARD_CLASS}>
+          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Client Score</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums text-[#ffd89c]">
+            {Math.round(detail?.average_score ?? 0)}/100
+          </p>
+        </article>
+        <article className={ADMIN_KPI_DARK_CARD_CLASS}>
+          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Marked for Follow-up</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums text-[#ffb3c9]">
+            {detail?.action_required_answers ?? (loading ? '...' : 0)}
+          </p>
+        </article>
       </div>
 
       <article className="rounded-2xl border border-[#e2e8f5] bg-white p-4 shadow-sm">

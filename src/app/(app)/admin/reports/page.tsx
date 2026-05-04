@@ -8,6 +8,7 @@ import {
   type ReportListItem,
   type ReportStatus,
 } from '@/lib/reports';
+import { ADMIN_PAGE_TITLE_CLASS } from '@/app/(app)/admin/admin-page-title';
 
 const statusClass: Record<ReportStatus, string> = {
   draft_generated: 'bg-[#fff4df] text-[#b6862f]',
@@ -68,7 +69,7 @@ export default function AdminReportsPage({ searchParams }: ReportsPageProps) {
     <section className="space-y-4">
       <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Reports</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#1f2d45]">Report Center</h1>
+        <h1 className={`mt-2 ${ADMIN_PAGE_TITLE_CLASS}`}>Report Center</h1>
         <p className="mt-1 text-sm text-[#607594]">Review generated assessment reports and publish approved versions.</p>
         {statusFilter ? <p className="mt-2 text-sm font-semibold text-[#3e69b0]">Filtered by status: {statusFilter}</p> : null}
       </header>
