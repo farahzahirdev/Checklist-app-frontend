@@ -154,6 +154,13 @@ function Badge({ children, v }: { children: React.ReactNode; v: 'green' | 'blue'
   );
 }
 
+function recordChild(obj: Record<string, unknown> | null | undefined, key: string): Record<string, unknown> | null {
+  if (!obj) return null;
+  const v = obj[key];
+  if (v && typeof v === 'object' && !Array.isArray(v)) return v as Record<string, unknown>;
+  return null;
+}
+
 export default function UsersAccessMerged() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -450,14 +457,52 @@ export default function UsersAccessMerged() {
     router.replace(`/admin/users?tab=${t}`, { scroll: false });
   };
 
-  const dashRecent = Array.isArray(customerDash?.recent_assessments)
-    ? (customerDash.recent_assessments as Array<Record<string, unknown>>)
-    : [];
-  const dashChecklists = Array.isArray(customerDash?.available_checklists)
-    ? (customerDash.available_checklists as Array<Record<string, unknown>>)
-    : [];
-  const dashPay =
-    customerDash && typeof customerDash.payment_status === 'string' ? (customerDash.payment_status as string) : null;
+  const dashIfCustomer = recordChild(customerDash, 'if_customer');
+  const dashAssessmentBoard =
+    recordChild(dashIfCustomer, 'assessment_dashboard') ?? recordChild(customerDash, 'assessment_dashboard');
+  const dashPaymentBoard =
+    recordChild(dashIfCustomer, 'payment_dashboard') ?? recordChild(customerDash, 'payment_dashboard');
+
+  const dashRecent = (() => {
+    const fromDash = dashAssessmentBoard?.recent_submissions;
+    if (Array.isArray(fromDash)) return fromDash as Array<Record<string, unknown>>;
+    const legacy = customerDash?.recent_assessments;
+    if (Array.isArray(legacy)) return legacy as Array<Record<string, unknown>>;
+    const rec = recordChild(dashIfCustomer, 'assessment_records');
+    const assessments = rec?.assessments;
+    if (Array.isArray(assessments)) return assessments as Array<Record<string, unknown>>;
+    return [];
+  })();
+  const dashChecklists = (() => {
+    const fromDash = dashAssessmentBoard?.available_checklists;
+    if (Array.isArray(fromDash)) return fromDash as Array<Record<string, unknown>>;
+    const legacy = customerDash?.available_checklists;
+    return Array.isArray(legacy) ? (legacy as Array<Record<string, unknown>>) : [];
+  })();
+  const dashPaymentPreview = (() => {
+    if (!customerDash) {
+      return { legacyStatus: null as string | null, count: null as number | null, amount: null as string | null };
+    }
+    const legacy = customerDash.payment_status;
+    if (typeof legacy === 'string' && legacy.trim()) {
+      return { legacyStatus: legacy.trim(), count: null, amount: null };
+    }
+    const summary = recordChild(dashPaymentBoard, 'summary');
+    let count: number | null = null;
+    let amount: string | null = null;
+    if (summary) {
+      const tp = summary.total_payments;
+      const tf = summary.total_amount_formatted;
+      if (typeof tp === 'number') count = tp;
+      if (typeof tf === 'string' && tf.trim()) amount = tf.trim();
+    }
+    if (count === null) {
+      const payRec = recordChild(dashIfCustomer, 'payment_records');
+      const payments = payRec?.payments;
+      if (Array.isArray(payments)) count = payments.length;
+    }
+    return { legacyStatus: null, count, amount };
+  })();
 
   async function onChangeRole(e: FormEvent) {
     e.preventDefault();
@@ -734,7 +779,7 @@ export default function UsersAccessMerged() {
     }`;
 
   return (
-    <div className={`${shell} p-4 md:p-5`}>
+    <div className={`${shell} min-w-0 p-3 sm:p-4 md:p-5`}>
       <div className="pb-5">
         <h1 className={ADMIN_PAGE_TITLE_CLASS}>Users & Access Control</h1>
         <p className={`mt-1 max-w-[560px] text-[13px] ${muted}`}>
@@ -742,7 +787,7 @@ export default function UsersAccessMerged() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
         {(
           [
             { k: 'Admin users', v: adminUsers.length, sub: 'Admins & auditors', icon: 'admin-users' as const },
@@ -751,12 +796,14 @@ export default function UsersAccessMerged() {
             { k: 'Permissions', v: permissions.length, sub: 'Rules', icon: 'permissions' as const },
           ] as const
         ).map((s) => (
-          <div key={s.k} className={statCardClass}>
-            <div className="absolute right-3 top-3 opacity-95">
+          <div key={s.k} className={`${statCardClass} min-w-0`}>
+            <div className="absolute right-2 top-2 opacity-95 sm:right-3 sm:top-3">
               <StatIcon type={s.icon} />
             </div>
-            <p className="pr-12 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8fabd4]">{s.k}</p>
-            <p className="mt-1 text-[32px] font-extrabold leading-none tracking-[-0.05em] text-white">
+            <p className="truncate pr-10 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#8fabd4] sm:pr-12 sm:text-[10px] sm:tracking-[0.12em]">
+              {s.k}
+            </p>
+            <p className="mt-1 text-[26px] font-extrabold leading-none tracking-[-0.05em] text-white sm:text-[32px]">
               {rbacMetaLoading ? '…' : s.v}
             </p>
             <p className="mt-1 text-[11px] text-[#b8cae7]">{s.sub}</p>
@@ -764,7 +811,11 @@ export default function UsersAccessMerged() {
         ))}
       </div>
 
-      <div className={`mt-4 flex flex-wrap gap-1 rounded-t-lg bg-slate-100/90 p-1 pb-0 ring-1 ring-slate-200/80`}>
+      <div
+        className={`mt-3 flex flex-nowrap gap-1 overflow-x-auto overflow-y-hidden rounded-t-lg bg-slate-100/90 p-1 pb-0 ring-1 ring-slate-200/80 [-webkit-overflow-scrolling:touch] sm:mt-4`}
+        role="tablist"
+        aria-label="Users and access sections"
+      >
         {(
           [
             ['users', 'Admin users'],
@@ -777,10 +828,12 @@ export default function UsersAccessMerged() {
           <button
             key={id}
             type="button"
+            role="tab"
+            aria-selected={mainTab === id}
             className={
               mainTab === id
-                ? 'rounded-t-[10px] border border-slate-200 border-b-white bg-white px-[18px] py-2 text-[12px] font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200/80'
-                : 'rounded-t-[10px] border border-transparent px-[18px] py-2 text-[12px] font-semibold text-slate-700 hover:bg-white hover:text-slate-900'
+                ? 'shrink-0 rounded-t-[10px] border border-slate-200 border-b-white bg-white px-3 py-2 text-[11px] font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200/80 sm:px-[18px] sm:text-[12px]'
+                : 'shrink-0 rounded-t-[10px] border border-transparent px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-white hover:text-slate-900 sm:px-[18px] sm:text-[12px]'
             }
             onClick={() => setTab(id as MainTab)}
           >
@@ -789,18 +842,18 @@ export default function UsersAccessMerged() {
         ))}
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 min-w-0">
         {mainTab === 'users' ? (
-          <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
-            <div className="grid gap-4">
-              <div className={card}>
-                <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${line} px-[18px] py-3`}>
-                  <div>
-                    <h2 className="text-[15px] font-bold text-slate-900">Admin & auditor users</h2>
-                    <p className={`text-[12px] ${muted}`}>Click a row to inspect and manage</p>
+          <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_340px]">
+            <div className="grid min-w-0 gap-4">
+              <div className={`${card} min-w-0`}>
+                <div className={`flex flex-col gap-3 border-b ${line} px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-[18px]`}>
+                  <div className="min-w-0">
+                    <h2 className="text-[14px] font-bold text-slate-900 sm:text-[15px]">Admin & auditor users</h2>
+                    <p className={`text-[11px] sm:text-[12px] ${muted}`}>Click a row to inspect and manage</p>
                   </div>
                   <div
-                    className={`flex min-w-[200px] max-w-[320px] flex-1 items-center gap-2 rounded-[11px] border ${line} bg-slate-50 px-3 py-2 focus-within:border-[#10284F]`}
+                    className={`flex w-full min-w-0 items-center gap-2 rounded-[11px] border ${line} bg-slate-50 px-3 py-2 focus-within:border-[#10284F] sm:w-auto sm:min-w-[200px] sm:max-w-[320px] sm:flex-1`}
                   >
                     <input
                       className="min-w-0 flex-1 bg-transparent text-[12px] text-slate-900 outline-none placeholder:text-slate-500"
@@ -810,7 +863,7 @@ export default function UsersAccessMerged() {
                     />
                   </div>
                 </div>
-                <div className={`flex flex-wrap gap-2 border-b ${line} px-[18px] py-2`}>
+                <div className={`flex flex-wrap gap-2 border-b ${line} px-3 py-2 sm:px-[18px]`}>
                   <button
                     type="button"
                     className={filterChip(userRoleFilter === 'all' && userStatusFilter === 'all')}
@@ -862,95 +915,105 @@ export default function UsersAccessMerged() {
                     Inactive
                   </button>
                 </div>
-                <div
-                  className={`grid grid-cols-[38px_minmax(0,1fr)_100px_80px_76px] gap-3 border-b ${line} bg-slate-100 px-[18px] py-2 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500`}
-                >
-                  <div />
-                  <div>User</div>
-                  <div>Role</div>
-                  <div>Status</div>
-                  <div className="text-right">Actions</div>
-                </div>
-                <div className={`max-h-[420px] ${scrollYScrollbarHidden}`}>
-                  {listsLoading ? (
-                    <p className={`p-6 text-center text-sm ${muted}`}>Loading…</p>
-                  ) : displayedAdminUsers.length === 0 ? (
-                    <p className={`p-6 text-center text-sm ${muted}`}>No users match.</p>
-                  ) : (
-                    displayedAdminUsers.map((u) => {
-                      const col = colorFor(u.email);
-                      const sel = selectedAdminId === u.id;
-                      return (
-                        <div
-                          key={u.id}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => {
-                            setSelectedAdminId(u.id);
-                            setInspTab('details');
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              setSelectedAdminId(u.id);
-                            }
-                          }}
-                          className={`group grid cursor-pointer grid-cols-[38px_minmax(0,1fr)_100px_80px_76px] gap-3 border-b border-[rgba(155,181,224,0.06)] px-[18px] py-2.5 transition hover:bg-[#eef4ff] ${
-                            sel ? 'border-l-2 border-l-[#10284F] bg-gradient-to-r from-[#eef4ff] to-white pl-4' : ''
-                          }`}
-                        >
-                          <div
-                            className="flex h-[34px] w-[34px] items-center justify-center rounded-[11px] text-[12px] font-extrabold"
-                            style={{ background: col.bg, color: col.fg }}
-                          >
-                            {initials(u.email)}
-                          </div>
-                          <div>
-                            <p className="text-[13px] font-semibold text-slate-900">{u.email}</p>
-                            <p className={`text-[11px] ${muted}`}>Staff</p>
-                          </div>
-                          <div>
-                            <Badge v={u.role === 'admin' ? 'blue' : 'gold'}>{u.role}</Badge>
-                          </div>
-                          <div>
-                            <Badge v={u.is_active ? 'green' : 'gray'}>{u.is_active ? 'Active' : 'Inactive'}</Badge>
-                          </div>
-                          <div className="flex min-w-0 items-center justify-end opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
-                            <span className={`${btn} shrink-0 py-0.5 text-[10px]`}>Inspect</span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
+                <div className={`max-h-[min(420px,55vh)] overflow-y-auto sm:max-h-[420px] ${scrollYScrollbarHidden}`}>
+                  <div className="overflow-x-auto">
+                    <div className="min-w-[480px]">
+                      <div
+                        className={`grid grid-cols-[38px_minmax(0,1fr)_100px_80px_76px] gap-2 border-b ${line} bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500 sm:gap-3 sm:px-[18px]`}
+                      >
+                        <div />
+                        <div>User</div>
+                        <div>Role</div>
+                        <div>Status</div>
+                        <div className="text-right">Actions</div>
+                      </div>
+                      <div>
+                        {listsLoading ? (
+                          <p className={`p-6 text-center text-sm ${muted}`}>Loading…</p>
+                        ) : displayedAdminUsers.length === 0 ? (
+                          <p className={`p-6 text-center text-sm ${muted}`}>No users match.</p>
+                        ) : (
+                          displayedAdminUsers.map((u) => {
+                          const col = colorFor(u.email);
+                          const sel = selectedAdminId === u.id;
+                          return (
+                            <div
+                              key={u.id}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => {
+                                setSelectedAdminId(u.id);
+                                setInspTab('details');
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  setSelectedAdminId(u.id);
+                                }
+                              }}
+                              className={`group grid cursor-pointer grid-cols-[38px_minmax(0,1fr)_100px_80px_76px] gap-2 border-b border-[rgba(155,181,224,0.06)] px-3 py-2.5 transition hover:bg-[#eef4ff] sm:gap-3 sm:px-[18px] ${
+                                sel ? 'border-l-2 border-l-[#10284F] bg-gradient-to-r from-[#eef4ff] to-white pl-3 sm:pl-4' : ''
+                              }`}
+                            >
+                              <div
+                                className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[11px] text-[12px] font-extrabold"
+                                style={{ background: col.bg, color: col.fg }}
+                              >
+                                {initials(u.email)}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate text-[12px] font-semibold text-slate-900 sm:text-[13px]">{u.email}</p>
+                                <p className={`text-[10px] sm:text-[11px] ${muted}`}>Staff</p>
+                              </div>
+                              <div className="min-w-0">
+                                <Badge v={u.role === 'admin' ? 'blue' : 'gold'}>{u.role}</Badge>
+                              </div>
+                              <div className="min-w-0">
+                                <Badge v={u.is_active ? 'green' : 'gray'}>{u.is_active ? 'Active' : 'Inactive'}</Badge>
+                              </div>
+                              <div className="flex min-w-0 items-center justify-end opacity-100 sm:opacity-0 sm:pointer-events-none sm:transition-opacity sm:duration-150 sm:group-hover:opacity-100 sm:group-hover:pointer-events-auto sm:group-focus-within:opacity-100 sm:group-focus-within:pointer-events-auto">
+                                <span className={`${btn} shrink-0 py-0.5 text-[10px]`}>Inspect</span>
+                              </div>
+                            </div>
+                          );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className={card}>
-                <div className={`border-b ${line} px-[18px] py-3`}>
-                  <h2 className="text-[15px] font-bold">Recent activity</h2>
+              <div className={`${card} min-w-0`}>
+                <div className={`border-b ${line} px-3 py-3 sm:px-[18px]`}>
+                  <h2 className="text-[14px] font-bold sm:text-[15px]">Recent activity</h2>
                 </div>
-                <div className="px-[18px] py-3">
+                <div className="px-3 py-3 sm:px-[18px]">
                   <p className={`text-center text-sm ${muted}`}>Use Audit Logs in the sidebar for a full admin action history.</p>
                 </div>
               </div>
             </div>
-            <aside className={`${card} lg:sticky lg:top-2 lg:self-start`}>
-              <div className={`flex items-center justify-between border-b ${line} px-[18px] py-3`}>
-                <h3 className="text-[14px] font-bold">{selectedAdminId ? (adminDetail?.email ?? 'Loading…') : 'Select a user'}</h3>
-                {adminDetail ? <Badge v={adminDetail.role === 'admin' ? 'blue' : 'gold'}>{adminDetail.role}</Badge> : <Badge v="gray">None</Badge>}
+            <aside className={`${card} min-w-0 lg:sticky lg:top-2 lg:self-start`}>
+              <div className={`flex min-w-0 items-center justify-between gap-2 border-b ${line} px-3 py-3 sm:px-[18px]`}>
+                <h3 className="min-w-0 flex-1 truncate text-[13px] font-bold sm:text-[14px]">
+                  {selectedAdminId ? (adminDetail?.email ?? 'Loading…') : 'Select a user'}
+                </h3>
+                <span className="shrink-0">
+                  {adminDetail ? <Badge v={adminDetail.role === 'admin' ? 'blue' : 'gold'}>{adminDetail.role}</Badge> : <Badge v="gray">None</Badge>}
+                </span>
               </div>
               {!selectedAdminId || !adminDetail ? (
-                <div className={`px-6 py-10 text-center ${muted}`}>
+                <div className={`px-4 py-10 text-center sm:px-6 ${muted}`}>
                   <p className="mb-2 text-3xl opacity-20">👆</p>
                   <p className="text-sm">Click a user row to load details and manage access.</p>
                 </div>
               ) : (
                 <div>
-                  <div className={`flex border-b ${line}`}>
+                  <div className={`flex min-w-0 border-b ${line}`}>
                     {(['details', 'actions', 'security'] as const).map((t) => (
                       <button
                         key={t}
                         type="button"
-                        className={`flex-1 border-b-2 py-2 text-[11px] font-semibold capitalize ${
+                        className={`min-w-0 flex-1 border-b-2 px-1 py-2 text-[10px] font-semibold capitalize sm:px-2 sm:text-[11px] ${
                           inspTab === t ? 'border-[#10284F] text-slate-900' : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                         }`}
                         onClick={() => setInspTab(t)}
@@ -959,7 +1022,7 @@ export default function UsersAccessMerged() {
                       </button>
                     ))}
                   </div>
-                  <div className="p-[18px]">
+                  <div className="p-3 sm:p-[18px]">
                     {inspTab === 'details' ? (
                       <div>
                         <div className={`mb-4 flex gap-3 border-b ${line} pb-4`}>
@@ -1054,14 +1117,14 @@ export default function UsersAccessMerged() {
         ) : null}
 
         {mainTab === 'customers' ? (
-          <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
-            <div className={card}>
-              <div className={`flex flex-wrap items-center justify-between gap-3 border-b ${line} px-[18px] py-3`}>
-                <div>
-                  <h2 className="text-[15px] font-bold">Customer accounts</h2>
-                  <p className={`text-[12px] ${muted}`}>Select a customer to manage or preview dashboard</p>
+          <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_340px]">
+            <div className={`${card} min-w-0`}>
+              <div className={`flex flex-col gap-3 border-b ${line} px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-[18px]`}>
+                <div className="min-w-0">
+                  <h2 className="text-[14px] font-bold sm:text-[15px]">Customer accounts</h2>
+                  <p className={`text-[11px] sm:text-[12px] ${muted}`}>Select a customer to manage or preview dashboard</p>
                 </div>
-                <div className={`flex max-w-[300px] flex-1 rounded-[11px] border ${line} bg-slate-50 px-3 py-2`}>
+                <div className={`flex w-full min-w-0 rounded-[11px] border ${line} bg-slate-50 px-3 py-2 sm:w-auto sm:max-w-[300px] sm:flex-1`}>
                   <input
                     className="min-w-0 flex-1 bg-transparent text-[12px] outline-none placeholder:text-slate-500"
                     placeholder="Search email…"
@@ -1070,97 +1133,107 @@ export default function UsersAccessMerged() {
                   />
                 </div>
               </div>
-              <div className={`flex flex-wrap gap-2 border-b ${line} px-[18px] py-2`}>
+              <div className={`flex flex-wrap gap-2 border-b ${line} px-3 py-2 sm:px-[18px]`}>
                 {(['all', 'active', 'inactive'] as const).map((k) => (
                   <button key={k} type="button" className={filterChip(customerActiveFilter === k)} onClick={() => setCustomerActiveFilter(k)}>
                     {k[0].toUpperCase() + k.slice(1)}
                   </button>
                 ))}
               </div>
-              <div
-                className={`grid grid-cols-[38px_1fr_90px_80px] gap-3 border-b ${line} bg-slate-100 px-[18px] py-2 text-[10px] font-bold uppercase text-slate-500 sm:grid-cols-[38px_1fr_90px_80px_100px]`}
-              >
-                <div />
-                <div>Customer</div>
-                <div>Status</div>
-                <div className="hidden sm:block">Plan</div>
-                <div className="hidden sm:block">Actions</div>
-              </div>
-              <div className={`max-h-[420px] ${scrollYScrollbarHidden}`}>
-                {listsLoading ? (
-                  <p className={`p-6 text-center text-sm ${muted}`}>Loading…</p>
-                ) : customers.length === 0 ? (
-                  <p className={`p-6 text-center text-sm ${muted}`}>No customers.</p>
-                ) : (
-                  customers.map((c) => {
-                    const col = colorFor(c.email);
-                    const sel = selectedCustomerId === c.id;
-                    return (
-                      <div
-                        key={c.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => {
-                          setSelectedCustomerId(c.id);
-                          setCustInspTab('details');
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            setSelectedCustomerId(c.id);
-                          }
-                        }}
-                        className={`group grid cursor-pointer grid-cols-[38px_1fr_90px_80px] gap-3 border-b border-[rgba(155,181,224,0.06)] px-[18px] py-2.5 hover:bg-[#eef4ff] sm:grid-cols-[38px_1fr_90px_80px_100px] ${
-                          sel ? 'border-l-2 border-l-[#10284F] bg-gradient-to-r from-[#eef4ff] to-transparent pl-4' : ''
-                        }`}
-                      >
-                        <div
-                          className="flex h-[34px] w-[34px] items-center justify-center rounded-[11px] text-[12px] font-extrabold"
-                          style={{ background: col.bg, color: col.fg }}
-                        >
-                          {initials(c.email)}
-                        </div>
-                        <div>
-                          <p className="text-[13px] font-semibold">{c.email}</p>
-                          <p className={`text-[11px] ${muted}`}>Customer</p>
-                        </div>
-                        <div>
-                          <Badge v={c.is_active ? 'green' : 'gray'}>{c.is_active ? 'Active' : 'Inactive'}</Badge>
-                        </div>
-                        <div className="hidden sm:block">
-                          <Badge v="blue">—</Badge>
-                        </div>
-                        <div className="hidden sm:flex">
-                          <span className={`${btn} text-[10px]`}>Inspect</span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
+              <div className={`max-h-[min(420px,55vh)] overflow-y-auto sm:max-h-[420px] ${scrollYScrollbarHidden}`}>
+                <div className="overflow-x-auto">
+                  <div className="min-w-[360px]">
+                    <div
+                      className={`grid grid-cols-[38px_1fr_90px_80px] gap-2 border-b ${line} bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase text-slate-500 sm:grid-cols-[38px_1fr_90px_80px_100px] sm:gap-3 sm:px-[18px]`}
+                    >
+                      <div />
+                      <div>Customer</div>
+                      <div>Status</div>
+                      <div className="hidden sm:block">Plan</div>
+                      <div className="hidden sm:block">Actions</div>
+                    </div>
+                    <div>
+                      {listsLoading ? (
+                        <p className={`p-6 text-center text-sm ${muted}`}>Loading…</p>
+                      ) : customers.length === 0 ? (
+                        <p className={`p-6 text-center text-sm ${muted}`}>No customers.</p>
+                      ) : (
+                        customers.map((c) => {
+                          const col = colorFor(c.email);
+                          const sel = selectedCustomerId === c.id;
+                          return (
+                            <div
+                              key={c.id}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => {
+                                setSelectedCustomerId(c.id);
+                                setCustInspTab('details');
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  setSelectedCustomerId(c.id);
+                                }
+                              }}
+                              className={`group grid cursor-pointer grid-cols-[38px_1fr_90px_80px] gap-2 border-b border-[rgba(155,181,224,0.06)] px-3 py-2.5 hover:bg-[#eef4ff] sm:grid-cols-[38px_1fr_90px_80px_100px] sm:gap-3 sm:px-[18px] ${
+                                sel ? 'border-l-2 border-l-[#10284F] bg-gradient-to-r from-[#eef4ff] to-transparent pl-3 sm:pl-4' : ''
+                              }`}
+                            >
+                              <div
+                                className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[11px] text-[12px] font-extrabold"
+                                style={{ background: col.bg, color: col.fg }}
+                              >
+                                {initials(c.email)}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate text-[12px] font-semibold sm:text-[13px]">{c.email}</p>
+                                <p className={`text-[10px] sm:text-[11px] ${muted}`}>Customer</p>
+                              </div>
+                              <div className="min-w-0">
+                                <Badge v={c.is_active ? 'green' : 'gray'}>{c.is_active ? 'Active' : 'Inactive'}</Badge>
+                              </div>
+                              <div className="hidden min-w-0 sm:block">
+                                <Badge v="blue">—</Badge>
+                              </div>
+                              <div className="hidden sm:flex sm:items-center">
+                                <span className={`${btn} text-[10px]`}>Inspect</span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <aside className={`${card} lg:sticky lg:top-2`}>
-              <div className={`flex items-center justify-between border-b ${line} px-[18px] py-3`}>
-                <h3 className="text-[14px] font-bold">{selectedCustomerId ? (customerDetail?.email ?? '…') : 'Select a customer'}</h3>
-                {customerDetail ? (
-                  <Badge v={customerDetail.is_active ? 'green' : 'gray'}>{customerDetail.is_active ? 'Active' : 'Inactive'}</Badge>
-                ) : (
-                  <Badge v="gray">None</Badge>
-                )}
+            <aside className={`${card} min-w-0 lg:sticky lg:top-2 lg:self-start`}>
+              <div className={`flex min-w-0 items-center justify-between gap-2 border-b ${line} px-3 py-3 sm:px-[18px]`}>
+                <h3 className="min-w-0 flex-1 truncate text-[13px] font-bold sm:text-[14px]">
+                  {selectedCustomerId ? (customerDetail?.email ?? '…') : 'Select a customer'}
+                </h3>
+                <span className="shrink-0">
+                  {customerDetail ? (
+                    <Badge v={customerDetail.is_active ? 'green' : 'gray'}>{customerDetail.is_active ? 'Active' : 'Inactive'}</Badge>
+                  ) : (
+                    <Badge v="gray">None</Badge>
+                  )}
+                </span>
               </div>
               {!selectedCustomerId || !customerDetail ? (
-                <div className={`px-6 py-10 text-center ${muted}`}>
+                <div className={`px-4 py-10 text-center sm:px-6 ${muted}`}>
                   <p className="mb-2 text-3xl opacity-20">🧑‍💼</p>
                   <p className="text-sm">Click a customer row for details and actions.</p>
                 </div>
               ) : (
                 <div>
-                  <div className={`flex border-b ${line}`}>
+                  <div className={`flex min-w-0 border-b ${line}`}>
                     {(['details', 'dashboard', 'actions'] as const).map((t) => (
                       <button
                         key={t}
                         type="button"
-                        className={`flex-1 border-b-2 py-2 text-[11px] font-semibold capitalize ${
+                        className={`min-w-0 flex-1 border-b-2 px-1 py-2 text-[10px] font-semibold capitalize sm:px-2 sm:text-[11px] ${
                           custInspTab === t ? 'border-[#10284F] text-slate-900' : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                         }`}
                         onClick={() => setCustInspTab(t)}
@@ -1169,7 +1242,7 @@ export default function UsersAccessMerged() {
                       </button>
                     ))}
                   </div>
-                  <div className="p-[18px]">
+                  <div className="p-3 sm:p-[18px]">
                     {custInspTab === 'details' ? (
                       <div>
                         <p className={`mb-2 text-[11px] font-bold uppercase text-slate-500`}>Permissions</p>
@@ -1192,17 +1265,24 @@ export default function UsersAccessMerged() {
                         </button>
                         {customerDash ? (
                           <div className="mt-2 grid grid-cols-2 gap-2 text-[12px]">
-                            <div className={`rounded-xl border ${line} p-2`}>
-                              <p className={muted}>Payment</p>
-                              <p className="font-bold">{dashPay ?? '—'}</p>
+                            <div className={`min-w-0 rounded-xl border ${line} p-2`}>
+                              <p className={muted}>Payments</p>
+                              <p className="break-words font-bold tabular-nums">
+                                {dashPaymentPreview.legacyStatus ??
+                                  (dashPaymentPreview.count !== null ? dashPaymentPreview.count : '—')}
+                              </p>
                             </div>
-                            <div className={`rounded-xl border ${line} p-2`}>
+                            <div className={`min-w-0 rounded-xl border ${line} p-2`}>
+                              <p className={muted}>Total</p>
+                              <p className="break-words font-bold">{dashPaymentPreview.amount ?? '—'}</p>
+                            </div>
+                            <div className={`min-w-0 rounded-xl border ${line} p-2`}>
                               <p className={muted}>Assessments</p>
-                              <p className="font-bold">{dashRecent.length}</p>
+                              <p className="font-bold tabular-nums">{dashRecent.length}</p>
                             </div>
-                            <div className={`rounded-xl border ${line} p-2`}>
+                            <div className={`min-w-0 rounded-xl border ${line} p-2`}>
                               <p className={muted}>Checklists</p>
-                              <p className="font-bold">{dashChecklists.length}</p>
+                              <p className="font-bold tabular-nums">{dashChecklists.length}</p>
                             </div>
                           </div>
                         ) : null}
@@ -1235,13 +1315,13 @@ export default function UsersAccessMerged() {
         ) : null}
 
         {mainTab === 'rbac' ? (
-          <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
-            <div className="grid gap-4">
-              <div className={card}>
-                <div className={`border-b ${line} px-[18px] py-3`}>
-                  <h2 className="text-[15px] font-bold">Assign / remove role</h2>
+          <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_minmax(0,360px)]">
+            <div className="grid min-w-0 gap-4">
+              <div className={`${card} min-w-0`}>
+                <div className={`border-b ${line} px-3 py-3 sm:px-[18px]`}>
+                  <h2 className="text-[14px] font-bold sm:text-[15px]">Assign / remove role</h2>
                 </div>
-                <div className="space-y-3 p-[18px]">
+                <div className="space-y-3 p-3 sm:p-[18px]">
                   <input
                     className={inp}
                     placeholder="Search users…"
@@ -1357,11 +1437,11 @@ export default function UsersAccessMerged() {
                 </div>
               </div>
 
-              <div className={card}>
-                <div className={`border-b ${line} px-[18px] py-3`}>
-                  <h2 className="text-[15px] font-bold">Role permission management</h2>
+              <div className={`${card} min-w-0`}>
+                <div className={`border-b ${line} px-3 py-3 sm:px-[18px]`}>
+                  <h2 className="text-[14px] font-bold sm:text-[15px]">Role permission management</h2>
                 </div>
-                <div className="space-y-3 p-[18px]">
+                <div className="space-y-3 p-3 sm:p-[18px]">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <select className={inp} value={selectedRoleId} onChange={(e) => setSelectedRoleId(e.target.value)}>
                       <option value="">Role…</option>
@@ -1468,12 +1548,12 @@ export default function UsersAccessMerged() {
               </div>
             </div>
 
-            <div className="grid gap-4">
-              <div className={card}>
-                <div className={`border-b ${line} px-[18px] py-3`}>
-                  <h2 className="text-[15px] font-bold">Create role</h2>
+            <div className="grid min-w-0 gap-4">
+              <div className={`${card} min-w-0`}>
+                <div className={`border-b ${line} px-3 py-3 sm:px-[18px]`}>
+                  <h2 className="text-[14px] font-bold sm:text-[15px]">Create role</h2>
                 </div>
-                <div className="space-y-2 p-[18px]">
+                <div className="space-y-2 p-3 sm:p-[18px]">
                   <input className={inp} placeholder="Code" value={newRoleCodeCreate} onChange={(e) => setNewRoleCodeCreate(e.target.value)} disabled={isReadOnly} />
                   <input className={inp} placeholder="Name" value={newRoleName} onChange={(e) => setNewRoleName(e.target.value)} disabled={isReadOnly} />
                   <input className={inp} placeholder="Description" value={newRoleDescription} onChange={(e) => setNewRoleDescription(e.target.value)} disabled={isReadOnly} />
@@ -1492,12 +1572,12 @@ export default function UsersAccessMerged() {
                   </button>
                 </div>
               </div>
-              <div className={card}>
-                <div className={`border-b ${line} px-[18px] py-3`}>
-                  <h2 className="text-[15px] font-bold">Create permission</h2>
+              <div className={`${card} min-w-0`}>
+                <div className={`border-b ${line} px-3 py-3 sm:px-[18px]`}>
+                  <h2 className="text-[14px] font-bold sm:text-[15px]">Create permission</h2>
                 </div>
-                <div className="space-y-2 p-[18px]">
-                  <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2 p-3 sm:p-[18px]">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <input className={inp} placeholder="Resource" value={newPermRes} onChange={(e) => setNewPermRes(e.target.value)} disabled={isReadOnly} />
                     <input className={inp} placeholder="Action" value={newPermAct} onChange={(e) => setNewPermAct(e.target.value)} disabled={isReadOnly} />
                   </div>
@@ -1521,11 +1601,11 @@ export default function UsersAccessMerged() {
                   </button>
                 </div>
               </div>
-              <div className={card}>
-                <div className={`border-b ${line} px-[18px] py-3`}>
-                  <h2 className="text-[15px] font-bold">Edit role</h2>
+              <div className={`${card} min-w-0`}>
+                <div className={`border-b ${line} px-3 py-3 sm:px-[18px]`}>
+                  <h2 className="text-[14px] font-bold sm:text-[15px]">Edit role</h2>
                 </div>
-                <div className="space-y-2 p-[18px]">
+                <div className="space-y-2 p-3 sm:p-[18px]">
                   <input className={inp} value={roleUpdateName} onChange={(e) => setRoleUpdateName(e.target.value)} disabled={isReadOnly} />
                   <input className={inp} value={roleUpdateDescription} onChange={(e) => setRoleUpdateDescription(e.target.value)} disabled={isReadOnly} />
                   <label className={`flex items-center gap-2 text-[12px] ${muted}`}>
@@ -1548,11 +1628,11 @@ export default function UsersAccessMerged() {
                   </button>
                 </div>
               </div>
-              <div className={card}>
-                <div className={`border-b ${line} px-[18px] py-3`}>
-                  <h2 className="text-[15px] font-bold">Custom permissions (auditors)</h2>
+              <div className={`${card} min-w-0`}>
+                <div className={`border-b ${line} px-3 py-3 sm:px-[18px]`}>
+                  <h2 className="text-[14px] font-bold sm:text-[15px]">Custom permissions (auditors)</h2>
                 </div>
-                <div className="space-y-2 p-[18px]">
+                <div className="space-y-2 p-3 sm:p-[18px]">
                   <p className={`text-[12px] ${muted}`}>Applies to auditor-role users. Format resource:action</p>
                   <select className={inp} value={customPermUserId} onChange={(e) => setCustomPermUserId(e.target.value)} disabled={isReadOnly}>
                     <option value="">User…</option>
@@ -1578,12 +1658,12 @@ export default function UsersAccessMerged() {
         ) : null}
 
         {mainTab === 'check' ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className={card}>
-              <div className={`border-b ${line} px-[18px] py-3`}>
-                <h2 className="text-[15px] font-bold">Permission check</h2>
+          <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+            <div className={`${card} min-w-0`}>
+              <div className={`border-b ${line} px-3 py-3 sm:px-[18px]`}>
+                <h2 className="text-[14px] font-bold sm:text-[15px]">Permission check</h2>
               </div>
-              <div className="space-y-3 p-[18px]">
+              <div className="space-y-3 p-3 sm:p-[18px]">
                 <p className={`text-[12px] ${muted}`}>Leave user unset to check your own session.</p>
                 <select className={inp} value={targetUserId} onChange={(e) => setTargetUserId(e.target.value)}>
                   <option value="">My session</option>
@@ -1632,11 +1712,11 @@ export default function UsersAccessMerged() {
                 ) : null}
               </div>
             </div>
-            <div className={card}>
-              <div className={`border-b ${line} px-[18px] py-3`}>
-                <h2 className="text-[15px] font-bold">Quick user lookup</h2>
+            <div className={`${card} min-w-0`}>
+              <div className={`border-b ${line} px-3 py-3 sm:px-[18px]`}>
+                <h2 className="text-[14px] font-bold sm:text-[15px]">Quick user lookup</h2>
               </div>
-              <div className="space-y-3 p-[18px]">
+              <div className="space-y-3 p-3 sm:p-[18px]">
                 <select className={inp} value={lookupUserId} onChange={(e) => setLookupUserId(e.target.value)}>
                   <option value="">User…</option>
                   {allUsers.map((u) => (
@@ -1645,11 +1725,21 @@ export default function UsersAccessMerged() {
                     </option>
                   ))}
                 </select>
-                <div className="flex gap-2">
-                  <button type="button" className={btn} onClick={() => void onLoadUserRoles(lookupUserId)} disabled={!lookupUserId}>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    className={`${btn} inline-flex w-full items-center justify-center sm:w-auto`}
+                    onClick={() => void onLoadUserRoles(lookupUserId)}
+                    disabled={!lookupUserId}
+                  >
                     View roles
                   </button>
-                  <button type="button" className={btn} onClick={() => void onLoadUserPerms(lookupUserId)} disabled={!lookupUserId}>
+                  <button
+                    type="button"
+                    className={`${btn} inline-flex w-full items-center justify-center sm:w-auto`}
+                    onClick={() => void onLoadUserPerms(lookupUserId)}
+                    disabled={!lookupUserId}
+                  >
                     View permissions
                   </button>
                 </div>
@@ -1687,15 +1777,15 @@ export default function UsersAccessMerged() {
         ) : null}
 
         {mainTab === 'roleswitch' && !isReadOnly ? (
-          <div className="max-w-[680px] space-y-4">
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-[12px] text-amber-900">
+          <div className="w-full min-w-0 max-w-[680px] space-y-4">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-900 sm:p-4 sm:text-[12px]">
               QA and testing only. Temporarily switches your session. Use End switch to return. Actions are logged.
             </div>
-            <div className={card}>
-              <div className={`border-b ${line} px-[18px] py-3`}>
-                <h2 className="text-[15px] font-bold">Switch role</h2>
+            <div className={`${card} min-w-0`}>
+              <div className={`border-b ${line} px-3 py-3 sm:px-[18px]`}>
+                <h2 className="text-[14px] font-bold sm:text-[15px]">Switch role</h2>
               </div>
-              <form className="space-y-3 p-[18px]" onSubmit={onSwitchRole}>
+              <form className="space-y-3 p-3 sm:p-[18px]" onSubmit={onSwitchRole}>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <button
                     type="button"
@@ -1716,11 +1806,16 @@ export default function UsersAccessMerged() {
                 </div>
                 <input className={inp} value={switchReason} onChange={(e) => setSwitchReason(e.target.value)} placeholder="Reason *" />
                 <input className={inp} type="number" min={1} value={switchDuration} onChange={(e) => setSwitchDuration(Number(e.target.value))} />
-                <div className="flex gap-2">
-                  <button type="submit" className={btnPri} disabled={loading}>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button type="submit" className={`${btnPri} inline-flex w-full items-center justify-center sm:w-auto`} disabled={loading}>
                     Switch role
                   </button>
-                  <button type="button" className={btn} onClick={() => void onEndSwitch()} disabled={loading}>
+                  <button
+                    type="button"
+                    className={`${btn} inline-flex w-full items-center justify-center sm:w-auto`}
+                    onClick={() => void onEndSwitch()}
+                    disabled={loading}
+                  >
                     End switch
                   </button>
                 </div>
