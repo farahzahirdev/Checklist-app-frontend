@@ -52,8 +52,8 @@ export default function HomePage() {
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
       <section style={heroStyle}>
-        <div className="mx-auto grid min-h-[560px] w-full max-w-[1440px] items-center gap-10 px-4 py-10 text-white sm:px-6 sm:py-12 md:gap-12 md:px-6 md:py-16 lg:grid-cols-2 lg:gap-14">
-          <div className="space-y-7">
+        <div className="mx-auto grid w-full max-w-6xl items-center gap-8 px-4 py-8 text-white sm:px-6 sm:py-10 md:gap-10 md:px-8 md:py-12 lg:min-h-0 lg:grid-cols-2 lg:gap-12 lg:py-10">
+          <div className="space-y-5 lg:space-y-6">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">Home</p>
             <h1 className="max-w-xl text-4xl font-semibold leading-[1.04] motion-safe:animate-fade-in-up motion-safe:delay-100 sm:text-5xl md:text-6xl">
               Built by
@@ -154,7 +154,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 md:px-6 md:py-12">
+      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:px-8 md:py-10">
         <div className="grid gap-4 lg:grid-cols-2">
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
             <div className="flex items-start gap-4">
@@ -286,7 +286,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1440px] px-4 pb-14 sm:px-6 md:px-6 md:pb-16">
+      <section className="mx-auto max-w-6xl px-4 pb-12 sm:px-6 md:px-8 md:pb-14">
         <h3 className="text-center text-3xl font-semibold text-[#202743] motion-safe:animate-fade-in-up md:text-4xl">Trust & Credentials</h3>
         <p className="mt-2 text-center text-base text-[#6f7893] motion-safe:animate-fade-in-up motion-safe:delay-75 md:text-lg">
           We combine real-world experience with recognized knowledge and standards.
