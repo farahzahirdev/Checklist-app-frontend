@@ -52,8 +52,8 @@ export default function HomePage() {
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
       <section style={heroStyle}>
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-8 px-4 py-8 text-white sm:px-6 sm:py-10 md:gap-10 md:px-8 md:py-12 lg:min-h-0 lg:grid-cols-2 lg:gap-12 lg:py-10">
-          <div className="space-y-5 lg:space-y-6">
+        <div className="mx-auto grid w-full max-w-[1440px] items-start gap-6 px-4 py-6 text-white sm:px-6 sm:py-8 md:gap-8 md:px-6 md:py-10 lg:grid-cols-2 lg:items-center lg:gap-10 lg:py-10">
+          <div className="space-y-5">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">Home</p>
             <h1 className="max-w-xl text-4xl font-semibold leading-[1.04] motion-safe:animate-fade-in-up motion-safe:delay-100 sm:text-5xl md:text-6xl">
               Built by
@@ -70,19 +70,19 @@ export default function HomePage() {
           <div className="relative motion-safe:animate-fade-in-right motion-safe:delay-150">
             <div className="overflow-hidden rounded-2xl border border-[#325a99]/80 bg-[#edf1f9] text-[#152948] shadow-[0_24px_70px_rgba(0,0,0,0.55)] transition-shadow duration-500 ease-out motion-safe:hover:shadow-[0_28px_80px_rgba(0,0,0,0.5)]">
               <div className="grid md:grid-cols-[180px_1fr]">
-                <aside className="h-full bg-[#0b1a39] p-3 text-[#dce8ff]">
-                  <p className="mb-3 text-sm font-semibold">Checklist KB</p>
-                  <ul className="space-y-2 text-xs">
+                <aside className="h-full bg-[#0b1a39] p-2.5 text-[#dce8ff]">
+                  <p className="mb-2 text-sm font-semibold">Checklist KB</p>
+                  <ul className="space-y-1.5 text-xs">
                     <li className="rounded-md bg-[#17376d] px-2 py-1.5">Dashboard</li>
                     <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">Checklists</li>
                     <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">Reports</li>
                     <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">Settings</li>
                   </ul>
                 </aside>
-                <div className="p-4">
-                  <div className="mb-3 rounded-xl bg-white p-3">
+                <div className="p-3">
+                  <div className="mb-2 rounded-xl bg-white p-2.5">
                     <p className="text-sm font-semibold text-[#1a2c4f]">Dashboard</p>
-                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
                       <div>
                         <p className="text-[11px] text-[#6f7f98]">Overall Readiness</p>
                         <p className="text-2xl font-bold text-[#173a73] sm:text-[26px] xl:text-3xl">72%</p>
@@ -96,23 +96,23 @@ export default function HomePage() {
                         <p className="text-2xl font-bold text-[#173a73] sm:text-[26px] xl:text-3xl">7</p>
                       </div>
                     </div>
-                    <div className="mt-2 h-2 rounded-full bg-[#d6e2f7]">
+                    <div className="mt-1.5 h-2 rounded-full bg-[#d6e2f7]">
                       <div className="h-full w-[72%] rounded-full bg-[#2e82ff]" />
                     </div>
                   </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="rounded-xl bg-white p-3">
+                  <div className="grid gap-1.5 sm:grid-cols-2">
+                    <div className="rounded-xl bg-white p-2.5">
                       <p className="text-xs font-semibold text-[#263d62]">Recent Activity</p>
-                      <ul className="mt-2 space-y-2 text-[11px] text-[#4f668a]">
+                      <ul className="mt-1.5 space-y-1.5 text-[11px] text-[#4f668a]">
                         <li>Audit Readiness Checklist</li>
                         <li>Documentation Package</li>
                         <li>NIS2 Gap Analysis</li>
                       </ul>
                     </div>
-                    <div className="rounded-xl bg-white p-3">
+                    <div className="rounded-xl bg-white p-2.5">
                       <p className="text-xs font-semibold text-[#263d62]">Top Domains</p>
-                      <div className="mt-2">
-                        <svg viewBox="0 0 220 150" className="h-24 w-full" fill="none" aria-hidden="true">
+                      <div className="mt-1.5">
+                        <svg viewBox="0 0 220 150" className="h-20 w-full" fill="none" aria-hidden="true">
                           <g stroke="#e1e9f7" strokeWidth="1">
                             <polygon points="110,22 152,44 152,92 110,114 68,92 68,44" />
                             <polygon points="110,40 137,54 137,82 110,96 83,82 83,54" />
@@ -154,7 +154,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:px-8 md:py-10">
+      <section className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 md:px-6 md:py-12">
         <div className="grid gap-4 lg:grid-cols-2">
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
             <div className="flex items-start gap-4">
@@ -286,7 +286,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-12 sm:px-6 md:px-8 md:pb-14">
+      <section className="mx-auto max-w-[1440px] px-4 pb-14 sm:px-6 md:px-6 md:pb-16">
         <h3 className="text-center text-3xl font-semibold text-[#202743] motion-safe:animate-fade-in-up md:text-4xl">Trust & Credentials</h3>
         <p className="mt-2 text-center text-base text-[#6f7893] motion-safe:animate-fade-in-up motion-safe:delay-75 md:text-lg">
           We combine real-world experience with recognized knowledge and standards.
