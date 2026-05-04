@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import {
+  formatSupportTicketStatus,
   getAdminSupportTicket,
   listAdminSupportTickets,
   replyToSupportTicket,
@@ -142,7 +143,7 @@ export default function AdminSupportPage() {
               <option value="all">All statuses</option>
               {STATUS_OPTIONS.map((option) => (
                 <option key={option} value={option}>
-                  {option}
+                  {formatSupportTicketStatus(option, 'admin')}
                 </option>
               ))}
             </select>
@@ -181,7 +182,7 @@ export default function AdminSupportPage() {
                       <p className="mt-1 text-xs text-[#607594]">Updated {formatDate(ticket.last_message_at ?? ticket.updated_at)}</p>
                     </div>
                     <span className="shrink-0 rounded-full border border-[#d4dced] bg-white px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5b6f91]">
-                      {ticket.status}
+                      {formatSupportTicketStatus(ticket.status, 'admin')}
                     </span>
                   </div>
                 </button>
@@ -199,7 +200,7 @@ export default function AdminSupportPage() {
             {selectedTicket ? (
               <div className="flex items-center gap-2">
                 <span className="rounded-full border border-[#d4dced] bg-[#f7f9fe] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#5b6f91]">
-                  {selectedTicket.status}
+                  {formatSupportTicketStatus(selectedTicket.status, 'admin')}
                 </span>
                 <select
                   value={selectedTicket.status}
@@ -208,7 +209,7 @@ export default function AdminSupportPage() {
                 >
                   {STATUS_OPTIONS.map((option) => (
                     <option key={option} value={option}>
-                      {option}
+                      {formatSupportTicketStatus(option, 'admin')}
                     </option>
                   ))}
                 </select>

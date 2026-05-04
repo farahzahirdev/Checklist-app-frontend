@@ -2,6 +2,26 @@ import { apiGetWithAuth, apiPatch, apiPost } from '@/lib/api';
 
 export type SupportTicketStatus = 'open' | 'waiting_customer' | 'resolved' | 'closed';
 
+export type SupportTicketAudience = 'customer' | 'admin';
+
+export function formatSupportTicketStatus(
+  status: SupportTicketStatus | string,
+  audience: SupportTicketAudience = 'customer',
+): string {
+  const normalized = (status ?? '').toString().trim();
+  if (!normalized) return '-';
+
+  if (normalized === 'waiting_customer') {
+    return audience === 'admin' ? 'Waiting for customer' : 'Ticket update';
+  }
+
+  return normalized
+    .replace(/_/g, ' ')
+    .split(/\s+/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
 export type SupportTicketMessage = {
   id: string;
   ticket_id: string;

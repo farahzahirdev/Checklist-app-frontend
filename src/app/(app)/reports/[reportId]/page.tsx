@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
+import { ReportDashboard } from '@/components/report/report-dashboard';
 import {
   getCustomerReport,
   getCustomerReportData,
@@ -14,7 +15,7 @@ import {
 function formatDate(value: string | null | undefined) {
   if (!value) return '-';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
 }
 
 const statusLabels: Record<ReportResponse['status'], string> = {
@@ -89,7 +90,7 @@ export default function CustomerReportPage() {
   const isPublished = report.status === 'published';
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-6" suppressHydrationWarning>
       <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -136,89 +137,7 @@ export default function CustomerReportPage() {
         </p>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-[#243555]">Section Scores</h2>
-          <div className="space-y-3">
-            {data.section_scores.map((section) => (
-              <article key={section.section_id} className="rounded-xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="font-semibold text-[#243555]">{section.section_name}</h3>
-                  <span className="text-sm font-semibold text-[#3e69b0]">{section.percentage}%</span>
-                </div>
-                <p className="mt-2 text-sm text-[#607594]">Score {section.score}/{section.max_score}</p>
-              </article>
-            ))}
-            {!data.section_scores.length ? <p className="text-sm text-[#607594]">No section scores available.</p> : null}
-          </div>
-        </section>
-
-        <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-[#243555]">Chapter Overview</h2>
-          <div className="space-y-3">
-            {data.chapter_data.map((chapter) => (
-              <article key={chapter.chapter_code} className="rounded-xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="font-semibold text-[#243555]">{chapter.title}</h3>
-                  <span className="text-sm font-semibold text-[#3e69b0]">{chapter.percentage}%</span>
-                </div>
-                <p className="mt-2 text-sm text-[#607594]">
-                  Score {chapter.score}/{chapter.max_score} · Findings {chapter.findings_count}
-                </p>
-                <p className="mt-2 text-sm text-[#607594]">{chapter.recommendations}</p>
-              </article>
-            ))}
-            {!data.chapter_data.length ? <p className="text-sm text-[#607594]">No chapter overview available.</p> : null}
-          </div>
-        </section>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-[#243555]">Findings ({data.findings.length})</h2>
-          <div className="space-y-3">
-            {data.findings.map((finding, index) => (
-              <article key={`${finding.question_text}-${index}`} className="rounded-xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <span className={`rounded-md px-2 py-1 text-xs font-semibold ${finding.priority === 'high' ? 'bg-[#fee2e2] text-[#dc2626]' : finding.priority === 'medium' ? 'bg-[#fef3c7] text-[#d97706]' : 'bg-[#e0e7ff] text-[#3730a3]'}`}>
-                    {finding.priority.toUpperCase()}
-                  </span>
-                  <span className="text-xs text-[#607594]">Answer: {finding.answer}</span>
-                </div>
-                <p className="mt-3 text-sm text-[#2b3e60]">{finding.question_text}</p>
-                <p className="mt-2 text-sm text-[#607594]">{finding.recommendation}</p>
-              </article>
-            ))}
-            {!data.findings.length ? <p className="text-sm text-[#607594]">No findings available.</p> : null}
-          </div>
-        </section>
-
-        <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-[#243555]">Admin Summaries</h2>
-          <div className="space-y-3">
-            {data.section_summaries.map((summary, index) => (
-              <article key={`${summary.section_id}-${index}`} className="rounded-xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
-                <h3 className="font-semibold text-[#243555]">{summary.chapter_code}</h3>
-                <p className="mt-2 text-sm text-[#607594]">{summary.summary_text}</p>
-              </article>
-            ))}
-            {!data.section_summaries.length ? <p className="text-sm text-[#607594]">No summaries available.</p> : null}
-          </div>
-        </section>
-      </div>
-
-      <section className="space-y-3">
-        <h2 className="text-xl font-semibold text-[#243555]">Public Suggestions</h2>
-        <div className="space-y-3">
-          {data.public_suggestions.map((suggestion, index) => (
-            <article key={`${suggestion.created_at}-${index}`} className="rounded-xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
-              <p className="text-sm text-[#2b3e60]">{suggestion.suggestion_text}</p>
-              <p className="mt-2 text-xs text-[#607594]">Shared {formatDate(suggestion.created_at)}</p>
-            </article>
-          ))}
-          {!data.public_suggestions.length ? <p className="text-sm text-[#607594]">No public suggestions available.</p> : null}
-        </div>
-      </section>
+      <ReportDashboard data={data} reportId={reportId} />
     </section>
   );
 }
