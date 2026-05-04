@@ -346,13 +346,13 @@ export default function AdminReportDetailPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="request-changes-title"
-            className="w-full max-w-lg rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl"
+            className="w-full max-w-lg md:max-w-2xl lg:max-w-3xl rounded-2xl border border-[#dbe4f4] bg-white p-6 md:p-8 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 id="request-changes-title" className="text-lg font-semibold text-[#1f2d45]">
+            <h2 id="request-changes-title" className="text-lg font-semibold text-[#1f2d45] md:text-xl">
               Request changes
             </h2>
-            <p className="mt-1 text-sm text-[#607594]">
+            <p className="mt-1 text-sm text-[#607594] md:text-[0.9375rem]">
               Describe what should be revised before this report can move forward. This will be sent with the change
               request.
             </p>
@@ -361,8 +361,8 @@ export default function AdminReportDetailPage() {
               <textarea
                 value={requestChangesNote}
                 onChange={(e) => setRequestChangesNote(e.target.value)}
-                rows={5}
-                className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
+                rows={6}
+                className="min-h-[9.5rem] w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0] md:min-h-[14rem] md:px-4 md:py-3 md:text-[0.9375rem]"
                 placeholder="e.g. Update executive summary, clarify finding #3, add missing appendix…"
                 autoFocus
               />
