@@ -19,7 +19,7 @@ export function SiteHeader() {
 
   return (
     <header className="relative z-50 border-b border-[#284776] bg-[#050b1a]/95 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-[1440px] items-center px-4 py-4 sm:px-6 md:px-6">
+      <div className="mx-auto flex w-full max-w-7xl items-center px-4 py-4 sm:px-6 md:px-6">
         <Link href="/" className="flex items-center gap-3">
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#2f5ba6] bg-[#0b1d3f]">
             <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#62a2ff]" fill="none" aria-hidden="true">

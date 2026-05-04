@@ -116,7 +116,7 @@ export default function ResourcesPage() {
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
       <section style={heroStyle}>
-        <div className="mx-auto min-h-[560px] max-w-[1440px] px-4 py-7 sm:px-6 md:px-6 md:py-9">
+        <div className="mx-auto min-h-[560px] max-w-7xl px-4 py-7 sm:px-6 md:px-6 md:py-9">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-sm font-medium text-[#64799d] transition-colors duration-200 hover:text-[#3f5376]"
@@ -299,7 +299,7 @@ export default function ResourcesPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 md:px-6 md:py-10">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:px-6 md:py-10">
         <div className="grid gap-6 lg:grid-cols-[1.2fr_1.8fr]">
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
             <p className="text-xl font-semibold text-[#334a72]">Main benefit</p>
@@ -331,7 +331,7 @@ export default function ResourcesPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1440px] px-4 pb-8 sm:px-6 md:px-6 md:pb-10">
+      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 md:px-6 md:pb-10">
         <div className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-md md:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -387,7 +387,7 @@ export default function ResourcesPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1440px] px-4 pb-8 sm:px-6 md:px-6 md:pb-10">
+      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 md:px-6 md:pb-10">
         <div>
           <h2 className="text-4xl font-semibold text-[#1a2440] motion-safe:animate-fade-in-up">{t('sections.whoItsFor')}</h2>
           <p className="mt-2 text-xl text-[#556b8c] motion-safe:animate-fade-in-up motion-safe:delay-75">
@@ -411,7 +411,7 @@ export default function ResourcesPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1440px] px-4 pb-8 sm:px-6 md:px-6 md:pb-10">
+      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 md:px-6 md:pb-10">
         <div className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-md md:p-8">
           <div>
             <h2 className="text-4xl font-semibold text-[#1a2440]">What you get</h2>
@@ -476,7 +476,7 @@ export default function ResourcesPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1440px] px-4 pb-10 sm:px-6 md:px-6 md:pb-12">
+      <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 md:px-6 md:pb-12">
         <div className="rounded-2xl border border-[#264579] bg-[linear-gradient(120deg,#091229,#0b1a39_48%,#0e2348)] px-5 py-6 text-white motion-safe:animate-fade-in-up motion-safe:delay-100 sm:px-8 md:px-10 md:py-7">
           <div className="flex flex-wrap items-center justify-between gap-5">
             <div className="flex items-center gap-4">

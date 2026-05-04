@@ -52,7 +52,7 @@ export default function HomePage() {
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
       <section style={heroStyle}>
-        <div className="mx-auto grid min-h-[440px] w-full max-w-[1440px] items-start gap-6 px-4 py-7 text-white sm:min-h-[460px] sm:px-6 sm:py-9 md:gap-8 md:px-6 md:py-11 lg:min-h-[480px] lg:grid-cols-2 lg:items-center lg:gap-10 lg:py-11">
+        <div className="mx-auto grid min-h-[440px] w-full max-w-7xl items-start gap-6 px-4 py-7 text-white sm:min-h-[460px] sm:px-6 sm:py-9 md:gap-8 md:px-6 md:py-11 lg:min-h-[480px] lg:grid-cols-2 lg:items-center lg:gap-10 lg:py-11">
           <div className="space-y-5">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">Home</p>
             <h1 className="max-w-xl text-4xl font-semibold leading-[1.04] motion-safe:animate-fade-in-up motion-safe:delay-100 sm:text-5xl md:text-6xl">
@@ -154,7 +154,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 md:px-6 md:py-12">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-6 md:py-12">
         <div className="grid gap-4 lg:grid-cols-2">
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
             <div className="flex items-start gap-4">
@@ -286,7 +286,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1440px] px-4 pb-14 sm:px-6 md:px-6 md:pb-16">
+      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 md:px-6 md:pb-16">
         <h3 className="text-center text-3xl font-semibold text-[#202743] motion-safe:animate-fade-in-up md:text-4xl">Trust & Credentials</h3>
         <p className="mt-2 text-center text-base text-[#6f7893] motion-safe:animate-fade-in-up motion-safe:delay-75 md:text-lg">
           We combine real-world experience with recognized knowledge and standards.

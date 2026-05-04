@@ -3,7 +3,7 @@ import Link from 'next/link';
 export function PublicFooter() {
   return (
     <footer className="border-t border-[#0f274f] bg-[#040d21]">
-      <div className="mx-auto grid max-w-[1440px] gap-6 px-4 py-5 text-[#a7b7d3] sm:px-6 md:grid-cols-[1.4fr_1.1fr_1fr_1.1fr] md:px-6">
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-5 text-[#a7b7d3] sm:px-6 md:grid-cols-[1.4fr_1.1fr_1fr_1.1fr] md:px-6">
         <div className="border-b border-[#12315a] pb-4 md:border-b-0 md:border-r md:pb-0 md:pr-6">
           <Link href="/" className="inline-flex items-center gap-2 text-[17px] font-semibold text-white">
             <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-[#0e2e64] text-[#4e91ff]">
