@@ -1,4 +1,5 @@
 import { apiGetWithAuth } from '@/lib/api';
+import { getCompanyQuerySuffix } from '@/lib/company-context';
 
 export type AdminDashboardSummary = {
   users_total: number;
@@ -148,20 +149,23 @@ type DashboardAuth = {
   token?: string | null;
 };
 
-export async function getAdminDashboardSummary(auth?: DashboardAuth) {
-  return apiGetWithAuth<AdminDashboardSummary>('/dashboard/admin', auth);
+export async function getAdminDashboardSummary(auth?: DashboardAuth & { companyId?: string }) {
+  const suffix = getCompanyQuerySuffix(auth?.companyId);
+  return apiGetWithAuth<AdminDashboardSummary>(`/dashboard/admin${suffix ? `?${suffix}` : ''}`, auth);
 }
 
-export async function getAdminAwaitingReview(auth?: DashboardAuth) {
-  return apiGetWithAuth<AdminAwaitingReviewItem[]>('/dashboard/admin/awaiting-review', auth);
+export async function getAdminAwaitingReview(auth?: DashboardAuth & { companyId?: string }) {
+  const suffix = getCompanyQuerySuffix(auth?.companyId);
+  return apiGetWithAuth<AdminAwaitingReviewItem[]>(`/dashboard/admin/awaiting-review${suffix ? `?${suffix}` : ''}`, auth);
 }
 
 export async function getAdminActivity(auth?: DashboardAuth) {
   return apiGetWithAuth<AdminActivityItem[]>('/dashboard/admin/activity', auth);
 }
 
-export async function getAdminDistribution(auth?: DashboardAuth) {
-  return apiGetWithAuth<AdminDistribution>('/dashboard/admin/distribution', auth);
+export async function getAdminDistribution(auth?: DashboardAuth & { companyId?: string }) {
+  const suffix = getCompanyQuerySuffix(auth?.companyId);
+  return apiGetWithAuth<AdminDistribution>(`/dashboard/admin/distribution${suffix ? `?${suffix}` : ''}`, auth);
 }
 
 export async function getAdminRetention(auth?: DashboardAuth) {
@@ -172,15 +176,18 @@ export async function getAdminSystemHealth(auth?: DashboardAuth) {
   return apiGetWithAuth<AdminSystemHealth>('/dashboard/admin/system-health', auth);
 }
 
-export async function getAuditorDashboardSummary(auth?: DashboardAuth) {
-  return apiGetWithAuth<AuditorDashboardSummary>('/dashboard/auditor', auth);
+export async function getAuditorDashboardSummary(auth?: DashboardAuth & { companyId?: string }) {
+  const suffix = getCompanyQuerySuffix(auth?.companyId);
+  return apiGetWithAuth<AuditorDashboardSummary>(`/dashboard/auditor${suffix ? `?${suffix}` : ''}`, auth);
 }
 
 
-export async function getCustomerDashboardSummary(auth?: DashboardAuth) {
-  return apiGetWithAuth<CustomerDashboardSummary>('/dashboard/customer', auth);
+export async function getCustomerDashboardSummary(auth?: DashboardAuth & { companyId?: string }) {
+  const suffix = getCompanyQuerySuffix(auth?.companyId);
+  return apiGetWithAuth<CustomerDashboardSummary>(`/dashboard/customer${suffix ? `?${suffix}` : ''}`, auth);
 }
 
-export async function getCustomerDashboardEnhanced(auth?: DashboardAuth) {
-  return apiGetWithAuth<CustomerDashboardEnhanced>('/dashboard/customer/enhanced', auth);
+export async function getCustomerDashboardEnhanced(auth?: DashboardAuth & { companyId?: string }) {
+  const suffix = getCompanyQuerySuffix(auth?.companyId);
+  return apiGetWithAuth<CustomerDashboardEnhanced>(`/dashboard/customer/enhanced${suffix ? `?${suffix}` : ''}`, auth);
 }

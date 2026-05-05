@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
+import CompanySwitcher from '@/components/company/company-switcher';
 import {
   changeCustomerPassword,
   getCustomerProfile,
@@ -216,6 +217,9 @@ export default function CustomerProfilePage() {
         <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-[#1f2d45]">Company context</h2>
           <p className="mt-1 text-sm text-[#607594]">Company information is shown for visibility and managed by platform flow.</p>
+          <div className="mt-4">
+            <CompanySwitcher label="Select company" />
+          </div>
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <div className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-3">
               <dt className="text-[#607594]">Company name</dt>

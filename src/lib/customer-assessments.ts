@@ -34,6 +34,7 @@ export type CustomerAssessmentListParams = {
   sort_order?: 'asc' | 'desc';
   skip?: number;
   limit?: number;
+  company_id?: string;
 };
 
 function buildAssessmentListQuery(params?: CustomerAssessmentListParams): string {
@@ -46,6 +47,7 @@ function buildAssessmentListQuery(params?: CustomerAssessmentListParams): string
   if (params.sort_order) query.set('sort_order', params.sort_order);
   if (typeof params.skip === 'number') query.set('skip', String(params.skip));
   if (typeof params.limit === 'number') query.set('limit', String(params.limit));
+  if (params.company_id) query.set('company_id', params.company_id);
   const qs = query.toString();
   return qs ? `?${qs}` : '';
 }

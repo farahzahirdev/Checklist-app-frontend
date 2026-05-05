@@ -18,6 +18,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   const navItems = [
     { href: '/admin', label: 'Dashboard', icon: 'home' },
+    { href: '/admin/companies', label: 'Companies', icon: 'box' },
     { href: '/admin/checklists', label: 'Checklist Content', icon: 'checklist' },
     { href: '/admin/users', label: 'Users & access', icon: 'users' },
     { href: '/admin/support', label: 'Support', icon: 'report' },
@@ -33,7 +34,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     if (!roleLoaded) return;
     if (!isReadOnly) return;
     const isAllowedAuditorRoute =
-      pathname === '/admin' || pathname.startsWith('/admin/checklists') || pathname.startsWith('/admin/users');
+    pathname === '/admin' || pathname.startsWith('/admin/checklists') || pathname.startsWith('/admin/users');
     if (!isAllowedAuditorRoute) {
       router.replace('/admin/checklists');
     }

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import CompanySwitcher from '@/components/company/company-switcher';
+import { getActiveCompanyId } from '@/lib/company-context';
 import {
   getCustomerDashboardEnhanced,
   getCustomerDashboardSummary,
@@ -17,6 +19,7 @@ export default function DashboardPage() {
   const [enhanced, setEnhanced] = useState<CustomerDashboardEnhanced | null>(null);
   const [assessments, setAssessments] = useState<CustomerAssessmentListItem[]>([]);
   const [reports, setReports] = useState<ReportResponse[]>([]);
+  const [activeCompanyId, setActiveCompanyId] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [permissionBlocked, setPermissionBlocked] = useState(false);
@@ -26,11 +29,12 @@ export default function DashboardPage() {
     setError('');
     setPermissionBlocked(false);
     try {
+      const companyId = getActiveCompanyId() || activeCompanyId || undefined;
       const [summaryResponse, enhancedResponse, assessmentsResponse, reportsResponse] = await Promise.all([
-        getCustomerDashboardSummary(),
-        getCustomerDashboardEnhanced().catch(() => null),
-        listCustomerAssessments({ sort_by: 'updated_at', sort_order: 'desc', limit: 20 }).catch(() => null),
-        getCustomerReports().catch(() => []),
+        getCustomerDashboardSummary({ companyId }),
+        getCustomerDashboardEnhanced({ companyId }).catch(() => null),
+        listCustomerAssessments({ sort_by: 'updated_at', sort_order: 'desc', limit: 20, company_id: companyId }).catch(() => null),
+        getCustomerReports(companyId).catch(() => []),
       ]);
       setSummary(summaryResponse);
       setEnhanced(enhancedResponse);
@@ -49,7 +53,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     void loadDashboard();
-  }, []);
+  }, [activeCompanyId]);
 
   return (
     <section className="space-y-6">
@@ -58,14 +62,19 @@ export default function DashboardPage() {
           <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Customer Dashboard</p>
           <h1 className="text-3xl font-semibold text-[#1f2d45]">Overview</h1>
         </div>
-        <button
-          type="button"
-          onClick={() => void loadDashboard()}
-          disabled={loading}
-          className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff] disabled:opacity-60"
-        >
-          {loading ? 'Refreshing...' : 'Refresh'}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="min-w-[240px]">
+            <CompanySwitcher label="Active company" compact onCompanyChange={setActiveCompanyId} />
+          </div>
+          <button
+            type="button"
+            onClick={() => void loadDashboard()}
+            disabled={loading}
+            className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff] disabled:opacity-60"
+          >
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
       </header>
 
       {error ? (

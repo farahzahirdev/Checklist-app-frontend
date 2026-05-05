@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
+import { getActiveCompanyId } from '@/lib/company-context';
 import { createStripeCheckoutSession, getUserPaymentStatus } from '@/lib/payments';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
 
@@ -75,9 +76,11 @@ export default function PaymentPage() {
     setLoading(true);
     try {
       const origin = window.location.origin;
+      const companyId = getActiveCompanyId() || undefined;
       window.localStorage.setItem(CHECKOUT_CHECKLIST_ID_STORAGE_KEY, selectedChecklistId);
       const checkoutUrl = await createStripeCheckoutSession({
         checklist_id: selectedChecklistId,
+        company_id: companyId,
         success_url: `${origin}/payment/success?checklist_id=${encodeURIComponent(selectedChecklistId)}`,
         cancel_url: `${origin}/payment?checkout=cancelled`,
       });

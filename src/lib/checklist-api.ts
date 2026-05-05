@@ -784,9 +784,10 @@ export type ChecklistAccessGrant = {
   created_at: string;
 };
 
-export async function selectChecklistAfterPayment(checklistId: string) {
+export async function selectChecklistAfterPayment(checklistId: string, companyId?: string) {
   const query = new URLSearchParams();
   query.set('checklist_id', checklistId);
+  if (companyId) query.set('company_id', companyId);
   return apiPost<ChecklistAccessGrant, Record<string, never>>(`/access/select-checklist?${query.toString()}`, {});
 }
 

@@ -8,6 +8,7 @@ export type AssessmentSessionResponse = {
   checklist_id: string;
   user_id: string;
   access_window_id: string;
+  company_id?: string | null;
   status: AssessmentStatus;
   started_at: string;
   expires_at: string;
@@ -15,12 +16,15 @@ export type AssessmentSessionResponse = {
   is_new: boolean;
 };
 
-export async function startAssessment(payload: { checklist_id: string }) {
-  return apiPost<AssessmentSessionResponse, { checklist_id: string }>('/assessment/start', payload);
+export async function startAssessment(payload: { checklist_id: string; company_id?: string }) {
+  return apiPost<AssessmentSessionResponse, { checklist_id: string; company_id?: string }>('/assessment/start', payload);
 }
 
-export async function getCurrentAssessment(checklistId?: string) {
-  const suffix = checklistId ? `?checklist_id=${encodeURIComponent(checklistId)}` : '';
+export async function getCurrentAssessment(checklistId?: string, companyId?: string) {
+  const query = new URLSearchParams();
+  if (checklistId) query.set('checklist_id', checklistId);
+  if (companyId) query.set('company_id', companyId);
+  const suffix = query.toString() ? `?${query.toString()}` : '';
   return apiGetWithAuth<AssessmentSessionResponse>(`/assessment/current${suffix}`);
 }
 
@@ -92,8 +96,11 @@ export type AssessmentCurrentDetailResponse = AssessmentSessionResponse & {
   sections: AssessmentDetailSection[];
 };
 
-export async function getCurrentAssessmentDetail(checklistId?: string) {
-  const suffix = checklistId ? `?checklist_id=${encodeURIComponent(checklistId)}` : '';
+export async function getCurrentAssessmentDetail(checklistId?: string, companyId?: string) {
+  const query = new URLSearchParams();
+  if (checklistId) query.set('checklist_id', checklistId);
+  if (companyId) query.set('company_id', companyId);
+  const suffix = query.toString() ? `?${query.toString()}` : '';
   return apiGetWithAuth<AssessmentCurrentDetailResponse>(`/assessment/current/detail${suffix}`);
 }
 
@@ -161,8 +168,11 @@ export type AssessmentSubmitResponse = {
   completion_percent: number;
 };
 
-export async function submitAssessment(assessmentId: string) {
-  return apiPost<AssessmentSubmitResponse, Record<string, never>>(`/assessment/${assessmentId}/submit`, {});
+export async function submitAssessment(assessmentId: string, companyId?: string) {
+  const query = new URLSearchParams();
+  if (companyId) query.set('company_id', companyId);
+  const suffix = query.toString() ? `?${query.toString()}` : '';
+  return apiPost<AssessmentSubmitResponse, Record<string, never>>(`/assessment/${assessmentId}/submit${suffix}`, {});
 }
 
 export async function uploadAssessmentEvidence(assessmentId: string, questionId: string, file: File): Promise<any> {

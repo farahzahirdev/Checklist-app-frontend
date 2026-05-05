@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { getActiveCompanyId } from '@/lib/company-context';
 import { getCustomerReports, type ReportResponse } from '@/lib/reports';
 
 const statusLabels: Record<ReportResponse['status'], string> = {
@@ -22,7 +23,7 @@ export default function ReportsPage() {
     setLoading(true);
     setError('');
     try {
-      const response = await getCustomerReports();
+      const response = await getCustomerReports(getActiveCompanyId() || undefined);
       setReports(response.filter((report) => report.status === 'published'));
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load reports';
