@@ -123,32 +123,58 @@ export default function PaymentPage() {
                       : 'Price unavailable';
                     const description =
                       checklist.checklist_type?.description?.trim() || checklist.warning?.trim() || 'No description available.';
+                    const typeLabel = checklist.checklist_type?.name || checklist.checklist_type?.code || 'Checklist type';
                     return (
                       <button
                         key={checklist.id}
                         type="button"
                         onClick={() => setSelectedChecklistId(checklist.id)}
-                        className={`rounded-xl border p-3 text-left transition ${
+                        className={`group relative overflow-hidden rounded-2xl border p-0 text-left transition-all duration-300 ${
                           isSelected
-                            ? 'border-[#8bb4ff] bg-[linear-gradient(160deg,#16305d,#1c3d76)] text-white ring-2 ring-[#8bb4ff]/70 shadow-[0_8px_20px_rgba(16,40,79,0.45)]'
-                            : 'border-[#2d4f83] bg-[linear-gradient(160deg,#10284f,#123263)] text-[#d8e6ff] hover:border-[#5e86c8] hover:shadow-[0_6px_16px_rgba(16,40,79,0.35)]'
+                            ? 'border-[#9fc2ff] bg-[linear-gradient(145deg,#143566_0%,#1b4a86_48%,#2a67b0_100%)] text-white ring-2 ring-[#a9c8ff]/70 shadow-[0_18px_32px_rgba(10,30,63,0.55)]'
+                            : 'border-[#2d4f83] bg-[linear-gradient(145deg,#0d2448_0%,#123263_48%,#173e78_100%)] text-[#d8e6ff] hover:-translate-y-0.5 hover:border-[#79a8f6] hover:shadow-[0_14px_28px_rgba(10,30,63,0.45)]'
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm font-semibold leading-tight">{checklist.title}</p>
-                          {isSelected ? (
-                            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-[#a9c8ff] bg-[#0b2144] px-1 text-[10px] font-semibold text-[#cfe0ff]">
-                              ✓
+                        <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+                        <div className="pointer-events-none absolute -bottom-6 -left-5 h-20 w-20 rounded-full bg-[#7bb0ff]/20 blur-2xl" />
+
+                        <div className="relative z-10 p-4">
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-[#d9e7ff]">
+                              {typeLabel}
                             </span>
-                          ) : null}
+                            {isSelected ? (
+                              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-[#b8d3ff] bg-[#0b2144]/70 px-1 text-[10px] font-semibold text-[#d6e5ff]">
+                                Selected
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <p className="mt-3 text-base font-semibold leading-tight text-white">{checklist.title}</p>
+                          <p className="mt-1.5 text-xs text-[#c9dcff]">
+                            {checklist.version ? `Version ${checklist.version}` : 'Latest version'}
+                          </p>
+
+                          <p className="mt-3 min-h-[3rem] line-clamp-2 text-xs leading-relaxed text-[#d5e4ff]">{description}</p>
+
+                          <div className="mt-4 flex items-end justify-between gap-2">
+                            <div>
+                              <p className="text-[10px] uppercase tracking-[0.2em] text-[#b8cff6]">Price</p>
+                              <p className="text-xl font-semibold tracking-tight text-white">{priceLabel}</p>
+                            </div>
+                            <span
+                              className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
+                                isSelected
+                                  ? 'bg-[#d7e7ff] text-[#12305d]'
+                                  : 'border border-white/20 bg-white/10 text-[#d8e6ff] group-hover:bg-white/20'
+                              }`}
+                            >
+                              {isSelected ? 'Ready to checkout' : 'Choose plan'}
+                            </span>
+                          </div>
+
+                          {checklist.warning ? <p className="mt-3 text-xs text-amber-200">{checklist.warning}</p> : null}
                         </div>
-                        <p className="mt-1.5 text-xs text-[#9db8e6]">
-                          {(checklist.checklist_type?.name || checklist.checklist_type?.code || 'Checklist type') +
-                            (checklist.version ? ` • v${checklist.version}` : '')}
-                        </p>
-                        <p className="mt-2 line-clamp-3 text-xs text-[#c6d8fb]">{description}</p>
-                        <p className="mt-3 text-base font-semibold tracking-wide">{priceLabel}</p>
-                        {checklist.warning ? <p className="mt-2 text-xs text-amber-200">{checklist.warning}</p> : null}
                       </button>
                     );
                   })}

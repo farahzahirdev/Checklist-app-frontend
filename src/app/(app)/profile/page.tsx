@@ -2,7 +2,6 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
-import CompanySwitcher from '@/components/company/company-switcher';
 import CompanyManagement from '@/components/company-management';
 import {
   changeCustomerPassword,
@@ -152,7 +151,7 @@ export default function CustomerProfilePage() {
 
       {error ? <p className="rounded-lg border border-[#f0c7cf] bg-[#fff2f4] px-3 py-2 text-sm text-[#b63d51]">{error}</p> : null}
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-4">
         <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-[#1f2d45]">Profile details</h2>
           <p className="mt-1 text-sm text-[#607594]">Update your profile information used across customer workspace.</p>
@@ -213,36 +212,6 @@ export default function CustomerProfilePage() {
               {savingProfile ? 'Saving...' : 'Save profile'}
             </button>
           </form>
-        </article>
-
-        <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-[#1f2d45]">Company context</h2>
-          <p className="mt-1 text-sm text-[#607594]">Company information is shown for visibility and managed by platform flow.</p>
-          <div className="mt-4">
-            <CompanySwitcher label="Select company" />
-          </div>
-          <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-            <div className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-3">
-              <dt className="text-[#607594]">Company name</dt>
-              <dd className="mt-1 font-semibold text-[#1f2d45]">{profile?.company_name || '-'}</dd>
-            </div>
-            <div className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-3">
-              <dt className="text-[#607594]">Industry</dt>
-              <dd className="mt-1 font-semibold text-[#1f2d45]">{profile?.company_industry || '-'}</dd>
-            </div>
-            <div className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-3">
-              <dt className="text-[#607594]">Company size</dt>
-              <dd className="mt-1 font-semibold text-[#1f2d45]">{profile?.company_size || '-'}</dd>
-            </div>
-            <div className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-3">
-              <dt className="text-[#607594]">Region</dt>
-              <dd className="mt-1 font-semibold text-[#1f2d45]">{profile?.company_region || '-'}</dd>
-            </div>
-          </dl>
-          <p className="mt-3 text-xs text-[#6c83a8]">
-            Profile created: {profile?.created_at ? new Date(profile.created_at).toLocaleString() : 'n/a'} | Last updated:{' '}
-            {profile?.updated_at ? new Date(profile.updated_at).toLocaleString() : 'n/a'}
-          </p>
         </article>
       </div>
 
