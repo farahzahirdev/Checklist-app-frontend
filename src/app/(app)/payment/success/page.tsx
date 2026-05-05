@@ -268,7 +268,6 @@ export default function PaymentSuccessPage() {
         <h1 className="text-3xl font-semibold text-[#1f2d45]">Payment completed</h1>
         <p className="max-w-2xl text-sm text-[#4f6281]">Finalizing checklist access and security setup.</p>
       </header>
-      <CompanySwitcher label="Company" compact={false} />
       <article
         className={`border p-6 shadow-sm ${
           paymentStatus === 'succeeded' ? 'border-[#2f4d82] text-white' : 'border-[#dbe4f4] bg-white text-[#2a3d5f]'
