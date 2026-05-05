@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
@@ -162,6 +162,7 @@ function sanitizeRichHtml(input?: string | null) {
 
 export default function AssessmentPage() {
   const searchParams = useSearchParams();
+  const questionPanelTopRef = useRef<HTMLDivElement | null>(null);
   const checklistIdFromQuery = searchParams.get('checklist_id') ?? '';
   const [availableChecklists, setAvailableChecklists] = useState<CustomerChecklist[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
@@ -177,6 +178,7 @@ export default function AssessmentPage() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [isWhyThisMattersOpen, setIsWhyThisMattersOpen] = useState(false);
   const [autoSaving, setAutoSaving] = useState<Record<string, boolean>>({});
   const [evidenceLoading, setEvidenceLoading] = useState<Record<string, boolean>>({});
   const [evidencePreviewUrls, setEvidencePreviewUrls] = useState<Record<string, string>>({});
@@ -460,6 +462,10 @@ export default function AssessmentPage() {
   }, [activeQuestion?.answer_options]);
 
   const whyThisMattersText = (activeQuestion?.how_it_works || activeQuestion?.explanation || '').trim();
+
+  useEffect(() => {
+    setIsWhyThisMattersOpen(false);
+  }, [activeQuestionId]);
 
   async function ensureCurrentAssessmentId() {
     if (assessmentId) {
@@ -854,15 +860,22 @@ export default function AssessmentPage() {
     setActiveQuestionCursor(allQuestions.indexOf(firstQuestionInSection));
   }
 
+  function scrollQuestionPanelToTop() {
+    questionPanelTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
   return (
     <section className="space-y-4 bg-[#f4f6fa]">
       <div className="rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_1px_3px_rgba(18,32,61,0.08)]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Assessment</p>
             <p className="mt-1 text-sm text-[#607594]">Switch checklist to view/manage different assessments.</p>
           </div>
-          <label className="min-w-[280px] flex-1 max-w-xl">
+          <label className="w-full min-w-0 flex-1 sm:min-w-[280px] sm:max-w-xl">
             <select
               value={effectiveChecklistId}
               onChange={(event) => {
@@ -870,7 +883,7 @@ export default function AssessmentPage() {
                 const next = nextId ? `/assessment?checklist_id=${encodeURIComponent(nextId)}` : '/assessment';
                 window.location.assign(next);
               }}
-              className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring disabled:opacity-60"
+              className="w-full min-w-0 rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring disabled:opacity-60"
               disabled={catalogLoading || !checklistSelectOptions.length}
             >
               <option value="">
@@ -894,7 +907,7 @@ export default function AssessmentPage() {
 
       <section className={isSubmittedChecklist ? 'grid gap-4' : 'grid gap-4 lg:grid-cols-[280px_1fr]'}>
         {!isSubmittedChecklist ? (
-        <aside className="rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_1px_3px_rgba(18,32,61,0.08)]">
+        <aside className="w-full min-w-0 max-w-[calc(100vw-2rem)] rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_1px_3px_rgba(18,32,61,0.08)] sm:max-w-none">
           <h3 className="text-[22px] font-semibold text-[#1f2d45]">Checklist Sections</h3>
           <ul className="mt-3 space-y-2 text-sm">
             {(assessmentDetail?.sections ?? []).map((section) => (
@@ -1010,8 +1023,9 @@ export default function AssessmentPage() {
         </aside>
         ) : null}
 
-        <div>
-          <article className="rounded-xl border border-[#d9dee8] bg-white p-5 shadow-[0_1px_3px_rgba(18,32,61,0.08)]">
+        <div className="w-full min-w-0">
+          <div ref={questionPanelTopRef} />
+          <article className="w-full min-w-0 max-w-[calc(100vw-2rem)] rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_1px_3px_rgba(18,32,61,0.08)] sm:max-w-none sm:p-5">
             {selectedSectionId && questionsInActiveSection.length === 0 ? (
               <div className="mt-3 rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] px-3 py-3 text-sm text-[#607594]">
                 No questions for this section yet. Select another section from the left panel.
@@ -1051,15 +1065,20 @@ export default function AssessmentPage() {
                     <button
                       type="button"
                       disabled={!whyThisMattersText}
+                      aria-label="Why this matters"
+                      onClick={() => {
+                        if (!whyThisMattersText) return;
+                        setIsWhyThisMattersOpen((open) => !open);
+                      }}
                       className="inline-flex items-center gap-1.5 rounded-md border border-[#d9e4f5] bg-[#f4f7fc] px-3 py-1.5 text-xs font-semibold text-[#4d6c98] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#b8cceb] text-[10px] text-[#5f7fb4]">
                         i
                       </span>
-                      Why this matters
+                      <span className="hidden sm:inline">Why this matters</span>
                     </button>
-                    {whyThisMattersText ? (
-                      <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 hidden w-96 rounded-lg border border-[#d9e4f5] bg-white p-4 text-sm text-[#3f5677] shadow-lg group-hover:block">
+                    {whyThisMattersText && isWhyThisMattersOpen ? (
+                      <div className="absolute right-0 top-full z-20 mt-2 w-[351px] max-w-[calc(100vw-2rem)] rounded-lg border border-[#d9e4f5] bg-white p-4 text-sm text-[#3f5677] shadow-lg">
                         {whyThisMattersText}
                       </div>
                     ) : null}
@@ -1068,7 +1087,7 @@ export default function AssessmentPage() {
                 </div>
 
                 <div className="rounded-lg border border-[#e2e8f5] bg-white p-2">
-                  <p className="px-2 py-1 text-[44px] leading-[1.1] font-semibold text-[#1f2d45]">
+                  <p className="break-words px-2 py-1 text-[28px] leading-[1.15] font-semibold text-[#1f2d45] sm:text-[44px] sm:leading-[1.1]">
                     {activeQuestion.question_title || activeQuestion.legal_requirement || 'Question'}
                   </p>
                   <div className="mt-3 grid gap-2 md:grid-cols-4">
@@ -1375,7 +1394,10 @@ export default function AssessmentPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => goToQuestionByIndex(activeQuestionIndex + 1)}
+                    onClick={() => {
+                      goToQuestionByIndex(activeQuestionIndex + 1);
+                      scrollQuestionPanelToTop();
+                    }}
                     disabled={!hasNextQuestion}
                     className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white hover:bg-[#223657] disabled:cursor-not-allowed disabled:opacity-60"
                   >

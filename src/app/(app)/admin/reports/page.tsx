@@ -2,13 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import {
   getReportsList,
   type ReportListItem,
   type ReportStatus,
 } from '@/lib/reports';
-import { ADMIN_PAGE_TITLE_CLASS } from '@/app/(app)/admin/admin-page-title';
+import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
+import {
+  ADMIN_KPI_DARK_CARD_CLASS,
+  ADMIN_KPI_DARK_LABEL_CLASS,
+  ADMIN_PAGE_HERO_EYEBROW_CLASS,
+  ADMIN_PAGE_HERO_HEADER_CLASS,
+  ADMIN_PAGE_HERO_SUBTITLE_CLASS,
+  ADMIN_PAGE_TITLE_CLASS,
+} from '@/app/(app)/admin/admin-page-title';
 
 const statusClass: Record<ReportStatus, string> = {
   draft_generated: 'bg-[#fff4df] text-[#b6862f]',
@@ -31,10 +40,28 @@ type ReportsPageProps = {
 };
 
 export default function AdminReportsPage({ searchParams }: ReportsPageProps) {
+  void searchParams;
+  const query = useSearchParams();
   const [reports, setReports] = useState<ReportListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+
+  useEffect(() => {
+    const statusFromQuery = query.get('status');
+    if (!statusFromQuery) return;
+    const normalized = statusFromQuery.trim().toLowerCase().replace(/\s+/g, '_');
+    const validStatuses: ReportStatus[] = [
+      'draft_generated',
+      'under_review',
+      'changes_requested',
+      'approved',
+      'published',
+    ];
+    if (validStatuses.includes(normalized as ReportStatus)) {
+      setStatusFilter(normalized as ReportStatus);
+    }
+  }, [query]);
 
   async function loadReports() {
     setLoading(true);
@@ -67,11 +94,23 @@ export default function AdminReportsPage({ searchParams }: ReportsPageProps) {
 
   return (
     <section className="space-y-4">
-      <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Reports</p>
-        <h1 className={`mt-2 ${ADMIN_PAGE_TITLE_CLASS}`}>Report Center</h1>
-        <p className="mt-1 text-sm text-[#607594]">Review generated assessment reports and publish approved versions.</p>
-        {statusFilter ? <p className="mt-2 text-sm font-semibold text-[#3e69b0]">Filtered by status: {statusFilter}</p> : null}
+      <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
+        <AdminBreadcrumbs
+          variant="onDark"
+          items={[
+            { label: 'Dashboard', href: '/admin' },
+            ...(statusFilter
+              ? [
+                  { label: 'Reports', href: '/admin/reports' },
+                  { label: statusLabels[statusFilter as ReportStatus] ?? 'Reports' },
+                ]
+              : [{ label: 'Reports' }]),
+          ]}
+        />
+        <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>Reports</p>
+        <h1 className={`mt-2 ${ADMIN_PAGE_TITLE_CLASS} text-white`}>Report Center</h1>
+        <p className={ADMIN_PAGE_HERO_SUBTITLE_CLASS}>Review generated assessment reports and publish approved versions.</p>
+        {statusFilter ? <p className="mt-2 text-sm font-semibold text-[#9db8e6]">Filtered by status: {statusFilter}</p> : null}
       </header>
 
       <div className="grid gap-3 md:grid-cols-3">
@@ -80,9 +119,9 @@ export default function AdminReportsPage({ searchParams }: ReportsPageProps) {
           { label: 'Draft Reports', value: stats.draft.toString() },
           { label: 'Published', value: stats.published.toString() },
         ].map((item) => (
-          <article key={item.label} className="rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm">
-            <p className="text-sm font-medium text-[#6a7d9a]">{item.label}</p>
-            <p className="mt-1 text-3xl font-semibold text-[#273a5a]">{item.value}</p>
+          <article key={item.label} className={ADMIN_KPI_DARK_CARD_CLASS}>
+            <p className={ADMIN_KPI_DARK_LABEL_CLASS}>{item.label}</p>
+            <p className="mt-1 text-3xl font-semibold text-white">{item.value}</p>
           </article>
         ))}
       </div>

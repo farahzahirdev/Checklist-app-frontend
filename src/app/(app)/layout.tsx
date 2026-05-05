@@ -38,6 +38,7 @@ export default function AppLayout({
   const dashboardActive = pathname === '/dashboard';
   const assessmentActive = pathname?.startsWith('/assessment') ?? false;
   const accessActive = pathname?.startsWith('/access') ?? false;
+  const profileActive = pathname?.startsWith('/profile') ?? false;
   const supportActive = pathname?.startsWith('/support') ?? false;
   const purchaseActive = isPaymentPath;
   const paymentsActive = isPaymentsPath;
@@ -73,6 +74,9 @@ export default function AppLayout({
       return currentRole === 'customer';
     }
     if (currentPath.startsWith('/payments')) {
+      return currentRole === 'customer';
+    }
+    if (currentPath.startsWith('/profile')) {
       return currentRole === 'customer';
     }
     return true;
@@ -257,6 +261,14 @@ export default function AppLayout({
                 >
                   Payments
                 </Link>
+                <Link
+                  href="/profile"
+                  className={`flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
+                    profileActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
+                  }`}
+                >
+                  Profile
+                </Link>
                 <LogoutButton />
                 {roleSwitchActive ? (
                   <button
@@ -285,15 +297,15 @@ export default function AppLayout({
                   <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#9dc5ff]">Customer Workspace</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button
-                    type="button"
+                  <Link
+                    href="/profile"
                     className="inline-flex items-center gap-2 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-medium text-[#dce8ff] hover:bg-[#223657]"
                   >
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#d6e4ff] text-[#274b84]">
                       {displayName.charAt(0).toUpperCase() || 'U'}
                     </span>
                     {displayName}
-                  </button>
+                  </Link>
                 </div>
               </header>
               <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 md:p-5">{children}</div>

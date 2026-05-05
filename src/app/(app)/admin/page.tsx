@@ -118,6 +118,59 @@ export default function AdminDashboardPage() {
       ];
   const awaitingReviewPreview = data.awaitingReview.slice(0, 4);
   const hasMoreAwaitingReview = data.awaitingReview.length > awaitingReviewPreview.length;
+  const distributionItems = [
+    {
+      key: 'ready',
+      label: 'Ready to start',
+      value: Number(data.distribution?.ready_to_start ?? 0),
+      href: '/admin/assessments?status=Ready%20to%20Start',
+      color: '#5b8ff9',
+    },
+    {
+      key: 'progress',
+      label: 'In progress',
+      value: Number(data.distribution?.in_progress ?? 0),
+      href: '/admin/assessments?status=In%20Progress',
+      color: '#f6bd6b',
+    },
+    {
+      key: 'review',
+      label: 'Waiting for review',
+      value: Number(data.distribution?.waiting_for_review ?? 0),
+      href: '/admin/assessments?status=Awaiting%20Review',
+      color: '#f2cf85',
+    },
+    {
+      key: 'published',
+      label: 'Published',
+      value: Number(data.distribution?.published ?? 0),
+      href: '/admin/reports?status=Published',
+      color: '#5fb88d',
+    },
+    {
+      key: 'expired',
+      label: 'Expired',
+      value: Number(data.distribution?.expired ?? 0),
+      href: '/admin/assessments?status=Expired',
+      color: '#df5c6d',
+    },
+  ];
+  const distributionTotal = distributionItems.reduce((sum, item) => sum + item.value, 0);
+  const donutRadius = 56;
+  const donutStroke = 16;
+  const donutCircumference = 2 * Math.PI * donutRadius;
+  let donutOffset = 0;
+  const donutSegments = distributionItems.map((item) => {
+    const safeTotal = distributionTotal > 0 ? distributionTotal : 1;
+    const segmentLength = (item.value / safeTotal) * donutCircumference;
+    const segment = {
+      ...item,
+      dasharray: `${segmentLength} ${donutCircumference - segmentLength}`,
+      dashoffset: -donutOffset,
+    };
+    donutOffset += segmentLength;
+    return segment;
+  });
 
   return (
     <section className="-m-4 space-y-4 bg-[linear-gradient(160deg,#eef3fb_0%,#f8fbff_45%,#eef4ff_100%)] p-4 text-[#1f2d45] md:-m-5 md:p-5">
@@ -248,34 +301,45 @@ export default function AdminDashboardPage() {
       {!isReadOnly ? (
       <div className="grid gap-3 xl:grid-cols-3">
         <article className={`${panelCardClass} p-4`}>
-          <h3 className="text-lg font-semibold text-[#243555]">Distribution</h3>
-          <ul className="mt-3 space-y-2 text-sm text-[#2f4264]">
-            <li>
-              <Link href="/admin/assessments?status=Ready%20to%20Start" className="hover:text-[#274b84] hover:underline">
-                Ready to start: {data.distribution?.ready_to_start ?? (loading ? '...' : 0)}
-              </Link>
-            </li>
-            <li>
-              <Link href="/admin/assessments?status=In%20Progress" className="hover:text-[#274b84] hover:underline">
-                In progress: {data.distribution?.in_progress ?? (loading ? '...' : 0)}
-              </Link>
-            </li>
-            <li>
-              <Link href="/admin/assessments?status=Awaiting%20Review" className="hover:text-[#274b84] hover:underline">
-                Waiting review: {data.distribution?.waiting_for_review ?? (loading ? '...' : 0)}
-              </Link>
-            </li>
-            <li>
-              <Link href="/admin/reports?status=Published" className="hover:text-[#274b84] hover:underline">
-                Published: {data.distribution?.published ?? (loading ? '...' : 0)}
-              </Link>
-            </li>
-            <li>
-              <Link href="/admin/assessments?status=Expired" className="hover:text-[#274b84] hover:underline">
-                Expired: {data.distribution?.expired ?? (loading ? '...' : 0)}
-              </Link>
-            </li>
-          </ul>
+          <h3 className="text-lg font-semibold text-[#243555]">Assessment Status Distribution</h3>
+          <div className="mt-3 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="relative mx-auto h-40 w-40 xl:mx-0">
+              <svg viewBox="0 0 160 160" className="h-40 w-40 -rotate-90">
+                <circle cx="80" cy="80" r={donutRadius} fill="none" stroke="#e8eef8" strokeWidth={donutStroke} />
+                {donutSegments.map((segment) => (
+                  <circle
+                    key={segment.key}
+                    cx="80"
+                    cy="80"
+                    r={donutRadius}
+                    fill="none"
+                    stroke={segment.color}
+                    strokeWidth={donutStroke}
+                    strokeLinecap="round"
+                    strokeDasharray={segment.dasharray}
+                    strokeDashoffset={segment.dashoffset}
+                  />
+                ))}
+              </svg>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                <span className="text-4xl font-bold leading-none text-[#1f2d45]">{loading ? '...' : distributionTotal}</span>
+                <span className="mt-1 text-sm font-medium text-[#7285a5]">Progress</span>
+              </div>
+            </div>
+            <ul className="space-y-2 text-sm text-[#2f4264]">
+              {distributionItems.map((item) => (
+                <li key={item.key}>
+                  <Link href={item.href as any} className="flex items-center justify-between gap-3 rounded-md px-1 py-0.5 hover:bg-[#edf3ff]">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                      <span>{item.label}</span>
+                    </span>
+                    <span className="min-w-6 text-right font-semibold text-[#1f2d45]">{loading ? '...' : item.value}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </article>
 
         <article className={`${panelCardClass} p-4`}>

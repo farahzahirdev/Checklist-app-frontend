@@ -116,7 +116,7 @@ export default function ResourcesPage() {
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
       <section style={heroStyle}>
-        <div className="mx-auto min-h-[560px] max-w-7xl px-4 py-7 sm:px-6 md:px-6 md:py-9">
+        <div className="mx-auto min-h-[520px] max-w-7xl px-4 py-6 sm:px-6 md:px-6 md:py-8 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-sm font-medium text-[#64799d] transition-colors duration-200 hover:text-[#3f5376]"
@@ -127,7 +127,7 @@ export default function ResourcesPage() {
 
           <div className="mt-5 grid items-center gap-7 lg:grid-cols-[1.02fr_0.98fr]">
             <div className="space-y-5">
-              <span className="inline-flex rounded-full bg-[#dfe8ff] px-4 py-1.5 text-base font-semibold uppercase tracking-[0.12em] text-[#5278be] motion-safe:animate-fade-in motion-safe:delay-75">
+              <span className="public-eyebrow inline-flex rounded-full bg-[#dfe8ff] px-4 py-1.5 text-[#5278be] motion-safe:animate-fade-in motion-safe:delay-75">
                 Audit
               </span>
 
@@ -138,14 +138,14 @@ export default function ResourcesPage() {
                     <path d="m9.4 12.2 1.8 1.8 3.6-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>
-                <h1 className="text-5xl font-semibold leading-[1.02] text-[#1a2440] sm:text-6xl">
+                <h1 className="public-hero-title text-[#1a2440]">
                   Audit Readiness
                   <br />
                   Checklist
                 </h1>
               </div>
 
-              <p className="max-w-2xl text-2xl leading-9 text-[#4f6282] motion-safe:animate-fade-in-up motion-safe:delay-150">
+              <p className="public-hero-subtitle max-w-2xl text-[#4f6282] motion-safe:animate-fade-in-up motion-safe:delay-150">
                 Prepare for audits with <span className="font-semibold text-[#3864ad]">confidence</span>. Simplify complex compliance requirements into clear, actionable steps. Find gaps, upload evidence, and get a reviewed report to prove your readiness.
               </p>
 
@@ -248,7 +248,7 @@ export default function ResourcesPage() {
                   </div>
                 </div>
               </div>
-              <div className="pointer-events-none absolute -bottom-16 -right-10 hidden w-72 rounded-2xl border border-[#d7e2f5] bg-white px-4 py-3 shadow-[0_16px_35px_rgba(67,95,145,0.22)] sm:block">
+              <div className="pointer-events-none absolute -bottom-16 right-0 hidden w-72 rounded-2xl border border-[#d7e2f5] bg-white px-4 py-3 shadow-[0_16px_35px_rgba(67,95,145,0.22)] sm:block xl:-right-10">
                 <p className="text-[30px] font-semibold leading-none text-[#253d63]">Maturity Overview</p>
                 <div className="relative mt-2 h-44">
                   <svg viewBox="0 0 320 210" className="h-full w-full" fill="none" aria-hidden="true">
@@ -299,7 +299,7 @@ export default function ResourcesPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:px-6 md:py-10">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:px-6 md:py-10 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <div className="grid gap-6 lg:grid-cols-[1.2fr_1.8fr]">
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
             <p className="text-xl font-semibold text-[#334a72]">Main benefit</p>
@@ -331,7 +331,7 @@ export default function ResourcesPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 md:px-6 md:pb-10">
+      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 md:px-6 md:pb-10 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <div className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-md md:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -387,7 +387,7 @@ export default function ResourcesPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 md:px-6 md:pb-10">
+      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 md:px-6 md:pb-10 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <div>
           <h2 className="text-4xl font-semibold text-[#1a2440] motion-safe:animate-fade-in-up">{t('sections.whoItsFor')}</h2>
           <p className="mt-2 text-xl text-[#556b8c] motion-safe:animate-fade-in-up motion-safe:delay-75">
@@ -411,7 +411,7 @@ export default function ResourcesPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 md:px-6 md:pb-10">
+      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 md:px-6 md:pb-10 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <div className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-md md:p-8">
           <div>
             <h2 className="text-4xl font-semibold text-[#1a2440]">What you get</h2>
@@ -476,7 +476,7 @@ export default function ResourcesPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 md:px-6 md:pb-12">
+      <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 md:px-6 md:pb-12 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <div className="rounded-2xl border border-[#264579] bg-[linear-gradient(120deg,#091229,#0b1a39_48%,#0e2348)] px-5 py-6 text-white motion-safe:animate-fade-in-up motion-safe:delay-100 sm:px-8 md:px-10 md:py-7">
           <div className="flex flex-wrap items-center justify-between gap-5">
             <div className="flex items-center gap-4">

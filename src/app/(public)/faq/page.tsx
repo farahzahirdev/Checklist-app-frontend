@@ -48,22 +48,22 @@ export default function FaqPage() {
           <div className="absolute -left-24 top-12 h-72 w-72 rounded-full bg-[#2262d9]/40 blur-3xl" />
           <div className="absolute right-24 top-6 h-72 w-72 rounded-full bg-[#143f8f]/40 blur-3xl" />
         </div>
-        <div className="relative mx-auto flex min-h-[560px] max-w-7xl flex-col justify-center px-4 py-12 sm:px-6 md:px-6 md:py-16">
+        <div className="relative mx-auto flex min-h-[520px] max-w-7xl flex-col justify-center px-4 py-10 sm:px-6 md:px-6 md:py-12 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
           <p className="inline-flex self-start rounded-full border border-[#255da8] bg-[#12366c] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#9ac3ff] motion-safe:animate-fade-in motion-safe:delay-75">
             Help center
           </p>
-          <h1 className="mt-4 max-w-3xl text-5xl font-semibold leading-tight text-white motion-safe:animate-fade-in-up motion-safe:delay-100 sm:text-6xl">
+          <h1 className="public-hero-title mt-4 max-w-3xl text-white motion-safe:animate-fade-in-up motion-safe:delay-100">
             Frequently Asked Questions
           </h1>
-          <p className="mt-4 max-w-2xl text-lg leading-8 text-[#c7d8f8] motion-safe:animate-fade-in-up motion-safe:delay-200">
+          <p className="public-hero-subtitle mt-4 max-w-2xl text-[#c7d8f8] motion-safe:animate-fade-in-up motion-safe:delay-200">
             Everything you need to know about access, assessments, reports, and platform security.
           </p>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-6 md:py-14">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-6 md:py-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <div className="rounded-2xl border border-[#dce5f2] bg-[#edf2fa] p-5 transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-md sm:p-6">
-          <h2 className="text-3xl font-semibold text-[#1a2440]">Quick Answers</h2>
+          <h2 className="public-section-title text-[#1a2440]">Quick Answers</h2>
           <p className="mt-2 text-sm text-[#5e7293]">Click a question to expand details.</p>
           <div className="mt-6 space-y-4">
             {faqs.map((faq, index) => {
@@ -105,7 +105,7 @@ export default function FaqPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 md:px-6 md:pb-14">
+      <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 md:px-6 md:pb-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <article className="rounded-2xl border border-[#17489b] bg-[linear-gradient(90deg,#0b2f73,#0e3f9d)] p-5 text-white transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-[0_18px_34px_rgba(17,62,148,0.28)] md:p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>

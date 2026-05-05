@@ -138,6 +138,35 @@ function colorFor(email: string) {
   return COLORS[h % COLORS.length];
 }
 
+function humanizeToken(value: string) {
+  return value
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function formatPermissionLabel(resource: string, action: string) {
+  return `${humanizeToken(resource)}: ${humanizeToken(action)}`;
+}
+
+function permissionBadgeClass(resource: string) {
+  const palette: Record<string, string> = {
+    user_management: 'border-rose-200 bg-rose-50 text-rose-800',
+    permission_management: 'border-violet-200 bg-violet-50 text-violet-800',
+    audit_log: 'border-amber-200 bg-amber-50 text-amber-800',
+    payment: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    payment_management: 'border-teal-200 bg-teal-50 text-teal-800',
+    dashboard: 'border-sky-200 bg-sky-50 text-sky-800',
+    checklist: 'border-indigo-200 bg-indigo-50 text-indigo-800',
+    checklist_admin: 'border-blue-200 bg-blue-50 text-blue-800',
+    assessment: 'border-cyan-200 bg-cyan-50 text-cyan-800',
+    assessment_submit: 'border-lime-200 bg-lime-50 text-lime-800',
+    report: 'border-fuchsia-200 bg-fuchsia-50 text-fuchsia-800',
+  };
+  return palette[resource] ?? 'border-slate-200 bg-slate-50 text-slate-700';
+}
+
 function Badge({ children, v }: { children: React.ReactNode; v: 'green' | 'blue' | 'gold' | 'red' | 'gray' }) {
   const m = {
     green: 'border-emerald-200 bg-emerald-50 text-emerald-800',
@@ -204,8 +233,14 @@ export default function UsersAccessMerged() {
 
   const [targetUserId, setTargetUserId] = useState('');
   const [targetRoleId, setTargetRoleId] = useState('');
+  const [targetRoleMenuOpen, setTargetRoleMenuOpen] = useState(false);
+  const [targetRoleSearchQuery, setTargetRoleSearchQuery] = useState('');
   const [selectedRoleId, setSelectedRoleId] = useState('');
+  const [selectedRoleMenuOpen, setSelectedRoleMenuOpen] = useState(false);
+  const [selectedRoleSearchQuery, setSelectedRoleSearchQuery] = useState('');
   const [selectedPermissionId, setSelectedPermissionId] = useState('');
+  const [permissionMenuOpen, setPermissionMenuOpen] = useState(false);
+  const [permissionSearchQuery, setPermissionSearchQuery] = useState('');
   const [bulkPermissionKeys, setBulkPermissionKeys] = useState('dashboard:read,report:read');
   const [bulkRoleCodes, setBulkRoleCodes] = useState('auditor');
   const [newRoleCodeCreate, setNewRoleCodeCreate] = useState('');
@@ -228,6 +263,12 @@ export default function UsersAccessMerged() {
   >([]);
   const [rolesFetched, setRolesFetched] = useState(false);
   const [permissionsFetched, setPermissionsFetched] = useState(false);
+  const [checkUserMenuOpen, setCheckUserMenuOpen] = useState(false);
+  const [checkPermissionMenuOpen, setCheckPermissionMenuOpen] = useState(false);
+  const [lookupUserMenuOpen, setLookupUserMenuOpen] = useState(false);
+  const [checkUserSearchQuery, setCheckUserSearchQuery] = useState('');
+  const [checkPermissionSearchQuery, setCheckPermissionSearchQuery] = useState('');
+  const [lookupUserSearchQuery, setLookupUserSearchQuery] = useState('');
   const [selectedRoleDetail, setSelectedRoleDetail] = useState<{
     id: string;
     user_count: number;
@@ -237,6 +278,8 @@ export default function UsersAccessMerged() {
   const [auditorUserSearch, setAuditorUserSearch] = useState('');
   const [auditorUserListUnavailable, setAuditorUserListUnavailable] = useState(false);
   const [customPermUserId, setCustomPermUserId] = useState('');
+  const [customPermUserMenuOpen, setCustomPermUserMenuOpen] = useState(false);
+  const [customPermUserSearchQuery, setCustomPermUserSearchQuery] = useState('');
   const [customPermKeys, setCustomPermKeys] = useState('dashboard:read,report:read');
   const [rbacDetailRoles, setRbacDetailRoles] = useState<Array<{ id: string; code: string; name: string }>>([]);
   const [rbacDetailPerms, setRbacDetailPerms] = useState<Array<{ id: string; resource: string; action: string; description: string }>>([]);
@@ -271,6 +314,70 @@ export default function UsersAccessMerged() {
     },
     [permissions],
   );
+
+  const selectedPermission = useMemo(
+    () => permissions.find((p) => p.id === selectedPermissionId) ?? null,
+    [permissions, selectedPermissionId],
+  );
+  const selectedTargetRole = useMemo(
+    () => roles.find((r) => r.id === targetRoleId) ?? null,
+    [roles, targetRoleId],
+  );
+  const filteredTargetRoles = useMemo(() => {
+    const q = targetRoleSearchQuery.trim().toLowerCase();
+    if (!q) return roles;
+    return roles.filter((r) => `${r.name} ${r.code}`.toLowerCase().includes(q));
+  }, [roles, targetRoleSearchQuery]);
+  const selectedRoleOption = useMemo(
+    () => roles.find((r) => r.id === selectedRoleId) ?? null,
+    [roles, selectedRoleId],
+  );
+  const filteredSelectedRoles = useMemo(() => {
+    const q = selectedRoleSearchQuery.trim().toLowerCase();
+    if (!q) return roles;
+    return roles.filter((r) => `${r.name} ${r.code}`.toLowerCase().includes(q));
+  }, [roles, selectedRoleSearchQuery]);
+  const selectedCustomPermUser = useMemo(
+    () => adminUsers.find((u) => u.id === customPermUserId) ?? null,
+    [adminUsers, customPermUserId],
+  );
+  const filteredCustomPermUsers = useMemo(() => {
+    const q = customPermUserSearchQuery.trim().toLowerCase();
+    if (!q) return adminUsers;
+    return adminUsers.filter((u) => u.email.toLowerCase().includes(q));
+  }, [adminUsers, customPermUserSearchQuery]);
+  const filteredPermissionOptions = useMemo(() => {
+    const q = permissionSearchQuery.trim().toLowerCase();
+    if (!q) return permissions;
+    return permissions.filter((p) => `${p.resource}:${p.action}`.toLowerCase().includes(q));
+  }, [permissions, permissionSearchQuery]);
+  const selectedCheckPermission = useMemo(
+    () => permissions.find((p) => p.id === selectedCheckPermissionId) ?? null,
+    [permissions, selectedCheckPermissionId],
+  );
+  const filteredCheckPermissionOptions = useMemo(() => {
+    const q = checkPermissionSearchQuery.trim().toLowerCase();
+    if (!q) return permissions;
+    return permissions.filter((p) => `${p.resource}:${p.action}`.toLowerCase().includes(q));
+  }, [permissions, checkPermissionSearchQuery]);
+  const selectedTargetUser = useMemo(
+    () => allUsers.find((u) => u.id === targetUserId) ?? null,
+    [allUsers, targetUserId],
+  );
+  const filteredCheckUsers = useMemo(() => {
+    const q = checkUserSearchQuery.trim().toLowerCase();
+    if (!q) return allUsers;
+    return allUsers.filter((u) => `${u.email} ${u.role}`.toLowerCase().includes(q));
+  }, [allUsers, checkUserSearchQuery]);
+  const selectedLookupUser = useMemo(
+    () => allUsers.find((u) => u.id === lookupUserId) ?? null,
+    [allUsers, lookupUserId],
+  );
+  const filteredLookupUsers = useMemo(() => {
+    const q = lookupUserSearchQuery.trim().toLowerCase();
+    if (!q) return allUsers;
+    return allUsers.filter((u) => u.email.toLowerCase().includes(q));
+  }, [allUsers, lookupUserSearchQuery]);
 
   const roleIdsFromCodes = useCallback(
     (input: string) => {
@@ -919,13 +1026,12 @@ export default function UsersAccessMerged() {
                   <div className="overflow-x-auto">
                     <div className="min-w-[480px]">
                       <div
-                        className={`grid grid-cols-[38px_minmax(0,1fr)_100px_80px_76px] gap-2 border-b ${line} bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500 sm:gap-3 sm:px-[18px]`}
+                        className={`grid grid-cols-[38px_minmax(0,1fr)_100px_80px] gap-2 border-b ${line} bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500 sm:gap-3 sm:px-[18px]`}
                       >
                         <div />
                         <div>User</div>
                         <div>Role</div>
                         <div>Status</div>
-                        <div className="text-right">Actions</div>
                       </div>
                       <div>
                         {listsLoading ? (
@@ -951,7 +1057,7 @@ export default function UsersAccessMerged() {
                                   setSelectedAdminId(u.id);
                                 }
                               }}
-                              className={`group grid cursor-pointer grid-cols-[38px_minmax(0,1fr)_100px_80px_76px] gap-2 border-b border-[rgba(155,181,224,0.06)] px-3 py-2.5 transition hover:bg-[#eef4ff] sm:gap-3 sm:px-[18px] ${
+                              className={`group grid cursor-pointer grid-cols-[38px_minmax(0,1fr)_100px_80px] gap-2 border-b border-[rgba(155,181,224,0.06)] px-3 py-2.5 transition hover:bg-[#eef4ff] sm:gap-3 sm:px-[18px] ${
                                 sel ? 'border-l-2 border-l-[#10284F] bg-gradient-to-r from-[#eef4ff] to-white pl-3 sm:pl-4' : ''
                               }`}
                             >
@@ -970,9 +1076,6 @@ export default function UsersAccessMerged() {
                               </div>
                               <div className="min-w-0">
                                 <Badge v={u.is_active ? 'green' : 'gray'}>{u.is_active ? 'Active' : 'Inactive'}</Badge>
-                              </div>
-                              <div className="flex min-w-0 items-center justify-end opacity-100 sm:opacity-0 sm:pointer-events-none sm:transition-opacity sm:duration-150 sm:group-hover:opacity-100 sm:group-hover:pointer-events-auto sm:group-focus-within:opacity-100 sm:group-focus-within:pointer-events-auto">
-                                <span className={`${btn} shrink-0 py-0.5 text-[10px]`}>Inspect</span>
                               </div>
                             </div>
                           );
@@ -1049,9 +1152,9 @@ export default function UsersAccessMerged() {
                             adminDetail.permissions.map((p) => (
                               <code
                                 key={`${p.resource}:${p.action}`}
-                                className={`rounded-md border ${line} bg-slate-50 px-2 py-0.5 text-[10px] text-slate-500`}
+                                className={`rounded-md border px-2 py-0.5 text-[10px] ${permissionBadgeClass(p.resource)}`}
                               >
-                                {p.resource}:{p.action}
+                                {formatPermissionLabel(p.resource, p.action)}
                               </code>
                             ))
                           ) : (
@@ -1144,13 +1247,12 @@ export default function UsersAccessMerged() {
                 <div className="overflow-x-auto">
                   <div className="min-w-[360px]">
                     <div
-                      className={`grid grid-cols-[38px_1fr_90px_80px] gap-2 border-b ${line} bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase text-slate-500 sm:grid-cols-[38px_1fr_90px_80px_100px] sm:gap-3 sm:px-[18px]`}
+                      className={`grid grid-cols-[38px_1fr_90px_80px] gap-2 border-b ${line} bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase text-slate-500 sm:grid-cols-[38px_1fr_90px_80px] sm:gap-3 sm:px-[18px]`}
                     >
                       <div />
                       <div>Customer</div>
                       <div>Status</div>
                       <div className="hidden sm:block">Plan</div>
-                      <div className="hidden sm:block">Actions</div>
                     </div>
                     <div>
                       {listsLoading ? (
@@ -1176,7 +1278,7 @@ export default function UsersAccessMerged() {
                                   setSelectedCustomerId(c.id);
                                 }
                               }}
-                              className={`group grid cursor-pointer grid-cols-[38px_1fr_90px_80px] gap-2 border-b border-[rgba(155,181,224,0.06)] px-3 py-2.5 hover:bg-[#eef4ff] sm:grid-cols-[38px_1fr_90px_80px_100px] sm:gap-3 sm:px-[18px] ${
+                              className={`group grid cursor-pointer grid-cols-[38px_1fr_90px_80px] gap-2 border-b border-[rgba(155,181,224,0.06)] px-3 py-2.5 hover:bg-[#eef4ff] sm:grid-cols-[38px_1fr_90px_80px] sm:gap-3 sm:px-[18px] ${
                                 sel ? 'border-l-2 border-l-[#10284F] bg-gradient-to-r from-[#eef4ff] to-transparent pl-3 sm:pl-4' : ''
                               }`}
                             >
@@ -1195,9 +1297,6 @@ export default function UsersAccessMerged() {
                               </div>
                               <div className="hidden min-w-0 sm:block">
                                 <Badge v="blue">—</Badge>
-                              </div>
-                              <div className="hidden sm:flex sm:items-center">
-                                <span className={`${btn} text-[10px]`}>Inspect</span>
                               </div>
                             </div>
                           );
@@ -1248,8 +1347,8 @@ export default function UsersAccessMerged() {
                         <p className={`mb-2 text-[11px] font-bold uppercase text-slate-500`}>Permissions</p>
                         <div className="flex flex-wrap gap-1">
                           {customerDetail.permissions.map((p) => (
-                            <code key={`${p.resource}:${p.action}`} className={`rounded-md border ${line} bg-slate-50 px-2 py-0.5 text-[10px]`}>
-                              {p.resource}:{p.action}
+                            <code key={`${p.resource}:${p.action}`} className={`rounded-md border px-2 py-0.5 text-[10px] ${permissionBadgeClass(p.resource)}`}>
+                              {formatPermissionLabel(p.resource, p.action)}
                             </code>
                           ))}
                         </div>
@@ -1347,14 +1446,60 @@ export default function UsersAccessMerged() {
                     <>
                       <div>
                         <label className={`mb-1 block text-[10px] font-bold uppercase ${muted}`}>Role</label>
-                        <select className={inp} value={targetRoleId} onChange={(e) => setTargetRoleId(e.target.value)}>
-                          <option value="">Choose role…</option>
-                          {roles.map((r) => (
-                            <option key={r.id} value={r.id}>
-                              {r.name} ({r.code})
-                            </option>
-                          ))}
-                        </select>
+                        <div
+                          className="relative"
+                          onBlur={(event) => {
+                            const next = event.relatedTarget as Node | null;
+                            if (next && event.currentTarget.contains(next)) return;
+                            setTargetRoleMenuOpen(false);
+                          }}
+                        >
+                          <button
+                            type="button"
+                            className={`${inp} flex items-center justify-between gap-2 text-left`}
+                            onClick={() => setTargetRoleMenuOpen((open) => !open)}
+                            aria-haspopup="listbox"
+                            aria-expanded={targetRoleMenuOpen}
+                          >
+                            <span className="truncate">{selectedTargetRole ? `${selectedTargetRole.name} (${selectedTargetRole.code})` : 'Choose role…'}</span>
+                            <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-black" fill="none" aria-hidden="true">
+                              <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </button>
+                          {targetRoleMenuOpen ? (
+                            <div className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-[0_10px_30px_rgba(15,23,42,0.14)]">
+                              <input
+                                className={`${inp} py-1.5 text-[12px]`}
+                                placeholder="Search role…"
+                                value={targetRoleSearchQuery}
+                                onChange={(e) => setTargetRoleSearchQuery(e.target.value)}
+                                autoFocus
+                              />
+                              <div className={`mt-2 max-h-44 space-y-1 pr-1 ${scrollYScrollbarHidden}`}>
+                                {filteredTargetRoles.map((r) => {
+                                  const isSelected = r.id === targetRoleId;
+                                  return (
+                                    <button
+                                      key={r.id}
+                                      type="button"
+                                      role="option"
+                                      aria-selected={isSelected}
+                                      className={`w-full rounded-lg px-2 py-1.5 text-left text-[12px] ${
+                                        isSelected ? 'bg-[#e9f1ff] text-[#10284F]' : 'text-slate-700 hover:bg-slate-100'
+                                      }`}
+                                      onClick={() => {
+                                        setTargetRoleId(r.id);
+                                        setTargetRoleMenuOpen(false);
+                                      }}
+                                    >
+                                      {r.name} ({r.code})
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button
@@ -1426,8 +1571,8 @@ export default function UsersAccessMerged() {
                         <p className="text-[12px] font-semibold">Permissions</p>
                         <div className="mt-1 flex flex-wrap gap-1">
                           {rbacDetailPerms.map((p) => (
-                            <code key={p.id} className="text-[10px]">
-                              {p.resource}:{p.action}
+                            <code key={p.id} className={`rounded-md border px-2 py-0.5 text-[10px] ${permissionBadgeClass(p.resource)}`}>
+                              {formatPermissionLabel(p.resource, p.action)}
                             </code>
                           ))}
                         </div>
@@ -1443,22 +1588,126 @@ export default function UsersAccessMerged() {
                 </div>
                 <div className="space-y-3 p-3 sm:p-[18px]">
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <select className={inp} value={selectedRoleId} onChange={(e) => setSelectedRoleId(e.target.value)}>
-                      <option value="">Role…</option>
-                      {roles.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.name}
-                        </option>
-                      ))}
-                    </select>
-                    <select className={inp} value={selectedPermissionId} onChange={(e) => setSelectedPermissionId(e.target.value)}>
-                      <option value="">Permission…</option>
-                      {permissions.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.resource}:{p.action}
-                        </option>
-                      ))}
-                    </select>
+                    <div
+                      className="relative"
+                      onBlur={(event) => {
+                        const next = event.relatedTarget as Node | null;
+                        if (next && event.currentTarget.contains(next)) return;
+                        setSelectedRoleMenuOpen(false);
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className={`${inp} flex items-center justify-between gap-2 text-left`}
+                        onClick={() => setSelectedRoleMenuOpen((open) => !open)}
+                        aria-haspopup="listbox"
+                        aria-expanded={selectedRoleMenuOpen}
+                      >
+                        <span className="truncate">{selectedRoleOption ? selectedRoleOption.name : 'Role…'}</span>
+                        <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-black" fill="none" aria-hidden="true">
+                          <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </button>
+                      {selectedRoleMenuOpen ? (
+                        <div className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-[0_10px_30px_rgba(15,23,42,0.14)]">
+                          <input
+                            className={`${inp} py-1.5 text-[12px]`}
+                            placeholder="Search role…"
+                            value={selectedRoleSearchQuery}
+                            onChange={(e) => setSelectedRoleSearchQuery(e.target.value)}
+                            autoFocus
+                          />
+                          <div className={`mt-2 max-h-44 space-y-1 pr-1 ${scrollYScrollbarHidden}`}>
+                            {filteredSelectedRoles.map((r) => {
+                              const isSelected = r.id === selectedRoleId;
+                              return (
+                                <button
+                                  key={r.id}
+                                  type="button"
+                                  role="option"
+                                  aria-selected={isSelected}
+                                  className={`w-full rounded-lg px-2 py-1.5 text-left text-[12px] ${
+                                    isSelected ? 'bg-[#e9f1ff] text-[#10284F]' : 'text-slate-700 hover:bg-slate-100'
+                                  }`}
+                                  onClick={() => {
+                                    setSelectedRoleId(r.id);
+                                    setSelectedRoleMenuOpen(false);
+                                  }}
+                                >
+                                  {r.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                    <div
+                      className="relative"
+                      onBlur={(event) => {
+                        const next = event.relatedTarget as Node | null;
+                        if (next && event.currentTarget.contains(next)) return;
+                        setPermissionMenuOpen(false);
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className={`${inp} flex items-center justify-between gap-2 text-left`}
+                        onClick={() => setPermissionMenuOpen((open) => !open)}
+                        aria-haspopup="listbox"
+                        aria-expanded={permissionMenuOpen}
+                      >
+                        <span className="truncate">
+                          {selectedPermission ? formatPermissionLabel(selectedPermission.resource, selectedPermission.action) : 'Permission…'}
+                        </span>
+                        <svg
+                          viewBox="0 0 20 20"
+                          className="h-4 w-4 shrink-0 text-black"
+                          fill="none"
+                          aria-hidden="true"
+                        >
+                          <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </button>
+                      {permissionMenuOpen ? (
+                        <div className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-[0_10px_30px_rgba(15,23,42,0.14)]">
+                          <input
+                            className={`${inp} py-1.5 text-[12px]`}
+                            placeholder="Search permission…"
+                            value={permissionSearchQuery}
+                            onChange={(e) => setPermissionSearchQuery(e.target.value)}
+                            autoFocus
+                          />
+                          <div className={`mt-2 max-h-44 space-y-1 pr-1 ${scrollYScrollbarHidden}`}>
+                            {filteredPermissionOptions.length ? (
+                              filteredPermissionOptions.map((p) => {
+                                const optionLabel = formatPermissionLabel(p.resource, p.action);
+                                const isSelected = p.id === selectedPermissionId;
+                                return (
+                                  <button
+                                    key={p.id}
+                                    type="button"
+                                    role="option"
+                                    aria-selected={isSelected}
+                                    className={`w-full rounded-lg px-2 py-1.5 text-left text-[12px] ${
+                                      isSelected ? 'bg-[#e9f1ff] text-[#10284F]' : 'text-slate-700 hover:bg-slate-100'
+                                    }`}
+                                    onClick={() => {
+                                      setSelectedPermissionId(p.id);
+                                      setPermissionMenuOpen(false);
+                                    }}
+                                  >
+                                    {optionLabel}
+                                  </button>
+                                );
+                              })
+                            ) : (
+                              <p className={`px-2 py-2 text-[12px] ${muted}`}>No permissions found.</p>
+                            )}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -1503,8 +1752,8 @@ export default function UsersAccessMerged() {
                       <p className="font-semibold">Users: {selectedRoleDetail.user_count}</p>
                       <div className="mt-2 flex flex-wrap gap-1">
                         {selectedRoleDetail.permissions.map((p) => (
-                          <code key={p.id} className="text-[10px]">
-                            {p.resource}:{p.action}
+                          <code key={p.id} className={`rounded-md border px-2 py-0.5 text-[10px] ${permissionBadgeClass(p.resource)}`}>
+                            {formatPermissionLabel(p.resource, p.action)}
                           </code>
                         ))}
                       </div>
@@ -1634,14 +1883,61 @@ export default function UsersAccessMerged() {
                 </div>
                 <div className="space-y-2 p-3 sm:p-[18px]">
                   <p className={`text-[12px] ${muted}`}>Applies to auditor-role users. Format resource:action</p>
-                  <select className={inp} value={customPermUserId} onChange={(e) => setCustomPermUserId(e.target.value)} disabled={isReadOnly}>
-                    <option value="">User…</option>
-                    {adminUsers.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.email}
-                      </option>
-                    ))}
-                  </select>
+                  <div
+                    className="relative"
+                    onBlur={(event) => {
+                      const next = event.relatedTarget as Node | null;
+                      if (next && event.currentTarget.contains(next)) return;
+                      setCustomPermUserMenuOpen(false);
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className={`${inp} flex items-center justify-between gap-2 text-left`}
+                      onClick={() => setCustomPermUserMenuOpen((open) => !open)}
+                      aria-haspopup="listbox"
+                      aria-expanded={customPermUserMenuOpen}
+                      disabled={isReadOnly}
+                    >
+                      <span className="truncate">{selectedCustomPermUser ? selectedCustomPermUser.email : 'User…'}</span>
+                      <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-black" fill="none" aria-hidden="true">
+                        <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                    {customPermUserMenuOpen ? (
+                      <div className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-[0_10px_30px_rgba(15,23,42,0.14)]">
+                        <input
+                          className={`${inp} py-1.5 text-[12px]`}
+                          placeholder="Search user…"
+                          value={customPermUserSearchQuery}
+                          onChange={(e) => setCustomPermUserSearchQuery(e.target.value)}
+                          autoFocus
+                        />
+                        <div className={`mt-2 max-h-44 space-y-1 pr-1 ${scrollYScrollbarHidden}`}>
+                          {filteredCustomPermUsers.map((u) => {
+                            const isSelected = u.id === customPermUserId;
+                            return (
+                              <button
+                                key={u.id}
+                                type="button"
+                                role="option"
+                                aria-selected={isSelected}
+                                className={`w-full rounded-lg px-2 py-1.5 text-left text-[12px] ${
+                                  isSelected ? 'bg-[#e9f1ff] text-[#10284F]' : 'text-slate-700 hover:bg-slate-100'
+                                }`}
+                                onClick={() => {
+                                  setCustomPermUserId(u.id);
+                                  setCustomPermUserMenuOpen(false);
+                                }}
+                              >
+                                {u.email}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
                   <input className={inp} value={customPermKeys} onChange={(e) => setCustomPermKeys(e.target.value)} disabled={isReadOnly} />
                   <div className="flex gap-2">
                     <button type="button" className={btnPri} disabled={isReadOnly} onClick={() => void onCustomAssign()}>
@@ -1665,22 +1961,136 @@ export default function UsersAccessMerged() {
               </div>
               <div className="space-y-3 p-3 sm:p-[18px]">
                 <p className={`text-[12px] ${muted}`}>Leave user unset to check your own session.</p>
-                <select className={inp} value={targetUserId} onChange={(e) => setTargetUserId(e.target.value)}>
-                  <option value="">My session</option>
-                  {allUsers.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.email} — {u.role}
-                    </option>
-                  ))}
-                </select>
-                <select className={inp} value={selectedCheckPermissionId} onChange={(e) => setSelectedCheckPermissionId(e.target.value)}>
-                  <option value="">Permission…</option>
-                  {permissions.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.resource}:{p.action}
-                    </option>
-                  ))}
-                </select>
+                <div
+                  className="relative"
+                  onBlur={(event) => {
+                    const next = event.relatedTarget as Node | null;
+                    if (next && event.currentTarget.contains(next)) return;
+                    setCheckUserMenuOpen(false);
+                  }}
+                >
+                  <button
+                    type="button"
+                    className={`${inp} flex items-center justify-between gap-2 text-left`}
+                    onClick={() => setCheckUserMenuOpen((open) => !open)}
+                    aria-haspopup="listbox"
+                    aria-expanded={checkUserMenuOpen}
+                  >
+                    <span className="truncate">
+                      {selectedTargetUser ? `${selectedTargetUser.email} — ${selectedTargetUser.role}` : 'My session'}
+                    </span>
+                    <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-black" fill="none" aria-hidden="true">
+                      <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  {checkUserMenuOpen ? (
+                    <div className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-[0_10px_30px_rgba(15,23,42,0.14)]">
+                      <input
+                        className={`${inp} py-1.5 text-[12px]`}
+                        placeholder="Search user…"
+                        value={checkUserSearchQuery}
+                        onChange={(e) => setCheckUserSearchQuery(e.target.value)}
+                        autoFocus
+                      />
+                      <div className={`mt-2 max-h-44 space-y-1 pr-1 ${scrollYScrollbarHidden}`}>
+                        <button
+                          type="button"
+                          className={`w-full rounded-lg px-2 py-1.5 text-left text-[12px] ${
+                            !targetUserId ? 'bg-[#e9f1ff] text-[#10284F]' : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                          onClick={() => {
+                            setTargetUserId('');
+                            setCheckUserMenuOpen(false);
+                          }}
+                        >
+                          My session
+                        </button>
+                        {filteredCheckUsers.map((u) => {
+                          const optionLabel = `${u.email} — ${u.role}`;
+                          const isSelected = u.id === targetUserId;
+                          return (
+                            <button
+                              key={u.id}
+                              type="button"
+                              role="option"
+                              aria-selected={isSelected}
+                              className={`w-full rounded-lg px-2 py-1.5 text-left text-[12px] ${
+                                isSelected ? 'bg-[#e9f1ff] text-[#10284F]' : 'text-slate-700 hover:bg-slate-100'
+                              }`}
+                              onClick={() => {
+                                setTargetUserId(u.id);
+                                setCheckUserMenuOpen(false);
+                              }}
+                            >
+                              {optionLabel}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+                <div
+                  className="relative"
+                  onBlur={(event) => {
+                    const next = event.relatedTarget as Node | null;
+                    if (next && event.currentTarget.contains(next)) return;
+                    setCheckPermissionMenuOpen(false);
+                  }}
+                >
+                  <button
+                    type="button"
+                    className={`${inp} flex items-center justify-between gap-2 text-left`}
+                    onClick={() => setCheckPermissionMenuOpen((open) => !open)}
+                    aria-haspopup="listbox"
+                    aria-expanded={checkPermissionMenuOpen}
+                  >
+                    <span className="truncate">
+                      {selectedCheckPermission ? formatPermissionLabel(selectedCheckPermission.resource, selectedCheckPermission.action) : 'Permission…'}
+                    </span>
+                    <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-black" fill="none" aria-hidden="true">
+                      <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  {checkPermissionMenuOpen ? (
+                    <div className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-[0_10px_30px_rgba(15,23,42,0.14)]">
+                      <input
+                        className={`${inp} py-1.5 text-[12px]`}
+                        placeholder="Search permission…"
+                        value={checkPermissionSearchQuery}
+                        onChange={(e) => setCheckPermissionSearchQuery(e.target.value)}
+                        autoFocus
+                      />
+                      <div className={`mt-2 max-h-44 space-y-1 pr-1 ${scrollYScrollbarHidden}`}>
+                        {filteredCheckPermissionOptions.length ? (
+                          filteredCheckPermissionOptions.map((p) => {
+                            const optionLabel = formatPermissionLabel(p.resource, p.action);
+                            const isSelected = p.id === selectedCheckPermissionId;
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                role="option"
+                                aria-selected={isSelected}
+                                className={`w-full rounded-lg px-2 py-1.5 text-left text-[12px] ${
+                                  isSelected ? 'bg-[#e9f1ff] text-[#10284F]' : 'text-slate-700 hover:bg-slate-100'
+                                }`}
+                                onClick={() => {
+                                  setSelectedCheckPermissionId(p.id);
+                                  setCheckPermissionMenuOpen(false);
+                                }}
+                              >
+                                {optionLabel}
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <p className={`px-2 py-2 text-[12px] ${muted}`}>No permissions found.</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
                 <button type="button" className={btnPri} onClick={() => void onCheckPerm()} disabled={Boolean(actionLoading)}>
                   Run check
                 </button>
@@ -1717,14 +2127,64 @@ export default function UsersAccessMerged() {
                 <h2 className="text-[14px] font-bold sm:text-[15px]">Quick user lookup</h2>
               </div>
               <div className="space-y-3 p-3 sm:p-[18px]">
-                <select className={inp} value={lookupUserId} onChange={(e) => setLookupUserId(e.target.value)}>
-                  <option value="">User…</option>
-                  {allUsers.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.email}
-                    </option>
-                  ))}
-                </select>
+                <div
+                  className="relative"
+                  onBlur={(event) => {
+                    const next = event.relatedTarget as Node | null;
+                    if (next && event.currentTarget.contains(next)) return;
+                    setLookupUserMenuOpen(false);
+                  }}
+                >
+                  <button
+                    type="button"
+                    className={`${inp} flex items-center justify-between gap-2 text-left`}
+                    onClick={() => setLookupUserMenuOpen((open) => !open)}
+                    aria-haspopup="listbox"
+                    aria-expanded={lookupUserMenuOpen}
+                  >
+                    <span className="truncate">{selectedLookupUser ? selectedLookupUser.email : 'User…'}</span>
+                    <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-black" fill="none" aria-hidden="true">
+                      <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  {lookupUserMenuOpen ? (
+                    <div className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-[0_10px_30px_rgba(15,23,42,0.14)]">
+                      <input
+                        className={`${inp} py-1.5 text-[12px]`}
+                        placeholder="Search user…"
+                        value={lookupUserSearchQuery}
+                        onChange={(e) => setLookupUserSearchQuery(e.target.value)}
+                        autoFocus
+                      />
+                      <div className={`mt-2 max-h-44 space-y-1 pr-1 ${scrollYScrollbarHidden}`}>
+                        {filteredLookupUsers.length ? (
+                          filteredLookupUsers.map((u) => {
+                            const isSelected = u.id === lookupUserId;
+                            return (
+                              <button
+                                key={u.id}
+                                type="button"
+                                role="option"
+                                aria-selected={isSelected}
+                                className={`w-full rounded-lg px-2 py-1.5 text-left text-[12px] ${
+                                  isSelected ? 'bg-[#e9f1ff] text-[#10284F]' : 'text-slate-700 hover:bg-slate-100'
+                                }`}
+                                onClick={() => {
+                                  setLookupUserId(u.id);
+                                  setLookupUserMenuOpen(false);
+                                }}
+                              >
+                                {u.email}
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <p className={`px-2 py-2 text-[12px] ${muted}`}>No users found.</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <button
                     type="button"
@@ -1764,8 +2224,8 @@ export default function UsersAccessMerged() {
                     <p className="text-[11px] font-bold uppercase text-slate-500">Permissions</p>
                     <div className="mt-2 flex flex-wrap gap-1">
                       {userPermissionsResult.map((p) => (
-                        <code key={p.id} className="text-[10px]">
-                          {p.resource}:{p.action}
+                        <code key={p.id} className={`rounded-md border px-2 py-0.5 text-[10px] ${permissionBadgeClass(p.resource)}`}>
+                          {formatPermissionLabel(p.resource, p.action)}
                         </code>
                       ))}
                     </div>

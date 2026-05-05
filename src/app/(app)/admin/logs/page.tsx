@@ -28,6 +28,15 @@ function formatTimestamp(value: string) {
   return date.toLocaleString();
 }
 
+function humanizeToken(value: string | null | undefined) {
+  if (!value) return '-';
+  return value
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
 function toIsoFromDate(value: string, endOfDay = false): string | undefined {
   if (!value.trim()) return undefined;
   const date = new Date(`${value}T00:00:00`);
@@ -35,6 +44,111 @@ function toIsoFromDate(value: string, endOfDay = false): string | undefined {
     date.setHours(23, 59, 59, 999);
   }
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
+
+type DropdownOption = { value: string; label: string };
+type DropdownGroup = { label: string; options: DropdownOption[] };
+
+const hiddenScrollbar = '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0';
+
+function CustomDropdown({
+  value,
+  onChange,
+  placeholder,
+  options,
+  groups,
+  disabled = false,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  options?: DropdownOption[];
+  groups?: DropdownGroup[];
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedLabel = useMemo(() => {
+    if (!value) return placeholder;
+    const flat = [...(options ?? []), ...(groups?.flatMap((group) => group.options) ?? [])];
+    return flat.find((option) => option.value === value)?.label ?? placeholder;
+  }, [groups, options, placeholder, value]);
+
+  return (
+    <div
+      className="relative"
+      onBlur={(event) => {
+        const next = event.relatedTarget as Node | null;
+        if (next && event.currentTarget.contains(next)) return;
+        setOpen(false);
+      }}
+    >
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((current) => !current)}
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#2a3d5f] outline-none focus:border-[#7ea6e7] disabled:opacity-50"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="truncate text-left">{selectedLabel}</span>
+        <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-[#425f8f]" fill="none" aria-hidden="true">
+          <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {open ? (
+        <div
+          className={`absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-[#d4dced] bg-white p-1 shadow-[0_10px_30px_rgba(15,23,42,0.14)] ${hiddenScrollbar}`}
+          onWheel={(event) => {
+            const el = event.currentTarget;
+            const atTop = el.scrollTop <= 0;
+            const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+            if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) {
+              event.preventDefault();
+            }
+          }}
+        >
+          {(groups ?? []).map((group) => (
+            <div key={group.label} className="mb-1">
+              <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-black">{group.label}</p>
+              {group.options.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={value === option.value}
+                  className={`w-full rounded-lg px-2 py-1.5 text-left text-xs ${value === option.value ? 'bg-[#e9f1ff] text-[#10284F]' : 'text-[#2a3d5f] hover:bg-[#f4f7ff]'}`}
+                  onClick={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          ))}
+          {(options ?? []).map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="option"
+              aria-selected={value === option.value}
+              className={`w-full rounded-lg px-2 py-1.5 text-left text-xs ${value === option.value ? 'bg-[#e9f1ff] text-[#10284F]' : 'text-[#2a3d5f] hover:bg-[#f4f7ff]'}`}
+              onClick={() => {
+                onChange(option.value);
+                setOpen(false);
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <svg viewBox="0 0 20 20" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-transparent" fill="none" aria-hidden="true">
+        <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  );
 }
 
 export default function AdminAuditLogsPage() {
@@ -105,10 +219,6 @@ export default function AdminAuditLogsPage() {
     void load();
   }, [query]);
 
-  function onApplyFilters() {
-    setSkip(0);
-  }
-
   function exportCurrentRowsCsv() {
     if (!logs.length) {
       toast.error('No rows to export.');
@@ -167,73 +277,115 @@ export default function AdminAuditLogsPage() {
         </div>
 
         <div className="grid gap-2 border-b border-[#ecf0f8] bg-[#f8fbff] px-4 py-3 md:grid-cols-5">
-          <select 
-            value={action} 
-            onChange={(e) => setAction(e.target.value)} 
-            disabled={loadingFilterOptions}
-            className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm disabled:opacity-50"
-          >
-            <option value="">All actions</option>
-            {filterOptions && Object.entries(filterOptions.actions).map(([category, actions]) => (
-              <optgroup key={category} label={category}>
-                {actions.map((actionOption) => (
-                  <option key={actionOption.value} value={actionOption.value}>
-                    {actionOption.label}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-          <select 
-            value={actorRole} 
-            onChange={(e) => setActorRole(e.target.value)} 
-            disabled={loadingFilterOptions}
-            className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm disabled:opacity-50"
-          >
-            <option value="">All roles</option>
-            {filterOptions?.actor_roles.map((role) => (
-              <option key={role.value} value={role.value}>
-                {role.label}
-              </option>
-            ))}
-          </select>
-          <select value={successFilter} onChange={(e) => setSuccessFilter(e.target.value as 'all' | 'success' | 'failed')} className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm">
-            <option value="all">All status</option>
-            <option value="success">Success only</option>
-            <option value="failed">Failed only</option>
-          </select>
-          <input
-            ref={dateFromRef}
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            onClick={() => openNativePicker(dateFromRef)}
-            className="appearance-auto rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm"
-          />
-          <input
-            ref={dateToRef}
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            onClick={() => openNativePicker(dateToRef)}
-            className="appearance-auto rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm"
-          />
-          <div className="md:col-span-5 flex flex-wrap items-center gap-2">
-            <button type="button" onClick={onApplyFilters} className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f]">
-              Apply Filters
-            </button>
-            <button
-              type="button"
-              onClick={() => setOrderDirection((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
-              className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f]"
-            >
-              Sort: {orderDirection === 'desc' ? 'Newest first' : 'Oldest first'}
-            </button>
-            <select value={String(limit)} onChange={(e) => { setLimit(Number(e.target.value)); setSkip(0); }} className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm">
-              <option value="25">25 / page</option>
-              <option value="50">50 / page</option>
-              <option value="100">100 / page</option>
-            </select>
+          <label className="space-y-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">Action</span>
+            <CustomDropdown
+              value={action}
+              onChange={(value) => {
+                setAction(value);
+                setSkip(0);
+              }}
+              placeholder="All actions"
+              disabled={loadingFilterOptions}
+              groups={
+                filterOptions
+                  ? Object.entries(filterOptions.actions).map(([category, actions]) => ({
+                      label: category,
+                      options: actions.map((actionOption) => ({ value: actionOption.value, label: actionOption.label })),
+                    }))
+                  : []
+              }
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">Role</span>
+            <CustomDropdown
+              value={actorRole}
+              onChange={(value) => {
+                setActorRole(value);
+                setSkip(0);
+              }}
+              placeholder="All roles"
+              disabled={loadingFilterOptions}
+              options={(filterOptions?.actor_roles ?? []).map((role) => ({ value: role.value, label: role.label }))}
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">Result</span>
+            <CustomDropdown
+              value={successFilter}
+              onChange={(value) => {
+                setSuccessFilter(value as 'all' | 'success' | 'failed');
+                setSkip(0);
+              }}
+              placeholder="All status"
+              options={[
+                { value: 'all', label: 'All status' },
+                { value: 'success', label: 'Success only' },
+                { value: 'failed', label: 'Failed only' },
+              ]}
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">From</span>
+            <input
+              ref={dateFromRef}
+              type="date"
+              value={dateFrom}
+              onChange={(e) => {
+                setDateFrom(e.target.value);
+                setSkip(0);
+              }}
+              onClick={() => openNativePicker(dateFromRef)}
+              className="w-full appearance-auto rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">To</span>
+            <input
+              ref={dateToRef}
+              type="date"
+              value={dateTo}
+              onChange={(e) => {
+                setDateTo(e.target.value);
+                setSkip(0);
+              }}
+              onClick={() => openNativePicker(dateToRef)}
+              className="w-full appearance-auto rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm"
+            />
+          </label>
+          <div className="md:col-span-5 flex flex-wrap items-end gap-2">
+            <label className="space-y-1">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">Sort</span>
+              <CustomDropdown
+                value={orderDirection}
+                onChange={(value) => {
+                  setOrderDirection(value as 'asc' | 'desc');
+                  setSkip(0);
+                }}
+                placeholder="Newest first"
+                options={[
+                  { value: 'desc', label: 'Newest first' },
+                  { value: 'asc', label: 'Oldest first' },
+                ]}
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">Rows</span>
+              <CustomDropdown
+                value={String(limit)}
+                onChange={(value) => {
+                  setLimit(Number(value));
+                  setSkip(0);
+                }}
+                placeholder="25 / page"
+                options={[
+                  { value: '25', label: '25 / page' },
+                  { value: '50', label: '50 / page' },
+                  { value: '100', label: '100 / page' },
+                ]}
+              />
+            </label>
             <p className="ml-auto text-xs text-[#607594]">Total: {total}</p>
           </div>
         </div>
@@ -262,12 +414,13 @@ export default function AdminAuditLogsPage() {
               ) : null}
               {logs.map((log) => {
                 const severity = severityFromLog(log);
-                const actor = log.actor_name || log.actor_email || log.actor_role || 'Unknown';
-                const target = log.target_user_email || log.target_user_name || log.target_entity || log.target_id || '-';
+                const actor = log.actor_name || log.actor_email || (log.actor_role ? humanizeToken(log.actor_role) : 'Unknown');
+                const targetRaw = log.target_user_email || log.target_user_name || log.target_entity || log.target_id || '-';
+                const target = targetRaw.includes('@') ? targetRaw : humanizeToken(targetRaw);
                 return (
                 <tr key={log.id} className="border-b border-[#edf2f9] last:border-0">
                   <td className="py-3 pr-4 font-semibold text-[#25375a]">{actor}</td>
-                  <td className="py-3 pr-4 text-[#5f7395]">{log.action || '-'}</td>
+                  <td className="py-3 pr-4 text-[#5f7395]">{humanizeToken(log.action)}</td>
                   <td className="py-3 pr-4 text-[#5f7395]">{target}</td>
                   <td className="py-3 pr-4 text-[#5f7395]">{formatTimestamp(log.created_at)}</td>
                   <td className="py-3">
