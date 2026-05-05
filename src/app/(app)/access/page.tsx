@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import CompanySwitcher from '@/components/company/company-switcher';
 import { getActiveCompanyId } from '@/lib/company-context';
 import { getCurrentAssessment, startAssessment } from '@/lib/assessment';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
@@ -248,6 +249,8 @@ export default function AccessPage() {
         <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Customer</p>
         <h1 className="text-3xl font-semibold text-[#1f2d45]">Access & Pre-start</h1>
       </header>
+
+      <CompanySwitcher label="Company" compact={false} />
 
       {assessment ? (
         <article className="rounded-xl border border-[#bfd4ff] bg-[#eef4ff] p-5 shadow-sm">

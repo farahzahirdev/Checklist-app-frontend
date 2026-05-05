@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
+import CompanySwitcher from '@/components/company/company-switcher';
 import { getActiveCompanyId } from '@/lib/company-context';
 import { createStripeCheckoutSession, getUserPaymentStatus } from '@/lib/payments';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
@@ -103,6 +104,8 @@ export default function PaymentPage() {
         <h1 className="text-3xl font-semibold text-[#1f2d45]">Select checklist to purchase</h1>
         <p className="text-sm text-[#4f6281]">Choose a checklist first, then proceed to Stripe checkout.</p>
       </header>
+
+      <CompanySwitcher label="Company" compact={false} />
       <article className="rounded-2xl border border-[#13305c] bg-[linear-gradient(140deg,#071733_0%,#0c2144_50%,#13356d_100%)] p-6 text-sm text-[#d8e6ff] shadow-[0_10px_30px_rgba(6,20,47,0.25)]">
         {catalogLoading ? <p>Loading available checklists...</p> : null}
         {checkoutCancelled ? (

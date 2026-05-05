@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
+import CompanySwitcher from '@/components/company/company-switcher';
 import { getActiveCompanyId } from '@/lib/company-context';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
 import { listPurchasedChecklistIds } from '@/lib/customer-payments';
@@ -872,6 +873,16 @@ export default function AssessmentPage() {
 
   return (
     <section className="space-y-4 bg-[#f4f6fa]">
+      <div className="rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_1px_3px_rgba(18,32,61,0.08)]">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Assessment</p>
+          <p className="mt-1 text-sm text-[#607594]">Manage your assessments across different checklists and companies.</p>
+        </div>
+        <div className="mt-4">
+          <CompanySwitcher label="Select Company" compact={true} />
+        </div>
+      </div>
+
       <div className="rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_1px_3px_rgba(18,32,61,0.08)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div>
