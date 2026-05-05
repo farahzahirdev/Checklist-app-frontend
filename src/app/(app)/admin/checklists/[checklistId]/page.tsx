@@ -1130,7 +1130,7 @@ export default function ChecklistPanelBuilderPage() {
               )}
             </button>
           </div>
-          <div className="min-w-0 flex-1 basis-[min(100%,12rem)] py-0.5">
+          <div className="ml-2 min-w-0 flex-1 basis-[min(100%,12rem)] py-0.5 sm:ml-3">
             <h1 className={ADMIN_BUILDER_HEADER_TITLE_CLASS}>Checklist Content Builder</h1>
             <p className="mt-0.5 truncate text-[11px] text-[#9db8e6] sm:text-xs">{title || 'Untitled checklist'}</p>
           </div>

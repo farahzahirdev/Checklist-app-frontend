@@ -15,6 +15,7 @@ import {
   type ReportFindingItem,
   type ReportSummaryItem,
 } from '@/lib/reports';
+import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
 import {
   ADMIN_KPI_DARK_CARD_CLASS,
   ADMIN_KPI_DARK_LABEL_CLASS,
@@ -184,6 +185,14 @@ export default function AdminReportDetailPage() {
   return (
     <section className="space-y-6">
       <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
+        <AdminBreadcrumbs
+          variant="onDark"
+          items={[
+            { label: 'Dashboard', href: '/admin' },
+            { label: 'Reports', href: '/admin/reports' },
+            { label: 'Report Details' },
+          ]}
+        />
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>Report Details</p>
@@ -346,7 +355,7 @@ export default function AdminReportDetailPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="request-changes-title"
-            className="w-full max-w-lg md:max-w-2xl lg:max-w-3xl rounded-2xl border border-[#dbe4f4] bg-white p-6 md:p-8 shadow-xl"
+            className="w-full max-w-lg md:max-w-xl lg:max-w-2xl rounded-2xl border border-[#dbe4f4] bg-white p-6 md:p-8 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="request-changes-title" className="text-lg font-semibold text-[#1f2d45] md:text-xl">

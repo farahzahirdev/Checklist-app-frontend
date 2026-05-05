@@ -17,10 +17,24 @@ function getPasswordPolicyError(password: string): string | null {
   return null;
 }
 
+function normalizeOptionalField(value: string) {
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : undefined;
+}
+
 export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [username, setUsername] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
+  const [department, setDepartment] = useState('');
+  const [companyIndustry, setCompanyIndustry] = useState('');
+  const [companySize, setCompanySize] = useState('');
+  const [companyRegion, setCompanyRegion] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [mfaCode, setMfaCode] = useState('');
   const [mfaQrSvg, setMfaQrSvg] = useState('');
@@ -43,12 +57,31 @@ export default function RegisterPage() {
         toast.error('Password cannot contain spaces.');
         return;
       }
+      if (/\s/.test(confirmPassword)) {
+        toast.error('Confirm password cannot contain spaces.');
+        return;
+      }
+      if (normalizedPassword !== confirmPassword) {
+        toast.error('Password and confirm password do not match.');
+        return;
+      }
       const passwordPolicyError = getPasswordPolicyError(normalizedPassword);
       if (passwordPolicyError) {
         toast.error(passwordPolicyError);
         return;
       }
-      const data = await registerAccount({ email: normalizedEmail, password: normalizedPassword });
+      const data = await registerAccount({
+        email: normalizedEmail,
+        password: normalizedPassword,
+        full_name: normalizeOptionalField(fullName),
+        username: normalizeOptionalField(username),
+        company_name: normalizeOptionalField(companyName),
+        job_title: normalizeOptionalField(jobTitle),
+        department: normalizeOptionalField(department),
+        company_industry: normalizeOptionalField(companyIndustry),
+        company_size: normalizeOptionalField(companySize),
+        company_region: normalizeOptionalField(companyRegion),
+      });
       const role = getRoleKey(data.user.role);
       const destination = role === 'customer' ? '/payment' : getRoleHomePath(data.user.role);
 
@@ -131,12 +164,12 @@ export default function RegisterPage() {
   } as const;
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-6 py-8 text-[#ffffff]" style={backgroundStyle}>
-      <div className="mx-auto w-full max-w-lg space-y-8 rounded-2xl border border-[#2f4d82] bg-[#07112a]/85 p-8 backdrop-blur md:p-10">
+    <main className="flex min-h-screen items-center justify-center px-4 py-4 text-[#ffffff] lg:h-screen lg:overflow-hidden" style={backgroundStyle}>
+      <div className="mx-auto w-full max-w-2xl space-y-4 rounded-2xl border border-[#2f4d82] bg-[#07112a]/85 p-5 backdrop-blur md:p-7 lg:max-h-[calc(100vh-2rem)] lg:overflow-hidden">
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-[#9dc5ff]">Account</p>
-          <h1 className="mt-2 text-3xl font-semibold text-white">Create an account</h1>
-          <p className="mt-2 text-sm text-[#97a5bb]">Use a strong password with at least 12 characters and mixed character types.</p>
+          <h1 className="mt-1 text-3xl font-semibold text-white">Create an account</h1>
+          <p className="mt-1 text-sm text-[#97a5bb]">Use a strong password with at least 12 characters and mixed character types.</p>
           {step === 'customer-mfa-verify' ? (
             <p className="mt-2 text-sm text-amber-300">MFA is enabled. Enter your OTP to complete account setup.</p>
           ) : null}
@@ -146,7 +179,7 @@ export default function RegisterPage() {
         </div>
 
         {step === 'credentials' ? (
-          <form className="space-y-5" onSubmit={onSubmit}>
+          <form className="space-y-3.5" onSubmit={onSubmit}>
             <label className="block space-y-2 text-sm">
               <span className="text-[#d8e2f2]">Email</span>
               <input
@@ -159,7 +192,93 @@ export default function RegisterPage() {
                 className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
               />
             </label>
-            <label className="block space-y-2 text-sm">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <label className="block space-y-1 text-sm">
+                <span className="text-[#d8e2f2]">Full name (optional)</span>
+                <input
+                  type="text"
+                  name="full_name"
+                  autoComplete="name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
+                />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span className="text-[#d8e2f2]">Username (optional)</span>
+                <input
+                  type="text"
+                  name="username"
+                  autoComplete="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
+                />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span className="text-[#d8e2f2]">Company name (optional)</span>
+                <input
+                  type="text"
+                  name="company_name"
+                  autoComplete="organization"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
+                />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span className="text-[#d8e2f2]">Job title (optional)</span>
+                <input
+                  type="text"
+                  name="job_title"
+                  autoComplete="organization-title"
+                  value={jobTitle}
+                  onChange={(e) => setJobTitle(e.target.value)}
+                  className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
+                />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span className="text-[#d8e2f2]">Department (optional)</span>
+                <input
+                  type="text"
+                  name="department"
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
+                />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span className="text-[#d8e2f2]">Company industry (optional)</span>
+                <input
+                  type="text"
+                  name="company_industry"
+                  value={companyIndustry}
+                  onChange={(e) => setCompanyIndustry(e.target.value)}
+                  className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
+                />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span className="text-[#d8e2f2]">Company size (optional)</span>
+                <input
+                  type="text"
+                  name="company_size"
+                  value={companySize}
+                  onChange={(e) => setCompanySize(e.target.value)}
+                  className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
+                />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span className="text-[#d8e2f2]">Company region (optional)</span>
+                <input
+                  type="text"
+                  name="company_region"
+                  value={companyRegion}
+                  onChange={(e) => setCompanyRegion(e.target.value)}
+                  className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
+                />
+              </label>
+            </div>
+            <label className="block space-y-1.5 text-sm">
               <span className="text-[#d8e2f2]">Password</span>
               <div className="relative">
                 <input
@@ -200,14 +319,51 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
-              <ul className="ml-4 list-disc space-y-1 text-xs text-[#97a5bb]">
-                <li>At least 12 characters</li>
-                <li>At least one uppercase letter (A-Z)</li>
-                <li>At least one lowercase letter (a-z)</li>
-                <li>At least one number (0-9)</li>
-                <li>At least one special character</li>
-                <li>No spaces</li>
-              </ul>
+              <p className="text-xs text-[#97a5bb]">
+                Min 12 chars, with uppercase, lowercase, number, special character, and no spaces.
+              </p>
+            </label>
+            <label className="block space-y-1.5 text-sm">
+              <span className="text-[#d8e2f2]">Confirm password</span>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="confirm_password"
+                  autoComplete="new-password"
+                  required
+                  minLength={12}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value.replace(/\s/g, ''))}
+                  className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 pr-10 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? 'Hide confirm password' : 'Show confirm password'}
+                  className="absolute inset-y-0 right-0 inline-flex items-center px-3 text-[#9dc5ff] hover:text-[#c6dcff]"
+                >
+                  {showPassword ? (
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                      <path
+                        d="M3 3 21 21M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.3A10 10 0 0 1 12 5c5.5 0 9.5 4.6 10 7-.2 1-1 2.5-2.3 3.9M6.6 6.6C4.3 8.2 2.4 10.4 2 12c.5 2.4 4.5 7 10 7 1.6 0 3-.4 4.2-1"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                      <path
+                        d="M2 12c.5-2.4 4.5-7 10-7s9.5 4.6 10 7c-.5 2.4-4.5 7-10 7s-9.5-4.6-10-7Z"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                      />
+                      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </label>
 
             <button

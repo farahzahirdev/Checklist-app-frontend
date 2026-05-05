@@ -261,7 +261,7 @@ export default function PaymentSuccessPage() {
   const isPaymentRecordMissingError = /payment record not found/i.test(error);
 
   return (
-    <section className="mx-auto w-full max-w-5xl space-y-6 px-6 md:px-8">
+    <section className="mx-auto w-full max-w-7xl space-y-6 px-6 md:px-8">
       <header className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#6c83a8]">Payment Complete</p>
         <h1 className="text-3xl font-semibold text-[#1f2d45]">Payment completed</h1>

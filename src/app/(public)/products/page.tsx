@@ -104,17 +104,17 @@ export default function ProductsPage() {
           <div className="absolute -left-24 top-12 h-72 w-72 rounded-full bg-[#2262d9]/40 blur-3xl" />
           <div className="absolute right-24 top-6 h-72 w-72 rounded-full bg-[#143f8f]/40 blur-3xl" />
         </div>
-        <div className="relative mx-auto grid min-h-[560px] max-w-7xl items-center gap-8 px-4 py-12 sm:px-6 md:px-6 md:py-16 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="relative mx-auto grid min-h-[520px] max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 md:px-6 md:py-12 lg:max-w-6xl lg:grid-cols-[1.05fr_0.95fr] xl:max-w-7xl 2xl:max-w-[90rem]">
           <div>
             <p className="inline-flex rounded-full border border-[#255da8] bg-[#12366c] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#9ac3ff] motion-safe:animate-fade-in motion-safe:delay-75">
               Documentation blueprints
             </p>
-            <h1 className="mt-4 text-5xl font-semibold leading-tight text-white motion-safe:animate-fade-in-up motion-safe:delay-100 sm:text-6xl">
+            <h1 className="public-hero-title mt-4 text-white motion-safe:animate-fade-in-up motion-safe:delay-100">
               Close Gaps. Save Time.
               <br />
               Get Expert-Ready <span className="text-[#3f8bff]">Documentation.</span>
             </h1>
-            <p className="mt-4 max-w-xl text-lg leading-8 text-[#c7d8f8] motion-safe:animate-fade-in-up motion-safe:delay-200">
+            <p className="public-hero-subtitle mt-4 max-w-xl text-[#c7d8f8] motion-safe:animate-fade-in-up motion-safe:delay-200">
               Buy individual policy sections with ready-to-use templates, guidelines, and admin instructions - written
               by security experts, aligned to ISO 27001, NIS2, and best practices.
             </p>
@@ -177,7 +177,7 @@ export default function ProductsPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl space-y-4 px-4 py-10 sm:px-6 md:px-6 md:py-14">
+      <section className="mx-auto max-w-7xl space-y-4 px-4 py-10 sm:px-6 md:px-6 md:py-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <article className="rounded-2xl border border-[#d7e7de] bg-[#edf7f0] p-5 md:p-6">
           <div className="grid gap-3 md:grid-cols-[1.1fr_3fr]">
             <div>

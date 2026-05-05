@@ -8,10 +8,14 @@ export type AuthUser = {
   email: string;
   name?: string | null;
   full_name?: string | null;
+  username?: string | null;
   first_name?: string | null;
   last_name?: string | null;
   role: UserRole;
   is_active: boolean;
+  primary_company_id?: string | null;
+  job_title?: string | null;
+  department?: string | null;
 };
 
 export type AuthResponse = {
@@ -78,8 +82,21 @@ export function restoreOriginalAccessToken() {
   return true;
 }
 
-export async function registerAccount(payload: { email: string; password: string }) {
-  return apiPost<AuthResponse, typeof payload>('/auth/register', payload);
+export type RegisterPayload = {
+  email: string;
+  password: string;
+  full_name?: string;
+  username?: string;
+  company_name?: string;
+  job_title?: string;
+  department?: string;
+  company_industry?: string;
+  company_size?: string;
+  company_region?: string;
+};
+
+export async function registerAccount(payload: RegisterPayload) {
+  return apiPost<AuthResponse, RegisterPayload>('/auth/register', payload);
 }
 
 export type LoginPayload = {

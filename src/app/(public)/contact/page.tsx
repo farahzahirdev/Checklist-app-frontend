@@ -21,12 +21,12 @@ export default function ContactPage() {
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
       <section style={heroStyle}>
-        <div className="mx-auto grid min-h-[560px] w-full max-w-7xl gap-8 px-4 py-8 sm:px-6 md:px-6 md:py-12 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="mx-auto grid min-h-[560px] w-full max-w-7xl gap-8 px-4 py-8 sm:px-6 md:px-6 md:py-12 lg:max-w-6xl lg:grid-cols-[1.05fr_0.95fr] xl:max-w-7xl 2xl:max-w-[90rem]">
           <div className="space-y-6">
             <div className="space-y-3">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#4d7fd3] motion-safe:animate-fade-in motion-safe:delay-75">Contact Us</p>
-              <h1 className="text-4xl font-semibold text-[#1a2440] motion-safe:animate-fade-in-up motion-safe:delay-100 sm:text-5xl">Contact Us</h1>
-              <p className="max-w-lg text-xl leading-8 text-[#334768] motion-safe:animate-fade-in-up motion-safe:delay-200">
+              <p className="public-eyebrow text-[#4d7fd3] motion-safe:animate-fade-in motion-safe:delay-75">Contact Us</p>
+              <h1 className="public-hero-title text-[#1a2440] motion-safe:animate-fade-in-up motion-safe:delay-100">Contact Us</h1>
+              <p className="public-hero-subtitle max-w-lg text-[#334768] motion-safe:animate-fade-in-up motion-safe:delay-200">
                 Have a question about audit readiness or the product?
               </p>
             </div>
@@ -97,9 +97,9 @@ export default function ContactPage() {
       </section>
 
       <section style={heroStyle}>
-        <div className="mx-auto max-w-7xl px-4 py-12 text-center sm:px-6 md:px-6 md:py-14">
-          <h2 className="text-3xl font-semibold text-[#1a2440] motion-safe:animate-fade-in-up sm:text-4xl md:text-5xl">Start your assessment today</h2>
-          <p className="mx-auto mt-3 max-w-3xl text-lg text-[#495b7a] motion-safe:animate-fade-in-up motion-safe:delay-100 md:text-xl">
+        <div className="mx-auto max-w-7xl px-4 py-12 text-center sm:px-6 md:px-6 md:py-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
+          <h2 className="public-section-title text-[#1a2440] motion-safe:animate-fade-in-up">Start your assessment today</h2>
+          <p className="public-section-subtitle mx-auto mt-3 max-w-3xl text-[#495b7a] motion-safe:animate-fade-in-up motion-safe:delay-100">
             Get access to our tools and simplify your cybersecurity audit process.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3 motion-safe:animate-fade-in-up motion-safe:delay-200">
@@ -121,7 +121,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:px-6 md:py-10">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:px-6 md:py-10 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <div className="rounded-2xl border border-[#d7deeb] bg-white p-5 shadow-sm transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-md md:p-6">
           <div className="flex flex-wrap items-center justify-between gap-5">
             <div className="flex items-center gap-4">

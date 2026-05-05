@@ -117,10 +117,10 @@ export default function SupportPage() {
 
   return (
     <section className="space-y-5">
-      <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Support</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#1f2d45]">Support tickets</h1>
-        <p className="mt-2 text-sm text-[#607594]">Send an issue to the support team and track replies in one thread.</p>
+      <header className="rounded-2xl border border-[#1f3f73] bg-[linear-gradient(120deg,#071733,#0c2144_45%,#13356d)] px-5 py-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9dc5ff]">Support</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Support tickets</h1>
+        <p className="mt-2 text-sm text-[#b9cdef]">Send an issue to the support team and track replies in one thread.</p>
       </header>
 
       <div className="grid gap-5 xl:grid-cols-[420px_1fr]">

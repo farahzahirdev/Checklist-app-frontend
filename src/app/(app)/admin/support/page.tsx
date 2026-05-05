@@ -133,18 +133,33 @@ export default function AdminSupportPage() {
 
       <div className="grid gap-5 xl:grid-cols-[420px_1fr]">
         <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm">
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              type="text"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by subject or customer email"
-              className="min-w-0 flex-1 rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
-            />
+          <form
+            className="space-y-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void loadTickets(false);
+            }}
+          >
+            <div className="min-w-0 flex items-center gap-2">
+              <input
+                type="text"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by subject or customer email"
+                className="min-w-0 flex-1 rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="rounded-xl border border-[#1f2d45] bg-[#1f2d45] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
+              >
+                {loading ? 'Loading…' : 'Search'}
+              </button>
+            </div>
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value as SupportTicketStatus | 'all')}
-              className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
+              className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#2a3d5f] outline-none focus:border-[#7ea6e7] sm:w-auto"
             >
               <option value="all">All statuses</option>
               {STATUS_OPTIONS.map((option) => (
@@ -153,15 +168,7 @@ export default function AdminSupportPage() {
                 </option>
               ))}
             </select>
-            <button
-              type="button"
-              onClick={() => void loadTickets(false)}
-              disabled={loading}
-              className="rounded-xl border border-[#1f2d45] bg-[#1f2d45] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
-            >
-              {loading ? 'Loading…' : 'Search'}
-            </button>
-          </div>
+          </form>
 
           <div className="mt-4 space-y-2">
             {!tickets.length ? (

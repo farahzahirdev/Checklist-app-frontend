@@ -52,22 +52,22 @@ export default function HomePage() {
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
       <section style={heroStyle}>
-        <div className="mx-auto grid min-h-[440px] w-full max-w-7xl items-start gap-6 px-4 py-7 text-white sm:min-h-[460px] sm:px-6 sm:py-9 md:gap-8 md:px-6 md:py-11 lg:min-h-[480px] lg:grid-cols-2 lg:items-center lg:gap-10 lg:py-11">
-          <div className="space-y-5">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">Home</p>
-            <h1 className="max-w-xl text-4xl font-semibold leading-[1.04] motion-safe:animate-fade-in-up motion-safe:delay-100 sm:text-5xl md:text-6xl">
+        <div className="mx-auto grid min-h-[400px] w-full max-w-6xl items-start gap-5 px-4 py-6 text-white sm:min-h-[420px] sm:px-6 sm:py-8 md:gap-7 md:px-8 md:py-10 lg:min-h-[440px] lg:max-w-5xl lg:grid-cols-2 lg:items-center lg:gap-8 lg:px-10 lg:py-10 xl:max-w-6xl 2xl:max-w-[90rem]">
+          <div className="space-y-4">
+            <p className="public-eyebrow text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">ABOUT US</p>
+            <h1 className="public-hero-title max-w-xl motion-safe:animate-fade-in-up motion-safe:delay-100">
               Built by
               <br />
               cybersecurity
               <br />
               <span className="text-[#2f7dff]">professionals.</span>
             </h1>
-            <p className="max-w-xl text-lg leading-8 text-[#d4e2f6] motion-safe:animate-fade-in-up motion-safe:delay-200">
+            <p className="public-hero-subtitle max-w-xl text-[#d4e2f6] motion-safe:animate-fade-in-up motion-safe:delay-200">
               We simplify audit preparation for today&apos;s cybersecurity challenges. Our mission is to give security and compliance teams clarity, structure, and confidence — without the complexity.
             </p>
           </div>
 
-          <div className="relative motion-safe:animate-fade-in-right motion-safe:delay-150">
+          <div className="relative mx-auto w-full max-w-[620px] lg:max-w-[640px] lg:justify-self-end motion-safe:animate-fade-in-right motion-safe:delay-150">
             <div className="overflow-hidden rounded-2xl border border-[#325a99]/80 bg-[#edf1f9] text-[#152948] shadow-[0_24px_70px_rgba(0,0,0,0.55)] transition-shadow duration-500 ease-out motion-safe:hover:shadow-[0_28px_80px_rgba(0,0,0,0.5)]">
               <div className="grid md:grid-cols-[180px_1fr]">
                 <aside className="h-full bg-[#0b1a39] p-2.5 text-[#dce8ff]">
@@ -82,22 +82,28 @@ export default function HomePage() {
                 <div className="p-3">
                   <div className="mb-2 rounded-xl bg-white p-2.5">
                     <p className="text-sm font-semibold text-[#1a2c4f]">Dashboard</p>
-                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                      <div>
-                        <p className="text-[11px] text-[#6f7f98]">Overall Readiness</p>
-                        <p className="text-2xl font-bold text-[#173a73] sm:text-[26px] xl:text-3xl">72%</p>
+                    <div className="mt-2 grid grid-cols-3 gap-2">
+                      <div className="flex h-full min-h-[94px] flex-col rounded-lg border border-[#e2e8f5] bg-[#f8fbff] p-2">
+                        <p className="min-h-[24px] text-[11px] leading-[1.1] text-black">Overall Readiness</p>
+                        <p className="min-h-[34px] text-xl font-bold leading-tight text-[#173a73] sm:text-2xl lg:text-[22px] xl:text-2xl 2xl:text-3xl">72%</p>
+                        <div className="mt-auto h-1.5 rounded-full bg-[#d6e2f7]">
+                          <div className="h-full w-[72%] rounded-full bg-[#2e82ff]" />
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[11px] text-[#6f7f98]">Completed</p>
-                        <p className="text-2xl font-bold text-[#173a73] sm:text-[26px] xl:text-3xl">18/25</p>
+                      <div className="flex h-full min-h-[94px] flex-col rounded-lg border border-[#e2e8f5] bg-[#f8fbff] p-2">
+                        <p className="min-h-[24px] text-[11px] leading-[1.1] text-[#6f7f98]">Completed</p>
+                        <p className="min-h-[34px] text-xl font-bold leading-tight text-[#173a73] sm:text-2xl lg:text-[22px] xl:text-2xl 2xl:text-3xl">18/25</p>
+                        <div className="mt-auto h-1.5 rounded-full bg-[#d6e2f7]">
+                          <div className="h-full w-[72%] rounded-full bg-[#2e82ff]" />
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[11px] text-[#6f7f98]">Open Findings</p>
-                        <p className="text-2xl font-bold text-[#173a73] sm:text-[26px] xl:text-3xl">7</p>
+                      <div className="flex h-full min-h-[94px] flex-col rounded-lg border border-[#e2e8f5] bg-[#f8fbff] p-2">
+                        <p className="min-h-[24px] text-[11px] leading-[1.1] text-[#6f7f98]">Open Findings</p>
+                        <p className="min-h-[34px] text-xl font-bold leading-tight text-[#173a73] sm:text-2xl lg:text-[22px] xl:text-2xl 2xl:text-3xl">7</p>
+                        <div className="mt-auto h-1.5 rounded-full bg-[#d6e2f7]">
+                          <div className="h-full w-[28%] rounded-full bg-[#2e82ff]" />
+                        </div>
                       </div>
-                    </div>
-                    <div className="mt-1.5 h-2 rounded-full bg-[#d6e2f7]">
-                      <div className="h-full w-[72%] rounded-full bg-[#2e82ff]" />
                     </div>
                   </div>
                   <div className="grid gap-1.5 sm:grid-cols-2">
@@ -154,7 +160,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-6 md:py-12">
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:px-8 md:py-12 lg:max-w-5xl lg:px-10 xl:max-w-6xl 2xl:max-w-[90rem]">
         <div className="grid gap-4 lg:grid-cols-2">
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
             <div className="flex items-start gap-4">
@@ -286,7 +292,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 md:px-6 md:pb-16">
+      <section className="mx-auto max-w-6xl px-4 pb-14 sm:px-6 md:px-8 md:pb-16 lg:max-w-5xl lg:px-10 xl:max-w-6xl 2xl:max-w-[90rem]">
         <h3 className="text-center text-3xl font-semibold text-[#202743] motion-safe:animate-fade-in-up md:text-4xl">Trust & Credentials</h3>
         <p className="mt-2 text-center text-base text-[#6f7893] motion-safe:animate-fade-in-up motion-safe:delay-75 md:text-lg">
           We combine real-world experience with recognized knowledge and standards.
@@ -358,7 +364,7 @@ export default function HomePage() {
                 </svg>
               </span>
               <div className="min-w-0">
-                <p className="text-2xl font-semibold md:text-4xl">Ready to work with us?</p>
+                <p className="text-2xl font-semibold md:text-4xl">Want to know more about our work?</p>
                 <p className="mt-1 text-sm text-[#c7d8f8] md:text-base">
                   We&apos;re always open to new conversations about how we can help you and your organization stay secure and audit-ready.
                 </p>
