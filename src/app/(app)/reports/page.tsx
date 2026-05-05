@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import CompanySwitcher from '@/components/company/company-switcher';
 import { getActiveCompanyId } from '@/lib/company-context';
 import { getCustomerReports, type ReportResponse } from '@/lib/reports';
 
@@ -45,8 +44,6 @@ export default function ReportsPage() {
         <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Customer</p>
         <h1 className="text-3xl font-semibold text-[#1f2d45]">Reports</h1>
       </header>
-
-      <CompanySwitcher label="Company" compact={false} />
 
       <div className="space-y-5">
 

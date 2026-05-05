@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import CompanySwitcher from '@/components/company/company-switcher';
 import { getActiveCompanyId } from '@/lib/company-context';
 import { getCurrentUser, persistAccessToken, startMfaSetup, verifyMfaCode } from '@/lib/auth';
 import { listPublishedCustomerChecklists, selectChecklistAfterPayment, type CustomerChecklist } from '@/lib/checklist-api';

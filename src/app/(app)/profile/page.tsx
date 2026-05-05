@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import CompanySwitcher from '@/components/company/company-switcher';
+import CompanyManagement from '@/components/company-management';
 import {
   changeCustomerPassword,
   getCustomerProfile,
@@ -382,6 +383,10 @@ export default function CustomerProfilePage() {
             </span>
           </div>
         </form>
+      </article>
+
+      <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+        <CompanyManagement />
       </article>
     </section>
   );

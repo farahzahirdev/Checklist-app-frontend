@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { LogoutButton } from '@/components/logout-button';
+import NavbarCompanySelector from '@/components/navbar-company-selector';
 import {
   ACCESS_TOKEN_STORAGE_KEY,
   clearRoleSwitchSession,
@@ -262,7 +263,7 @@ export default function AppLayout({
                   Payments
                 </Link>
                 <Link
-                  href="/profile"
+                  href={'/profile' as Route}
                   className={`flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
                     profileActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
                   }`}
@@ -297,8 +298,9 @@ export default function AppLayout({
                   <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#9dc5ff]">Customer Workspace</p>
                 </div>
                 <div className="flex items-center gap-3">
+                  <NavbarCompanySelector />
                   <Link
-                    href="/profile"
+                    href={'/profile' as Route}
                     className="inline-flex items-center gap-2 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-medium text-[#dce8ff] hover:bg-[#223657]"
                   >
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#d6e4ff] text-[#274b84]">
