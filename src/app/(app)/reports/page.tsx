@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { getCustomerReports, type ReportResponse } from '@/lib/reports';
+import { useLocale } from '@/lib/i18n';
 
 const statusLabels: Record<ReportResponse['status'], string> = {
   draft_generated: 'Draft',
@@ -14,6 +15,7 @@ const statusLabels: Record<ReportResponse['status'], string> = {
 };
 
 export default function ReportsPage() {
+  const { locale } = useLocale();
   const [reports, setReports] = useState<ReportResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -35,7 +37,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     void loadReports();
-  }, []);
+  }, [locale]);
 
   return (
     <section className="space-y-6">

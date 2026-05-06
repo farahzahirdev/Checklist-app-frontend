@@ -11,8 +11,12 @@ import {
 import { listCustomerAssessments, type CustomerAssessmentListItem } from '@/lib/customer-assessments';
 import { getCustomerReports, type ReportResponse } from '@/lib/reports';
 import { formatStatusLabel } from '@/lib/status-format';
+import { translate, useLocale } from '@/lib/i18n';
+import { customerDashboardMessages } from '@/locales/customer-dashboard';
 
 export default function DashboardPage() {
+  const { locale } = useLocale();
+  const t = (key: string) => translate(customerDashboardMessages, locale, key);
   const [summary, setSummary] = useState<CustomerDashboardSummary | null>(null);
   const [enhanced, setEnhanced] = useState<CustomerDashboardEnhanced | null>(null);
   const [assessments, setAssessments] = useState<CustomerAssessmentListItem[]>([]);
@@ -37,7 +41,7 @@ export default function DashboardPage() {
       setAssessments(assessmentsResponse?.assessments ?? []);
       setReports(reportsResponse);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to load customer dashboard';
+      const msg = err instanceof Error ? err.message : t('errors.load');
       setError(msg);
       if (msg.includes('insufficient_permissions')) {
         setPermissionBlocked(true);
@@ -55,8 +59,8 @@ export default function DashboardPage() {
     <section className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Customer Dashboard</p>
-          <h1 className="text-3xl font-semibold text-[#1f2d45]">Overview</h1>
+          <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">{t('title.kicker')}</p>
+          <h1 className="text-3xl font-semibold text-[#1f2d45]">{t('title')}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -65,7 +69,7 @@ export default function DashboardPage() {
             disabled={loading}
             className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff] disabled:opacity-60"
           >
-            {loading ? 'Refreshing...' : 'Refresh'}
+            {loading ? t('actions.refreshing') : t('actions.refresh')}
           </button>
         </div>
       </header>
@@ -75,14 +79,13 @@ export default function DashboardPage() {
       ) : null}
       {permissionBlocked ? (
         <div className="rounded-lg border border-[#f2dfad] bg-[#fff9ea] px-3 py-3 text-sm text-[#835f12]">
-          This switched session cannot access customer dashboard summary. Use `Assessment`/`Access`, or click `Return to
-          Admin`.
+          {t('permission.blocked')}
           <div className="mt-2 flex gap-2">
             <Link href="/assessment" className="rounded-md border border-[#e4d2a0] px-2 py-1 text-xs hover:bg-[#fff2ce]">
-              Go to Assessment
+              {t('permission.goAssessment')}
             </Link>
             <Link href="/access" className="rounded-md border border-[#e4d2a0] px-2 py-1 text-xs hover:bg-[#fff2ce]">
-              Go to Access
+              {t('permission.goAccess')}
             </Link>
           </div>
         </div>
@@ -90,40 +93,42 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-2xl border border-[#345793] bg-[#0d1d3a] p-5">
-          <p className="text-sm text-[#97a5bb]">Paid checklists</p>
+          <p className="text-sm text-[#97a5bb]">{t('kpi.paidChecklists')}</p>
           <p className="mt-2 text-3xl font-semibold text-white">{summary?.paid_checklists_count ?? (loading ? '...' : 0)}</p>
         </article>
         <article className="rounded-2xl border border-[#345793] bg-[#0d1d3a] p-5">
-          <p className="text-sm text-[#97a5bb]">Active assessments</p>
+          <p className="text-sm text-[#97a5bb]">{t('kpi.activeAssessments')}</p>
           <p className="mt-2 text-3xl font-semibold text-white">
             {summary?.active_assessments_count ?? (loading ? '...' : 0)}
           </p>
         </article>
         <article className="rounded-2xl border border-[#345793] bg-[#0d1d3a] p-5">
-          <p className="text-sm text-[#97a5bb]">Submitted assessments</p>
+          <p className="text-sm text-[#97a5bb]">{t('kpi.submittedAssessments')}</p>
           <p className="mt-2 text-3xl font-semibold text-white">
             {summary?.submitted_assessments_count ?? (loading ? '...' : 0)}
           </p>
         </article>
         <article className="rounded-2xl border border-[#345793] bg-[#0d1d3a] p-5">
-          <p className="text-sm text-[#97a5bb]">Latest report status</p>
-          <p className="mt-2 text-xl font-semibold text-white">{summary?.latest_report_status ?? (loading ? '...' : 'n/a')}</p>
+          <p className="text-sm text-[#97a5bb]">{t('kpi.latestReportStatus')}</p>
+          <p className="mt-2 text-xl font-semibold text-white">{summary?.latest_report_status ?? (loading ? '...' : t('labels.na'))}</p>
         </article>
       </div>
 
       {summary?.generated_at ? (
-        <p className="text-xs text-[#607594]">Last generated at: {new Date(summary.generated_at).toLocaleString()}</p>
+        <p className="text-xs text-[#607594]">
+          {t('meta.lastGeneratedAt').replace('{date}', new Date(summary.generated_at).toLocaleString())}
+        </p>
       ) : null}
 
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-[#1f2d45]">Reports</h2>
+          <h2 className="text-lg font-semibold text-[#1f2d45]">{t('sections.reports')}</h2>
           {reports.length > 0 && (
             <Link
               href="/reports"
               className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#2a3d5f] hover:bg-[#f6f9ff]"
             >
-              View All Reports
+              {t('actions.viewAllReports')}
             </Link>
           )}
         </div>
@@ -131,45 +136,45 @@ export default function DashboardPage() {
 
         {reports.some((report) => report.status === 'approved') ? (
           <p className="text-xs text-[#607594]">
-            Approved reports are waiting for publication. Only published reports appear here for customers.
+            {t('reports.approvedWaiting')}
           </p>
         ) : null}
         {!reports.length ? (
           <p className="rounded-xl border border-[#dbe4f4] bg-white p-4 text-sm text-[#607594] shadow-sm">
-            {loading ? 'Loading reports…' : 'No reports available yet. Reports will appear here after your assessments are reviewed and approved.'}
+            {loading ? t('loading.reports') : t('empty.reports')}
           </p>
         ) : (
           <div className="overflow-hidden rounded-xl border border-[#dbe4f4] bg-white shadow-sm">
             <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-[#eef2fa] bg-[#f7f9fe] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#607594]">
-              <span>Assessment</span>
-              <span className="text-right">Status</span>
+              <span>{t('table.assessment')}</span>
+              <span className="text-right">{t('table.status')}</span>
             </div>
             <ul className="divide-y divide-[#eef2fa]">
               {reports.filter((report) => report.status === 'published').slice(0, 5).map((report) => (
                 <li key={report.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-[#1f2d45]">Report for Assessment</p>
+                    <p className="truncate font-semibold text-[#1f2d45]">{t('report.itemTitle')}</p>
                     <p className="mt-0.5 truncate text-xs text-[#607594]">
-                      {report.status === 'published' ? 'Published' : 
-                       report.status === 'approved' ? 'Approved' :
-                       report.status === 'under_review' ? 'Under Review' :
-                       report.status === 'changes_requested' ? 'Changes Requested' : 'Draft'}
+                      {report.status === 'published' ? t('report.status.published') :
+                       report.status === 'approved' ? t('report.status.approved') :
+                       report.status === 'under_review' ? t('report.status.under_review') :
+                       report.status === 'changes_requested' ? t('report.status.changes_requested') : t('report.status.draft')}
                       {' • '}
-                      {report.approved_at ? `Approved ${new Date(report.approved_at).toLocaleDateString()}` : 
-                       report.reviewed_at ? `Reviewed ${new Date(report.reviewed_at).toLocaleDateString()}` :
-                       report.draft_generated_at ? `Generated ${new Date(report.draft_generated_at).toLocaleDateString()}` : 'Recent'}
+                      {report.approved_at ? t('report.meta.approved').replace('{date}', new Date(report.approved_at).toLocaleDateString()) :
+                       report.reviewed_at ? t('report.meta.reviewed').replace('{date}', new Date(report.reviewed_at).toLocaleDateString()) :
+                       report.draft_generated_at ? t('report.meta.generated').replace('{date}', new Date(report.draft_generated_at).toLocaleDateString()) : t('report.meta.recent')}
                     </p>
                   </div>
                   <Link
                     href={`/reports/${report.id}` as any}
                     className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
                   >
-                    View Report
+                    {t('actions.viewReport')}
                   </Link>
                 </li>
               ))}
               {!reports.filter((report) => report.status === 'published').length ? (
-                <li className="px-4 py-3 text-sm text-[#607594]">No published reports yet.</li>
+                <li className="px-4 py-3 text-sm text-[#607594]">{t('empty.publishedReports')}</li>
               ) : null}
             </ul>
           </div>
@@ -178,24 +183,24 @@ export default function DashboardPage() {
 
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-[#1f2d45]">Assessments</h2>
+          <h2 className="text-lg font-semibold text-[#1f2d45]">{t('sections.assessments')}</h2>
           <Link
             href="/access"
             className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#2a3d5f] hover:bg-[#f6f9ff]"
           >
-            Manage access
+            {t('actions.manageAccess')}
           </Link>
         </div>
 
         {!assessments.length ? (
           <p className="rounded-xl border border-[#dbe4f4] bg-white p-4 text-sm text-[#607594] shadow-sm">
-            {loading ? 'Loading assessments…' : 'No assessments found yet.'}
+            {loading ? t('loading.assessments') : t('empty.assessments')}
           </p>
         ) : (
           <div className="overflow-hidden rounded-xl border border-[#dbe4f4] bg-white shadow-sm">
             <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-[#eef2fa] bg-[#f7f9fe] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#607594]">
-              <span>Checklist</span>
-              <span className="text-right">Action</span>
+              <span>{t('table.checklist')}</span>
+              <span className="text-right">{t('table.action')}</span>
             </div>
             <ul className="divide-y divide-[#eef2fa]">
               {assessments.slice(0, 20).map((item) => (
@@ -203,20 +208,20 @@ export default function DashboardPage() {
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-[#1f2d45]">{item.checklist_title}</p>
                     <p className="mt-0.5 truncate text-xs text-[#607594]">
-                      {formatStatusLabel(item.status)} • {item.completion_percent}% • last activity{' '}
-                      {item.last_activity ? new Date(item.last_activity).toLocaleString() : 'n/a'}
+                      {formatStatusLabel(item.status)} • {item.completion_percent}% • {t('labels.lastActivity')}{' '}
+                      {item.last_activity ? new Date(item.last_activity).toLocaleString() : t('labels.na')}
                     </p>
                   </div>
                   {item.status === 'submitted' ? (
                     <span className="shrink-0 rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-1.5 text-xs font-semibold text-[#2a3d5f]">
-                      Submitted
+                      {t('assessment.submitted')}
                     </span>
                   ) : (
                     <Link
                       className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white"
                       href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}`}
                     >
-                      Open
+                      {t('actions.open')}
                     </Link>
                   )}
                 </li>
@@ -229,13 +234,15 @@ export default function DashboardPage() {
       {enhanced ? (
         <section className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-[#1f2d45]">Your assessments</h2>
-            <p className="text-xs text-[#607594]">Updated: {new Date(enhanced.generated_at).toLocaleString()}</p>
+            <h2 className="text-lg font-semibold text-[#1f2d45]">{t('sections.yourAssessments')}</h2>
+            <p className="text-xs text-[#607594]">
+              {t('meta.updatedAt').replace('{date}', new Date(enhanced.generated_at).toLocaleString())}
+            </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-[#243555]">Active</h3>
+              <h3 className="text-sm font-semibold text-[#243555]">{t('subsections.active')}</h3>
               {enhanced.active_assessments?.length ? (
                 <ul className="mt-3 space-y-2 text-sm text-[#3f5677]">
                   {enhanced.active_assessments.slice(0, 5).map((item) => (
@@ -251,18 +258,18 @@ export default function DashboardPage() {
                         className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white"
                         href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}`}
                       >
-                        Open
+                        {t('actions.open')}
                       </Link>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-2 text-sm text-[#607594]">No active assessments yet.</p>
+                <p className="mt-2 text-sm text-[#607594]">{t('empty.activeAssessments')}</p>
               )}
             </article>
 
             <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-[#243555]">Expiring soon</h3>
+              <h3 className="text-sm font-semibold text-[#243555]">{t('subsections.expiringSoon')}</h3>
               {enhanced.expiring_soon?.length ? (
                 <ul className="mt-3 space-y-2 text-sm text-[#3f5677]">
                   {enhanced.expiring_soon.slice(0, 5).map((item) => (
@@ -270,20 +277,20 @@ export default function DashboardPage() {
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-[#1f2d45]">{item.checklist_title}</p>
                         <p className="truncate text-xs text-[#607594]">
-                          {item.days_until_expiry ?? 'n/a'} days left • {formatStatusLabel(item.status)} • {item.completion_percent}%
+                          {t('labels.daysLeft').replace('{days}', String(item.days_until_expiry ?? t('labels.na')))} • {formatStatusLabel(item.status)} • {item.completion_percent}%
                         </p>
                       </div>
                       <Link
                         className="shrink-0 rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#2a3d5f] hover:bg-[#f6f9ff]"
                         href={`/access?checklist_id=${encodeURIComponent(item.checklist_id)}`}
                       >
-                        View
+                        {t('actions.view')}
                       </Link>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-2 text-sm text-[#607594]">Nothing expiring in the next week.</p>
+                <p className="mt-2 text-sm text-[#607594]">{t('empty.expiringSoon')}</p>
               )}
             </article>
           </div>

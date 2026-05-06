@@ -44,7 +44,5 @@ export const homeMessages: TranslationMessages = {
     'bottom.getAccess': 'Get Access',
     'bottom.viewProducts': 'View Products',
   },
-  es: {},
-  fr: {},
-  de: {},
+  cs: {},
 };

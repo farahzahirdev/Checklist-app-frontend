@@ -3,9 +3,13 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { logoutAccount, persistAccessToken } from '@/lib/auth';
+import { translate, useLocale } from '@/lib/i18n';
+import { customerLayoutMessages } from '@/locales/customer-layout';
 
 export function LogoutButton() {
   const router = useRouter();
+  const { locale } = useLocale();
+  const t = (key: string) => translate(customerLayoutMessages, locale, key);
   const [loading, setLoading] = useState(false);
 
   async function handleLogout() {
@@ -29,7 +33,7 @@ export function LogoutButton() {
       disabled={loading}
       className="rounded-lg border border-[#345793] px-3 py-1.5 text-sm text-[#d8e2f2] hover:bg-[#1f7bff]/20 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {loading ? 'Logging out...' : 'Logout'}
+      {loading ? t('actions.loggingOut') : t('actions.logout')}
     </button>
   );
 }

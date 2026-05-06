@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { translate, useLocale } from '@/lib/i18n';
 import {
   createBulkAnswerReviews,
   createAnswerReview,
@@ -29,6 +30,7 @@ import {
   ADMIN_PAGE_HERO_SUBTITLE_CLASS,
   ADMIN_PAGE_HERO_TITLE_TEXT_CLASS,
 } from '@/app/(app)/admin/admin-page-title';
+import { adminAssessmentReviewDetailMessages } from '@/locales/admin-assessment-review-detail';
 
 type ReviewDraft = {
   suggestion_type: string;
@@ -144,6 +146,14 @@ export default function AdminAssessmentReviewDetailPage() {
   const params = useParams<{ assessmentId: string }>();
   const assessmentId = params.assessmentId;
   const router = useRouter();
+  const { locale } = useLocale();
+  const t = (key: string) => translate(adminAssessmentReviewDetailMessages, locale, key);
+  const statusLabel = (status: string | null | undefined) => {
+    if (!status) return t('status.unknown');
+    const exact = translate(adminAssessmentReviewDetailMessages, locale, `status.${status}`);
+    if (exact) return exact;
+    return String(status).split('_').join(' ');
+  };
 
   const [detail, setDetail] = useState<AssessmentAnswersReviewDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -179,7 +189,7 @@ export default function AdminAssessmentReviewDetailPage() {
         setReviewStatusLabel(response.assessment_status || 'pending_review');
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load assessment review');
+      toast.error(err instanceof Error ? err.message : t('toasts.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -271,7 +281,7 @@ export default function AdminAssessmentReviewDetailPage() {
       score_adjustment: draft.score_adjustment,
     };
     if (!payload.suggestion_text || payload.suggestion_text.length < 10) {
-      const message = 'Suggestion text should be at least 10 characters.';
+      const message = t('validation.suggestionMin');
       setSuggestionErrors((prev) => ({ ...prev, [answer.answer_id]: message }));
       toast.error(message);
       return;
@@ -280,10 +290,10 @@ export default function AdminAssessmentReviewDetailPage() {
     try {
       if (answer.review?.id) await updateAnswerReview(answer.review.id, payload);
       else await createAnswerReview(answer.answer_id, payload);
-      toast.success('Answer review saved.');
+      toast.success(t('toasts.answerSaved'));
       await loadDetail();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save answer review');
+      toast.error(err instanceof Error ? err.message : t('toasts.answerSaveFailed'));
     } finally {
       setSavingAnswerId('');
     }
@@ -294,10 +304,10 @@ export default function AdminAssessmentReviewDetailPage() {
     setSavingAnswerId(answer.answer_id);
     try {
       await deleteAnswerReview(answer.review.id);
-      toast.success('Answer review deleted.');
+      toast.success(t('toasts.answerDeleted'));
       await loadDetail();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete answer review');
+      toast.error(err instanceof Error ? err.message : t('toasts.answerDeleteFailed'));
     } finally {
       setSavingAnswerId('');
     }
@@ -313,7 +323,7 @@ export default function AdminAssessmentReviewDetailPage() {
         summary_notes: summaryNotes.trim(),
         recommendations: recommendations.trim(),
       });
-      toast.success('Assessment review finalized.');
+      toast.success(t('toasts.finalized'));
       await loadDetail();
 
       // Try to open the report for this assessment. If it doesn't exist, create a draft then open it.
@@ -333,7 +343,7 @@ export default function AdminAssessmentReviewDetailPage() {
         }
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to finalize review');
+      toast.error(err instanceof Error ? err.message : t('toasts.finalizeFailed'));
     } finally {
       setFinalizing(false);
     }
@@ -344,10 +354,10 @@ export default function AdminAssessmentReviewDetailPage() {
     setFinalizing(true);
     try {
       await quickApproveAssessment(detail.assessment_id);
-      toast.success('Assessment quick-approved.');
+      toast.success(t('toasts.quickApproved'));
       await loadDetail();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to quick approve');
+      toast.error(err instanceof Error ? err.message : t('toasts.quickApproveFailed'));
     } finally {
       setFinalizing(false);
     }
@@ -360,10 +370,10 @@ export default function AdminAssessmentReviewDetailPage() {
       await requestAssessmentChanges(detail.assessment_id, {
         message: recommendations.trim() || 'Please review flagged answers and resubmit.',
       });
-      toast.success('Changes requested from customer.');
+      toast.success(t('toasts.changesRequested'));
       await loadDetail();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to request changes');
+      toast.error(err instanceof Error ? err.message : t('toasts.changesRequestFailed'));
     } finally {
       setFinalizing(false);
     }
@@ -384,7 +394,7 @@ export default function AdminAssessmentReviewDetailPage() {
       .filter((item) => item.suggestion_text.length > 0);
 
     if (!entries.length) {
-      toast.error('No drafted reviews to save in bulk.');
+      toast.error(t('toasts.bulkNone'));
       return;
     }
     setFinalizing(true);
@@ -396,7 +406,7 @@ export default function AdminAssessmentReviewDetailPage() {
       toast.success(`Bulk saved: ${result.success_count} success, ${result.failure_count} failed.`);
       await loadDetail();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save bulk reviews');
+      toast.error(err instanceof Error ? err.message : t('toasts.bulkFailed'));
     } finally {
       setFinalizing(false);
     }
@@ -410,7 +420,7 @@ export default function AdminAssessmentReviewDetailPage() {
       setHistoryByReviewId((prev) => ({ ...prev, [reviewId]: history.slice(0, 2) }));
       setExpandedHistory((prev) => ({ ...prev, [reviewId]: false }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load review history');
+      toast.error(err instanceof Error ? err.message : t('toasts.historyFailed'));
     } finally {
       setLoadingHistoryId('');
     }
@@ -429,26 +439,26 @@ export default function AdminAssessmentReviewDetailPage() {
         <AdminBreadcrumbs
           variant="onDark"
           items={[
-            { label: 'Dashboard', href: '/admin' },
-            { label: 'Assessments', href: '/admin/assessments' },
+            { label: t('crumbs.dashboard'), href: '/admin' },
+            { label: t('crumbs.assessments'), href: '/admin/assessments' },
             {
               label:
                 detail?.checklist_title ||
                 detail?.customer_name ||
                 detail?.customer_email ||
-                (loading ? 'Loading…' : 'Review'),
+                (loading ? t('history.loading') : t('crumbs.review')),
             },
           ]}
         />
-        <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>Assessment review</p>
+        <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>{t('hero.eyebrow')}</p>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <h1 className={ADMIN_PAGE_HERO_TITLE_TEXT_CLASS}>Assessment Awaiting Review</h1>
+            <h1 className={ADMIN_PAGE_HERO_TITLE_TEXT_CLASS}>{t('hero.title')}</h1>
             <p className={ADMIN_PAGE_HERO_SUBTITLE_CLASS}>
               {detail?.customer_name || detail?.customer_email || '-'} — {detail?.checklist_title || '-'}
             </p>
             <p className="mt-1 text-xs font-medium text-[#9db8e6]">
-              {String(reviewStatusLabel || detail?.assessment_status || 'pending_review').split('_').join(' ')} ·{' '}
+              {statusLabel(reviewStatusLabel || detail?.assessment_status || 'pending_review')} ·{' '}
               {formatDateTime(detail?.submitted_at)}
             </p>
           </div>
@@ -458,30 +468,30 @@ export default function AdminAssessmentReviewDetailPage() {
             onClick={() => void finalizeReview()}
             className="shrink-0 rounded-xl border border-[#5ea2ff] bg-[#2f7dff] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#256ceb] disabled:opacity-60"
           >
-            {finalizing ? 'Saving...' : 'Finalize Review'}
+            {finalizing ? t('actions.saving') : t('actions.finalize')}
           </button>
         </div>
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <article className={ADMIN_KPI_DARK_CARD_CLASS}>
-          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Total Questions</p>
+          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>{t('kpi.total')}</p>
           <p className="mt-2 text-2xl font-semibold tabular-nums text-white">{detail?.total_answers ?? (loading ? '...' : 0)}</p>
         </article>
         <article className={ADMIN_KPI_DARK_CARD_CLASS}>
-          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Answered</p>
+          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>{t('kpi.answered')}</p>
           <p className="mt-2 text-2xl font-semibold tabular-nums text-[#7cf0aa]">
             {detail?.total_answers ?? (loading ? '...' : 0)} ({Math.round(detail?.completion_percentage ?? 0)}%)
           </p>
         </article>
         <article className={ADMIN_KPI_DARK_CARD_CLASS}>
-          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Client Score</p>
+          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>{t('labels.clientAnswer')}</p>
           <p className="mt-2 text-2xl font-semibold tabular-nums text-[#ffd89c]">
             {Math.round(detail?.average_score ?? 0)}/100
           </p>
         </article>
         <article className={ADMIN_KPI_DARK_CARD_CLASS}>
-          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Marked for Follow-up</p>
+          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>{t('kpi.followUp')}</p>
           <p className="mt-2 text-2xl font-semibold tabular-nums text-[#ffb3c9]">
             {detail?.action_required_answers ?? (loading ? '...' : 0)}
           </p>
@@ -490,37 +500,37 @@ export default function AdminAssessmentReviewDetailPage() {
 
       <article className="rounded-2xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-semibold text-[#4e6489]">Filter:</p>
+          <p className="text-sm font-semibold text-[#4e6489]">{t('filters.label')}</p>
           <select value={sectionFilter} onChange={(event) => setSectionFilter(event.target.value)} className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm font-semibold text-[#2a3d5f]">
-            <option value="all">All Questions</option>
+            <option value="all">{t('filters.allQuestions')}</option>
             {sectionOptions.map((section) => <option key={section} value={section}>{section}</option>)}
           </select>
           <button type="button" onClick={() => setFollowUpFilter((prev) => (prev === 'all' ? 'marked' : 'all'))} className={`rounded-xl border px-3 py-2 text-sm font-semibold ${followUpFilter === 'marked' ? 'border-[#f2d49f] bg-[#fff3de] text-[#b6862f]' : 'border-[#d4dced] bg-white text-[#425f8f]'}`}>
-            {followUpFilter === 'marked' ? 'Highlighting Follow-ups' : 'Highlight Follow-ups'}
+            {followUpFilter === 'marked' ? t('filters.highlightingFollowUps') : t('filters.highlightFollowUps')}
           </button>
           <select value={answerStateFilter} onChange={(event) => setAnswerStateFilter(event.target.value as 'all' | 'not_answered')} className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm font-semibold text-[#2a3d5f]">
-            <option value="all">All Answer States</option>
-            <option value="not_answered">Not Answered</option>
+            <option value="all">{t('filters.answerStates.all')}</option>
+            <option value="not_answered">{t('filters.answerStates.notAnswered')}</option>
           </select>
         </div>
       </article>
 
       <article className="rounded-2xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
-        <h2 className="text-lg font-semibold text-[#243555]">Overall Review Notes</h2>
-        <textarea value={summaryNotes} onChange={(event) => setSummaryNotes(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm" placeholder="Summary notes for the assessment..." />
-        <textarea value={recommendations} onChange={(event) => setRecommendations(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm" placeholder="Recommendations for customer..." />
+        <h2 className="text-lg font-semibold text-[#243555]">{t('notes.title')}</h2>
+        <textarea value={summaryNotes} onChange={(event) => setSummaryNotes(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm" placeholder={t('notes.summaryPlaceholder')} />
+        <textarea value={recommendations} onChange={(event) => setRecommendations(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm" placeholder={t('notes.recommendationsPlaceholder')} />
         <div className="mt-2 flex gap-2">
-          <button type="button" disabled={finalizing || loading} onClick={() => void requestChanges()} className="rounded-xl border border-[#d4dced] bg-white px-4 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">Request Changes</button>
-          <button type="button" disabled={finalizing || loading} onClick={() => void quickApprove()} className="rounded-xl border border-[#d4dced] bg-[#f8faff] px-4 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">Quick Approve</button>
-          <button type="button" disabled={finalizing || loading} onClick={() => void saveBulkReviews()} className="rounded-xl border border-[#d4dced] bg-[#f8faff] px-4 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">Save Drafted in Bulk</button>
+          <button type="button" disabled={finalizing || loading} onClick={() => void requestChanges()} className="rounded-xl border border-[#d4dced] bg-white px-4 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">{t('actions.requestChanges')}</button>
+          <button type="button" disabled={finalizing || loading} onClick={() => void quickApprove()} className="rounded-xl border border-[#d4dced] bg-[#f8faff] px-4 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">{t('actions.quickApprove')}</button>
+          <button type="button" disabled={finalizing || loading} onClick={() => void saveBulkReviews()} className="rounded-xl border border-[#d4dced] bg-[#f8faff] px-4 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">{t('actions.saveBulk')}</button>
         </div>
       </article>
 
-      {loading ? <p className="rounded-xl border border-[#e2e8f5] bg-white px-4 py-3 text-sm text-[#607594]">Loading answers...</p> : null}
+      {loading ? <p className="rounded-xl border border-[#e2e8f5] bg-white px-4 py-3 text-sm text-[#607594]">{t('loading.answers')}</p> : null}
 
       {!loading && sectionGroups.map(([key, answers], sectionIndex) => (
         <section key={key} className="space-y-2 rounded-2xl border border-[#dbe4f4] bg-white p-4 shadow-sm">
-          <h2 className="text-2xl font-semibold text-[#243555]">{sectionIndex + 1}. {answers[0]?.section_name || answers[0]?.section_code || 'General'}</h2>
+          <h2 className="text-2xl font-semibold text-[#243555]">{sectionIndex + 1}. {answers[0]?.section_name || answers[0]?.section_code || t('section.general')}</h2>
           {answers.map((answer) => {
             const draft = getDraft(answer);
             const isSaving = savingAnswerId === answer.answer_id;
@@ -532,10 +542,10 @@ export default function AdminAssessmentReviewDetailPage() {
                 ? 'bg-[#fff3de] text-[#b6862f]'
                 : 'bg-[#e9f8ef] text-[#2f9960]';
             const badgeText = answerEmpty
-              ? 'Not Answered'
+              ? t('badges.notAnswered')
               : answer.is_action_required || answer.review?.is_action_required
-                ? 'Marked for Follow-up'
-                : 'Answered';
+                ? t('badges.followUp')
+                : t('badges.answered');
             const isMarkedForFollowUp = answer.is_action_required || Boolean(answer.review?.is_action_required);
             const shouldHighlight = followUpFilter === 'marked' && isMarkedForFollowUp;
             const shouldDim = followUpFilter === 'marked' && !isMarkedForFollowUp;
@@ -548,7 +558,7 @@ export default function AdminAssessmentReviewDetailPage() {
                   : 'border-[#e2e8f5] bg-[#fbfcff]'
               }`}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-semibold text-[#25375a]">Question ID: {answer.question_id}</p>
+                  <p className="font-semibold text-[#25375a]">{t('labels.questionId')}: {answer.question_id}</p>
                   <span className={`rounded-md px-2 py-1 text-xs font-semibold ${badgeClass}`}>{badgeText}</span>
                 </div>
                 {answer.question_text && (
@@ -556,9 +566,9 @@ export default function AdminAssessmentReviewDetailPage() {
                 )}
                 <div className="mt-3">
                   <div className="grid gap-3 border-b border-[#edf2f9] pb-2 text-sm font-semibold text-[#2b3e60] md:grid-cols-3">
-                    <p>Client Answer</p>
-                    <p>Client Note</p>
-                    <p>Attachment</p>
+                    <p>{t('labels.clientAnswer')}</p>
+                    <p>{t('labels.note')}</p>
+                    <p>{t('labels.evidence')}</p>
                   </div>
                   <div className="mt-3 grid gap-3 md:grid-cols-3">
                     <div className="space-y-2 rounded-lg border border-[#dfe7f6] bg-white p-3">
@@ -568,10 +578,10 @@ export default function AdminAssessmentReviewDetailPage() {
                           {option}
                         </label>
                       ))}
-                      <p className="pt-1 text-xs text-[#97a5bb]">Answer cannot be modified</p>
+                      <p className="pt-1 text-xs text-[#97a5bb]">{t('labels.answerLocked')}</p>
                     </div>
                     <div className="rounded-lg border border-[#dfe7f6] bg-white p-3 text-sm text-[#2f4264]">
-                      {answer.note_text || 'No note added'}
+                      {answer.note_text || t('labels.noNote')}
                     </div>
                     <div className="rounded-lg border border-[#dfe7f6] bg-white p-3">
                       {(() => {
@@ -625,7 +635,7 @@ export default function AdminAssessmentReviewDetailPage() {
                                           });
                                       }}
                                       className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f1f5f9]"
-                                      title="Preview"
+                                    title={t('actions.preview')}
                                     >
                                       👁
                                     </button>
@@ -651,7 +661,7 @@ export default function AdminAssessmentReviewDetailPage() {
                                         });
                                     }}
                                     className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f1f5f9]"
-                                    title="Download"
+                                    title={t('actions.download')}
                                   >
                                     ⬇
                                   </button>
@@ -664,7 +674,7 @@ export default function AdminAssessmentReviewDetailPage() {
                     </div>
                   </div>
                   <div className="mt-3 rounded-lg border border-[#e3e9f6] bg-[#f8fbff] p-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7a8ca8]">Reviewer Actions</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7a8ca8]">{t('reviewerActions.title')}</p>
                     <div className="mt-2 grid gap-2 md:grid-cols-3">
                       <select
                         value={normalizeSuggestionType(draft.suggestion_type)}
@@ -677,8 +687,8 @@ export default function AdminAssessmentReviewDetailPage() {
                           </option>
                         ))}
                       </select>
-                      <input value={draft.reference_materials} onChange={(event) => setDraft(answer.answer_id, { reference_materials: event.target.value })} className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm" placeholder="Reference materials" />
-                      <label className="inline-flex items-center gap-2 rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#425f8f]"><input type="checkbox" checked={draft.is_action_required} onChange={(event) => setDraft(answer.answer_id, { is_action_required: event.target.checked })} />Action required</label>
+                      <input value={draft.reference_materials} onChange={(event) => setDraft(answer.answer_id, { reference_materials: event.target.value })} className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm" placeholder={t('reviewerActions.referenceMaterials')} />
+                      <label className="inline-flex items-center gap-2 rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#425f8f]"><input type="checkbox" checked={draft.is_action_required} onChange={(event) => setDraft(answer.answer_id, { is_action_required: event.target.checked })} />{t('reviewerActions.actionRequired')}</label>
                     </div>
                     <textarea
                       value={draft.suggestion_text}
@@ -687,20 +697,20 @@ export default function AdminAssessmentReviewDetailPage() {
                       className={`mt-2 w-full rounded-lg border bg-white px-3 py-2 text-sm ${
                         suggestionErrors[answer.answer_id] ? 'border-[#c43e53] ring-1 ring-[#c43e53]' : 'border-[#d4dced]'
                       }`}
-                      placeholder="Suggestion text"
+                      placeholder={t('reviewerActions.suggestionPlaceholder')}
                     />
                     {suggestionErrors[answer.answer_id] ? (
                       <p className="text-xs font-medium text-[#c43e53]">{suggestionErrors[answer.answer_id]}</p>
                     ) : null}
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <button type="button" disabled={isSaving} onClick={() => void saveAnswerReview(answer)} className="rounded-xl border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">{isSaving ? 'Saving...' : answer.review?.id ? 'Update Review' : 'Save Review'}</button>
-                      {answer.review?.id ? <button type="button" disabled={isSaving} onClick={() => void removeAnswerReview(answer)} className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">Delete Review</button> : null}
-                      {answer.review?.id ? <button type="button" disabled={loadingHistoryId === answer.review.id} onClick={() => void loadReviewHistory(answer.review!.id)} className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">{loadingHistoryId === answer.review.id ? 'Loading...' : 'View History'}</button> : null}
+                      <button type="button" disabled={isSaving} onClick={() => void saveAnswerReview(answer)} className="rounded-xl border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">{isSaving ? t('actions.saving') : answer.review?.id ? t('actions.updateReview') : t('actions.saveReview')}</button>
+                      {answer.review?.id ? <button type="button" disabled={isSaving} onClick={() => void removeAnswerReview(answer)} className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">{t('actions.deleteReview')}</button> : null}
+                      {answer.review?.id ? <button type="button" disabled={loadingHistoryId === answer.review.id} onClick={() => void loadReviewHistory(answer.review!.id)} className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">{loadingHistoryId === answer.review.id ? t('history.loading') : t('actions.viewHistory')}</button> : null}
                     </div>
                     {answer.review?.id && historyByReviewId[answer.review.id] ? (
                       <div className="mt-2 space-y-2 rounded-lg border border-[#d4ced] bg-white p-2">
                         <div className="flex items-center justify-between">
-                          <p className="text-xs font-semibold text-[#2a3d5f]">Review History</p>
+                          <p className="text-xs font-semibold text-[#2a3d5f]">{t('history.title')}</p>
                           <button 
                             type="button"
                             onClick={() => setHistoryByReviewId(prev => ({ ...prev, [answer.review!.id]: [] }))}
@@ -748,7 +758,7 @@ export default function AdminAssessmentReviewDetailPage() {
                             )}
                           </>
                         ) : (
-                          <p className="text-xs text-[#607594]">No history entries found.</p>
+                          <p className="text-xs text-[#607594]">{t('history.none')}</p>
                         )}
                       </div>
                     ) : null}
@@ -762,7 +772,12 @@ export default function AdminAssessmentReviewDetailPage() {
 
       {!loading ? (
         <footer className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm">
-          <p className="text-sm text-[#607594]">Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, filteredAnswers.length)} of {filteredAnswers.length} questions</p>
+          <p className="text-sm text-[#607594]">
+            {t('footer.showing')
+              .replace('{from}', String((page - 1) * pageSize + 1))
+              .replace('{to}', String(Math.min(page * pageSize, filteredAnswers.length)))
+              .replace('{total}', String(filteredAnswers.length))}
+          </p>
           <div className="flex items-center gap-1">
             <button type="button" disabled={page === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))} className="rounded-lg border border-[#d4dced] px-2.5 py-1.5 text-sm text-[#425f8f] disabled:opacity-50">‹</button>
             {Array.from({ length: totalPages }).slice(0, 7).map((_, idx) => {

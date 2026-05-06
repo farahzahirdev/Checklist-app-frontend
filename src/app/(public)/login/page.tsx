@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
+import { translate, useLocale } from '@/lib/i18n';
 import {
   ACCESS_TOKEN_STORAGE_KEY,
   getRoleHomePath,
@@ -19,9 +20,12 @@ import {
 import { getCurrentAssessment } from '@/lib/assessment';
 import { getUserPaymentStatus } from '@/lib/payments';
 import authBackground from '@/assets/cybersecurity-background.jpg';
+import { authPagesMessages } from '@/locales/auth-pages';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { locale } = useLocale();
+  const t = (key: string) => translate(authPagesMessages, locale, key);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -91,11 +95,11 @@ export default function LoginPage() {
       const normalizedEmail = email.trim().toLowerCase();
       const normalizedPassword = password.trim();
       if (!normalizedPassword) {
-        toast.error('Password cannot be empty or spaces only.');
+        toast.error(t('errors.passwordEmpty'));
         return;
       }
       if (/\s/.test(password)) {
-        toast.error('Password cannot contain spaces.');
+        toast.error(t('errors.passwordHasSpaces'));
         return;
       }
       const payload = {
@@ -109,11 +113,11 @@ export default function LoginPage() {
       const destination = role === 'customer' ? '/payment' : getRoleHomePath(data.user.role);
       if (role === 'admin' || role === 'auditor') {
         if (!data.access_token) {
-          toast.error('Sign in did not return an access token.');
+          toast.error(t('errors.signInNoToken'));
           return;
         }
         persistAccessToken(data.access_token);
-        toast.success('Signed in successfully.');
+        toast.success(t('success.signedIn'));
         router.push(destination as Route);
         router.refresh();
         return;
@@ -121,33 +125,33 @@ export default function LoginPage() {
 
       if (data.mfa_required && data.mfa_enabled) {
         if (!data.challenge_token) {
-          toast.error('MFA verification requires a challenge token from login.');
+          toast.error(t('errors.mfaNeedChallenge'));
           return;
         }
         setMfaChallengeToken(data.challenge_token);
         setStep('customer-mfa-verify');
-        toast.info('Enter your OTP code to complete sign in.');
+        toast.info(t('login.mfa.verifyToast'));
         return;
       }
 
       if (data.mfa_required && !data.mfa_enabled) {
         if (!data.access_token) {
-          toast.error('MFA setup requires an access token from login.');
+          toast.error(t('errors.mfaNeedAccessToken'));
           return;
         }
         persistAccessToken(data.access_token);
         setStep('customer-mfa-setup');
-        toast.info('Set up MFA in your authenticator app.');
+        toast.info(t('login.mfa.setupToast'));
         await loadMfaSetup();
         return;
       }
 
       if (!data.access_token) {
-        toast.error('Sign in did not return an access token.');
+        toast.error(t('errors.signInNoToken'));
         return;
       }
       persistAccessToken(data.access_token);
-      toast.success('Signed in successfully.');
+      toast.success(t('success.signedIn'));
       if (role === 'customer') {
         await redirectCustomerAfterAuth(data.user.id);
       } else {
@@ -155,7 +159,7 @@ export default function LoginPage() {
         router.refresh();
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Sign in failed');
+      toast.error(err instanceof Error ? err.message : t('errors.signInFailed'));
     } finally {
       setLoading(false);
     }
@@ -167,7 +171,7 @@ export default function LoginPage() {
       const setup = await startMfaSetup();
       setMfaQrSvg(setup.svg_qr ?? '');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load MFA setup details.');
+      toast.error(err instanceof Error ? err.message : t('errors.mfaSetupLoadFailed'));
     } finally {
       setSetupLoading(false);
     }
@@ -177,26 +181,26 @@ export default function LoginPage() {
     event.preventDefault();
     const code = mfaCode.trim();
     if (code.length !== 6) {
-      toast.error('Enter your 6-digit OTP code.');
+      toast.error(t('errors.otpSixDigits'));
       return;
     }
     setLoading(true);
     try {
       if (!mfaChallengeToken) {
-        toast.error('Missing MFA challenge token. Please sign in again.');
+        toast.error(t('errors.mfaMissingChallenge'));
         return;
       }
       const data = await verifyMfaChallenge({ challenge_token: mfaChallengeToken, code });
       if (!data.access_token) {
-        toast.error('MFA verification succeeded but no access token was returned.');
+        toast.error(t('errors.mfaVerifyNoToken'));
         return;
       }
       persistAccessToken(data.access_token);
-      toast.success('MFA verified successfully.');
+      toast.success(t('success.mfaVerified'));
       router.push('/dashboard');
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to verify OTP code.');
+      toast.error(err instanceof Error ? err.message : t('errors.mfaVerifyFailed'));
     } finally {
       setLoading(false);
     }
@@ -206,7 +210,7 @@ export default function LoginPage() {
     event.preventDefault();
     const code = mfaCode.trim();
     if (code.length !== 6) {
-      toast.error('Enter your 6-digit OTP code.');
+      toast.error(t('errors.otpSixDigits'));
       return;
     }
 
@@ -216,11 +220,11 @@ export default function LoginPage() {
       if (data.access_token) {
         persistAccessToken(data.access_token);
       }
-      toast.success('MFA setup completed.');
+      toast.success(t('success.mfaSetupCompleted'));
       router.push('/dashboard');
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to complete MFA setup.');
+      toast.error(err instanceof Error ? err.message : t('errors.mfaSetupCompleteFailed'));
     } finally {
       setLoading(false);
     }
@@ -237,23 +241,23 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center px-6 py-8 text-[#ffffff]" style={backgroundStyle}>
       <div className="mx-auto w-full max-w-lg space-y-8 rounded-2xl border border-[#2f4d82] bg-[#07112a]/85 p-8 backdrop-blur md:p-10">
         <div>
-          <p className="text-xs uppercase tracking-[0.35em] text-[#9dc5ff]">Account</p>
-          <h1 className="mt-2 text-3xl font-semibold text-white">Sign in</h1>
-          <p className="mt-2 text-sm text-[#97a5bb]">Use your registered account credentials.</p>
+          <p className="text-xs uppercase tracking-[0.35em] text-[#9dc5ff]">{t('common.account')}</p>
+          <h1 className="mt-2 text-3xl font-semibold text-white">{t('login.title')}</h1>
+          <p className="mt-2 text-sm text-[#97a5bb]">{t('login.subtitle')}</p>
           {step === 'customer-mfa-verify' ? (
             <p className="mt-2 text-sm text-amber-300">
-              MFA is enabled. Enter your MFA code to complete sign in.
+              {t('login.mfa.enabledBanner')}
             </p>
           ) : null}
           {step === 'customer-mfa-setup' ? (
-            <p className="mt-2 text-sm text-amber-300">Set up MFA in your authenticator app, then verify your OTP code.</p>
+            <p className="mt-2 text-sm text-amber-300">{t('register.mfa.finish')}</p>
           ) : null}
         </div>
 
         {step === 'credentials' ? (
           <form className="space-y-5" onSubmit={onSubmit}>
             <label className="block space-y-2 text-sm">
-              <span className="text-[#d8e2f2]">Email</span>
+              <span className="text-[#d8e2f2]">{t('fields.email')}</span>
               <input
                 type="email"
                 name="email"
@@ -265,7 +269,7 @@ export default function LoginPage() {
               />
             </label>
             <label className="block space-y-2 text-sm">
-              <span className="text-[#d8e2f2]">Password</span>
+              <span className="text-[#d8e2f2]">{t('fields.password')}</span>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -279,7 +283,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? t('actions.hidePassword') : t('actions.showPassword')}
                   className="absolute inset-y-0 right-0 inline-flex items-center px-3 text-[#9dc5ff] hover:text-[#c6dcff]"
                 >
                   {showPassword ? (
@@ -311,7 +315,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full rounded-lg border border-[#1f7bff] bg-[#1f7bff] py-2.5 text-sm font-medium text-white hover:bg-[#2e87ff] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? t('login.submitting') : t('login.submit')}
             </button>
           </form>
         ) : null}
@@ -319,12 +323,12 @@ export default function LoginPage() {
         {step === 'customer-mfa-verify' ? (
           <form className="space-y-5" onSubmit={onVerifyMfaChallenge}>
             <label className="block space-y-2 text-sm">
-              <span className="text-[#d8e2f2]">OTP code</span>
+              <span className="text-[#d8e2f2]">{t('fields.otp')}</span>
               <input
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]{6}"
-                title="Enter a 6-digit OTP code"
+                title={t('fields.otpSixDigitsTitle')}
                 maxLength={6}
                 value={mfaCode}
                 onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -336,7 +340,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full rounded-lg border border-[#1f7bff] bg-[#1f7bff] py-2.5 text-sm font-medium text-white hover:bg-[#2e87ff] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? 'Verifying OTP…' : 'Verify OTP'}
+              {loading ? t('login.mfa.verifying') : t('login.mfa.verifyTitle')}
             </button>
           </form>
         ) : null}
@@ -344,8 +348,8 @@ export default function LoginPage() {
         {step === 'customer-mfa-setup' ? (
           <form className="space-y-5" onSubmit={onVerifyMfaEnrollment}>
             <div className="space-y-2 rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-3 text-sm text-[#d8e2f2]">
-              <p>Scan this setup in your authenticator app:</p>
-              {setupLoading ? <p className="text-[#9dc5ff]">Loading MFA setup details...</p> : null}
+              <p>{t('login.mfa.setup.scan')}</p>
+              {setupLoading ? <p className="text-[#9dc5ff]">{t('login.mfa.setup.loading')}</p> : null}
               {mfaQrSvg ? (
                 mfaQrSvg.startsWith('data:image/') ? (
                   <div className="mt-2 rounded bg-white p-3">
@@ -365,12 +369,12 @@ export default function LoginPage() {
               ) : null}
             </div>
             <label className="block space-y-2 text-sm">
-              <span className="text-[#d8e2f2]">Enter OTP code to enable MFA</span>
+              <span className="text-[#d8e2f2]">{t('login.mfa.setup.enterToEnable')}</span>
               <input
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]{6}"
-                title="Enter a 6-digit OTP code"
+                title={t('fields.otpSixDigitsTitle')}
                 maxLength={6}
                 value={mfaCode}
                 onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -384,23 +388,23 @@ export default function LoginPage() {
                 disabled={setupLoading}
                 className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] py-2.5 text-sm font-medium text-[#d8e2f2] hover:bg-[#1f3158] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {setupLoading ? 'Refreshing…' : 'Refresh setup code'}
+                {setupLoading ? t('login.mfa.setup.refreshing') : t('login.mfa.setup.refresh')}
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full rounded-lg border border-[#1f7bff] bg-[#1f7bff] py-2.5 text-sm font-medium text-white hover:bg-[#2e87ff] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? 'Completing setup…' : 'Complete MFA setup'}
+                {loading ? t('login.mfa.setup.completing') : t('login.mfa.setup.complete')}
               </button>
             </div>
           </form>
         ) : null}
 
         <p className="text-center text-sm text-[#97a5bb]">
-          New here?{' '}
+          {t('login.newHere')}{' '}
           <Link href="/register" className="text-[#9dc5ff] hover:text-[#c6dcff]">
-            Create an account
+            {t('login.createAccount')}
           </Link>
         </p>
       </div>

@@ -10,6 +10,7 @@ import {
   type AssessmentReviewItem,
   type AssessmentReviewSummary,
 } from '@/lib/assessment-review';
+import { translate, useLocale } from '@/lib/i18n';
 import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
 import {
   ADMIN_KPI_DARK_CARD_CLASS,
@@ -19,6 +20,7 @@ import {
   ADMIN_PAGE_HERO_SUBTITLE_CLASS,
   ADMIN_PAGE_HERO_TITLE_CLASS,
 } from '@/app/(app)/admin/admin-page-title';
+import { adminAssessmentsMessages } from '@/locales/admin-assessments';
 
 const statusClass: Record<string, string> = {
   pending_review: 'bg-[#fff4df] text-[#b6862f]',
@@ -28,8 +30,8 @@ const statusClass: Record<string, string> = {
   changes_requested: 'bg-[#ffedf0] text-[#cc5163]',
 };
 
-function formatStatus(status: string | null | undefined) {
-  if (!status) return 'Unknown';
+function formatStatusFallback(status: string | null | undefined) {
+  if (!status) return '';
   return status
     .split('_')
     .join(' ')
@@ -44,6 +46,13 @@ function formatDateTime(value: string | null | undefined) {
 }
 
 export default function AdminAssessmentsPage() {
+  const { locale } = useLocale();
+  const t = (key: string) => translate(adminAssessmentsMessages, locale, key);
+  const statusLabel = (status: string | null | undefined) => {
+    if (!status) return t('status.unknown');
+    const exact = translate(adminAssessmentsMessages, locale, `status.${status}`);
+    return exact || formatStatusFallback(status) || t('status.unknown');
+  };
   const [summary, setSummary] = useState<AssessmentReviewSummary | null>(null);
   const [rows, setRows] = useState<AssessmentReviewItem[]>([]);
   const [myReviews, setMyReviews] = useState<AssessmentReviewItem[]>([]);
@@ -83,7 +92,7 @@ export default function AdminAssessmentsPage() {
     }
 
     void load();
-  }, [limit, skip, statusFilter]);
+  }, [limit, skip, statusFilter, locale]);
 
   return (
     <section className="space-y-4">
@@ -91,20 +100,22 @@ export default function AdminAssessmentsPage() {
         <AdminBreadcrumbs
           variant="onDark"
           items={[
-            { label: 'Dashboard', href: '/admin' },
+            { label: t('crumbs.dashboard'), href: '/admin' },
             ...(statusFilter
               ? [
-                  { label: 'Assessments', href: '/admin/assessments' },
-                  { label: formatStatus(statusFilter) },
+                  { label: t('crumbs.assessments'), href: '/admin/assessments' },
+                  { label: statusLabel(statusFilter) },
                 ]
-              : [{ label: 'Assessments' }]),
+              : [{ label: t('crumbs.assessments') }]),
           ]}
         />
-        <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>Assessments</p>
-        <h1 className={ADMIN_PAGE_HERO_TITLE_CLASS}>Assessment Management</h1>
-        <p className={ADMIN_PAGE_HERO_SUBTITLE_CLASS}>Track review queue, in-progress reviews, and completed assessments.</p>
+        <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>{t('hero.eyebrow')}</p>
+        <h1 className={ADMIN_PAGE_HERO_TITLE_CLASS}>{t('hero.title')}</h1>
+        <p className={ADMIN_PAGE_HERO_SUBTITLE_CLASS}>{t('hero.subtitle')}</p>
         {statusFilter ? (
-          <p className="mt-2 text-sm font-semibold text-[#b8d4ff]">Filtered by status: {formatStatus(statusFilter)}</p>
+          <p className="mt-2 text-sm font-semibold text-[#b8d4ff]">
+            {t('hero.filteredBy').replace('{status}', statusLabel(statusFilter))}
+          </p>
         ) : null}
       </header>
 
@@ -112,22 +123,22 @@ export default function AdminAssessmentsPage() {
         {(
           [
             {
-              label: 'Pending Review',
+              label: t('kpi.pending'),
               value: summary?.total_assessments_pending_review ?? 0,
               valueClass: 'text-[#ffd89c]',
             },
             {
-              label: 'In Progress',
+              label: t('kpi.inProgress'),
               value: summary?.total_assessments_in_progress ?? 0,
               valueClass: 'text-[#a9c7ff]',
             },
             {
-              label: 'Completed',
+              label: t('kpi.completed'),
               value: summary?.total_assessments_completed ?? 0,
               valueClass: 'text-[#7cf0aa]',
             },
             {
-              label: 'Action Required',
+              label: t('kpi.actionRequired'),
               value: summary?.total_action_required ?? 0,
               valueClass: 'text-[#ffb3c9]',
             },
@@ -142,13 +153,13 @@ export default function AdminAssessmentsPage() {
 
       <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ecf0f8] px-4 py-3">
-          <h2 className="text-xl font-semibold text-[#243555]">Assessment Reviews</h2>
+          <h2 className="text-xl font-semibold text-[#243555]">{t('section.reviews')}</h2>
           <div className="flex flex-wrap items-center gap-2">
             <input
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search customer or checklist"
+              placeholder={t('search.placeholder')}
               className="w-64 rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
             />
             <select
@@ -159,12 +170,12 @@ export default function AdminAssessmentsPage() {
               }}
               className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#1f2d45] focus:bg-white"
             >
-              <option className="bg-white text-[#1f2d45]" value="">All statuses</option>
-              <option className="bg-white text-[#1f2d45]" value="pending_review">Pending review</option>
-              <option className="bg-white text-[#1f2d45]" value="in_progress">In progress</option>
-              <option className="bg-white text-[#1f2d45]" value="completed">Completed</option>
-              <option className="bg-white text-[#1f2d45]" value="changes_requested">Changes requested</option>
-              <option className="bg-white text-[#1f2d45]" value="approved">Approved</option>
+              <option className="bg-white text-[#1f2d45]" value="">{t('filters.allStatuses')}</option>
+              <option className="bg-white text-[#1f2d45]" value="pending_review">{t('status.pending_review')}</option>
+              <option className="bg-white text-[#1f2d45]" value="in_progress">{t('status.in_progress')}</option>
+              <option className="bg-white text-[#1f2d45]" value="completed">{t('status.completed')}</option>
+              <option className="bg-white text-[#1f2d45]" value="changes_requested">{t('status.changes_requested')}</option>
+              <option className="bg-white text-[#1f2d45]" value="approved">{t('status.approved')}</option>
             </select>
             <select
               value={String(limit)}
@@ -174,9 +185,9 @@ export default function AdminAssessmentsPage() {
               }}
               className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#1f2d45] focus:bg-white"
             >
-              <option className="bg-white text-[#1f2d45]" value="25">25 / page</option>
-              <option className="bg-white text-[#1f2d45]" value="50">50 / page</option>
-              <option className="bg-white text-[#1f2d45]" value="100">100 / page</option>
+              <option className="bg-white text-[#1f2d45]" value="25">{t('rows.25')}</option>
+              <option className="bg-white text-[#1f2d45]" value="50">{t('rows.50')}</option>
+              <option className="bg-white text-[#1f2d45]" value="100">{t('rows.100')}</option>
             </select>
           </div>
         </div>
@@ -185,19 +196,19 @@ export default function AdminAssessmentsPage() {
           <table className="min-w-full text-left text-sm text-[#2b3e60]">
             <thead className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7a8ca8]">
               <tr className="border-b border-[#edf2f9]">
-                <th className="py-2 pr-4">Customer</th>
-                <th className="py-2 pr-4">Checklist</th>
-                <th className="py-2 pr-4">Submitted</th>
-                <th className="py-2 pr-4">Review Status</th>
-                <th className="py-2 pr-4">Reviewed Answers</th>
-                <th className="py-2">Action</th>
+                <th className="py-2 pr-4">{t('table.customer')}</th>
+                <th className="py-2 pr-4">{t('table.checklist')}</th>
+                <th className="py-2 pr-4">{t('table.submitted')}</th>
+                <th className="py-2 pr-4">{t('table.reviewStatus')}</th>
+                <th className="py-2 pr-4">{t('table.reviewedAnswers')}</th>
+                <th className="py-2">{t('table.action')}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
                   <td className="py-3 text-[#607594]" colSpan={6}>
-                    Loading assessment reviews...
+                    {t('loading.reviews')}
                   </td>
                 </tr>
               ) : null}
@@ -205,7 +216,7 @@ export default function AdminAssessmentsPage() {
                 visibleRows.map((row) => (
                 <tr key={row.assessment_id} className="border-b border-[#edf2f9] last:border-0">
                   <td className="py-3 pr-4">
-                    <p className="font-semibold text-[#25375a]">{row.customer_name || 'Unknown customer'}</p>
+                    <p className="font-semibold text-[#25375a]">{row.customer_name || t('labels.unknownCustomer')}</p>
                     <p className="text-xs text-[#5f7395]">{row.customer_email || '-'}</p>
                   </td>
                   <td className="py-3 pr-4 text-[#5f7395]">
@@ -215,13 +226,13 @@ export default function AdminAssessmentsPage() {
                   <td className="py-3 pr-4 text-[#5f7395]">{formatDateTime(row.submitted_at)}</td>
                   <td className="py-3 pr-4">
                     <span className={`rounded-md px-2 py-1 text-xs font-semibold ${statusClass[row.status] || 'bg-[#edf2f9] text-[#425f8f]'}`}>
-                      {formatStatus(row.status)}
+                      {statusLabel(row.status)}
                     </span>
                   </td>
                   <td className="py-3 pr-4 text-[#5f7395]">{row.answer_reviews_count}</td>
                   <td className="py-3">
                     <Link href={`/admin/assessments/${row.assessment_id}`} className="text-sm font-semibold text-[#3e69b0]">
-                      Open Review
+                      {t('actions.openReview')}
                     </Link>
                   </td>
                 </tr>
@@ -229,7 +240,7 @@ export default function AdminAssessmentsPage() {
               {!loading && !visibleRows.length ? (
                 <tr>
                   <td className="py-3 text-[#607594]" colSpan={7}>
-                    No assessment reviews match the current filters.
+                    {t('empty.reviews')}
                   </td>
                 </tr>
               ) : null}
@@ -243,34 +254,38 @@ export default function AdminAssessmentsPage() {
             disabled={skip === 0 || loading}
             className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-50"
           >
-            Previous
+            {t('pager.previous')}
           </button>
-          <p className="text-xs text-[#607594]">Showing {skip + 1} - {skip + rows.length}</p>
+          <p className="text-xs text-[#607594]">
+            {t('pager.showing')
+              .replace('{from}', String(rows.length ? skip + 1 : 1))
+              .replace('{to}', String(skip + rows.length))}
+          </p>
           <button
             type="button"
             onClick={() => setSkip((prev) => prev + limit)}
             disabled={rows.length < limit || loading}
             className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-50"
           >
-            Next
+            {t('pager.next')}
           </button>
         </div>
       </article>
       <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
         <div className="border-b border-[#ecf0f8] px-4 py-3">
-          <h2 className="text-xl font-semibold text-[#243555]">My Reviews</h2>
+          <h2 className="text-xl font-semibold text-[#243555]">{t('section.myReviews')}</h2>
         </div>
         <div className="divide-y divide-[#edf2f9] px-4">
           {myReviews.length ? (
             myReviews.map((review) => (
               <div key={review.id} className="py-3 text-sm text-[#2f4264]">
-                <p className="font-semibold text-[#25375a]">{review.customer_email || review.customer_name || 'Unknown customer'}</p>
-                <p className="text-[#5f7395]">{review.checklist_title || '-'} · {formatStatus(review.status)}</p>
+                <p className="font-semibold text-[#25375a]">{review.customer_email || review.customer_name || t('labels.unknownCustomer')}</p>
+                <p className="text-[#5f7395]">{review.checklist_title || '-'} · {statusLabel(review.status)}</p>
                 <p className="text-xs text-[#7a8ca8]">{formatDateTime(review.updated_at)}</p>
               </div>
             ))
           ) : (
-            <p className="py-4 text-sm text-[#6f82a3]">{loading ? 'Loading...' : 'No assigned reviews yet.'}</p>
+            <p className="py-4 text-sm text-[#6f82a3]">{loading ? t('loading.generic') : t('empty.myReviews')}</p>
           )}
         </div>
       </article>

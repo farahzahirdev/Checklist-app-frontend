@@ -1,0 +1,33 @@
+import type { TranslationMessages } from '@/lib/i18n';
+
+export const customerAssessmentMessages: TranslationMessages = {
+  en: {
+    'title.kicker': 'Assessment',
+    'subtitle': 'Switch checklist to view/manage different assessments.',
+    'dropdown.loading': 'Loading checklists…',
+    'dropdown.select': 'Select checklist',
+    'dropdown.nonePurchased': 'No purchased checklists found',
+    'sections.title': 'Checklist Sections',
+    'empty.noQuestions': 'No questions available for this assessment.',
+    'errors.notFound': 'Assessment not found.',
+    'actions.submit': 'Submit Assessment',
+    'actions.submitting': 'Submitting…',
+    'toasts.submitted': 'Assessment submitted.',
+    'messages.submittedWithCompletion': 'Assessment submitted. Completion: {percent}%',
+  },
+  cs: {
+    'title.kicker': 'Hodnocení',
+    'subtitle': 'Přepněte checklist pro zobrazení / správu různých hodnocení.',
+    'dropdown.loading': 'Načítám checklisty…',
+    'dropdown.select': 'Vybrat checklist',
+    'dropdown.nonePurchased': 'Nenalezeny žádné zakoupené checklisty',
+    'sections.title': 'Sekce checklistu',
+    'empty.noQuestions': 'Pro toto hodnocení nejsou k dispozici žádné otázky.',
+    'errors.notFound': 'Hodnocení nebylo nalezeno.',
+    'actions.submit': 'Odeslat hodnocení',
+    'actions.submitting': 'Odesílám…',
+    'toasts.submitted': 'Hodnocení bylo odesláno.',
+    'messages.submittedWithCompletion': 'Hodnocení odesláno. Dokončeno: {percent}%',
+  },
+};
+

@@ -7,6 +7,8 @@ import type { Route } from 'next';
 import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { PublicFooter } from '@/components/public-footer';
 import { ACCESS_TOKEN_STORAGE_KEY, getCurrentUser, getRoleHomePath } from '@/lib/auth';
+import { translate, useLocale } from '@/lib/i18n';
+import { aboutUsMessages } from '@/locales/about-us';
 
 function ArrowRightIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
@@ -18,6 +20,8 @@ function ArrowRightIcon({ className = 'h-4 w-4' }: { className?: string }) {
 
 export default function HomePage() {
   const router = useRouter();
+  const { locale } = useLocale();
+  const t = (key: string) => translate(aboutUsMessages, locale, key);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,16 +58,16 @@ export default function HomePage() {
       <section style={heroStyle}>
         <div className="mx-auto grid min-h-[400px] w-full max-w-6xl items-start gap-5 px-4 py-6 text-white sm:min-h-[420px] sm:px-6 sm:py-8 md:gap-7 md:px-8 md:py-10 lg:min-h-[440px] lg:max-w-5xl lg:grid-cols-2 lg:items-center lg:gap-8 lg:px-10 lg:py-10 xl:max-w-6xl 2xl:max-w-[90rem]">
           <div className="space-y-4">
-            <p className="public-eyebrow text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">ABOUT US</p>
+            <p className="public-eyebrow text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">{t('hero.kicker')}</p>
             <h1 className="public-hero-title max-w-xl motion-safe:animate-fade-in-up motion-safe:delay-100">
-              Built by
+              {t('hero.line1')}
               <br />
-              cybersecurity
+              {t('hero.line2')}
               <br />
-              <span className="text-[#2f7dff]">professionals.</span>
+              <span className="text-[#2f7dff]">{t('hero.line3')}</span>
             </h1>
             <p className="public-hero-subtitle max-w-xl text-[#d4e2f6] motion-safe:animate-fade-in-up motion-safe:delay-200">
-              We simplify audit preparation for today&apos;s cybersecurity challenges. Our mission is to give security and compliance teams clarity, structure, and confidence — without the complexity.
+              {t('hero.subtitle')}
             </p>
           </div>
 
@@ -71,34 +75,34 @@ export default function HomePage() {
             <div className="overflow-hidden rounded-2xl border border-[#325a99]/80 bg-[#edf1f9] text-[#152948] shadow-[0_24px_70px_rgba(0,0,0,0.55)] transition-shadow duration-500 ease-out motion-safe:hover:shadow-[0_28px_80px_rgba(0,0,0,0.5)]">
               <div className="grid md:grid-cols-[180px_1fr]">
                 <aside className="h-full bg-[#0b1a39] p-2.5 text-[#dce8ff]">
-                  <p className="mb-2 text-sm font-semibold">Checklist KB</p>
+                  <p className="mb-2 text-sm font-semibold">{t('mock.brand')}</p>
                   <ul className="space-y-1.5 text-xs">
-                    <li className="rounded-md bg-[#17376d] px-2 py-1.5">Dashboard</li>
-                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">Checklists</li>
-                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">Reports</li>
-                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">Settings</li>
+                    <li className="rounded-md bg-[#17376d] px-2 py-1.5">{t('mock.nav.dashboard')}</li>
+                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{t('mock.nav.checklists')}</li>
+                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{t('mock.nav.reports')}</li>
+                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{t('mock.nav.settings')}</li>
                   </ul>
                 </aside>
                 <div className="p-3">
                   <div className="mb-2 rounded-xl bg-white p-2.5">
-                    <p className="text-sm font-semibold text-[#1a2c4f]">Dashboard</p>
+                    <p className="text-sm font-semibold text-[#1a2c4f]">{t('mock.dashboard.title')}</p>
                     <div className="mt-2 grid grid-cols-3 gap-2">
                       <div className="flex h-full min-h-[94px] flex-col rounded-lg border border-[#e2e8f5] bg-[#f8fbff] p-2">
-                        <p className="min-h-[24px] text-[11px] leading-[1.1] text-black">Overall Readiness</p>
+                        <p className="min-h-[24px] text-[11px] leading-[1.1] text-black">{t('mock.metric.overallReadiness')}</p>
                         <p className="min-h-[34px] text-xl font-bold leading-tight text-[#173a73] sm:text-2xl lg:text-[22px] xl:text-2xl 2xl:text-3xl">72%</p>
                         <div className="mt-auto h-1.5 rounded-full bg-[#d6e2f7]">
                           <div className="h-full w-[72%] rounded-full bg-[#2e82ff]" />
                         </div>
                       </div>
                       <div className="flex h-full min-h-[94px] flex-col rounded-lg border border-[#e2e8f5] bg-[#f8fbff] p-2">
-                        <p className="min-h-[24px] text-[11px] leading-[1.1] text-[#6f7f98]">Completed</p>
+                        <p className="min-h-[24px] text-[11px] leading-[1.1] text-[#6f7f98]">{t('mock.metric.completed')}</p>
                         <p className="min-h-[34px] text-xl font-bold leading-tight text-[#173a73] sm:text-2xl lg:text-[22px] xl:text-2xl 2xl:text-3xl">18/25</p>
                         <div className="mt-auto h-1.5 rounded-full bg-[#d6e2f7]">
                           <div className="h-full w-[72%] rounded-full bg-[#2e82ff]" />
                         </div>
                       </div>
                       <div className="flex h-full min-h-[94px] flex-col rounded-lg border border-[#e2e8f5] bg-[#f8fbff] p-2">
-                        <p className="min-h-[24px] text-[11px] leading-[1.1] text-[#6f7f98]">Open Findings</p>
+                        <p className="min-h-[24px] text-[11px] leading-[1.1] text-[#6f7f98]">{t('mock.metric.openFindings')}</p>
                         <p className="min-h-[34px] text-xl font-bold leading-tight text-[#173a73] sm:text-2xl lg:text-[22px] xl:text-2xl 2xl:text-3xl">7</p>
                         <div className="mt-auto h-1.5 rounded-full bg-[#d6e2f7]">
                           <div className="h-full w-[28%] rounded-full bg-[#2e82ff]" />
@@ -108,15 +112,15 @@ export default function HomePage() {
                   </div>
                   <div className="grid gap-1.5 sm:grid-cols-2">
                     <div className="rounded-xl bg-white p-2.5">
-                      <p className="text-xs font-semibold text-[#263d62]">Recent Activity</p>
+                      <p className="text-xs font-semibold text-[#263d62]">{t('mock.activity.title')}</p>
                       <ul className="mt-1.5 space-y-1.5 text-[11px] text-[#4f668a]">
-                        <li>Audit Readiness Checklist</li>
-                        <li>Documentation Package</li>
-                        <li>NIS2 Gap Analysis</li>
+                        <li>{t('mock.activity.item1')}</li>
+                        <li>{t('mock.activity.item2')}</li>
+                        <li>{t('mock.activity.item3')}</li>
                       </ul>
                     </div>
                     <div className="rounded-xl bg-white p-2.5">
-                      <p className="text-xs font-semibold text-[#263d62]">Top Domains</p>
+                      <p className="text-xs font-semibold text-[#263d62]">{t('mock.domains.title')}</p>
                       <div className="mt-1.5">
                         <svg viewBox="0 0 220 150" className="h-20 w-full" fill="none" aria-hidden="true">
                           <g stroke="#e1e9f7" strokeWidth="1">
@@ -130,24 +134,24 @@ export default function HomePage() {
                             <line x1="110" y1="68" x2="68" y2="44" />
                           </g>
                           <polygon points="110,32 145,48 147,90 110,108 75,88 81,50" fill="#96b8f3" fillOpacity="0.35" stroke="#5e97ed" strokeWidth="1.8" />
-                          <text x="110" y="14" textAnchor="middle" className="fill-[#6f7f98] text-[8px]">Governance</text>
-                          <text x="165" y="47" className="fill-[#6f7f98] text-[8px]">Risk</text>
-                          <text x="165" y="57" className="fill-[#6f7f98] text-[8px]">Management</text>
-                          <text x="160" y="94" className="fill-[#6f7f98] text-[8px]">Access</text>
-                          <text x="160" y="104" className="fill-[#6f7f98] text-[8px]">Control</text>
-                          <text x="53" y="58" textAnchor="end" className="fill-[#6f7f98] text-[8px]">Asset</text>
-                          <text x="53" y="68" textAnchor="end" className="fill-[#6f7f98] text-[8px]">Management</text>
-                          <text x="58" y="95" textAnchor="end" className="fill-[#6f7f98] text-[8px]">Incident</text>
-                          <text x="58" y="105" textAnchor="end" className="fill-[#6f7f98] text-[8px]">Management</text>
+                          <text x="110" y="14" textAnchor="middle" className="fill-[#6f7f98] text-[8px]">{t('mock.domain.governance')}</text>
+                          <text x="165" y="47" className="fill-[#6f7f98] text-[8px]">{t('mock.domain.risk')}</text>
+                          <text x="165" y="57" className="fill-[#6f7f98] text-[8px]">{t('mock.domain.management')}</text>
+                          <text x="160" y="94" className="fill-[#6f7f98] text-[8px]">{t('mock.domain.access')}</text>
+                          <text x="160" y="104" className="fill-[#6f7f98] text-[8px]">{t('mock.domain.control')}</text>
+                          <text x="53" y="58" textAnchor="end" className="fill-[#6f7f98] text-[8px]">{t('mock.domain.asset')}</text>
+                          <text x="53" y="68" textAnchor="end" className="fill-[#6f7f98] text-[8px]">{t('mock.domain.assetManagement')}</text>
+                          <text x="58" y="95" textAnchor="end" className="fill-[#6f7f98] text-[8px]">{t('mock.domain.incident')}</text>
+                          <text x="58" y="105" textAnchor="end" className="fill-[#6f7f98] text-[8px]">{t('mock.domain.incidentManagement')}</text>
                         </svg>
                         <div className="mt-1 flex items-center justify-center gap-4 text-[10px] font-medium text-[#6f7f98]">
                           <span className="inline-flex items-center gap-1">
                             <span className="h-2 w-2 rounded-[2px] bg-[#2f7dff]" />
-                            Current
+                            {t('mock.legend.current')}
                           </span>
                           <span className="inline-flex items-center gap-1">
                             <span className="h-2 w-2 rounded-[2px] bg-[#98dbc0]" />
-                            Target
+                            {t('mock.legend.target')}
                           </span>
                         </div>
                       </div>
@@ -172,10 +176,8 @@ export default function HomePage() {
                 </svg>
               </span>
               <div>
-                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-3xl">What We Do</h3>
-                <p className="mt-2 text-sm leading-7 text-[#55627e] md:text-[15px] md:leading-relaxed">
-                  We are cybersecurity professionals with hands-on experience in audits, compliance, and incident response. Over the years, we have worked with organizations across different industries, helping them strengthen their security and prepare for audits with confidence.
-                </p>
+                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-3xl">{t('cards.whoWeAre.title')}</h3>
+                <p className="mt-2 whitespace-pre-line text-sm leading-7 text-[#55627e] md:text-[15px] md:leading-relaxed">{t('cards.whoWeAre.body')}</p>
               </div>
             </div>
           </article>
@@ -189,33 +191,31 @@ export default function HomePage() {
                 </svg>
               </span>
               <div>
-                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-3xl">Our Experience</h3>
+                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-3xl">{t('cards.experience.title')}</h3>
                 <ul className="mt-3 space-y-2.5 text-sm leading-snug text-[#445675] md:text-[15px] md:leading-relaxed">
                   <li className="flex items-start gap-2.5">
                     <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
                       ✓
                     </span>
-                    <span className="min-w-0">Cybersecurity and audit expertise</span>
+                    <span className="min-w-0">{t('cards.experience.point1')}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
                       ✓
                     </span>
-                    <span className="min-w-0">
-                      ISO 27001, NIS2, and relevant requirements under the Czech Cybersecurity Act
-                    </span>
+                    <span className="min-w-0">{t('cards.experience.point2')}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
                       ✓
                     </span>
-                    <span className="min-w-0">Security assessments and incident response</span>
+                    <span className="min-w-0">{t('cards.experience.point3')}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
                       ✓
                     </span>
-                    <span className="min-w-0">Real-world experience across multiple industries</span>
+                    <span className="min-w-0">{t('cards.experience.point4')}</span>
                   </li>
                 </ul>
               </div>
@@ -236,11 +236,9 @@ export default function HomePage() {
                 </svg>
               </span>
               <div>
-                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-3xl">Why This Product Exists</h3>
-                <p className="mt-2 text-sm leading-7 text-[#55627e] md:text-[15px] md:leading-relaxed">
-                  We saw that many organizations were not unprepared because of lack of effort, but because of unclear requirements, missing documentation, and the lack of a structured approach. Existing tools were either too complex or not focused on what really matters during an audit.
-                </p>
-                <p className="mt-4 text-sm font-semibold text-[#303f60] md:text-[15px]">Checklist KB was created to change that.</p>
+                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-3xl">{t('cards.why.title')}</h3>
+                <p className="mt-2 text-sm leading-7 text-[#55627e] md:text-[15px] md:leading-relaxed">{t('cards.why.body')}</p>
+                <p className="mt-4 text-sm font-semibold text-[#303f60] md:text-[15px]">{t('cards.why.highlight')}</p>
               </div>
             </div>
           </article>
@@ -256,34 +254,32 @@ export default function HomePage() {
                 </svg>
               </span>
               <div>
-                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-3xl">Our Approach</h3>
-                <p className="mt-2 text-sm leading-7 text-[#55627e] md:text-[15px] md:leading-relaxed">
-                  We believe audit preparation should be practical, clear, and evidence-based. That&apos;s why we built a solution that focuses on what really matters and guides you step by step.
-                </p>
+                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-3xl">{t('cards.approach.title')}</h3>
+                <p className="mt-2 text-sm leading-7 text-[#55627e] md:text-[15px] md:leading-relaxed">{t('cards.approach.body')}</p>
                 <ul className="mt-3 space-y-2.5 text-sm leading-snug text-[#445675] md:text-[15px] md:leading-relaxed">
                   <li className="flex items-start gap-2.5">
                     <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
                       ✓
                     </span>
-                    <span className="min-w-0">Practical, not theoretical</span>
+                    <span className="min-w-0">{t('cards.approach.point1')}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
                       ✓
                     </span>
-                    <span className="min-w-0">Focused on real audit readiness</span>
+                    <span className="min-w-0">{t('cards.approach.point2')}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
                       ✓
                     </span>
-                    <span className="min-w-0">Evidence-based approach</span>
+                    <span className="min-w-0">{t('cards.approach.point3')}</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">
                       ✓
                     </span>
-                    <span className="min-w-0">Simple and structured workflow</span>
+                    <span className="min-w-0">{t('cards.approach.point4')}</span>
                   </li>
                 </ul>
               </div>
@@ -293,9 +289,9 @@ export default function HomePage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 pb-14 sm:px-6 md:px-8 md:pb-16 lg:max-w-5xl lg:px-10 xl:max-w-6xl 2xl:max-w-[90rem]">
-        <h3 className="text-center text-3xl font-semibold text-[#202743] motion-safe:animate-fade-in-up md:text-4xl">Trust & Credentials</h3>
+        <h3 className="text-center text-3xl font-semibold text-[#202743] motion-safe:animate-fade-in-up md:text-4xl">{t('trust.title')}</h3>
         <p className="mt-2 text-center text-base text-[#6f7893] motion-safe:animate-fade-in-up motion-safe:delay-75 md:text-lg">
-          We combine real-world experience with recognized knowledge and standards.
+          {t('trust.subtitle')}
         </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -306,10 +302,8 @@ export default function HomePage() {
                 <path d="M9 9h6M9 13h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </span>
-            <h4 className="mt-3 text-xl font-semibold text-[#1f2741] md:text-2xl">Real-World Experience</h4>
-            <p className="mt-2 text-sm leading-6 text-[#55627e] md:text-[15px] md:leading-relaxed">
-              Years of hands-on work with audits, security assessments, and incident response.
-            </p>
+            <h4 className="mt-3 text-xl font-semibold text-[#1f2741] md:text-2xl">{t('trust.card1.title')}</h4>
+            <p className="mt-2 text-sm leading-6 text-[#55627e] md:text-[15px] md:leading-relaxed">{t('trust.card1.body')}</p>
           </article>
 
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-5 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:delay-100 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md">
@@ -318,10 +312,8 @@ export default function HomePage() {
                 <path d="m4 9 8-5 8 5-8 5-8-5Zm3 2.5v4.5c0 1.6 2.2 3 5 3s5-1.4 5-3v-4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </span>
-            <h4 className="mt-3 text-xl font-semibold text-[#1f2741] md:text-2xl">Certifications</h4>
-            <p className="mt-2 text-sm leading-6 text-[#55627e] md:text-[15px] md:leading-relaxed">
-              Industry-recognized certifications including CISSP, CySA+, and ISO 27001 Lead Auditor.
-            </p>
+            <h4 className="mt-3 text-xl font-semibold text-[#1f2741] md:text-2xl">{t('trust.card2.title')}</h4>
+            <p className="mt-2 text-sm leading-6 text-[#55627e] md:text-[15px] md:leading-relaxed">{t('trust.card2.body')}</p>
           </article>
 
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-5 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:delay-200 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md">
@@ -330,10 +322,8 @@ export default function HomePage() {
                 <path d="M12 2 4 5v6c0 5.3 3.4 9.6 8 11 4.6-1.4 8-5.7 8-11V5l-8-3Z" stroke="currentColor" strokeWidth="1.8" />
               </svg>
             </span>
-            <h4 className="mt-3 text-xl font-semibold text-[#1f2741] md:text-2xl">Security Standards</h4>
-            <p className="mt-2 text-sm leading-6 text-[#55627e] md:text-[15px] md:leading-relaxed">
-              Deep knowledge of frameworks such as NIS2, ISO 27001, and other international standards.
-            </p>
+            <h4 className="mt-3 text-xl font-semibold text-[#1f2741] md:text-2xl">{t('trust.card3.title')}</h4>
+            <p className="mt-2 text-sm leading-6 text-[#55627e] md:text-[15px] md:leading-relaxed">{t('trust.card3.body')}</p>
           </article>
 
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-5 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:delay-300 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md">
@@ -348,10 +338,8 @@ export default function HomePage() {
                 />
               </svg>
             </span>
-            <h4 className="mt-3 text-xl font-semibold text-[#1f2741] md:text-2xl">Practical Partnerships</h4>
-            <p className="mt-2 text-sm leading-6 text-[#55627e] md:text-[15px] md:leading-relaxed">
-              Collaboration with organizations to strengthen their security and achieve compliance goals.
-            </p>
+            <h4 className="mt-3 text-xl font-semibold text-[#1f2741] md:text-2xl">{t('trust.card4.title')}</h4>
+            <p className="mt-2 text-sm leading-6 text-[#55627e] md:text-[15px] md:leading-relaxed">{t('trust.card4.body')}</p>
           </article>
         </div>
 
@@ -364,9 +352,9 @@ export default function HomePage() {
                 </svg>
               </span>
               <div className="min-w-0">
-                <p className="text-2xl font-semibold md:text-4xl">Want to know more about our work?</p>
+                <p className="text-2xl font-semibold md:text-4xl">{t('bottom.title')}</p>
                 <p className="mt-1 text-sm text-[#c7d8f8] md:text-base">
-                  We&apos;re always open to new conversations about how we can help you and your organization stay secure and audit-ready.
+                  {t('bottom.subtitle')}
                 </p>
               </div>
             </div>
@@ -375,14 +363,14 @@ export default function HomePage() {
                 href="/contact"
                 className="inline-flex min-w-[180px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-6 py-3 text-base font-semibold transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
               >
-                Contact Us
+                {t('bottom.contact')}
                 <ArrowRightIcon />
               </Link>
               <Link
                 href="/products"
                 className="inline-flex min-w-[210px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#456298] px-6 py-3 text-base font-semibold text-[#e5eeff] transition-colors duration-200 hover:bg-[#173160] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
               >
-                Explore Products
+                {t('bottom.products')}
                 <ArrowRightIcon />
               </Link>
             </div>

@@ -6,6 +6,9 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { LogoutButton } from '@/components/logout-button';
+import { CustomerLanguageSwitcher } from '@/components/customer-language-switcher';
+import { translate, useLocale } from '@/lib/i18n';
+import { customerLayoutMessages } from '@/locales/customer-layout';
 import {
   ACCESS_TOKEN_STORAGE_KEY,
   clearRoleSwitchSession,
@@ -25,6 +28,8 @@ export default function AppLayout({
 }>) {
   const pathname = usePathname();
   const router = useRouter();
+  const { locale } = useLocale();
+  const t = (key: string) => translate(customerLayoutMessages, locale, key);
   const [authReady, setAuthReady] = useState(false);
   const [role, setRole] = useState<UserRoleKey | ''>('');
   const [displayName, setDisplayName] = useState('User');
@@ -193,7 +198,7 @@ export default function AppLayout({
           {mobileMenuOpen ? (
             <button
               type="button"
-              aria-label="Close sidebar overlay"
+              aria-label={t('actions.closeSidebarOverlay')}
               onClick={() => setMobileMenuOpen(false)}
               className="absolute inset-0 z-20 bg-[#06142f]/45 lg:hidden"
             />
@@ -210,7 +215,7 @@ export default function AppLayout({
                     <path d="M12 2 4 5v6c0 5.3 3.4 9.6 8 11 4.6-1.4 8-5.7 8-11V5l-8-3Z" stroke="currentColor" strokeWidth="1.8" />
                   </svg>
                 </span>
-                <span className="text-xl font-semibold text-white">Checklist KB</span>
+                <span className="text-xl font-semibold text-white">{t('brand.name')}</span>
               </Link>
               <nav className="mt-4 flex flex-col gap-1.5 text-[15px]">
                 <Link
@@ -219,7 +224,7 @@ export default function AppLayout({
                     dashboardActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
                   }`}
                 >
-                  Dashboard
+                  {t('nav.dashboard')}
                 </Link>
                 <Link
                   href="/assessment"
@@ -227,7 +232,7 @@ export default function AppLayout({
                     assessmentActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
                   }`}
                 >
-                  Assessment
+                  {t('nav.assessment')}
                 </Link>
                 <Link
                   href="/access"
@@ -235,7 +240,7 @@ export default function AppLayout({
                     accessActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
                   }`}
                 >
-                  Access
+                  {t('nav.access')}
                 </Link>
                 <Link
                   href={'/support' as Route}
@@ -243,7 +248,7 @@ export default function AppLayout({
                     supportActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
                   }`}
                 >
-                  Support
+                  {t('nav.support')}
                 </Link>
                 <Link
                   href="/payment"
@@ -251,7 +256,7 @@ export default function AppLayout({
                     purchaseActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
                   }`}
                 >
-                  Purchase
+                  {t('nav.purchase')}
                 </Link>
                 <Link
                   href="/payments"
@@ -259,7 +264,7 @@ export default function AppLayout({
                     paymentsActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
                   }`}
                 >
-                  Payments
+                  {t('nav.payments')}
                 </Link>
                 <Link
                   href={'/profile' as Route}
@@ -267,8 +272,11 @@ export default function AppLayout({
                     profileActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
                   }`}
                 >
-                  Profile
+                  {t('nav.profile')}
                 </Link>
+                <div className="mt-2 lg:hidden">
+                  <CustomerLanguageSwitcher fullWidth />
+                </div>
                 <LogoutButton />
                 {roleSwitchActive ? (
                   <button
@@ -276,7 +284,7 @@ export default function AppLayout({
                     onClick={() => void onReturnToAdmin()}
                     className="mt-2 rounded-xl border border-amber-300/70 bg-amber-500/10 px-3 py-2 text-left text-sm text-amber-100 hover:bg-amber-500/20"
                   >
-                    Return to Admin
+                    {t('actions.returnToAdmin')}
                   </button>
                 ) : null}
               </nav>
@@ -286,7 +294,7 @@ export default function AppLayout({
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    aria-label="Open sidebar"
+                    aria-label={t('actions.openSidebar')}
                     onClick={() => setMobileMenuOpen((prev) => !prev)}
                     className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#2d4f83] bg-[#182843] text-[#dce8ff] hover:bg-[#223657] lg:hidden"
                   >
@@ -294,9 +302,12 @@ export default function AppLayout({
                       <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     </svg>
                   </button>
-                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#9dc5ff]">Customer Workspace</p>
+                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#9dc5ff]">{t('header.workspace')}</p>
                 </div>
                 <div className="flex items-center gap-3">
+                  <div className="hidden lg:block">
+                    <CustomerLanguageSwitcher />
+                  </div>
                   <Link
                     href={'/profile' as Route}
                     className="inline-flex items-center gap-2 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-medium text-[#dce8ff] hover:bg-[#223657]"

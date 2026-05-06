@@ -7,23 +7,30 @@ import { getCurrentAssessment, startAssessment } from '@/lib/assessment';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
 import { listPurchasedChecklistIds } from '@/lib/customer-payments';
 import { formatStatusLabel } from '@/lib/status-format';
+import { translate, useLocale } from '@/lib/i18n';
+import { customerAccessMessages } from '@/locales/customer-access';
 
-function formatTimeRemaining(expiresAt: string): string {
+function formatTimeRemaining(expiresAt: string, t: (key: string) => string): string {
   const expires = new Date(expiresAt).getTime();
   if (Number.isNaN(expires)) {
-    return 'Invalid expiry timestamp';
+    return t('timer.invalid');
   }
   const diff = expires - Date.now();
   if (diff <= 0) {
-    return 'Expired';
+    return t('timer.expired');
   }
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
   const minutes = Math.floor((diff / (1000 * 60)) % 60);
-  return `${days}d ${hours}h ${minutes}m remaining`;
+  return t('timer.remainingFmt')
+    .replace('{d}', String(days))
+    .replace('{h}', String(hours))
+    .replace('{m}', String(minutes));
 }
 
 export default function AccessPage() {
+  const { locale } = useLocale();
+  const t = (key: string) => translate(customerAccessMessages, locale, key);
   const searchParams = useSearchParams();
   const checklistIdFromQuery = searchParams.get('checklist_id') ?? '';
   const [checklistId, setChecklistId] = useState('');
@@ -53,7 +60,7 @@ export default function AccessPage() {
   } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const remaining = useMemo(() => (assessment ? formatTimeRemaining(assessment.expires_at) : ''), [assessment]);
+  const remaining = useMemo(() => (assessment ? formatTimeRemaining(assessment.expires_at, t) : ''), [assessment, t]);
   const isSubmittedAssessment = assessment?.status === 'submitted';
   const assessmentAlreadyStarted = Boolean(assessment && assessment.status === 'in_progress');
   const checklistLocked = Boolean(checklistIdFromQuery);
@@ -177,11 +184,11 @@ export default function AccessPage() {
       if (checklistId.trim()) {
         setAssessmentsByChecklistId((previous) => ({ ...previous, [checklistId.trim()]: response }));
       }
-      setMessage('Active assessment loaded.');
+      setMessage(t('messages.activeLoaded'));
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to load assessment.';
+      const message = err instanceof Error ? err.message : t('errors.loadAssessment');
       if (message.toLowerCase().includes('assessment not found')) {
-        setMessage('No active assessment found yet. Start assessment to begin.');
+        setMessage(t('messages.noneActiveYet'));
       } else {
         setError(message);
       }
@@ -220,7 +227,7 @@ export default function AccessPage() {
     setError('');
     setMessage('');
     if (!checklistId.trim()) {
-      setError('Checklist is required.');
+      setError(t('errors.checklistRequired'));
       return;
     }
     setLoading(true);
@@ -228,11 +235,11 @@ export default function AccessPage() {
       const response = await startAssessment({ checklist_id: checklistId.trim() });
       setAssessment(response);
       setAssessmentsByChecklistId((previous) => ({ ...previous, [checklistId.trim()]: response }));
-      setMessage('Assessment started. The 7-day completion window is now active.');
+      setMessage(t('messages.started'));
     } catch (err) {
-      const text = err instanceof Error ? err.message : 'Unable to start assessment.';
+      const text = err instanceof Error ? err.message : t('errors.startAssessment');
       if (text.includes('payment_required')) {
-        setError('Payment unlock is not confirmed yet. Complete payment and retry after webhook processing.');
+        setError(t('errors.paymentPending'));
       } else {
         setError(text);
       }
@@ -244,31 +251,31 @@ export default function AccessPage() {
   return (
     <section className="space-y-6">
       <header className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Customer</p>
-        <h1 className="text-3xl font-semibold text-[#1f2d45]">Access & Pre-start</h1>
+        <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">{t('title.kicker')}</p>
+        <h1 className="text-3xl font-semibold text-[#1f2d45]">{t('title')}</h1>
       </header>
 
       {assessment ? (
         <article className="rounded-xl border border-[#bfd4ff] bg-[#eef4ff] p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#4a6ea8]">Remaining time</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#4a6ea8]">{t('timer.remaining')}</p>
           <p className="mt-1 text-3xl font-semibold text-[#1f2d45]">{remaining}</p>
           <div className="mt-3 grid gap-2 text-sm text-[#445c7e] md:grid-cols-3">
             {selectedChecklistName ? (
               <p>
-                <span className="font-semibold">Checklist:</span> {selectedChecklistName}
+                <span className="font-semibold">{t('labels.checklist')}:</span> {selectedChecklistName}
               </p>
             ) : null}
             <p>
-              <span className="font-semibold">Status:</span> {formatStatusLabel(assessment.status)}
+              <span className="font-semibold">{t('labels.status')}:</span> {formatStatusLabel(assessment.status)}
             </p>
             <p>
-              <span className="font-semibold">Completion:</span> {assessment.completion_percent}%
+              <span className="font-semibold">{t('labels.completion')}:</span> {assessment.completion_percent}%
             </p>
             <p>
-              <span className="font-semibold">Started:</span> {new Date(assessment.started_at).toLocaleString()}
+              <span className="font-semibold">{t('labels.started')}:</span> {new Date(assessment.started_at).toLocaleString()}
             </p>
             <p>
-              <span className="font-semibold">Expires:</span> {new Date(assessment.expires_at).toLocaleString()}
+              <span className="font-semibold">{t('labels.expires')}:</span> {new Date(assessment.expires_at).toLocaleString()}
             </p>
           </div>
         </article>
@@ -277,28 +284,28 @@ export default function AccessPage() {
       {!assessmentAlreadyStarted && !isSubmittedAssessment ? (
         <>
           <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-[#243555]">Before you start</h2>
+            <h2 className="text-lg font-semibold text-[#243555]">{t('before.title')}</h2>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#4f6281]">
-              <li>The 7-day completion window starts only when you click Start Assessment.</li>
-              <li>Evidence uploads are optional but recommended for better auditor review.</li>
-              <li>Final report is published in-app after manual auditor review.</li>
+              <li>{t('before.point1')}</li>
+              <li>{t('before.point2')}</li>
+              <li>{t('before.point3')}</li>
             </ul>
           </article>
 
           <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
             {checklistLocked ? (
               <div className="space-y-2 text-sm">
-                <p className="text-[#3f5677]">Checklist</p>
+                <p className="text-[#3f5677]">{t('labels.checklist')}</p>
                 <p className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555]">
-                  {selectedChecklistName || checklistId || 'Selected checklist'}
+                  {selectedChecklistName || checklistId || t('checklist.selectedFallback')}
                 </p>
               </div>
             ) : (
               <label className="block space-y-2 text-sm">
-                <span className="text-[#3f5677]">Checklist</span>
+                <span className="text-[#3f5677]">{t('labels.checklist')}</span>
                 {checklistsLoading ? (
                   <div className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#607594]">
-                    Loading purchased checklists...
+                    {t('checklist.loadingPurchased')}
                   </div>
                 ) : (
                   <select
@@ -308,7 +315,7 @@ export default function AccessPage() {
                     disabled={!orderedChecklists.length}
                   >
                     {!checklistId ? (
-                      <option value="">{orderedChecklists.length ? 'Select purchased checklist' : 'No purchased checklists found'}</option>
+                      <option value="">{orderedChecklists.length ? t('checklist.selectPurchased') : t('checklist.nonePurchased')}</option>
                     ) : null}
                     {orderedChecklists.map((checklist) => (
                       <option key={checklist.id} value={checklist.id}>
@@ -318,7 +325,7 @@ export default function AccessPage() {
                   </select>
                 )}
                 <p className="text-xs text-[#607594]">
-                  Showing your purchased checklists only. To add more, click <span className="font-semibold">Buy another checklist</span>.
+                  {t('checklist.helper').replace('{cta}', t('actions.buyAnother'))}
                 </p>
               </label>
             )}
@@ -329,13 +336,13 @@ export default function AccessPage() {
                 disabled={loading || isSubmittedAssessment}
                 className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? 'Processing…' : 'Start Assessment'}
+                {loading ? t('actions.processing') : t('actions.start')}
               </button>
               <Link
                 href="/payment"
                 className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff]"
               >
-                Buy another checklist
+                {t('actions.buyAnother')}
               </Link>
             </div>
 
@@ -346,7 +353,7 @@ export default function AccessPage() {
       ) : isSubmittedAssessment ? (
         <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
           <p className="text-sm text-[#3f5677]">
-            This assessment is already submitted and cannot be started or submitted again.
+            {t('submitted.notice')}
           </p>
           {message ? <p className="mt-3 text-sm text-[#2f9960]">{message}</p> : null}
           {error ? <p className="mt-3 text-sm text-[#c43e53]">{error}</p> : null}
@@ -358,7 +365,7 @@ export default function AccessPage() {
               href={checklistId.trim() ? `/assessment?checklist_id=${encodeURIComponent(checklistId.trim())}` : '/assessment'}
               className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white"
             >
-              Continue Assessment
+              {t('actions.continue')}
             </Link>
           </div>
 

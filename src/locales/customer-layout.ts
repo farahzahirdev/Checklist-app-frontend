@@ -1,0 +1,43 @@
+import type { TranslationMessages } from '@/lib/i18n';
+
+export const customerLayoutMessages: TranslationMessages = {
+  en: {
+    'brand.name': 'AuditReady',
+    'nav.dashboard': 'Dashboard',
+    'nav.assessment': 'Assessment',
+    'nav.access': 'Access',
+    'nav.support': 'Support',
+    'nav.purchase': 'Purchase',
+    'nav.payments': 'Payments',
+    'nav.profile': 'Profile',
+    'header.workspace': 'Customer Workspace',
+    'actions.openSidebar': 'Open sidebar',
+    'actions.closeSidebarOverlay': 'Close sidebar overlay',
+    'actions.returnToAdmin': 'Return to Admin',
+    'actions.logout': 'Logout',
+    'actions.loggingOut': 'Logging out...',
+    'lang.label': 'Language',
+    'lang.cs': 'Čeština',
+    'lang.en': 'English',
+  },
+  cs: {
+    'brand.name': 'AuditReady',
+    'nav.dashboard': 'Přehled',
+    'nav.assessment': 'Hodnocení',
+    'nav.access': 'Přístup',
+    'nav.support': 'Podpora',
+    'nav.purchase': 'Nákup',
+    'nav.payments': 'Platby',
+    'nav.profile': 'Profil',
+    'header.workspace': 'Zákaznické prostředí',
+    'actions.openSidebar': 'Otevřít menu',
+    'actions.closeSidebarOverlay': 'Zavřít překryv menu',
+    'actions.returnToAdmin': 'Zpět do adminu',
+    'actions.logout': 'Odhlásit se',
+    'actions.loggingOut': 'Odhlašuji...',
+    'lang.label': 'Jazyk',
+    'lang.cs': 'Čeština',
+    'lang.en': 'English',
+  },
+};
+

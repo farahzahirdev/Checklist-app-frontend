@@ -10,6 +10,8 @@ import {
   replyMySupportTicket,
   type SupportTicket,
 } from '@/lib/support-tickets';
+import { translate, useLocale } from '@/lib/i18n';
+import { customerSupportMessages } from '@/locales/customer-support';
 
 function formatDate(value: string | null | undefined) {
   if (!value) return 'n/a';
@@ -17,6 +19,9 @@ function formatDate(value: string | null | undefined) {
 }
 
 export default function SupportPage() {
+  const { locale } = useLocale();
+  const t = (key: string) => translate(customerSupportMessages, locale, key);
+  const roleLabel = (role: string) => translate(customerSupportMessages, locale, `role.${role}`) || role;
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState('');
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
@@ -40,7 +45,7 @@ export default function SupportPage() {
         setSelectedTicket(null);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load support tickets.');
+      toast.error(err instanceof Error ? err.message : t('errors.loadTickets'));
     } finally {
       setLoading(false);
     }
@@ -58,7 +63,7 @@ export default function SupportPage() {
       setSelectedTicket(ticket);
       setReplyMessage('');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load ticket.');
+      toast.error(err instanceof Error ? err.message : t('errors.loadTicket'));
     } finally {
       setDetailLoading(false);
       setActionLoading('');
@@ -72,20 +77,20 @@ export default function SupportPage() {
   async function onCreateTicket(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!subject.trim() || !message.trim()) {
-      toast.error('Subject and message are required.');
+      toast.error(t('errors.requiredSubjectMessage'));
       return;
     }
     setActionLoading('create');
     try {
       const ticket = await createMySupportTicket({ subject, message });
-      toast.success('Support ticket created.');
+      toast.success(t('success.ticketCreated'));
       setSubject('');
       setMessage('');
       await loadTickets(false);
       setSelectedTicketId(ticket.id);
       setSelectedTicket(ticket);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create ticket.');
+      toast.error(err instanceof Error ? err.message : t('errors.createTicket'));
     } finally {
       setActionLoading('');
     }
@@ -94,11 +99,11 @@ export default function SupportPage() {
   async function onReplyTicket(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedTicketId) {
-      toast.error('Select a ticket first.');
+      toast.error(t('errors.selectTicket'));
       return;
     }
     if (!replyMessage.trim()) {
-      toast.error('Reply message is required.');
+      toast.error(t('errors.replyRequired'));
       return;
     }
     setActionLoading('reply');
@@ -107,9 +112,9 @@ export default function SupportPage() {
       setSelectedTicket(ticket);
       setTickets((current) => current.map((item) => (item.id === ticket.id ? ticket : item)));
       setReplyMessage('');
-      toast.success('Message added to ticket.');
+      toast.success(t('success.replyAdded'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to reply to ticket.');
+      toast.error(err instanceof Error ? err.message : t('errors.replyFailed'));
     } finally {
       setActionLoading('');
     }
@@ -118,33 +123,33 @@ export default function SupportPage() {
   return (
     <section className="space-y-5">
       <header className="rounded-2xl border border-[#1f3f73] bg-[linear-gradient(120deg,#071733,#0c2144_45%,#13356d)] px-5 py-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9dc5ff]">Support</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Support tickets</h1>
-        <p className="mt-2 text-sm text-[#b9cdef]">Send an issue to the support team and track replies in one thread.</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9dc5ff]">{t('hero.kicker')}</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">{t('hero.title')}</h1>
+        <p className="mt-2 text-sm text-[#b9cdef]">{t('hero.subtitle')}</p>
       </header>
 
       <div className="grid gap-5 xl:grid-cols-[420px_1fr]">
         <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-[#243555]">Create a ticket</h2>
+          <h2 className="text-base font-semibold text-[#243555]">{t('create.title')}</h2>
           <form className="mt-4 space-y-3" onSubmit={onCreateTicket}>
             <label className="block space-y-2 text-sm">
-              <span className="font-medium text-[#566b8d]">Subject</span>
+              <span className="font-medium text-[#566b8d]">{t('fields.subject')}</span>
               <input
                 type="text"
                 value={subject}
                 onChange={(event) => setSubject(event.target.value)}
                 className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
-                placeholder="Describe the issue briefly"
+                placeholder={t('fields.subjectPlaceholder')}
               />
             </label>
             <label className="block space-y-2 text-sm">
-              <span className="font-medium text-[#566b8d]">Message</span>
+              <span className="font-medium text-[#566b8d]">{t('fields.message')}</span>
               <textarea
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
                 rows={5}
                 className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
-                placeholder="Describe the problem, what you expected, and any details that help the support team"
+                placeholder={t('fields.messagePlaceholder')}
               />
             </label>
             <button
@@ -152,26 +157,26 @@ export default function SupportPage() {
               disabled={actionLoading === 'create'}
               className="rounded-xl border border-[#1f2d45] bg-[#1f2d45] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
             >
-              {actionLoading === 'create' ? 'Sending…' : 'Submit ticket'}
+              {actionLoading === 'create' ? t('actions.sending') : t('actions.submitTicket')}
             </button>
           </form>
 
           <div className="mt-6 flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold text-[#243555]">Your tickets</h2>
+            <h2 className="text-base font-semibold text-[#243555]">{t('list.title')}</h2>
             <button
               type="button"
               onClick={() => void loadTickets(false)}
               disabled={loading}
               className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-xs font-semibold text-[#2a3d5f] hover:bg-[#f6f9ff] disabled:opacity-60"
             >
-              {loading ? 'Refreshing…' : 'Refresh'}
+              {loading ? t('actions.refreshing') : t('actions.refresh')}
             </button>
           </div>
 
           <div className="mt-3 space-y-2">
             {!tickets.length ? (
               <p className="rounded-xl border border-[#dbe4f4] bg-[#f9fbff] px-4 py-3 text-sm text-[#607594]">
-                {loading ? 'Loading tickets…' : 'No support tickets yet.'}
+                {loading ? t('empty.loadingTickets') : t('empty.noTickets')}
               </p>
             ) : (
               tickets.map((ticket) => (
@@ -189,7 +194,7 @@ export default function SupportPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-[#1f2d45]">{ticket.subject}</p>
-                      <p className="mt-1 text-xs text-[#607594]">Updated {formatDate(ticket.last_message_at ?? ticket.updated_at)}</p>
+                      <p className="mt-1 text-xs text-[#607594]">{t('ticket.updated')} {formatDate(ticket.last_message_at ?? ticket.updated_at)}</p>
                     </div>
                     <span className="shrink-0 rounded-full border border-[#d4dced] bg-white px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5b6f91]">
                       {formatSupportTicketStatus(ticket.status, 'customer')}
@@ -204,8 +209,8 @@ export default function SupportPage() {
         <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#eef2fa] pb-4">
             <div>
-              <h2 className="text-xl font-semibold text-[#243555]">Ticket thread</h2>
-              <p className="text-sm text-[#607594]">Support responses will appear here.</p>
+              <h2 className="text-xl font-semibold text-[#243555]">{t('thread.title')}</h2>
+              <p className="text-sm text-[#607594]">{t('thread.subtitle')}</p>
             </div>
             {selectedTicket ? (
               <span className="rounded-full border border-[#d4dced] bg-[#f7f9fe] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#5b6f91]">
@@ -216,7 +221,7 @@ export default function SupportPage() {
 
           {!selectedTicket ? (
             <p className="mt-5 rounded-xl border border-[#dbe4f4] bg-[#f9fbff] px-4 py-3 text-sm text-[#607594]">
-              {detailLoading ? 'Loading ticket…' : 'Select a ticket to view the conversation.'}
+              {detailLoading ? t('thread.loading') : t('thread.empty')}
             </p>
           ) : (
             <>
@@ -229,7 +234,7 @@ export default function SupportPage() {
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3 text-xs text-[#607594]">
-                      <span className="font-semibold uppercase tracking-[0.16em]">{entry.sender_role}</span>
+                      <span className="font-semibold uppercase tracking-[0.16em]">{roleLabel(entry.sender_role)}</span>
                       <span>{formatDate(entry.created_at)}</span>
                     </div>
                     <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#243555]">{entry.body}</p>
@@ -239,13 +244,13 @@ export default function SupportPage() {
 
               <form onSubmit={onReplyTicket} className="mt-6 space-y-3 border-t border-[#eef2fa] pt-4">
                 <label className="block space-y-2 text-sm">
-                  <span className="font-medium text-[#566b8d]">Add a reply</span>
+                  <span className="font-medium text-[#566b8d]">{t('reply.label')}</span>
                   <textarea
                     value={replyMessage}
                     onChange={(event) => setReplyMessage(event.target.value)}
                     rows={4}
                     className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
-                    placeholder="Add more context or follow up with the support team"
+                    placeholder={t('reply.placeholder')}
                   />
                 </label>
                 <button
@@ -253,7 +258,7 @@ export default function SupportPage() {
                   disabled={actionLoading === 'reply'}
                   className="rounded-xl border border-[#1f2d45] bg-[#1f2d45] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
                 >
-                  {actionLoading === 'reply' ? 'Sending…' : 'Send reply'}
+                  {actionLoading === 'reply' ? t('actions.sending') : t('actions.sendReply')}
                 </button>
               </form>
             </>

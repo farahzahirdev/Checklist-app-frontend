@@ -3,36 +3,24 @@
 import { useState } from 'react';
 import { PublicFooter } from '@/components/public-footer';
 import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
+import { translate, useLocale } from '@/lib/i18n';
+import { faqMessages } from '@/locales/faq';
 
-const faqs = [
-  {
-    q: 'When does my 7-day window begin?',
-    a: 'The 7-day completion window starts only when you click Start Assessment, not immediately after payment.',
-  },
-  {
-    q: 'Is evidence upload mandatory?',
-    a: 'No. Uploads are optional, but recommended to support auditor review and report quality.',
-  },
-  {
-    q: 'How is access unlocked after payment?',
-    a: 'Access is unlocked automatically after Stripe webhook confirmation is processed by the backend.',
-  },
-  {
-    q: 'Which roles are supported?',
-    a: 'The platform supports admin/operator, read-only auditor, and customer roles.',
-  },
-  {
-    q: 'Can I save progress and continue later?',
-    a: 'Yes. Your assessment progress is saved so you can continue within your active access window.',
-  },
-  {
-    q: 'How do I get my final report?',
-    a: 'After completing the checklist, your report is available in the Reports area for download and sharing.',
-  },
-];
+const FAQ_KEYS = [
+  { q: 'qa.0.q', a: 'qa.0.a' },
+  { q: 'qa.1.q', a: 'qa.1.a' },
+  { q: 'qa.2.q', a: 'qa.2.a' },
+  { q: 'qa.3.q', a: 'qa.3.a' },
+  { q: 'qa.4.q', a: 'qa.4.a' },
+  { q: 'qa.5.q', a: 'qa.5.a' },
+] as const;
 
 export default function FaqPage() {
+  const { locale } = useLocale();
+  const t = (key: string) => translate(faqMessages, locale, key);
   const [openIndex, setOpenIndex] = useState<number>(0);
+
+  const faqs = FAQ_KEYS.map((item) => ({ q: t(item.q), a: t(item.a) }));
 
   const heroStyle = {
     backgroundImage: `radial-gradient(circle at 20% 20%, rgba(16, 55, 114, 0.62) 0%, rgba(7, 22, 47, 0.72) 45%, rgba(4, 16, 34, 0.78) 100%), url(${heroBackground.src})`,
@@ -50,21 +38,21 @@ export default function FaqPage() {
         </div>
         <div className="relative mx-auto flex min-h-[520px] max-w-7xl flex-col justify-center px-4 py-10 sm:px-6 md:px-6 md:py-12 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
           <p className="inline-flex self-start rounded-full border border-[#255da8] bg-[#12366c] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#9ac3ff] motion-safe:animate-fade-in motion-safe:delay-75">
-            Help center
+            {t('hero.kicker')}
           </p>
           <h1 className="public-hero-title mt-4 max-w-3xl text-white motion-safe:animate-fade-in-up motion-safe:delay-100">
-            Frequently Asked Questions
+            {t('hero.title')}
           </h1>
           <p className="public-hero-subtitle mt-4 max-w-2xl text-[#c7d8f8] motion-safe:animate-fade-in-up motion-safe:delay-200">
-            Everything you need to know about access, assessments, reports, and platform security.
+            {t('hero.subtitle')}
           </p>
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-6 md:py-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <div className="rounded-2xl border border-[#dce5f2] bg-[#edf2fa] p-5 transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-md sm:p-6">
-          <h2 className="public-section-title text-[#1a2440]">Quick Answers</h2>
-          <p className="mt-2 text-sm text-[#5e7293]">Click a question to expand details.</p>
+          <h2 className="public-section-title text-[#1a2440]">{t('section.title')}</h2>
+          <p className="mt-2 text-sm text-[#5e7293]">{t('section.subtitle')}</p>
           <div className="mt-6 space-y-4">
             {faqs.map((faq, index) => {
               const isOpen = openIndex === index;
@@ -109,14 +97,14 @@ export default function FaqPage() {
         <article className="rounded-2xl border border-[#17489b] bg-[linear-gradient(90deg,#0b2f73,#0e3f9d)] p-5 text-white transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-[0_18px_34px_rgba(17,62,148,0.28)] md:p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h3 className="text-3xl font-semibold">Still have questions?</h3>
-              <p className="mt-1 text-sm text-[#d2e2ff]">Reach out and we&apos;ll help you get the answers you need.</p>
+              <h3 className="text-3xl font-semibold">{t('cta.title')}</h3>
+              <p className="mt-1 text-sm text-[#d2e2ff]">{t('cta.subtitle')}</p>
             </div>
             <a
               href="/contact"
               className="rounded-xl border border-white/35 bg-white px-5 py-2.5 font-semibold text-[#123e8b] transition-colors duration-200 hover:bg-[#e9f1ff] active:scale-[0.98] motion-safe:active:transition-transform"
             >
-              Contact Us
+              {t('cta.contact')}
             </a>
           </div>
         </article>
