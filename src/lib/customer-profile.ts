@@ -15,6 +15,11 @@ export type CustomerProfile = {
   company_industry: string | null;
   company_size: string | null;
   company_region: string | null;
+  company_email: string | null;
+  company_website: string | null;
+  company_slug: string | null;
+  company_country: string | null;
+  company_description: string | null;
 };
 
 export type UpdateCustomerProfilePayload = {
@@ -22,6 +27,14 @@ export type UpdateCustomerProfilePayload = {
   username?: string;
   job_title?: string;
   department?: string;
+  company_name?: string | null;
+  company_slug?: string | null;
+  company_email?: string | null;
+  company_website?: string | null;
+  company_industry?: string | null;
+  company_country?: string | null;
+  company_size?: string | null;
+  company_description?: string | null;
 };
 
 export type ChangeCustomerPasswordPayload = {
