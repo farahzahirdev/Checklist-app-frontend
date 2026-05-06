@@ -126,10 +126,18 @@ export default function PaymentPage() {
                       checklist.checklist_type?.description?.trim() || checklist.warning?.trim() || t('labels.noDescription');
                     const typeLabel = checklist.checklist_type?.name || checklist.checklist_type?.code || t('labels.checklistType');
                     return (
-                      <button
+                      <div
                         key={checklist.id}
-                        type="button"
                         onClick={() => setSelectedChecklistId(checklist.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setSelectedChecklistId(checklist.id);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={isSelected}
                         className={`group relative overflow-hidden rounded-2xl border p-0 text-left transition-all duration-300 ${
                           isSelected
                             ? 'border-[#9fc2ff] bg-[linear-gradient(145deg,#143566_0%,#1b4a86_48%,#2a67b0_100%)] text-white ring-2 ring-[#a9c8ff]/70 shadow-[0_18px_32px_rgba(10,30,63,0.55)]'
@@ -174,9 +182,26 @@ export default function PaymentPage() {
                             </span>
                           </div>
 
+                          {isSelected ? (
+                            <div className="mt-4">
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  void beginCheckout();
+                                }}
+                                disabled={loading}
+                                className="w-full rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-white/15 disabled:opacity-60"
+                              >
+                                {loading ? t('actions.redirecting') : t('actions.proceed')}
+                              </button>
+                            </div>
+                          ) : null}
+
                           {checklist.warning ? <p className="mt-3 text-xs text-amber-200">{checklist.warning}</p> : null}
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -184,14 +209,6 @@ export default function PaymentPage() {
             ) : (
               <p className="text-amber-200">{t('empty.noneAvailable')}</p>
             )}
-            <button
-              type="button"
-              onClick={() => void beginCheckout()}
-              disabled={loading || !selectedChecklistId}
-              className="self-start rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-white hover:bg-[#223657] disabled:opacity-60"
-            >
-              {loading ? t('actions.redirecting') : t('actions.proceed')}
-            </button>
           </div>
         ) : null}
       </article>

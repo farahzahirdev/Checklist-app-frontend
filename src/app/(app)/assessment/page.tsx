@@ -167,6 +167,7 @@ export default function AssessmentPage() {
   const t = (key: string) => translate(customerAssessmentMessages, locale, key);
   const searchParams = useSearchParams();
   const questionPanelTopRef = useRef<HTMLDivElement | null>(null);
+  const evidenceInputRef = useRef<HTMLInputElement | null>(null);
   const checklistIdFromQuery = searchParams.get('checklist_id') ?? '';
   const [availableChecklists, setAvailableChecklists] = useState<CustomerChecklist[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
@@ -243,6 +244,25 @@ export default function AssessmentPage() {
     [activeQuestion?.expected_implementation],
   );
   const effectiveChecklistId = checklistIdFromQuery || assessmentDetail?.checklist_id || '';
+
+  useEffect(() => {
+    if (!activeQuestion) return;
+    // Reset the browser-controlled file input when switching questions, so the
+    // previous question's selected filename doesn't appear on the next question.
+    if (evidenceInputRef.current) {
+      evidenceInputRef.current.value = '';
+    }
+  }, [activeQuestion?.id]);
+
+  useEffect(() => {
+    if (!activeQuestion) return;
+    const selected = selectedEvidenceFiles[activeQuestion.id];
+    if (selected) return;
+    // Also clear after upload/remove while staying on same question.
+    if (evidenceInputRef.current) {
+      evidenceInputRef.current.value = '';
+    }
+  }, [activeQuestion?.id, selectedEvidenceFiles, showUploadProgress]);
 
   useEffect(() => {
     let mounted = true;
@@ -1255,6 +1275,7 @@ export default function AssessmentPage() {
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <input
                         type="file"
+                        ref={evidenceInputRef}
                         onChange={(event) => setSelectedEvidenceFiles(prev => ({ 
                           ...prev, 
                           [activeQuestion.id]: event.target.files?.[0] ?? null 
