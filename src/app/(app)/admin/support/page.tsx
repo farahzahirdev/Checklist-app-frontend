@@ -2,8 +2,8 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
+import { translate, useLocale } from '@/lib/i18n';
 import {
-  formatSupportTicketStatus,
   getAdminSupportTicket,
   listAdminSupportTickets,
   replyToSupportTicket,
@@ -17,6 +17,7 @@ import {
   ADMIN_PAGE_HERO_SUBTITLE_CLASS,
   ADMIN_PAGE_HERO_TITLE_CLASS,
 } from '@/app/(app)/admin/admin-page-title';
+import { adminSupportMessages } from '@/locales/admin-support';
 
 const STATUS_OPTIONS: Array<SupportTicketStatus> = ['open', 'waiting_customer', 'resolved', 'closed'];
 
@@ -26,6 +27,10 @@ function formatDate(value: string | null | undefined) {
 }
 
 export default function AdminSupportPage() {
+  const { locale } = useLocale();
+  const t = (key: string) => translate(adminSupportMessages, locale, key);
+  const statusLabel = (status: SupportTicketStatus) => t(`status.${status}`);
+  const roleLabel = (role: string) => translate(adminSupportMessages, locale, `role.${role}`) || role;
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState('');
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
@@ -52,7 +57,7 @@ export default function AdminSupportPage() {
         setSelectedTicket(null);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load support tickets.');
+      toast.error(err instanceof Error ? err.message : t('errors.loadTickets'));
     } finally {
       setLoading(false);
     }
@@ -70,7 +75,7 @@ export default function AdminSupportPage() {
       setSelectedTicket(ticket);
       setReplyMessage('');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load ticket.');
+      toast.error(err instanceof Error ? err.message : t('errors.loadTicket'));
     } finally {
       setDetailLoading(false);
       setActionLoading('');
@@ -84,11 +89,11 @@ export default function AdminSupportPage() {
   async function onReplyTicket(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedTicketId) {
-      toast.error('Select a ticket first.');
+      toast.error(t('errors.selectTicket'));
       return;
     }
     if (!replyMessage.trim()) {
-      toast.error('Reply message is required.');
+      toast.error(t('errors.replyRequired'));
       return;
     }
     setActionLoading('reply');
@@ -97,9 +102,9 @@ export default function AdminSupportPage() {
       setSelectedTicket(ticket);
       setTickets((current) => current.map((item) => (item.id === ticket.id ? ticket : item)));
       setReplyMessage('');
-      toast.success('Reply sent.');
+      toast.success(t('success.replySent'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to reply to ticket.');
+      toast.error(err instanceof Error ? err.message : t('errors.replyFailed'));
     } finally {
       setActionLoading('');
     }
@@ -107,7 +112,7 @@ export default function AdminSupportPage() {
 
   async function onUpdateStatus(nextStatus: SupportTicketStatus) {
     if (!selectedTicketId) {
-      toast.error('Select a ticket first.');
+      toast.error(t('errors.selectTicket'));
       return;
     }
     setActionLoading('status');
@@ -115,9 +120,9 @@ export default function AdminSupportPage() {
       const ticket = await updateSupportTicketStatus(selectedTicketId, { status: nextStatus });
       setSelectedTicket(ticket);
       setTickets((current) => current.map((item) => (item.id === ticket.id ? ticket : item)));
-      toast.success('Ticket status updated.');
+      toast.success(t('success.statusUpdated'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update ticket status.');
+      toast.error(err instanceof Error ? err.message : t('errors.statusFailed'));
     } finally {
       setActionLoading('');
     }
@@ -126,9 +131,9 @@ export default function AdminSupportPage() {
   return (
     <section className="space-y-5">
       <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
-        <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>Admin Support</p>
-        <h1 className={ADMIN_PAGE_HERO_TITLE_CLASS}>Support console</h1>
-        <p className={ADMIN_PAGE_HERO_SUBTITLE_CLASS}>Review customer tickets and reply from the support team.</p>
+        <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>{t('hero.eyebrow')}</p>
+        <h1 className={ADMIN_PAGE_HERO_TITLE_CLASS}>{t('hero.title')}</h1>
+        <p className={ADMIN_PAGE_HERO_SUBTITLE_CLASS}>{t('hero.subtitle')}</p>
       </header>
 
       <div className="grid gap-5 xl:grid-cols-[420px_1fr]">
@@ -145,7 +150,7 @@ export default function AdminSupportPage() {
                 type="text"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search by subject or customer email"
+                placeholder={t('search.placeholder')}
                 className="min-w-0 flex-1 rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
               />
               <button
@@ -153,7 +158,7 @@ export default function AdminSupportPage() {
                 disabled={loading}
                 className="rounded-xl border border-[#1f2d45] bg-[#1f2d45] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
               >
-                {loading ? 'Loading…' : 'Search'}
+                {loading ? t('search.loading') : t('search.button')}
               </button>
             </div>
             <select
@@ -161,10 +166,10 @@ export default function AdminSupportPage() {
               onChange={(event) => setStatusFilter(event.target.value as SupportTicketStatus | 'all')}
               className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#2a3d5f] outline-none focus:border-[#7ea6e7] sm:w-auto"
             >
-              <option value="all">All statuses</option>
+              <option value="all">{t('filter.allStatuses')}</option>
               {STATUS_OPTIONS.map((option) => (
                 <option key={option} value={option}>
-                  {formatSupportTicketStatus(option, 'admin')}
+                  {statusLabel(option)}
                 </option>
               ))}
             </select>
@@ -173,7 +178,7 @@ export default function AdminSupportPage() {
           <div className="mt-4 space-y-2">
             {!tickets.length ? (
               <p className="rounded-xl border border-[#dbe4f4] bg-[#f9fbff] px-4 py-3 text-sm text-[#607594]">
-                {loading ? 'Loading tickets…' : 'No support tickets found.'}
+                {loading ? t('list.loading') : t('list.empty')}
               </p>
             ) : (
               tickets.map((ticket) => (
@@ -192,10 +197,10 @@ export default function AdminSupportPage() {
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-[#1f2d45]">{ticket.subject}</p>
                       <p className="mt-1 truncate text-xs text-[#607594]">{ticket.customer_email}</p>
-                      <p className="mt-1 text-xs text-[#607594]">Updated {formatDate(ticket.last_message_at ?? ticket.updated_at)}</p>
+                      <p className="mt-1 text-xs text-[#607594]">{t('ticket.updated')} {formatDate(ticket.last_message_at ?? ticket.updated_at)}</p>
                     </div>
                     <span className="shrink-0 rounded-full border border-[#d4dced] bg-white px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5b6f91]">
-                      {formatSupportTicketStatus(ticket.status, 'admin')}
+                      {statusLabel(ticket.status)}
                     </span>
                   </div>
                 </button>
@@ -207,13 +212,13 @@ export default function AdminSupportPage() {
         <article className="rounded-2xl border border-[#e2e8f5] bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#eef2fa] pb-4">
             <div>
-              <h2 className="text-xl font-semibold text-[#243555]">Ticket detail</h2>
-              <p className="text-sm text-[#607594]">Reply and update status from here.</p>
+              <h2 className="text-xl font-semibold text-[#243555]">{t('detail.title')}</h2>
+              <p className="text-sm text-[#607594]">{t('detail.subtitle')}</p>
             </div>
             {selectedTicket ? (
               <div className="flex items-center gap-2">
                 <span className="rounded-full border border-[#d4dced] bg-[#f7f9fe] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#5b6f91]">
-                  {formatSupportTicketStatus(selectedTicket.status, 'admin')}
+                  {statusLabel(selectedTicket.status)}
                 </span>
                 <select
                   value={selectedTicket.status}
@@ -222,7 +227,7 @@ export default function AdminSupportPage() {
                 >
                   {STATUS_OPTIONS.map((option) => (
                     <option key={option} value={option}>
-                      {formatSupportTicketStatus(option, 'admin')}
+                      {statusLabel(option)}
                     </option>
                   ))}
                 </select>
@@ -232,7 +237,7 @@ export default function AdminSupportPage() {
 
           {!selectedTicket ? (
             <p className="mt-5 rounded-xl border border-[#dbe4f4] bg-[#f9fbff] px-4 py-3 text-sm text-[#607594]">
-              {detailLoading ? 'Loading ticket…' : 'Select a ticket to review the thread.'}
+              {detailLoading ? t('detail.loading') : t('detail.empty')}
             </p>
           ) : (
             <>
@@ -245,7 +250,7 @@ export default function AdminSupportPage() {
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3 text-xs text-[#607594]">
-                      <span className="font-semibold uppercase tracking-[0.16em]">{entry.sender_role}</span>
+                      <span className="font-semibold uppercase tracking-[0.16em]">{roleLabel(entry.sender_role)}</span>
                       <span>{formatDate(entry.created_at)}</span>
                     </div>
                     <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#243555]">{entry.body}</p>
@@ -255,13 +260,13 @@ export default function AdminSupportPage() {
 
               <form onSubmit={onReplyTicket} className="mt-6 space-y-3 border-t border-[#eef2fa] pt-4">
                 <label className="block space-y-2 text-sm">
-                  <span className="font-medium text-[#566b8d]">Reply</span>
+                  <span className="font-medium text-[#566b8d]">{t('reply.label')}</span>
                   <textarea
                     value={replyMessage}
                     onChange={(event) => setReplyMessage(event.target.value)}
                     rows={4}
                     className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
-                    placeholder="Respond to the customer here"
+                    placeholder={t('reply.placeholder')}
                   />
                 </label>
                 <button
@@ -269,7 +274,7 @@ export default function AdminSupportPage() {
                   disabled={actionLoading === 'reply'}
                   className="rounded-xl border border-[#1f2d45] bg-[#1f2d45] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
                 >
-                  {actionLoading === 'reply' ? 'Sending…' : 'Send reply'}
+                  {actionLoading === 'reply' ? t('reply.sending') : t('reply.send')}
                 </button>
               </form>
             </>

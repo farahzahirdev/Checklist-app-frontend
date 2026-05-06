@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { toast } from 'sonner';
 import { listAuditLogs, getAuditLogFilterOptions, type AuditLog, type ListAuditLogsParams, type AuditLogFilterOptions } from '@/lib/audit-logs';
+import { translate, useLocale } from '@/lib/i18n';
 import {
   ADMIN_PAGE_HERO_EYEBROW_CLASS,
   ADMIN_PAGE_HERO_HEADER_CLASS,
   ADMIN_PAGE_HERO_SUBTITLE_CLASS,
   ADMIN_PAGE_HERO_TITLE_CLASS,
 } from '@/app/(app)/admin/admin-page-title';
+import { adminLogsMessages } from '@/locales/admin-logs';
 
 const severityClass: Record<string, string> = {
   Info: 'bg-[#eaf2ff] text-[#3f74df]',
@@ -152,6 +154,8 @@ function CustomDropdown({
 }
 
 export default function AdminAuditLogsPage() {
+  const { locale } = useLocale();
+  const t = (key: string) => translate(adminLogsMessages, locale, key);
   const dateFromRef = useRef<HTMLInputElement | null>(null);
   const dateToRef = useRef<HTMLInputElement | null>(null);
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -193,7 +197,7 @@ export default function AdminAuditLogsPage() {
         const options = await getAuditLogFilterOptions();
         setFilterOptions(options);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Failed to load filter options');
+        toast.error(err instanceof Error ? err.message : t('errors.filterOptions'));
       } finally {
         setLoadingFilterOptions(false);
       }
@@ -210,7 +214,7 @@ export default function AdminAuditLogsPage() {
         setLogs(Array.isArray(response.logs) ? response.logs : []);
         setTotal(typeof response.total === 'number' ? response.total : 0);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Failed to load audit logs');
+        toast.error(err instanceof Error ? err.message : t('errors.loadLogs'));
       } finally {
         setLoading(false);
       }
@@ -221,7 +225,7 @@ export default function AdminAuditLogsPage() {
 
   function exportCurrentRowsCsv() {
     if (!logs.length) {
-      toast.error('No rows to export.');
+      toast.error(t('errors.noRowsExport'));
       return;
     }
     const header = ['id', 'actor', 'action', 'target', 'success', 'timestamp'];
@@ -261,31 +265,31 @@ export default function AdminAuditLogsPage() {
   return (
     <section className="space-y-4">
       <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
-        <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>Audit Logs</p>
-        <h1 className={ADMIN_PAGE_HERO_TITLE_CLASS}>Activity Audit Trail</h1>
-        <p className={ADMIN_PAGE_HERO_SUBTITLE_CLASS}>Security-sensitive actions and system events for compliance review.</p>
+        <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>{t('hero.eyebrow')}</p>
+        <h1 className={ADMIN_PAGE_HERO_TITLE_CLASS}>{t('hero.title')}</h1>
+        <p className={ADMIN_PAGE_HERO_SUBTITLE_CLASS}>{t('hero.subtitle')}</p>
       </header>
 
       <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ecf0f8] px-4 py-3">
-          <h2 className="text-xl font-semibold text-[#243555]">Recent Events</h2>
+          <h2 className="text-xl font-semibold text-[#243555]">{t('section.recentEvents')}</h2>
           <div className="flex items-center gap-2">
             <button type="button" onClick={exportCurrentRowsCsv} className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657]">
-              Download CSV
+              {t('actions.downloadCsv')}
             </button>
           </div>
         </div>
 
         <div className="grid gap-2 border-b border-[#ecf0f8] bg-[#f8fbff] px-4 py-3 md:grid-cols-5">
           <label className="space-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">Action</span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('filters.action')}</span>
             <CustomDropdown
               value={action}
               onChange={(value) => {
                 setAction(value);
                 setSkip(0);
               }}
-              placeholder="All actions"
+              placeholder={t('filters.actionAll')}
               disabled={loadingFilterOptions}
               groups={
                 filterOptions
@@ -298,36 +302,36 @@ export default function AdminAuditLogsPage() {
             />
           </label>
           <label className="space-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">Role</span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('filters.role')}</span>
             <CustomDropdown
               value={actorRole}
               onChange={(value) => {
                 setActorRole(value);
                 setSkip(0);
               }}
-              placeholder="All roles"
+              placeholder={t('filters.roleAll')}
               disabled={loadingFilterOptions}
               options={(filterOptions?.actor_roles ?? []).map((role) => ({ value: role.value, label: role.label }))}
             />
           </label>
           <label className="space-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">Result</span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('filters.result')}</span>
             <CustomDropdown
               value={successFilter}
               onChange={(value) => {
                 setSuccessFilter(value as 'all' | 'success' | 'failed');
                 setSkip(0);
               }}
-              placeholder="All status"
+              placeholder={t('filters.resultAll')}
               options={[
-                { value: 'all', label: 'All status' },
-                { value: 'success', label: 'Success only' },
-                { value: 'failed', label: 'Failed only' },
+                { value: 'all', label: t('filters.resultAll') },
+                { value: 'success', label: t('filters.resultSuccess') },
+                { value: 'failed', label: t('filters.resultFailed') },
               ]}
             />
           </label>
           <label className="space-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">From</span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('filters.from')}</span>
             <input
               ref={dateFromRef}
               type="date"
@@ -341,7 +345,7 @@ export default function AdminAuditLogsPage() {
             />
           </label>
           <label className="space-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">To</span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('filters.to')}</span>
             <input
               ref={dateToRef}
               type="date"
@@ -356,37 +360,37 @@ export default function AdminAuditLogsPage() {
           </label>
           <div className="md:col-span-5 flex flex-wrap items-end gap-2">
             <label className="space-y-1">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">Sort</span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('filters.sort')}</span>
               <CustomDropdown
                 value={orderDirection}
                 onChange={(value) => {
                   setOrderDirection(value as 'asc' | 'desc');
                   setSkip(0);
                 }}
-                placeholder="Newest first"
+                placeholder={t('filters.sortNewest')}
                 options={[
-                  { value: 'desc', label: 'Newest first' },
-                  { value: 'asc', label: 'Oldest first' },
+                  { value: 'desc', label: t('filters.sortNewest') },
+                  { value: 'asc', label: t('filters.sortOldest') },
                 ]}
               />
             </label>
             <label className="space-y-1">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">Rows</span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('filters.rows')}</span>
               <CustomDropdown
                 value={String(limit)}
                 onChange={(value) => {
                   setLimit(Number(value));
                   setSkip(0);
                 }}
-                placeholder="25 / page"
+                placeholder={t('filters.rows25')}
                 options={[
-                  { value: '25', label: '25 / page' },
-                  { value: '50', label: '50 / page' },
-                  { value: '100', label: '100 / page' },
+                  { value: '25', label: t('filters.rows25') },
+                  { value: '50', label: t('filters.rows50') },
+                  { value: '100', label: t('filters.rows100') },
                 ]}
               />
             </label>
-            <p className="ml-auto text-xs text-[#607594]">Total: {total}</p>
+            <p className="ml-auto text-xs text-[#607594]">{t('meta.total')}: {total}</p>
           </div>
         </div>
 
@@ -394,22 +398,22 @@ export default function AdminAuditLogsPage() {
           <table className="min-w-full text-left text-sm text-[#2b3e60]">
             <thead className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7a8ca8]">
               <tr className="border-b border-[#edf2f9]">
-                <th className="py-2 pr-4">Actor</th>
-                <th className="py-2 pr-4">Action</th>
-                <th className="py-2 pr-4">Target</th>
-                <th className="py-2 pr-4">Timestamp</th>
-                <th className="py-2">Severity</th>
+                <th className="py-2 pr-4">{t('table.actor')}</th>
+                <th className="py-2 pr-4">{t('table.action')}</th>
+                <th className="py-2 pr-4">{t('table.target')}</th>
+                <th className="py-2 pr-4">{t('table.timestamp')}</th>
+                <th className="py-2">{t('table.severity')}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-[#607594]">Loading audit logs...</td>
+                  <td colSpan={5} className="py-6 text-center text-[#607594]">{t('loading.table')}</td>
                 </tr>
               ) : null}
               {!loading && logs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-[#607594]">No audit logs found for the selected filters.</td>
+                  <td colSpan={5} className="py-6 text-center text-[#607594]">{t('empty.table')}</td>
                 </tr>
               ) : null}
               {logs.map((log) => {
@@ -424,7 +428,7 @@ export default function AdminAuditLogsPage() {
                   <td className="py-3 pr-4 text-[#5f7395]">{target}</td>
                   <td className="py-3 pr-4 text-[#5f7395]">{formatTimestamp(log.created_at)}</td>
                   <td className="py-3">
-                    <span className={`rounded-md px-2 py-1 text-xs font-semibold ${severityClass[severity]}`}>{severity}</span>
+                    <span className={`rounded-md px-2 py-1 text-xs font-semibold ${severityClass[severity]}`}>{t(`severity.${severity.toLowerCase()}`)}</span>
                   </td>
                 </tr>
               );
@@ -439,10 +443,12 @@ export default function AdminAuditLogsPage() {
             disabled={skip === 0 || loading}
             className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-50"
           >
-            Previous
+            {t('pager.previous')}
           </button>
           <p className="text-xs text-[#607594]">
-            Page {Math.min(currentPage, totalPages)} of {totalPages}
+            {t('pager.pageOf')
+              .replace('{page}', String(Math.min(currentPage, totalPages)))
+              .replace('{totalPages}', String(totalPages))}
           </p>
           <button
             type="button"
@@ -450,7 +456,7 @@ export default function AdminAuditLogsPage() {
             disabled={skip + limit >= total || loading}
             className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-50"
           >
-            Next
+            {t('pager.next')}
           </button>
         </div>
       </article>

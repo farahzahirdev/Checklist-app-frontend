@@ -11,6 +11,8 @@ import {
   type CustomerPaymentFilterOptions,
 } from '@/lib/customer-payments';
 import { formatStatusLabel } from '@/lib/status-format';
+import { translate, useLocale } from '@/lib/i18n';
+import { customerPaymentsMessages } from '@/locales/customer-payments';
 
 function formatDate(value?: string | null) {
   if (!value) return 'n/a';
@@ -33,6 +35,8 @@ const insightMeta = 'mt-1 text-sm text-[#c4d6f7]';
 const filterLabelClass = 'text-xs font-medium text-[#5f7395]';
 
 export default function PaymentsPage() {
+  const { locale } = useLocale();
+  const t = (key: string) => translate(customerPaymentsMessages, locale, key);
   const [analytics, setAnalytics] = useState<CustomerPaymentAnalyticsOverview | null>(null);
   const [recentPayments, setRecentPayments] = useState<CustomerPaymentRecord[]>([]);
   const [payments, setPayments] = useState<CustomerPaymentRecord[]>([]);
@@ -151,8 +155,8 @@ export default function PaymentsPage() {
     <section className="w-full min-w-0 space-y-8">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-medium text-[#5f7395]">Customer</p>
-            <h1 className="text-3xl font-semibold text-[#1f2d45]">Payments</h1>
+            <p className="text-xs font-medium text-[#5f7395]">{t('title.kicker')}</p>
+            <h1 className="text-3xl font-semibold text-[#1f2d45]">{t('title')}</h1>
           </div>
           <button
             type="button"
@@ -160,7 +164,7 @@ export default function PaymentsPage() {
             disabled={loading}
             className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff] disabled:opacity-60"
           >
-            {loading ? 'Refreshing...' : 'Refresh'}
+            {loading ? t('actions.refreshing') : t('actions.refresh')}
           </button>
         </header>
 
@@ -170,8 +174,8 @@ export default function PaymentsPage() {
 
         <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           <article className={insightCard}>
-            <p className={insightLabel}>Total spent</p>
-            <p className="mt-2 text-2xl font-semibold text-white">{totalSpent ?? (loading ? '...' : 'n/a')}</p>
+            <p className={insightLabel}>{t('kpi.totalSpent')}</p>
+            <p className="mt-2 text-2xl font-semibold text-white">{totalSpent ?? (loading ? '...' : t('labels.na'))}</p>
           </article>
 
           {latestChecklistPurchase?.checklist_title ? (
@@ -213,7 +217,7 @@ export default function PaymentsPage() {
 
         <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-[#1f2d45]">All payments</h2>
+          <h2 className="text-lg font-semibold text-[#1f2d45]">{t('section.allPayments')}</h2>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -221,7 +225,7 @@ export default function PaymentsPage() {
               disabled={paymentsLoading}
               className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff] disabled:opacity-60"
             >
-              {paymentsLoading ? 'Loading…' : 'Refresh list'}
+              {paymentsLoading ? t('actions.loading') : t('actions.refreshList')}
             </button>
           </div>
         </div>
@@ -229,14 +233,14 @@ export default function PaymentsPage() {
         <div className="rounded-xl border border-[#dbe4f4] bg-white p-4 shadow-sm">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
             <label className="space-y-1 text-sm xl:col-span-1">
-              <span className={filterLabelClass}>Status</span>
+              <span className={filterLabelClass}>{t('filters.status')}</span>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 disabled={loadingFilterOptions}
                 className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring disabled:opacity-50"
               >
-                <option value="">All statuses</option>
+                <option value="">{t('filters.allStatuses')}</option>
                 {filterOptions?.statuses.map((status) => (
                   <option key={status.value} value={status.value}>
                     {status.label}
@@ -245,16 +249,16 @@ export default function PaymentsPage() {
               </select>
             </label>
             <label className="space-y-1 text-sm xl:col-span-2">
-              <span className={filterLabelClass}>Search</span>
+              <span className={filterLabelClass}>{t('filters.search')}</span>
               <input
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
-                placeholder="Search by checklist title"
+                placeholder={t('filters.searchPlaceholder')}
                 className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
               />
             </label>
             <label className="space-y-1 text-sm xl:col-span-1">
-              <span className={filterLabelClass}>From date</span>
+              <span className={filterLabelClass}>{t('filters.fromDate')}</span>
               <input
                 type="date"
                 value={dateFromFilter}
@@ -263,7 +267,7 @@ export default function PaymentsPage() {
               />
             </label>
             <label className="space-y-1 text-sm xl:col-span-1">
-              <span className={filterLabelClass}>To date</span>
+              <span className={filterLabelClass}>{t('filters.toDate')}</span>
               <input
                 type="date"
                 value={dateToFilter}
@@ -279,7 +283,7 @@ export default function PaymentsPage() {
                   onChange={(e) => setActiveAccessOnly(e.target.checked)}
                   className="h-4 w-4 rounded border-[#b7c7e6]"
                 />
-                Show active access only
+                {t('filters.activeOnly')}
               </label>
             </div>
           </div>
@@ -287,30 +291,35 @@ export default function PaymentsPage() {
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <label className="flex items-center gap-2 text-sm text-[#2a3d5f]">
-                <span className={filterLabelClass}>Order by</span>
+                <span className={filterLabelClass}>{t('filters.orderBy')}</span>
                 <select
                   value={orderBy}
                   onChange={(e) => setOrderBy(e.target.value === 'paid_at' ? 'paid_at' : 'created_at')}
                   className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2 py-2 text-sm text-[#243555]"
                 >
-                  <option value="created_at">Record created</option>
-                  <option value="paid_at">Payment date</option>
+                  <option value="created_at">{t('filters.order.createdAt')}</option>
+                  <option value="paid_at">{t('filters.order.paidAt')}</option>
                 </select>
               </label>
               <label className="flex items-center gap-2 text-sm text-[#2a3d5f]">
-                <span className={filterLabelClass}>Sort by</span>
+                <span className={filterLabelClass}>{t('filters.sortBy')}</span>
                 <select
                   value={orderDirection}
                   onChange={(e) => setOrderDirection(e.target.value === 'asc' ? 'asc' : 'desc')}
                   className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-2 py-2 text-sm text-[#243555]"
                 >
-                  <option value="desc">Newest first</option>
-                  <option value="asc">Oldest first</option>
+                  <option value="desc">{t('filters.sort.newest')}</option>
+                  <option value="asc">{t('filters.sort.oldest')}</option>
                 </select>
               </label>
             </div>
             <p className="text-sm text-[#607594]">
-              {paymentsLoading ? 'Loading…' : `Showing ${pageStart}–${pageEnd} of ${paymentsTotal}`}
+              {paymentsLoading
+                ? t('actions.loading')
+                : t('meta.showing')
+                    .replace('{from}', String(pageStart))
+                    .replace('{to}', String(pageEnd))
+                    .replace('{total}', String(paymentsTotal))}
             </p>
           </div>
         </div>
@@ -321,8 +330,8 @@ export default function PaymentsPage() {
 
         <div className="overflow-hidden rounded-xl border border-[#dbe4f4] bg-white shadow-sm">
           <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-[#eef2fa] bg-[#f7f9fe] px-4 py-2 text-xs font-medium text-[#5f7395]">
-            <span>Payment</span>
-            <span className="text-right">Status</span>
+            <span>{t('table.payment')}</span>
+            <span className="text-right">{t('table.status')}</span>
           </div>
           <ul className="divide-y divide-[#eef2fa]">
             {(paymentsLoading ? [] : payments).map((item) => (
@@ -330,7 +339,7 @@ export default function PaymentsPage() {
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-[#1f2d45]">{item.checklist_title}</p>
                   <p className="mt-0.5 truncate text-xs text-[#607594]">
-                    {item.amount_formatted ?? `${item.amount_cents} ${item.currency}`} • Paid {formatDate(item.paid_at)} • Created{' '}
+                    {item.amount_formatted ?? `${item.amount_cents} ${item.currency}`} • {t('labels.paid')} {formatDate(item.paid_at)} • {t('labels.created')}{' '}
                     {formatDate(item.created_at)}
                   </p>
                 </div>
@@ -343,7 +352,7 @@ export default function PaymentsPage() {
               <li className="px-4 py-4 text-sm text-[#607594]">Loading payments…</li>
             ) : null}
             {!paymentsLoading && !payments.length ? (
-              <li className="px-4 py-4 text-sm text-[#607594]">No payments match these filters.</li>
+              <li className="px-4 py-4 text-sm text-[#607594]">{t('empty.noPaymentsMatch')}</li>
             ) : null}
           </ul>
         </div>
@@ -355,7 +364,7 @@ export default function PaymentsPage() {
             onClick={() => setSkip((prev) => Math.max(0, prev - limit))}
             className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff] disabled:opacity-60"
           >
-            Previous
+            {t('pager.previous')}
           </button>
           <button
             type="button"
@@ -363,23 +372,23 @@ export default function PaymentsPage() {
             onClick={() => setSkip((prev) => prev + limit)}
             className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff] disabled:opacity-60"
           >
-            Next
+            {t('pager.next')}
           </button>
         </div>
 
         <div className="border-t border-[#dbe4f4] pt-8">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-[#1f2d45]">Recent payments</h2>
+            <h2 className="text-lg font-semibold text-[#1f2d45]">{t('section.recentPayments')}</h2>
           </div>
           {!recentPayments.length ? (
             <p className="mt-3 rounded-xl border border-[#dbe4f4] bg-white p-4 text-sm text-[#607594] shadow-sm">
-              {loading ? 'Loading payments…' : 'No payments found yet.'}
+              {loading ? 'Loading payments…' : t('empty.noRecent')}
             </p>
           ) : (
             <div className="mt-3 overflow-hidden rounded-xl border border-[#dbe4f4] bg-white shadow-sm">
               <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-[#eef2fa] bg-[#f7f9fe] px-4 py-2 text-xs font-medium text-[#5f7395]">
-                <span>Payment</span>
-                <span className="text-right">Status</span>
+                <span>{t('table.payment')}</span>
+                <span className="text-right">{t('table.status')}</span>
               </div>
               <ul className="divide-y divide-[#eef2fa]">
                 {recentPayments.map((item) => (

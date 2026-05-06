@@ -1,0 +1,43 @@
+import type { TranslationMessages } from '@/lib/i18n';
+
+export const publicFooterMessages: TranslationMessages = {
+  en: {
+    'brand.name': 'AuditReady',
+    'brand.tagline': 'The smart way to prepare for cybersecurity audits. Clear. Secure. Effective.',
+    'social.linkedin': 'LinkedIn',
+    'social.x': 'X',
+    'social.email': 'Email',
+    'nav.title': 'Navigate',
+    'nav.products': 'Products',
+    'nav.faq': 'FAQ',
+    'nav.contact': 'Contact',
+    'nav.productDetails': 'Product Details',
+    'legal.title': 'Legal',
+    'legal.privacyPolicy': 'Privacy Policy',
+    'legal.cookies': 'Cookies',
+    'legal.termsOfService': 'Terms of Service',
+    'rights': '© 2025 AuditReady. All rights reserved.',
+    'closing.line1': 'Built for security.',
+    'closing.line2': 'Designed for clarity.',
+  },
+  cs: {
+    'brand.name': 'AuditReady',
+    'brand.tagline': 'Chytrý způsob, jak se připravit na kybernetické audity. Jasně. Bezpečně. Efektivně.',
+    'social.linkedin': 'LinkedIn',
+    'social.x': 'X',
+    'social.email': 'E-mail',
+    'nav.title': 'Nabídka',
+    'nav.products': 'Nabídka',
+    'nav.faq': 'FAQ',
+    'nav.contact': 'Kontakt',
+    'nav.productDetails': 'Detail produktu',
+    'legal.title': 'Právní informace',
+    'legal.privacyPolicy': 'Zásady ochrany soukromí',
+    'legal.cookies': 'Cookies',
+    'legal.termsOfService': 'Obchodní podmínky',
+    'rights': '© 2025 AuditReady. Všechna práva vyhrazena.',
+    'closing.line1': 'Vytvořeno pro bezpečnost.',
+    'closing.line2': 'Navrženo pro přehlednost.',
+  },
+};
+

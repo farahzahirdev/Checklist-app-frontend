@@ -5,18 +5,20 @@ import { useSearchParams } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { createStripeCheckoutSession, getUserPaymentStatus } from '@/lib/payments';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
+import { translate, useLocale } from '@/lib/i18n';
+import { customerPaymentMessages } from '@/locales/customer-payment';
 
 const LATEST_PAYMENT_ID_STORAGE_KEY = 'checklist_latest_payment_id';
 const CHECKOUT_CHECKLIST_ID_STORAGE_KEY = 'checklist_checkout_selected_id';
 
-function formatCheckoutError(err: unknown): string {
+function formatCheckoutError(err: unknown, t: (key: string) => string): string {
   const rawMessage = err instanceof Error ? err.message : '';
   if (!rawMessage) {
-    return 'Unable to start checkout. Please try again.';
+    return t('errors.startCheckout');
   }
 
   if (/failed to fetch/i.test(rawMessage) || /networkerror/i.test(rawMessage)) {
-    return 'Unable to reach payment service right now. Please check your connection and try again.';
+    return t('errors.reachPayment');
   }
 
   return rawMessage;
@@ -24,6 +26,8 @@ function formatCheckoutError(err: unknown): string {
 
 export default function PaymentPage() {
   const searchParams = useSearchParams();
+  const { locale } = useLocale();
+  const t = (key: string) => translate(customerPaymentMessages, locale, key);
   const [loading, setLoading] = useState(false);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [error, setError] = useState('');
@@ -52,7 +56,7 @@ export default function PaymentPage() {
         if (!mounted) {
           return;
         }
-        setError(err instanceof Error ? err.message : 'Failed to load checkout details.');
+        setError(err instanceof Error ? err.message : t('errors.loadCheckout'));
       } finally {
         if (mounted) {
           setCatalogLoading(false);
@@ -68,7 +72,7 @@ export default function PaymentPage() {
 
   async function beginCheckout() {
     if (!selectedChecklistId) {
-      setError('Please select a checklist.');
+      setError(t('errors.selectChecklist'));
       return;
     }
     setError('');
@@ -86,7 +90,7 @@ export default function PaymentPage() {
       }
       window.location.assign(checkoutUrl.checkoutUrl);
     } catch (err) {
-      setError(formatCheckoutError(err));
+      setError(formatCheckoutError(err, t));
       setLoading(false);
     }
   }
@@ -96,36 +100,44 @@ export default function PaymentPage() {
   return (
     <section className="flex min-h-[70vh] w-full flex-col justify-start space-y-6 px-1 pt-1 text-[#1f2d45]">
       <header className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">Customer</p>
-        <h1 className="text-3xl font-semibold text-[#1f2d45]">Select checklist to purchase</h1>
-        <p className="text-sm text-[#4f6281]">Choose a checklist first, then proceed to Stripe checkout.</p>
+        <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">{t('title.kicker')}</p>
+        <h1 className="text-3xl font-semibold text-[#1f2d45]">{t('title')}</h1>
+        <p className="text-sm text-[#4f6281]">{t('subtitle')}</p>
       </header>
 
       <article className="rounded-2xl border border-[#13305c] bg-[linear-gradient(140deg,#071733_0%,#0c2144_50%,#13356d_100%)] p-6 text-sm text-[#d8e6ff] shadow-[0_10px_30px_rgba(6,20,47,0.25)]">
-        {catalogLoading ? <p>Loading available checklists...</p> : null}
+        {catalogLoading ? <p>{t('loading.catalog')}</p> : null}
         {checkoutCancelled ? (
-          <p className="text-amber-200">Checkout was cancelled. You can try again below.</p>
+          <p className="text-amber-200">{t('checkout.cancelled')}</p>
         ) : null}
         {error ? <p className="mt-2 text-rose-300">{error}</p> : null}
         {!catalogLoading ? (
           <div className="mt-4 flex flex-col gap-3">
             {checklists.length ? (
               <div className="space-y-2">
-                <span className="text-xs uppercase tracking-[0.2em] text-[#9db8e6]">Checklist to purchase</span>
+                <span className="text-xs uppercase tracking-[0.2em] text-[#9db8e6]">{t('section.checklists')}</span>
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {checklists.map((checklist) => {
                     const isSelected = selectedChecklistId === checklist.id;
                     const priceLabel = checklist.pricing
                       ? `${(checklist.pricing.amount_cents / 100).toFixed(2)} ${checklist.pricing.currency.toUpperCase()}`
-                      : 'Price unavailable';
+                      : t('labels.priceUnavailable');
                     const description =
-                      checklist.checklist_type?.description?.trim() || checklist.warning?.trim() || 'No description available.';
-                    const typeLabel = checklist.checklist_type?.name || checklist.checklist_type?.code || 'Checklist type';
+                      checklist.checklist_type?.description?.trim() || checklist.warning?.trim() || t('labels.noDescription');
+                    const typeLabel = checklist.checklist_type?.name || checklist.checklist_type?.code || t('labels.checklistType');
                     return (
-                      <button
+                      <div
                         key={checklist.id}
-                        type="button"
                         onClick={() => setSelectedChecklistId(checklist.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setSelectedChecklistId(checklist.id);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={isSelected}
                         className={`group relative overflow-hidden rounded-2xl border p-0 text-left transition-all duration-300 ${
                           isSelected
                             ? 'border-[#9fc2ff] bg-[linear-gradient(145deg,#143566_0%,#1b4a86_48%,#2a67b0_100%)] text-white ring-2 ring-[#a9c8ff]/70 shadow-[0_18px_32px_rgba(10,30,63,0.55)]'
@@ -142,21 +154,21 @@ export default function PaymentPage() {
                             </span>
                             {isSelected ? (
                               <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-[#b8d3ff] bg-[#0b2144]/70 px-1 text-[10px] font-semibold text-[#d6e5ff]">
-                                Selected
+                                {t('labels.selected')}
                               </span>
                             ) : null}
                           </div>
 
                           <p className="mt-3 text-base font-semibold leading-tight text-white">{checklist.title}</p>
                           <p className="mt-1.5 text-xs text-[#c9dcff]">
-                            {checklist.version ? `Version ${checklist.version}` : 'Latest version'}
+                            {checklist.version ? t('labels.version').replace('{version}', checklist.version) : t('labels.latestVersion')}
                           </p>
 
                           <p className="mt-3 min-h-[3rem] line-clamp-2 text-xs leading-relaxed text-[#d5e4ff]">{description}</p>
 
                           <div className="mt-4 flex items-end justify-between gap-2">
                             <div>
-                              <p className="text-[10px] uppercase tracking-[0.2em] text-[#b8cff6]">Price</p>
+                              <p className="text-[10px] uppercase tracking-[0.2em] text-[#b8cff6]">{t('labels.price')}</p>
                               <p className="text-xl font-semibold tracking-tight text-white">{priceLabel}</p>
                             </div>
                             <span
@@ -166,28 +178,37 @@ export default function PaymentPage() {
                                   : 'border border-white/20 bg-white/10 text-[#d8e6ff] group-hover:bg-white/20'
                               }`}
                             >
-                              {isSelected ? 'Ready to checkout' : 'Choose plan'}
+                              {isSelected ? t('actions.ready') : t('actions.choosePlan')}
                             </span>
                           </div>
 
+                          {isSelected ? (
+                            <div className="mt-4">
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  void beginCheckout();
+                                }}
+                                disabled={loading}
+                                className="w-full rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-white/15 disabled:opacity-60"
+                              >
+                                {loading ? t('actions.redirecting') : t('actions.proceed')}
+                              </button>
+                            </div>
+                          ) : null}
+
                           {checklist.warning ? <p className="mt-3 text-xs text-amber-200">{checklist.warning}</p> : null}
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
               </div>
             ) : (
-              <p className="text-amber-200">No purchasable checklists are currently available.</p>
+              <p className="text-amber-200">{t('empty.noneAvailable')}</p>
             )}
-            <button
-              type="button"
-              onClick={() => void beginCheckout()}
-              disabled={loading || !selectedChecklistId}
-              className="self-start rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-white hover:bg-[#223657] disabled:opacity-60"
-            >
-              {loading ? 'Redirecting...' : 'Proceed to checkout'}
-            </button>
           </div>
         ) : null}
       </article>

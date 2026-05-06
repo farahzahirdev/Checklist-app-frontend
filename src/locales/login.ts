@@ -24,7 +24,5 @@ export const loginMessages: TranslationMessages = {
     'form.newHere': 'New here?',
     'form.createAccount': 'Create an account',
   },
-  es: {},
-  fr: {},
-  de: {},
+  cs: {},
 };

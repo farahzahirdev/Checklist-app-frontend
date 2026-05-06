@@ -23,6 +23,8 @@ import {
 import type { Checklist } from '@/lib/checklist-types';
 import { useAdminAccess } from '@/lib/admin-access';
 import { ADMIN_PAGE_TITLE_CLASS } from '@/app/(app)/admin/admin-page-title';
+import { translate, useLocale } from '@/lib/i18n';
+import { adminChecklistsMessages } from '@/locales/admin-checklists';
 
 type ChecklistStatus = 'draft' | 'published';
 
@@ -90,6 +92,8 @@ function getColumnBadge(
 export default function ChecklistPanelListPage() {
   const router = useRouter();
   const { isReadOnly } = useAdminAccess();
+  const { locale } = useLocale();
+  const t = (key: string) => translate(adminChecklistsMessages, locale, key);
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | ChecklistStatus>('all');
@@ -149,7 +153,7 @@ export default function ChecklistPanelListPage() {
 
   useEffect(() => {
     void loadChecklists();
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -198,22 +202,22 @@ export default function ChecklistPanelListPage() {
 
   function getFriendlyStripeStatus(priceStatus?: string | null) {
     if (!priceStatus) {
-      return { label: 'Stripe status unknown', className: 'bg-[#3a4f73] text-[#d8e6ff]' };
+      return { label: t('stripe.unknown'), className: 'bg-[#3a4f73] text-[#d8e6ff]' };
     }
     const normalized = priceStatus.toLowerCase();
     if (normalized === 'active' || normalized === 'available') {
-      return { label: 'Price available', className: 'bg-[#1f5b3d] text-[#9bf5be]' };
+      return { label: t('stripe.available'), className: 'bg-[#1f5b3d] text-[#9bf5be]' };
     }
     if (normalized === 'not_set' || normalized === 'missing' || normalized === 'not_available') {
-      return { label: 'Price needed', className: 'bg-[#5f3d1f] text-[#ffd8a0]' };
+      return { label: t('stripe.needed'), className: 'bg-[#5f3d1f] text-[#ffd8a0]' };
     }
     if (normalized === 'below_minimum') {
-      return { label: 'Price invalid', className: 'bg-[#6a1f2c] text-[#ffd5dd]' };
+      return { label: t('stripe.invalid'), className: 'bg-[#6a1f2c] text-[#ffd5dd]' };
     }
     if (normalized === 'archived' || normalized === 'inactive') {
-      return { label: 'Price inactive', className: 'bg-[#4a3a62] text-[#e0ccff]' };
+      return { label: t('stripe.inactive'), className: 'bg-[#4a3a62] text-[#e0ccff]' };
     }
-    return { label: 'Price status pending', className: 'bg-[#3a4f73] text-[#d8e6ff]' };
+    return { label: t('stripe.pending'), className: 'bg-[#3a4f73] text-[#d8e6ff]' };
   }
 
   function openCreateChecklistModal() {
@@ -563,7 +567,7 @@ export default function ChecklistPanelListPage() {
       <div className="w-full px-6 py-6">
         <header className="mb-5 flex items-center justify-between">
           <div>
-            <h1 className={ADMIN_PAGE_TITLE_CLASS}>Checklists</h1>
+            <h1 className={ADMIN_PAGE_TITLE_CLASS}>{t('title')}</h1>
           </div>
           {!isReadOnly ? (
             <div className="flex items-center gap-2">
@@ -572,7 +576,7 @@ export default function ChecklistPanelListPage() {
                 onClick={() => void openBulkImportModal()}
                 className="rounded-lg border border-[#2d4f83] bg-[#10284f] px-3 py-2 text-xs font-semibold text-white hover:bg-[#16345f]"
               >
-                Import CSV/Excel
+                {t('actions.import')}
               </button>
               <button
                 type="button"
@@ -580,7 +584,7 @@ export default function ChecklistPanelListPage() {
                 disabled={actionLoading === 'create'}
                 className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657]"
               >
-                {actionLoading === 'create' ? 'Creating...' : '+ New checklist'}
+                {actionLoading === 'create' ? t('actions.creating') : t('actions.new')}
               </button>
             </div>
           ) : null}
@@ -588,19 +592,19 @@ export default function ChecklistPanelListPage() {
 
         <div className="mb-5 grid gap-3 md:grid-cols-4">
           <div className="rounded-2xl border border-[#13305c] bg-[linear-gradient(140deg,#071733_0%,#0c2144_50%,#13356d_100%)] p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.14em] text-[#9db8e6]">Total checklists</p>
+            <p className="text-xs uppercase tracking-[0.14em] text-[#9db8e6]">{t('kpi.total')}</p>
             <p className="mt-2 text-2xl font-semibold text-white">{checklists.length}</p>
           </div>
           <div className="rounded-2xl border border-[#13305c] bg-[linear-gradient(140deg,#071733_0%,#0c2144_50%,#13356d_100%)] p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.14em] text-[#9db8e6]">Published</p>
+            <p className="text-xs uppercase tracking-[0.14em] text-[#9db8e6]">{t('kpi.published')}</p>
             <p className="mt-2 text-2xl font-semibold text-[#7cf0aa]">{publishedCount}</p>
           </div>
           <div className="rounded-2xl border border-[#13305c] bg-[linear-gradient(140deg,#071733_0%,#0c2144_50%,#13356d_100%)] p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.14em] text-[#9db8e6]">Drafts</p>
+            <p className="text-xs uppercase tracking-[0.14em] text-[#9db8e6]">{t('kpi.drafts')}</p>
             <p className="mt-2 text-2xl font-semibold text-[#a9c7ff]">{draftCount}</p>
           </div>
           <div className="rounded-2xl border border-[#13305c] bg-[linear-gradient(140deg,#071733_0%,#0c2144_50%,#13356d_100%)] p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.14em] text-[#9db8e6]">Published ratio</p>
+            <p className="text-xs uppercase tracking-[0.14em] text-[#9db8e6]">{t('kpi.publishedRatio')}</p>
             <p className="mt-2 text-2xl font-semibold text-white">
               {checklists.length ? `${Math.round((publishedCount / checklists.length) * 100)}%` : '0%'}
             </p>
@@ -611,7 +615,7 @@ export default function ChecklistPanelListPage() {
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search checklists..."
+            placeholder={t('search.placeholder')}
             className="min-w-[280px] flex-1 rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
           />
           <div className="flex rounded-xl border border-[#d4dced] bg-[linear-gradient(130deg,#ffffff_0%,#f2f7ff_100%)] p-1">
@@ -624,15 +628,15 @@ export default function ChecklistPanelListPage() {
                   filter === value ? 'bg-[#182843] text-white' : 'text-[#5f7395] hover:bg-[#edf4ff]'
                 }`}
               >
-                {value}
+                {t(`filters.${value}`)}
               </button>
             ))}
           </div>
           <div className="flex rounded-xl border border-[#d4dced] bg-[linear-gradient(130deg,#ffffff_0%,#f2f7ff_100%)] p-1">
             {([
-              { id: 'all', label: 'All prices' },
-              { id: 'set', label: 'Price set' },
-              { id: 'not_set', label: 'Price needed' },
+              { id: 'all', label: t('priceFilters.all') },
+              { id: 'set', label: t('priceFilters.set') },
+              { id: 'not_set', label: t('priceFilters.needed') },
             ] as const).map((option) => (
               <button
                 key={option.id}
@@ -675,7 +679,7 @@ export default function ChecklistPanelListPage() {
                           type="button"
                           onClick={() => setOpenCardMenuId((prev) => (prev === item.id ? null : item.id))}
                           className="rounded-md border border-[#2d4f83] bg-[#10284f] px-2 py-1 text-xs font-semibold text-[#dce8ff] hover:bg-[#16345f]"
-                          aria-label="Checklist options"
+                          aria-label={t('menu.aria')}
                         >
                           ...
                         </button>
@@ -687,7 +691,7 @@ export default function ChecklistPanelListPage() {
                             onClick={() => openEditModal(item)}
                             className="w-full rounded-md px-3 py-1.5 text-left text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff]"
                           >
-                            Edit
+                            {t('actions.edit')}
                           </button>
                           <button
                             type="button"
@@ -697,17 +701,17 @@ export default function ChecklistPanelListPage() {
                             }}
                             className="w-full rounded-md px-3 py-1.5 text-left text-xs font-semibold text-[#a73a46] hover:bg-[#fff1f3]"
                           >
-                            Delete
+                            {t('actions.delete')}
                           </button>
                         </div>
                       ) : null}
                     </div>
                   </div>
                   <p className="mb-3 text-xs text-[#9db8e6]">{item.lawDecree}</p>
-                  <p className="mb-4 text-sm text-[#d8e6ff]">Version: {item.version}</p>
+                  <p className="mb-4 text-sm text-[#d8e6ff]">{t('labels.version')}: {item.version}</p>
                   {item.stripeInfo?.priceAvailable && item.stripeInfo.priceAmountCents !== null && item.stripeInfo.priceCurrency ? (
                     <p className="mb-2 text-xs text-[#cfe3ff]">
-                      Price: {(item.stripeInfo.priceAmountCents / 100).toFixed(2)} {item.stripeInfo.priceCurrency.toUpperCase()}
+                      {t('labels.price')}: {(item.stripeInfo.priceAmountCents / 100).toFixed(2)} {item.stripeInfo.priceCurrency.toUpperCase()}
                     </p>
                   ) : null}
                   {item.warning ? <p className="mb-3 text-xs text-amber-200">{item.warning}</p> : null}
@@ -717,7 +721,7 @@ export default function ChecklistPanelListPage() {
                       onClick={() => router.push(`/admin/checklists/${item.id}`)}
                       className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657]"
                     >
-                      Open panel
+                      {t('actions.openPanel')}
                     </button>
                     {!isReadOnly && item.status === 'draft' ? (
                       <button
@@ -725,9 +729,9 @@ export default function ChecklistPanelListPage() {
                         onClick={() => void handlePublish(item.id)}
                         disabled={actionLoading === 'publish' && activeChecklistId === item.id}
                         className="rounded-lg border border-[#2d4f83] bg-[#10284f] px-3 py-2 text-xs font-semibold text-[#9bf5be] hover:bg-[#16345f] disabled:opacity-60"
-                        title={item.stripeInfo?.priceAvailable ? 'Publish checklist' : 'Click to see price requirements'}
+                        title={item.stripeInfo?.priceAvailable ? t('tooltip.publishReady') : t('tooltip.publishNeedsPrice')}
                       >
-                        {actionLoading === 'publish' && activeChecklistId === item.id ? 'Publishing...' : 'Publish'}
+                        {actionLoading === 'publish' && activeChecklistId === item.id ? t('actions.publishing') : t('actions.publish')}
                       </button>
                     ) : null}
                   </div>
@@ -736,15 +740,15 @@ export default function ChecklistPanelListPage() {
             </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-[#cad5ea] bg-[linear-gradient(160deg,#ffffff_0%,#f3f7ff_100%)] p-10 text-center shadow-sm">
-              <p className="text-base font-semibold text-[#25375a]">No checklists found</p>
-              <p className="mt-1 text-sm text-[#607594]">Try a different search or filter.</p>
+              <p className="text-base font-semibold text-[#25375a]">{t('empty.noneTitle')}</p>
+              <p className="mt-1 text-sm text-[#607594]">{t('empty.noneBody')}</p>
             </div>
           )}
           {loading ? (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/65 backdrop-blur-[1px]">
               <div className="flex items-center gap-3 rounded-xl border border-[#dbe4f4] bg-white px-4 py-3 shadow-sm">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#2d4f83] border-t-transparent" />
-                <span className="text-sm font-medium text-[#1f2d45]">Loading checklists...</span>
+                <span className="text-sm font-medium text-[#1f2d45]">{t('loading.overlay')}</span>
               </div>
             </div>
           ) : null}
@@ -787,9 +791,9 @@ export default function ChecklistPanelListPage() {
         {!isReadOnly && confirmDeleteChecklistId ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4">
             <div className="w-full max-w-md rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl">
-              <h2 className="text-lg font-semibold text-[#1f2d45]">Delete checklist?</h2>
+              <h2 className="text-lg font-semibold text-[#1f2d45]">{t('modal.delete.title')}</h2>
               <p className="mt-2 text-sm text-[#607594]">
-                This action cannot be undone. Are you sure you want to delete this checklist?
+                {t('modal.delete.body')}
               </p>
               <div className="mt-5 flex items-center justify-end gap-2">
                 <button
@@ -798,7 +802,7 @@ export default function ChecklistPanelListPage() {
                   disabled={actionLoading === 'delete'}
                   className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-sm font-semibold text-[#3e69b0] hover:bg-[#edf4ff] disabled:opacity-60"
                 >
-                  Cancel
+                  {t('actions.cancel')}
                 </button>
                 <button
                   type="button"
@@ -806,7 +810,7 @@ export default function ChecklistPanelListPage() {
                   disabled={actionLoading === 'delete'}
                   className="rounded-lg border border-[#d45f6b] bg-[#fff1f3] px-3 py-1.5 text-sm font-semibold text-[#a73a46] disabled:opacity-60"
                 >
-                  {actionLoading === 'delete' ? 'Deleting...' : 'Confirm delete'}
+                  {actionLoading === 'delete' ? t('actions.deleting') : t('actions.confirmDelete')}
                 </button>
               </div>
             </div>
@@ -816,25 +820,25 @@ export default function ChecklistPanelListPage() {
         {!isReadOnly && isCreateChecklistModalOpen ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4">
             <div className="w-full max-w-lg rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl">
-              <h2 className="text-lg font-semibold text-[#1f2d45]">New checklist</h2>
-              <p className="mt-1 text-sm text-[#607594]">Fill checklist details before creating.</p>
+              <h2 className="text-lg font-semibold text-[#1f2d45]">{t('modal.new.title')}</h2>
+              <p className="mt-1 text-sm text-[#607594]">{t('modal.new.subtitle')}</p>
               <div className="mt-4 space-y-3">
                 <label className="block space-y-2 text-sm text-[#3b4d6c]">
-                  <span className="font-medium">Title *</span>
+                  <span className="font-medium">{t('form.title')}</span>
                   <input
                     value={createTitle}
                     onChange={(event) => setCreateTitle(event.target.value)}
                     className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2"
-                    placeholder="Checklist title"
+                    placeholder={t('form.titlePlaceholder')}
                   />
                 </label>
                 <label className="block space-y-2 text-sm text-[#3b4d6c]">
-                  <span className="font-medium">Law decree *</span>
+                  <span className="font-medium">{t('form.lawDecree')}</span>
                   <input
                     value={createLawDecree}
                     onChange={(event) => setCreateLawDecree(event.target.value)}
                     className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2"
-                    placeholder="Law decree"
+                    placeholder={t('form.lawDecreePlaceholder')}
                   />
                 </label>
                               </div>
@@ -845,7 +849,7 @@ export default function ChecklistPanelListPage() {
                   disabled={actionLoading === 'create'}
                   className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-sm font-semibold text-[#3e69b0] hover:bg-[#edf4ff] disabled:opacity-60"
                 >
-                  Cancel
+                  {t('actions.cancel')}
                 </button>
                 <button
                   type="button"
@@ -853,7 +857,7 @@ export default function ChecklistPanelListPage() {
                   disabled={actionLoading === 'create'}
                   className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
                 >
-                  {actionLoading === 'create' ? 'Creating...' : 'Create checklist'}
+                  {actionLoading === 'create' ? t('actions.creating') : t('actions.createChecklist')}
                 </button>
               </div>
             </div>
@@ -863,11 +867,11 @@ export default function ChecklistPanelListPage() {
         {!isReadOnly && editChecklistId ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4">
             <div className="w-full max-w-lg rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl">
-              <h2 className="text-lg font-semibold text-[#1f2d45]">Edit checklist</h2>
-              <p className="mt-1 text-sm text-[#607594]">Update checklist metadata.</p>
+              <h2 className="text-lg font-semibold text-[#1f2d45]">{t('modal.edit.title')}</h2>
+              <p className="mt-1 text-sm text-[#607594]">{t('modal.edit.subtitle')}</p>
               <div className="mt-4 space-y-3">
                 <label className="block space-y-2 text-sm text-[#3b4d6c]">
-                  <span className="font-medium">Title *</span>
+                  <span className="font-medium">{t('form.title')}</span>
                   <input
                     value={editTitle}
                     onChange={(event) => setEditTitle(event.target.value)}
@@ -875,7 +879,7 @@ export default function ChecklistPanelListPage() {
                   />
                 </label>
                 <label className="block space-y-2 text-sm text-[#3b4d6c]">
-                  <span className="font-medium">Law decree *</span>
+                  <span className="font-medium">{t('form.lawDecree')}</span>
                   <input
                     value={editLawDecree}
                     onChange={(event) => setEditLawDecree(event.target.value)}
@@ -883,7 +887,7 @@ export default function ChecklistPanelListPage() {
                   />
                 </label>
                 <label className="block space-y-2 text-sm text-[#3b4d6c]">
-                  <span className="font-medium">Status *</span>
+                  <span className="font-medium">{t('form.status')}</span>
                   <select
                     value={editStatus}
                     onChange={(event) => setEditStatus(event.target.value as 'draft' | 'published')}
@@ -901,7 +905,7 @@ export default function ChecklistPanelListPage() {
                   disabled={editLoading}
                   className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-sm font-semibold text-[#3e69b0] hover:bg-[#edf4ff] disabled:opacity-60"
                 >
-                  Cancel
+                  {t('actions.cancel')}
                 </button>
                 <button
                   type="button"
@@ -909,7 +913,7 @@ export default function ChecklistPanelListPage() {
                   disabled={editLoading}
                   className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
                 >
-                  {editLoading ? 'Saving...' : 'Save changes'}
+                  {editLoading ? t('actions.saving') : t('actions.saveChanges')}
                 </button>
               </div>
             </div>

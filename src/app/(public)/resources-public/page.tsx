@@ -128,7 +128,7 @@ export default function ResourcesPage() {
           <div className="mt-5 grid items-center gap-7 lg:grid-cols-[1.02fr_0.98fr]">
             <div className="space-y-5">
               <span className="public-eyebrow inline-flex rounded-full bg-[#dfe8ff] px-4 py-1.5 text-[#5278be] motion-safe:animate-fade-in motion-safe:delay-75">
-                Audit
+                {t('hero.badge')}
               </span>
 
               <div className="flex items-start gap-4 motion-safe:animate-fade-in-up motion-safe:delay-100">
@@ -139,14 +139,14 @@ export default function ResourcesPage() {
                   </svg>
                 </span>
                 <h1 className="public-hero-title text-[#1a2440]">
-                  Audit Readiness
+                  {t('hero.title.line1')}
                   <br />
-                  Checklist
+                  {t('hero.title.line2')}
                 </h1>
               </div>
 
               <p className="public-hero-subtitle max-w-2xl text-[#4f6282] motion-safe:animate-fade-in-up motion-safe:delay-150">
-                Prepare for audits with <span className="font-semibold text-[#3864ad]">confidence</span>. Simplify complex compliance requirements into clear, actionable steps. Find gaps, upload evidence, and get a reviewed report to prove your readiness.
+                {t('hero.subtitle')}
               </p>
 
               <div className="flex flex-wrap gap-3 motion-safe:animate-fade-in-up motion-safe:delay-200">
@@ -154,14 +154,14 @@ export default function ResourcesPage() {
                   href="/register"
                   className="inline-flex items-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-7 py-3 text-2xl font-semibold text-white transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform"
                 >
-                  Get Access
+                  {t('hero.getAccess')}
                   <ArrowRightIcon />
                 </a>
                 <Link
                   href="/products/audit-readiness-checklist"
                   className="inline-flex items-center gap-2 rounded-xl border border-[#b5c7e7] bg-white/85 px-7 py-3 text-2xl font-semibold text-[#334a72] transition-colors duration-200 hover:bg-white active:scale-[0.98] motion-safe:active:transition-transform"
                 >
-                  View Product
+                  {t('hero.viewProduct')}
                   <ArrowRightIcon />
                 </Link>
               </div>
@@ -172,8 +172,8 @@ export default function ResourcesPage() {
                     <IconByName name="shield" className="h-5 w-5" />
                   </span>
                   <div>
-                    <p className="text-lg font-semibold">Secure & Private</p>
-                    <p className="text-sm text-[#627796]">Your data stays protected</p>
+                    <p className="text-lg font-semibold">{t('hero.highlight1.title')}</p>
+                    <p className="text-sm text-[#627796]">{t('hero.highlight1.body')}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2 text-[#3f5375] motion-safe:transition-transform motion-safe:hover:-translate-y-0.5">
@@ -181,8 +181,8 @@ export default function ResourcesPage() {
                     <IconByName name="clipboard-check" className="h-5 w-5" />
                   </span>
                   <div>
-                    <p className="text-lg font-semibold">Expert Review</p>
-                    <p className="text-sm text-[#627796]">Every report is reviewed by our team</p>
+                    <p className="text-lg font-semibold">{t('hero.highlight2.title')}</p>
+                    <p className="text-sm text-[#627796]">{t('hero.highlight2.body')}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2 text-[#3f5375] motion-safe:transition-transform motion-safe:hover:-translate-y-0.5">
@@ -192,8 +192,8 @@ export default function ResourcesPage() {
                     </svg>
                   </span>
                   <div>
-                    <p className="text-lg font-semibold">Fast & Focused</p>
-                    <p className="text-sm text-[#627796]">Start, assess, and finish in just a few days</p>
+                    <p className="text-lg font-semibold">{t('hero.highlight3.title')}</p>
+                    <p className="text-sm text-[#627796]">{t('hero.highlight3.body')}</p>
                   </div>
                 </div>
               </div>
@@ -203,33 +203,33 @@ export default function ResourcesPage() {
               <div className="overflow-hidden rounded-2xl border border-[#c9d7ef] bg-[#f7f9fe] shadow-[0_16px_45px_rgba(60,85,130,0.2)] transition-shadow duration-500 ease-out motion-safe:hover:shadow-[0_20px_50px_rgba(60,85,130,0.28)]">
                 <div className="grid md:grid-cols-[165px_1fr]">
                   <aside className="h-full bg-[#0b1a39] p-3 text-[#dce8ff]">
-                    <p className="mb-3 text-sm font-semibold">Checklist KB</p>
+                    <p className="mb-3 text-sm font-semibold">{t('mock.brand')}</p>
                     <ul className="space-y-2 text-xs">
-                      <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">Dashboard</li>
-                      <li className="rounded-md bg-[#17376d] px-2 py-1.5">Checklists</li>
-                      <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">Reports</li>
-                      <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">Settings</li>
+                      <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{t('mock.nav.dashboard')}</li>
+                      <li className="rounded-md bg-[#17376d] px-2 py-1.5">{t('mock.nav.checklists')}</li>
+                      <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{t('mock.nav.reports')}</li>
+                      <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{t('mock.nav.settings')}</li>
                     </ul>
                   </aside>
                   <div className="p-3">
                     <div className="rounded-xl bg-white p-3">
-                      <p className="text-sm font-semibold text-[#253d63]">1.1 Information Security Policies</p>
+                      <p className="text-sm font-semibold text-[#253d63]">{t('mock.sectionTitle')}</p>
                       <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_170px]">
                         <div>
-                          <p className="text-sm font-semibold text-[#1f2741]">Does your organization have documented information security policies?</p>
-                          <p className="mt-1 text-xs text-[#6b7e9b]">Policies should cover information classification, access control, incident management, and audit practice requirements.</p>
+                          <p className="text-sm font-semibold text-[#1f2741]">{t('mock.question')}</p>
+                          <p className="mt-1 text-xs text-[#6b7e9b]">{t('mock.questionHelp')}</p>
                         </div>
                         <div className="rounded-lg bg-[#f7f9ff] p-2 text-xs text-[#5f7292]">
-                          <p className="font-semibold text-[#344d75]">Progress</p>
+                          <p className="font-semibold text-[#344d75]">{t('mock.progress')}</p>
                           <p className="mt-1 text-2xl font-bold text-[#1f355d]">42%</p>
                           <div className="mt-2 h-1.5 rounded-full bg-[#d8e3f6]">
                             <div className="h-full w-[42%] rounded-full bg-[#2f7dff]" />
                           </div>
                           <ul className="mt-2 space-y-0.5 text-[11px]">
-                            <li>Yes 12</li>
-                            <li>Partly 5</li>
-                            <li>No 3</li>
-                            <li>Not sure 2</li>
+                            <li>{t('mock.answer.yes')} 12</li>
+                            <li>{t('mock.answer.partly')} 5</li>
+                            <li>{t('mock.answer.no')} 3</li>
+                            <li>{t('mock.answer.notSure')} 2</li>
                           </ul>
                         </div>
                       </div>
@@ -237,7 +237,7 @@ export default function ResourcesPage() {
 
                     <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_170px]">
                       <div className="rounded-xl bg-white p-3">
-                        <p className="text-sm font-semibold text-[#253d63]">Evidence</p>
+                        <p className="text-sm font-semibold text-[#253d63]">{t('mock.evidence')}</p>
                         <ul className="mt-2 space-y-2 text-sm text-[#4f6282]">
                           <li>policy_v1.2.pdf</li>
                           <li>screenshot.png</li>
@@ -249,7 +249,7 @@ export default function ResourcesPage() {
                 </div>
               </div>
               <div className="pointer-events-none absolute -bottom-16 right-0 hidden w-72 rounded-2xl border border-[#d7e2f5] bg-white px-4 py-3 shadow-[0_16px_35px_rgba(67,95,145,0.22)] sm:block xl:-right-10">
-                <p className="text-[30px] font-semibold leading-none text-[#253d63]">Maturity Overview</p>
+                <p className="text-[30px] font-semibold leading-none text-[#253d63]">{t('mock.maturity')}</p>
                 <div className="relative mt-2 h-44">
                   <svg viewBox="0 0 320 210" className="h-full w-full" fill="none" aria-hidden="true">
                     <g stroke="#e4ebf8" strokeWidth="1.2">
@@ -286,11 +286,11 @@ export default function ResourcesPage() {
                 <div className="mt-1 flex items-center justify-center gap-4 text-[11px] font-medium text-[#6f7f98]">
                   <span className="inline-flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-[2px] bg-[#2f7dff]" />
-                    Current
+                    {t('mock.legend.current')}
                   </span>
                   <span className="inline-flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-[2px] bg-[#98dbc0]" />
-                    Target
+                    {t('mock.legend.target')}
                   </span>
                 </div>
               </div>
@@ -302,12 +302,12 @@ export default function ResourcesPage() {
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:px-6 md:py-10 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <div className="grid gap-6 lg:grid-cols-[1.2fr_1.8fr]">
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
-            <p className="text-xl font-semibold text-[#334a72]">Main benefit</p>
+            <p className="text-xl font-semibold text-[#334a72]">{t('mainBenefit.kicker')}</p>
             <h2 className="mt-3 text-4xl font-semibold leading-tight text-[#1a2440]">
-              Know exactly how prepared you are for an audit — before the auditor arrives.
+              {t('mainBenefit.title')}
             </h2>
             <p className="mt-4 text-xl leading-8 text-[#556b8c]">
-              Identify gaps, validate controls, and get a clear path to audit readiness. Reduce risk, save time, and approach your next audit with confidence.
+              {t('mainBenefit.body')}
             </p>
           </article>
 
@@ -414,10 +414,8 @@ export default function ResourcesPage() {
       <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 md:px-6 md:pb-10 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <div className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-md md:p-8">
           <div>
-            <h2 className="text-4xl font-semibold text-[#1a2440]">What you get</h2>
-            <p className="mt-2 text-xl text-[#556b8c]">
-              Clear outputs, practical guidance, and audit-ready results you can use right away.
-            </p>
+            <h2 className="text-4xl font-semibold text-[#1a2440]">{t('whatYouGet.title')}</h2>
+            <p className="mt-2 text-xl text-[#556b8c]">{t('whatYouGet.subtitle')}</p>
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -425,12 +423,12 @@ export default function ResourcesPage() {
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#e8f7ee] text-[#30b271]">
                 <IconByName name="chart" className="h-6 w-6" />
               </span>
-              <h3 className="mt-3 text-2xl font-semibold text-[#1f355d]">Clear Gap Analysis</h3>
-              <p className="mt-2 text-sm leading-6 text-[#5e7293]">See where you stand and what needs improvement before the audit begins.</p>
+              <h3 className="mt-3 text-2xl font-semibold text-[#1f355d]">{t('whatYouGet.card1.title')}</h3>
+              <p className="mt-2 text-sm leading-6 text-[#5e7293]">{t('whatYouGet.card1.body')}</p>
               <ul className="mt-4 space-y-1.5 text-sm text-[#4e6283]">
-                <li>Visual maturity overview</li>
-                <li>Section-by-section scoring</li>
-                <li>Easy-to-understand findings</li>
+                <li>{t('whatYouGet.card1.point1')}</li>
+                <li>{t('whatYouGet.card1.point2')}</li>
+                <li>{t('whatYouGet.card1.point3')}</li>
               </ul>
             </article>
 
@@ -438,12 +436,12 @@ export default function ResourcesPage() {
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#e9f0ff] text-[#3c7df0]">
                 <IconByName name="doc-stack" className="h-6 w-6" />
               </span>
-              <h3 className="mt-3 text-2xl font-semibold text-[#1f355d]">Structured Report</h3>
-              <p className="mt-2 text-sm leading-6 text-[#5e7293]">A professional report you can review internally and share with confidence.</p>
+              <h3 className="mt-3 text-2xl font-semibold text-[#1f355d]">{t('whatYouGet.card2.title')}</h3>
+              <p className="mt-2 text-sm leading-6 text-[#5e7293]">{t('whatYouGet.card2.body')}</p>
               <ul className="mt-4 space-y-1.5 text-sm text-[#4e6283]">
-                <li>Executive summary</li>
-                <li>Detailed findings</li>
-                <li>Maturity score and overview</li>
+                <li>{t('whatYouGet.card2.point1')}</li>
+                <li>{t('whatYouGet.card2.point2')}</li>
+                <li>{t('whatYouGet.card2.point3')}</li>
               </ul>
             </article>
 
@@ -451,12 +449,12 @@ export default function ResourcesPage() {
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#fff5df] text-[#f2b535]">
                 <IconByName name="target" className="h-6 w-6" />
               </span>
-              <h3 className="mt-3 text-2xl font-semibold text-[#1f355d]">Actionable Recommendations</h3>
-              <p className="mt-2 text-sm leading-6 text-[#5e7293]">Know what to fix next, in what order, and where to focus first.</p>
+              <h3 className="mt-3 text-2xl font-semibold text-[#1f355d]">{t('whatYouGet.card3.title')}</h3>
+              <p className="mt-2 text-sm leading-6 text-[#5e7293]">{t('whatYouGet.card3.body')}</p>
               <ul className="mt-4 space-y-1.5 text-sm text-[#4e6283]">
-                <li>Prioritized by risk and impact</li>
-                <li>Practical next steps</li>
-                <li>Built-in guidance for follow-up</li>
+                <li>{t('whatYouGet.card3.point1')}</li>
+                <li>{t('whatYouGet.card3.point2')}</li>
+                <li>{t('whatYouGet.card3.point3')}</li>
               </ul>
             </article>
 
@@ -464,12 +462,12 @@ export default function ResourcesPage() {
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#f1ecff] text-[#6c62f7]">
                 <IconByName name="shield-check" className="h-6 w-6" />
               </span>
-              <h3 className="mt-3 text-2xl font-semibold text-[#1f355d]">Stronger Audit Readiness</h3>
-              <p className="mt-2 text-sm leading-6 text-[#5e7293]">Move into your audit with more confidence, clearer evidence, and less uncertainty.</p>
+              <h3 className="mt-3 text-2xl font-semibold text-[#1f355d]">{t('whatYouGet.card4.title')}</h3>
+              <p className="mt-2 text-sm leading-6 text-[#5e7293]">{t('whatYouGet.card4.body')}</p>
               <ul className="mt-4 space-y-1.5 text-sm text-[#4e6283]">
-                <li>Identify gaps early</li>
-                <li>Improve with evidence</li>
-                <li>Save time and reduce stress</li>
+                <li>{t('whatYouGet.card4.point1')}</li>
+                <li>{t('whatYouGet.card4.point2')}</li>
+                <li>{t('whatYouGet.card4.point3')}</li>
               </ul>
             </article>
           </div>
@@ -486,8 +484,8 @@ export default function ResourcesPage() {
                 </svg>
               </span>
               <div>
-                <p className="text-2xl font-semibold md:text-4xl">Ready to close your gaps and get audit-ready?</p>
-                <p className="text-sm text-[#c7d8f8] md:text-base">Start your assessment now and see where you stand.</p>
+                <p className="text-2xl font-semibold md:text-4xl">{t('closingCta.title')}</p>
+                <p className="text-sm text-[#c7d8f8] md:text-base">{t('closingCta.subtitle')}</p>
               </div>
             </div>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
@@ -495,14 +493,14 @@ export default function ResourcesPage() {
                 href="/register"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-7 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
               >
-                Get Access
+                {t('closingCta.getAccess')}
                 <ArrowRightIcon />
               </Link>
               <Link
                 href="/products/audit-readiness-checklist"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#456298] px-7 py-3 text-base font-semibold text-[#e5eeff] transition-colors duration-200 hover:bg-[#173160] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
               >
-                View Product
+                {t('closingCta.viewProduct')}
                 <ArrowRightIcon />
               </Link>
             </div>

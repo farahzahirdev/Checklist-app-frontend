@@ -21,6 +21,8 @@ import {
 } from '@/lib/assessment';
 import { isAllowedEvidenceFileSize, isAllowedEvidenceMimeType } from '@/lib/upload-rules';
 import SecureUploadProgress from '@/components/secure-upload-progress';
+import { translate, useLocale } from '@/lib/i18n';
+import { customerAssessmentMessages } from '@/locales/customer-assessment';
 
 type LocalAnswer = {
   answer: string;
@@ -161,8 +163,11 @@ function sanitizeRichHtml(input?: string | null) {
 }
 
 export default function AssessmentPage() {
+  const { locale } = useLocale();
+  const t = (key: string) => translate(customerAssessmentMessages, locale, key);
   const searchParams = useSearchParams();
   const questionPanelTopRef = useRef<HTMLDivElement | null>(null);
+  const evidenceInputRef = useRef<HTMLInputElement | null>(null);
   const checklistIdFromQuery = searchParams.get('checklist_id') ?? '';
   const [availableChecklists, setAvailableChecklists] = useState<CustomerChecklist[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
@@ -239,6 +244,25 @@ export default function AssessmentPage() {
     [activeQuestion?.expected_implementation],
   );
   const effectiveChecklistId = checklistIdFromQuery || assessmentDetail?.checklist_id || '';
+
+  useEffect(() => {
+    if (!activeQuestion) return;
+    // Reset the browser-controlled file input when switching questions, so the
+    // previous question's selected filename doesn't appear on the next question.
+    if (evidenceInputRef.current) {
+      evidenceInputRef.current.value = '';
+    }
+  }, [activeQuestion?.id]);
+
+  useEffect(() => {
+    if (!activeQuestion) return;
+    const selected = selectedEvidenceFiles[activeQuestion.id];
+    if (selected) return;
+    // Also clear after upload/remove while staying on same question.
+    if (evidenceInputRef.current) {
+      evidenceInputRef.current.value = '';
+    }
+  }, [activeQuestion?.id, selectedEvidenceFiles, showUploadProgress]);
 
   useEffect(() => {
     let mounted = true;
@@ -768,8 +792,8 @@ export default function AssessmentPage() {
     try {
       const currentAssessmentId = await ensureCurrentAssessmentId();
       const result = await submitAssessment(currentAssessmentId);
-      setMessage(`Assessment submitted. Completion: ${result.completion_percent}%`);
-      toast.success('Assessment submitted.');
+      setMessage(t('messages.submittedWithCompletion').replace('{percent}', String(result.completion_percent)));
+      toast.success(t('toasts.submitted'));
       await loadAssessmentDetail({ suppressNotFoundError: true });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to submit assessment.';
@@ -872,8 +896,8 @@ export default function AssessmentPage() {
       <div className="rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_1px_3px_rgba(18,32,61,0.08)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">Assessment</p>
-            <p className="mt-1 text-sm text-[#607594]">Switch checklist to view/manage different assessments.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">{t('title.kicker')}</p>
+            <p className="mt-1 text-sm text-[#607594]">{t('subtitle')}</p>
           </div>
           <label className="w-full min-w-0 flex-1 sm:min-w-[280px] sm:max-w-xl">
             <select
@@ -888,10 +912,10 @@ export default function AssessmentPage() {
             >
               <option value="">
                 {catalogLoading
-                  ? 'Loading checklists…'
+                  ? t('dropdown.loading')
                   : checklistSelectOptions.length
-                    ? 'Select checklist'
-                    : 'No purchased checklists found'}
+                    ? t('dropdown.select')
+                    : t('dropdown.nonePurchased')}
               </option>
               {checklistSelectOptions.map((item) => (
                 <option key={item.id} value={item.id}>
@@ -908,7 +932,7 @@ export default function AssessmentPage() {
       <section className={isSubmittedChecklist ? 'grid gap-4' : 'grid gap-4 lg:grid-cols-[280px_1fr]'}>
         {!isSubmittedChecklist ? (
         <aside className="w-full min-w-0 max-w-[calc(100vw-2rem)] rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_1px_3px_rgba(18,32,61,0.08)] sm:max-w-none">
-          <h3 className="text-[22px] font-semibold text-[#1f2d45]">Checklist Sections</h3>
+          <h3 className="text-[22px] font-semibold text-[#1f2d45]">{t('sections.title')}</h3>
           <ul className="mt-3 space-y-2 text-sm">
             {(assessmentDetail?.sections ?? []).map((section) => (
                 <li key={section.id}>
@@ -1180,7 +1204,7 @@ export default function AssessmentPage() {
                 ) : null}
               </>
             ) : (
-              <p className="mt-3 text-sm text-[#607594]">No questions available for this assessment.</p>
+              <p className="mt-3 text-sm text-[#607594]">{t('empty.noQuestions')}</p>
             )}
 
             {activeQuestion && !isSubmittedChecklist ? (
@@ -1251,6 +1275,7 @@ export default function AssessmentPage() {
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <input
                         type="file"
+                        ref={evidenceInputRef}
                         onChange={(event) => setSelectedEvidenceFiles(prev => ({ 
                           ...prev, 
                           [activeQuestion.id]: event.target.files?.[0] ?? null 
@@ -1370,7 +1395,7 @@ export default function AssessmentPage() {
                             : 'Answer all questions in all sections before submitting'
                         }
                       >
-                        {submittingAssessment ? 'Submitting…' : 'Submit Assessment'}
+                        {submittingAssessment ? t('actions.submitting') : t('actions.submit')}
                       </button>
                     ) : null}
                   </div>

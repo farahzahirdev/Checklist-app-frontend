@@ -5,15 +5,17 @@ import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
+import { translate, useLocale } from '@/lib/i18n';
 import { getRoleHomePath, getRoleKey, persistAccessToken, registerAccount, startMfaSetup, verifyMfaCode } from '@/lib/auth';
 import authBackground from '@/assets/cybersecurity-background.jpg';
+import { authPagesMessages } from '@/locales/auth-pages';
 
 function getPasswordPolicyError(password: string): string | null {
-  if (password.length < 12) return 'Password must be at least 12 characters.';
-  if (!/[a-z]/.test(password)) return 'Password must include at least one lowercase letter (a-z).';
-  if (!/[A-Z]/.test(password)) return 'Password must include at least one uppercase letter (A-Z).';
-  if (!/\d/.test(password)) return 'Password must include at least one number (0-9).';
-  if (!/[^A-Za-z0-9]/.test(password)) return 'Password must include at least one special character.';
+  if (password.length < 12) return 'errors.passwordMin';
+  if (!/[a-z]/.test(password)) return 'errors.passwordLower';
+  if (!/[A-Z]/.test(password)) return 'errors.passwordUpper';
+  if (!/\d/.test(password)) return 'errors.passwordNumber';
+  if (!/[^A-Za-z0-9]/.test(password)) return 'errors.passwordSpecial';
   return null;
 }
 
@@ -24,6 +26,8 @@ function normalizeOptionalField(value: string) {
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { locale } = useLocale();
+  const t = (key: string) => translate(authPagesMessages, locale, key);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -50,24 +54,24 @@ export default function RegisterPage() {
       const normalizedEmail = email.trim().toLowerCase();
       const normalizedPassword = password.trim();
       if (!normalizedPassword) {
-        toast.error('Password cannot be empty or spaces only.');
+        toast.error(t('errors.passwordEmpty'));
         return;
       }
       if (/\s/.test(password)) {
-        toast.error('Password cannot contain spaces.');
+        toast.error(t('errors.passwordHasSpaces'));
         return;
       }
       if (/\s/.test(confirmPassword)) {
-        toast.error('Confirm password cannot contain spaces.');
+        toast.error(t('errors.confirmPasswordHasSpaces'));
         return;
       }
       if (normalizedPassword !== confirmPassword) {
-        toast.error('Password and confirm password do not match.');
+        toast.error(t('errors.passwordMismatch'));
         return;
       }
       const passwordPolicyError = getPasswordPolicyError(normalizedPassword);
       if (passwordPolicyError) {
-        toast.error(passwordPolicyError);
+        toast.error(t(passwordPolicyError));
         return;
       }
       const data = await registerAccount({
@@ -87,26 +91,26 @@ export default function RegisterPage() {
 
       if (role === 'admin' || role === 'auditor') {
         if (!data.access_token) {
-          toast.error('Registration did not return an access token.');
+          toast.error(t('errors.registrationNoToken'));
           return;
         }
         persistAccessToken(data.access_token);
-        toast.success('Account created successfully.');
+        toast.success(t('success.accountCreated'));
         router.push(destination as Route);
         router.refresh();
         return;
       }
 
       if (!data.access_token) {
-        toast.error('Registration did not return an access token.');
+        toast.error(t('errors.registrationNoToken'));
         return;
       }
       persistAccessToken(data.access_token);
-      toast.success('Account created successfully.');
+      toast.success(t('success.accountCreated'));
       router.push(destination as Route);
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Registration failed');
+      toast.error(err instanceof Error ? err.message : t('errors.registrationFailed'));
     } finally {
       setLoading(false);
     }
@@ -118,7 +122,7 @@ export default function RegisterPage() {
       const setup = await startMfaSetup();
       setMfaQrSvg(setup.svg_qr ?? '');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load MFA setup details.');
+      toast.error(err instanceof Error ? err.message : t('errors.mfaSetupLoadFailed'));
     } finally {
       setSetupLoading(false);
     }
@@ -128,18 +132,18 @@ export default function RegisterPage() {
     event.preventDefault();
     const code = mfaCode.trim();
     if (code.length !== 6) {
-      toast.error('Enter your 6-digit OTP code.');
+      toast.error(t('errors.otpSixDigits'));
       return;
     }
     setLoading(true);
     try {
       const data = await verifyMfaCode({ code });
       if (!data.access_token) {
-        toast.error('MFA verification succeeded but no access token was returned.');
+        toast.error(t('errors.mfaVerifyNoToken'));
         return;
       }
       persistAccessToken(data.access_token);
-      toast.success('MFA verified successfully.');
+      toast.success(t('success.mfaVerified'));
       const role = getRoleKey(data.user.role);
       const destination = role === 'customer' ? '/payment' : getRoleHomePath(data.user.role);
       if (role === 'customer') {
@@ -150,7 +154,7 @@ export default function RegisterPage() {
         router.refresh();
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to verify OTP code.');
+      toast.error(err instanceof Error ? err.message : t('errors.mfaVerifyFailed'));
     } finally {
       setLoading(false);
     }
@@ -164,24 +168,27 @@ export default function RegisterPage() {
   } as const;
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-4 text-[#ffffff] lg:h-screen lg:overflow-hidden" style={backgroundStyle}>
-      <div className="mx-auto w-full max-w-2xl space-y-4 rounded-2xl border border-[#2f4d82] bg-[#07112a]/85 p-5 backdrop-blur md:p-7 lg:max-h-[calc(100vh-2rem)] lg:overflow-hidden">
+    <main
+      className="flex min-h-screen items-center justify-center px-4 py-4 text-[#ffffff] lg:h-screen lg:overflow-x-hidden lg:overflow-y-auto"
+      style={backgroundStyle}
+    >
+      <div className="mx-auto w-full max-w-2xl space-y-4 rounded-2xl border border-[#2f4d82] bg-[#07112a]/85 p-5 backdrop-blur md:p-7 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
         <div>
-          <p className="text-xs uppercase tracking-[0.35em] text-[#9dc5ff]">Account</p>
-          <h1 className="mt-1 text-3xl font-semibold text-white">Create an account</h1>
-          <p className="mt-1 text-sm text-[#97a5bb]">Use a strong password with at least 12 characters and mixed character types.</p>
+          <p className="text-xs uppercase tracking-[0.35em] text-[#9dc5ff]">{t('common.account')}</p>
+          <h1 className="mt-1 text-3xl font-semibold text-white">{t('register.title')}</h1>
+          <p className="mt-1 text-sm text-[#97a5bb]">{t('register.subtitle')}</p>
           {step === 'customer-mfa-verify' ? (
-            <p className="mt-2 text-sm text-amber-300">MFA is enabled. Enter your OTP to complete account setup.</p>
+            <p className="mt-2 text-sm text-amber-300">{t('login.mfa.enabledBanner')}</p>
           ) : null}
           {step === 'customer-mfa-setup' ? (
-            <p className="mt-2 text-sm text-amber-300">Set up MFA in your authenticator app, then verify your OTP code.</p>
+            <p className="mt-2 text-sm text-amber-300">{t('register.mfa.finish')}</p>
           ) : null}
         </div>
 
         {step === 'credentials' ? (
           <form className="space-y-3.5" onSubmit={onSubmit}>
             <label className="block space-y-2 text-sm">
-              <span className="text-[#d8e2f2]">Email</span>
+              <span className="text-[#d8e2f2]">{t('fields.email')}</span>
               <input
                 type="email"
                 name="email"
@@ -194,7 +201,7 @@ export default function RegisterPage() {
             </label>
             <div className="grid gap-2 sm:grid-cols-2">
               <label className="block space-y-1 text-sm">
-                <span className="text-[#d8e2f2]">Full name (optional)</span>
+                <span className="text-[#d8e2f2]">{t('register.fields.fullName')}</span>
                 <input
                   type="text"
                   name="full_name"
@@ -205,7 +212,7 @@ export default function RegisterPage() {
                 />
               </label>
               <label className="block space-y-1 text-sm">
-                <span className="text-[#d8e2f2]">Username (optional)</span>
+                <span className="text-[#d8e2f2]">{t('register.fields.username')}</span>
                 <input
                   type="text"
                   name="username"
@@ -216,7 +223,7 @@ export default function RegisterPage() {
                 />
               </label>
               <label className="block space-y-1 text-sm">
-                <span className="text-[#d8e2f2]">Company name (optional)</span>
+                <span className="text-[#d8e2f2]">{t('register.fields.companyName')}</span>
                 <input
                   type="text"
                   name="company_name"
@@ -227,7 +234,7 @@ export default function RegisterPage() {
                 />
               </label>
               <label className="block space-y-1 text-sm">
-                <span className="text-[#d8e2f2]">Job title (optional)</span>
+                <span className="text-[#d8e2f2]">{t('register.fields.jobTitle')}</span>
                 <input
                   type="text"
                   name="job_title"
@@ -238,7 +245,7 @@ export default function RegisterPage() {
                 />
               </label>
               <label className="block space-y-1 text-sm">
-                <span className="text-[#d8e2f2]">Department (optional)</span>
+                <span className="text-[#d8e2f2]">{t('register.fields.department')}</span>
                 <input
                   type="text"
                   name="department"
@@ -248,7 +255,7 @@ export default function RegisterPage() {
                 />
               </label>
               <label className="block space-y-1 text-sm">
-                <span className="text-[#d8e2f2]">Company industry (optional)</span>
+                <span className="text-[#d8e2f2]">{t('register.fields.companyIndustry')}</span>
                 <input
                   type="text"
                   name="company_industry"
@@ -258,7 +265,7 @@ export default function RegisterPage() {
                 />
               </label>
               <label className="block space-y-1 text-sm">
-                <span className="text-[#d8e2f2]">Company size (optional)</span>
+                <span className="text-[#d8e2f2]">{t('register.fields.companySize')}</span>
                 <input
                   type="text"
                   name="company_size"
@@ -268,7 +275,7 @@ export default function RegisterPage() {
                 />
               </label>
               <label className="block space-y-1 text-sm">
-                <span className="text-[#d8e2f2]">Company region (optional)</span>
+                <span className="text-[#d8e2f2]">{t('register.fields.companyRegion')}</span>
                 <input
                   type="text"
                   name="company_region"
@@ -279,7 +286,7 @@ export default function RegisterPage() {
               </label>
             </div>
             <label className="block space-y-1.5 text-sm">
-              <span className="text-[#d8e2f2]">Password</span>
+              <span className="text-[#d8e2f2]">{t('fields.password')}</span>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -294,7 +301,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? t('actions.hidePassword') : t('actions.showPassword')}
                   className="absolute inset-y-0 right-0 inline-flex items-center px-3 text-[#9dc5ff] hover:text-[#c6dcff]"
                 >
                   {showPassword ? (
@@ -320,11 +327,11 @@ export default function RegisterPage() {
                 </button>
               </div>
               <p className="text-xs text-[#97a5bb]">
-                Min 12 chars, with uppercase, lowercase, number, special character, and no spaces.
+                {t('register.passwordPolicyHint')}
               </p>
             </label>
             <label className="block space-y-1.5 text-sm">
-              <span className="text-[#d8e2f2]">Confirm password</span>
+              <span className="text-[#d8e2f2]">{t('fields.confirmPassword')}</span>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -339,7 +346,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  aria-label={showPassword ? 'Hide confirm password' : 'Show confirm password'}
+                  aria-label={showPassword ? t('actions.hideConfirmPassword') : t('actions.showConfirmPassword')}
                   className="absolute inset-y-0 right-0 inline-flex items-center px-3 text-[#9dc5ff] hover:text-[#c6dcff]"
                 >
                   {showPassword ? (
@@ -371,7 +378,7 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full rounded-lg border border-[#1f7bff] bg-[#1f7bff] py-2.5 text-sm font-medium text-white hover:bg-[#2e87ff] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? 'Creating account…' : 'Register'}
+              {loading ? t('register.submitting') : t('register.submit')}
             </button>
           </form>
         ) : null}
@@ -379,12 +386,12 @@ export default function RegisterPage() {
         {step === 'customer-mfa-verify' ? (
           <form className="space-y-5" onSubmit={onVerifyMfaCode}>
             <label className="block space-y-2 text-sm">
-              <span className="text-[#d8e2f2]">OTP code</span>
+              <span className="text-[#d8e2f2]">{t('fields.otp')}</span>
               <input
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]{6}"
-                title="Enter a 6-digit OTP code"
+                title={t('fields.otpSixDigitsTitle')}
                 maxLength={6}
                 value={mfaCode}
                 onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -396,7 +403,7 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full rounded-lg border border-[#1f7bff] bg-[#1f7bff] py-2.5 text-sm font-medium text-white hover:bg-[#2e87ff] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? 'Verifying OTP…' : 'Verify OTP'}
+              {loading ? t('login.mfa.verifying') : t('login.mfa.verifyTitle')}
             </button>
           </form>
         ) : null}
@@ -404,8 +411,8 @@ export default function RegisterPage() {
         {step === 'customer-mfa-setup' ? (
           <form className="space-y-5" onSubmit={onVerifyMfaCode}>
             <div className="space-y-2 rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-3 text-sm text-[#d8e2f2]">
-              <p>Scan this setup in your authenticator app:</p>
-              {setupLoading ? <p className="text-[#9dc5ff]">Loading MFA setup details...</p> : null}
+              <p>{t('login.mfa.setup.scan')}</p>
+              {setupLoading ? <p className="text-[#9dc5ff]">{t('login.mfa.setup.loading')}</p> : null}
               {mfaQrSvg ? (
                 mfaQrSvg.startsWith('data:image/') ? (
                   <div className="mt-2 rounded bg-white p-3">
@@ -424,12 +431,12 @@ export default function RegisterPage() {
               ) : null}
             </div>
             <label className="block space-y-2 text-sm">
-              <span className="text-[#d8e2f2]">Enter OTP code to enable MFA</span>
+              <span className="text-[#d8e2f2]">{t('login.mfa.setup.enterToEnable')}</span>
               <input
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]{6}"
-                title="Enter a 6-digit OTP code"
+                title={t('fields.otpSixDigitsTitle')}
                 maxLength={6}
                 value={mfaCode}
                 onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -443,14 +450,14 @@ export default function RegisterPage() {
                 disabled={setupLoading}
                 className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] py-2.5 text-sm font-medium text-[#d8e2f2] hover:bg-[#1f3158] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {setupLoading ? 'Refreshing…' : 'Refresh setup code'}
+                {setupLoading ? t('login.mfa.setup.refreshing') : t('login.mfa.setup.refresh')}
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full rounded-lg border border-[#1f7bff] bg-[#1f7bff] py-2.5 text-sm font-medium text-white hover:bg-[#2e87ff] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? 'Completing setup…' : 'Complete MFA setup'}
+                {loading ? t('login.mfa.setup.completing') : t('login.mfa.setup.complete')}
               </button>
             </div>
           </form>
@@ -458,13 +465,13 @@ export default function RegisterPage() {
 
         {step === 'credentials' ? (
           <p className="text-center text-sm text-[#97a5bb]">
-            Already have an account?{' '}
+            {t('register.haveAccount')}{' '}
             <Link href="/login" className="text-[#9dc5ff] hover:text-[#c6dcff]">
-              Sign in
+              {t('register.signIn')}
             </Link>
           </p>
         ) : (
-          <p className="text-center text-sm text-[#97a5bb]">Complete MFA to finish account setup.</p>
+          <p className="text-center text-sm text-[#97a5bb]">{t('register.mfa.finish')}</p>
         )}
       </div>
     </main>

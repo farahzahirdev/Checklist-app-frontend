@@ -2,26 +2,45 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { getCurrentUser, getRoleKey, getUserDisplayName, logoutAccount, persistAccessToken, type UserRoleKey } from '@/lib/auth';
 import { AdminAccessProvider } from '@/lib/admin-access';
+import { translate, useLocale } from '@/lib/i18n';
+import { adminMessages } from '@/locales/admin';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { locale, setLocale } = useLocale();
+  const t = (key: string) => translate(adminMessages, locale, key);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [role, setRole] = useState<UserRoleKey | ''>('');
   const [roleLoaded, setRoleLoaded] = useState(false);
   const [displayName, setDisplayName] = useState('User');
+  const [langOpen, setLangOpen] = useState(false);
+  const langRef = useRef<HTMLDivElement | null>(null);
+
+  const localeLabel = useMemo(() => (locale === 'en' ? 'EN' : 'CS'), [locale]);
+
+  useEffect(() => {
+    function handleDocPointerDown(event: PointerEvent) {
+      const target = event.target as Node | null;
+      if (target && langRef.current && !langRef.current.contains(target)) {
+        setLangOpen(false);
+      }
+    }
+    document.addEventListener('pointerdown', handleDocPointerDown);
+    return () => document.removeEventListener('pointerdown', handleDocPointerDown);
+  }, []);
 
   const navItems = [
-    { href: '/admin', label: 'Dashboard', icon: 'home' },
-    { href: '/admin/checklists', label: 'Checklist Content', icon: 'checklist' },
-    { href: '/admin/users', label: 'Users & access', icon: 'users' },
-    { href: '/admin/support', label: 'Support', icon: 'report' },
-    { href: '/admin/logs', label: 'Audit Logs', icon: 'shield' },
+    { href: '/admin', labelKey: 'nav.dashboard', icon: 'home' },
+    { href: '/admin/checklists', labelKey: 'nav.checklists', icon: 'checklist' },
+    { href: '/admin/users', labelKey: 'nav.users', icon: 'users' },
+    { href: '/admin/support', labelKey: 'nav.support', icon: 'report' },
+    { href: '/admin/logs', labelKey: 'nav.logs', icon: 'shield' },
   ] as const;
   const isReadOnly = role !== 'admin';
   const visibleNavItems = isReadOnly
@@ -124,7 +143,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <path d="M12 2 4 5v6c0 5.3 3.4 9.6 8 11 4.6-1.4 8-5.7 8-11V5l-8-3Z" stroke="currentColor" strokeWidth="1.8" />
               </svg>
             </span>
-            <span className="text-xl font-semibold text-white">Checklist KB</span>
+            <span className="text-xl font-semibold text-white">{t('brand.name')}</span>
           </Link>
           <nav className="mt-4 flex flex-col gap-1.5 text-[15px]">
             {visibleNavItems.map((item) => {
@@ -153,10 +172,70 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                       {iconByName(item.icon)}
                     </svg>
                   </span>
-                  {item.label}
+                  {t(item.labelKey)}
                 </Link>
               );
             })}
+            <div className="mt-2 lg:hidden">
+              <div className="relative" ref={langRef}>
+                <button
+                  type="button"
+                  onClick={() => setLangOpen((prev) => !prev)}
+                  aria-label="Language"
+                  aria-haspopup="listbox"
+                  aria-expanded={langOpen}
+                  className="flex w-full items-center justify-between gap-2 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-[#dce8ff] hover:bg-[#223657]"
+                >
+                  <span>{localeLabel}</span>
+                  <svg
+                    viewBox="0 0 20 20"
+                    className={`h-4 w-4 text-[#b8c9e8] transition-transform duration-150 ${langOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 8 4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                {langOpen ? (
+                  <div
+                    role="listbox"
+                    aria-label="Language"
+                    className="mt-2 w-full overflow-hidden rounded-xl border border-[#2d4f83] bg-[#0b1a39] shadow-[0_18px_40px_rgba(0,0,0,0.45)]"
+                  >
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={locale === 'cs'}
+                      onClick={() => {
+                        setLocale('cs');
+                        setLangOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
+                        locale === 'cs' ? 'bg-[#17376d] text-white' : 'text-[#e8f0ff] hover:bg-[#173160]'
+                      }`}
+                    >
+                      <span>CS</span>
+                      {locale === 'cs' ? <span className="text-xs text-[#9ac3ff]">✓</span> : null}
+                    </button>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={locale === 'en'}
+                      onClick={() => {
+                        setLocale('en');
+                        setLangOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
+                        locale === 'en' ? 'bg-[#17376d] text-white' : 'text-[#e8f0ff] hover:bg-[#173160]'
+                      }`}
+                    >
+                      <span>EN</span>
+                      {locale === 'en' ? <span className="text-xs text-[#9ac3ff]">✓</span> : null}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </div>
             <button
               type="button"
               onClick={() => void handleLogout()}
@@ -168,7 +247,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                   {iconByName('logout')}
                 </svg>
               </span>
-              {logoutLoading ? 'Logging out...' : 'Log out'}
+              {logoutLoading ? t('actions.loggingOut') : t('actions.logout')}
             </button>
           </nav>
         </aside>
@@ -177,7 +256,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                aria-label="Open sidebar"
+                aria-label={t('actions.openSidebar')}
                 onClick={() => setMobileNavOpen((prev) => !prev)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#2d4f83] bg-[#182843] text-[#dce8ff] hover:bg-[#223657] lg:hidden"
               >
@@ -187,6 +266,64 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               </button>
             </div>
             <div className="flex items-center gap-3">
+              <div className="relative hidden lg:block" ref={langRef}>
+                <button
+                  type="button"
+                  onClick={() => setLangOpen((prev) => !prev)}
+                  aria-label="Language"
+                  aria-haspopup="listbox"
+                  aria-expanded={langOpen}
+                  className="inline-flex min-w-[72px] items-center justify-between gap-2 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-[#dce8ff] hover:bg-[#223657]"
+                >
+                  <span>{localeLabel}</span>
+                  <svg
+                    viewBox="0 0 20 20"
+                    className={`h-4 w-4 text-[#b8c9e8] transition-transform duration-150 ${langOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 8 4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                {langOpen ? (
+                  <div
+                    role="listbox"
+                    aria-label="Language"
+                    className="absolute right-0 z-50 mt-2 w-[72px] overflow-hidden rounded-xl border border-[#2d4f83] bg-[#0b1a39] shadow-[0_18px_40px_rgba(0,0,0,0.45)]"
+                  >
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={locale === 'cs'}
+                      onClick={() => {
+                        setLocale('cs');
+                        setLangOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
+                        locale === 'cs' ? 'bg-[#17376d] text-white' : 'text-[#e8f0ff] hover:bg-[#173160]'
+                      }`}
+                    >
+                      <span>CS</span>
+                      {locale === 'cs' ? <span className="text-xs text-[#9ac3ff]">✓</span> : null}
+                    </button>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={locale === 'en'}
+                      onClick={() => {
+                        setLocale('en');
+                        setLangOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
+                        locale === 'en' ? 'bg-[#17376d] text-white' : 'text-[#e8f0ff] hover:bg-[#173160]'
+                      }`}
+                    >
+                      <span>EN</span>
+                      {locale === 'en' ? <span className="text-xs text-[#9ac3ff]">✓</span> : null}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
               <button
                 type="button"
                 className="inline-flex items-center gap-2 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-medium text-[#dce8ff] hover:bg-[#223657]"

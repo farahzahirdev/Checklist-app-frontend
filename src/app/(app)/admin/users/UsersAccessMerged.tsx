@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
+import { translate, useLocale } from '@/lib/i18n';
+import { adminUsersAccessMessages } from '@/locales/admin-users-access';
 import {
   activateCustomer,
   assignPermissionsToUser,
@@ -191,6 +193,8 @@ function recordChild(obj: Record<string, unknown> | null | undefined, key: strin
 }
 
 export default function UsersAccessMerged() {
+  const { locale } = useLocale();
+  const t = (key: string) => translate(adminUsersAccessMessages, locale, key);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isReadOnly } = useAdminAccess();
@@ -445,7 +449,7 @@ export default function UsersAccessMerged() {
     } finally {
       setListsLoading(false);
     }
-  }, [isReadOnly, userSearchQuery, userRoleFilter, customerSearchQuery, customerActiveFilter]);
+  }, [isReadOnly, userSearchQuery, userRoleFilter, customerSearchQuery, customerActiveFilter, locale]);
 
   const loadRbacMeta = useCallback(async () => {
     setRbacMetaLoading(true);
@@ -888,19 +892,19 @@ export default function UsersAccessMerged() {
   return (
     <div className={`${shell} min-w-0 p-3 sm:p-4 md:p-5`}>
       <div className="pb-5">
-        <h1 className={ADMIN_PAGE_TITLE_CLASS}>Users & Access Control</h1>
+        <h1 className={ADMIN_PAGE_TITLE_CLASS}>{t('title')}</h1>
         <p className={`mt-1 max-w-[560px] text-[13px] ${muted}`}>
-          Manage admin users, customers, roles, permissions, and session testing from one place.
+          {t('subtitle')}
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
         {(
           [
-            { k: 'Admin users', v: adminUsers.length, sub: 'Admins & auditors', icon: 'admin-users' as const },
-            { k: 'Customers', v: customers.length, sub: 'Accounts', icon: 'customers' as const },
-            { k: 'Roles', v: roles.length, sub: 'RBAC', icon: 'roles' as const },
-            { k: 'Permissions', v: permissions.length, sub: 'Rules', icon: 'permissions' as const },
+            { k: t('stats.adminUsers.title'), v: adminUsers.length, sub: t('stats.adminUsers.subtitle'), icon: 'admin-users' as const },
+            { k: t('stats.customers.title'), v: customers.length, sub: t('stats.customers.subtitle'), icon: 'customers' as const },
+            { k: t('stats.roles.title'), v: roles.length, sub: t('stats.roles.subtitle'), icon: 'roles' as const },
+            { k: t('stats.permissions.title'), v: permissions.length, sub: t('stats.permissions.subtitle'), icon: 'permissions' as const },
           ] as const
         ).map((s) => (
           <div key={s.k} className={`${statCardClass} min-w-0`}>
@@ -921,15 +925,15 @@ export default function UsersAccessMerged() {
       <div
         className={`mt-3 flex flex-nowrap gap-1 overflow-x-auto overflow-y-hidden rounded-t-lg bg-slate-100/90 p-1 pb-0 ring-1 ring-slate-200/80 [-webkit-overflow-scrolling:touch] sm:mt-4`}
         role="tablist"
-        aria-label="Users and access sections"
+        aria-label={t('title')}
       >
         {(
           [
-            ['users', 'Admin users'],
-            ['customers', 'Customers'],
-            ['rbac', 'Roles & permissions'],
-            ['check', 'Permission check'],
-            ...(!isReadOnly ? ([['roleswitch', 'Role switch']] as const) : []),
+            ['users', t('tabs.users')],
+            ['customers', t('tabs.customers')],
+            ['rbac', t('tabs.rbac')],
+            ['check', t('tabs.check')],
+            ...(!isReadOnly ? ([['roleswitch', t('tabs.roleswitch')]] as const) : []),
           ] as const
         ).map(([id, label]) => (
           <button
@@ -956,15 +960,15 @@ export default function UsersAccessMerged() {
               <div className={`${card} min-w-0`}>
                 <div className={`flex flex-col gap-3 border-b ${line} px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-[18px]`}>
                   <div className="min-w-0">
-                    <h2 className="text-[14px] font-bold text-slate-900 sm:text-[15px]">Admin & auditor users</h2>
-                    <p className={`text-[11px] sm:text-[12px] ${muted}`}>Click a row to inspect and manage</p>
+                    <h2 className="text-[14px] font-bold text-slate-900 sm:text-[15px]">{t('users.sectionTitle')}</h2>
+                    <p className={`text-[11px] sm:text-[12px] ${muted}`}>{t('users.sectionHint')}</p>
                   </div>
                   <div
                     className={`flex w-full min-w-0 items-center gap-2 rounded-[11px] border ${line} bg-slate-50 px-3 py-2 focus-within:border-[#10284F] sm:w-auto sm:min-w-[200px] sm:max-w-[320px] sm:flex-1`}
                   >
                     <input
                       className="min-w-0 flex-1 bg-transparent text-[12px] text-slate-900 outline-none placeholder:text-slate-500"
-                      placeholder="Search email…"
+                      placeholder={t('users.searchPlaceholder')}
                       value={userSearchQuery}
                       onChange={(e) => setUserSearchQuery(e.target.value)}
                     />
@@ -979,7 +983,7 @@ export default function UsersAccessMerged() {
                       setUserStatusFilter('all');
                     }}
                   >
-                    All
+                    {t('filters.all')}
                   </button>
                   <button
                     type="button"
@@ -989,7 +993,7 @@ export default function UsersAccessMerged() {
                       setUserStatusFilter('all');
                     }}
                   >
-                    Admin
+                    {t('filters.admin')}
                   </button>
                   <button
                     type="button"
@@ -999,7 +1003,7 @@ export default function UsersAccessMerged() {
                       setUserStatusFilter('all');
                     }}
                   >
-                    Auditor
+                    {t('filters.auditor')}
                   </button>
                   <button
                     type="button"
@@ -1009,7 +1013,7 @@ export default function UsersAccessMerged() {
                       setUserRoleFilter('all');
                     }}
                   >
-                    Active
+                    {t('filters.active')}
                   </button>
                   <button
                     type="button"
@@ -1019,7 +1023,7 @@ export default function UsersAccessMerged() {
                       setUserRoleFilter('all');
                     }}
                   >
-                    Inactive
+                    {t('filters.inactive')}
                   </button>
                 </div>
                 <div className={`max-h-[min(420px,55vh)] overflow-y-auto sm:max-h-[420px] ${scrollYScrollbarHidden}`}>
@@ -1029,9 +1033,9 @@ export default function UsersAccessMerged() {
                         className={`grid grid-cols-[38px_minmax(0,1fr)_100px_80px] gap-2 border-b ${line} bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500 sm:gap-3 sm:px-[18px]`}
                       >
                         <div />
-                        <div>User</div>
-                        <div>Role</div>
-                        <div>Status</div>
+                        <div>{t('table.user')}</div>
+                        <div>{t('table.role')}</div>
+                        <div>{t('table.status')}</div>
                       </div>
                       <div>
                         {listsLoading ? (
@@ -1075,7 +1079,7 @@ export default function UsersAccessMerged() {
                                 <Badge v={u.role === 'admin' ? 'blue' : 'gold'}>{u.role}</Badge>
                               </div>
                               <div className="min-w-0">
-                                <Badge v={u.is_active ? 'green' : 'gray'}>{u.is_active ? 'Active' : 'Inactive'}</Badge>
+                                <Badge v={u.is_active ? 'green' : 'gray'}>{u.is_active ? t('common.active') : t('common.inactive')}</Badge>
                               </div>
                             </div>
                           );
@@ -1088,10 +1092,10 @@ export default function UsersAccessMerged() {
               </div>
               <div className={`${card} min-w-0`}>
                 <div className={`border-b ${line} px-3 py-3 sm:px-[18px]`}>
-                  <h2 className="text-[14px] font-bold sm:text-[15px]">Recent activity</h2>
+                  <h2 className="text-[14px] font-bold sm:text-[15px]">{t('activity.title')}</h2>
                 </div>
                 <div className="px-3 py-3 sm:px-[18px]">
-                  <p className={`text-center text-sm ${muted}`}>Use Audit Logs in the sidebar for a full admin action history.</p>
+                  <p className={`text-center text-sm ${muted}`}>{t('activity.hint')}</p>
                 </div>
               </div>
             </div>
@@ -1107,7 +1111,7 @@ export default function UsersAccessMerged() {
               {!selectedAdminId || !adminDetail ? (
                 <div className={`px-4 py-10 text-center sm:px-6 ${muted}`}>
                   <p className="mb-2 text-3xl opacity-20">👆</p>
-                  <p className="text-sm">Click a user row to load details and manage access.</p>
+                  <p className="text-sm">{t('inspector.emptyAdmin')}</p>
                 </div>
               ) : (
                 <div>
@@ -1121,7 +1125,7 @@ export default function UsersAccessMerged() {
                         }`}
                         onClick={() => setInspTab(t)}
                       >
-                        {t}
+                        {translate(adminUsersAccessMessages, locale, `inspector.tabs.${t}`)}
                       </button>
                     ))}
                   </div>
@@ -1142,11 +1146,11 @@ export default function UsersAccessMerged() {
                         </div>
                         <dl className="space-y-0 text-[12px]">
                           <div className={`flex justify-between border-t border-[rgba(155,181,224,0.07)] py-2 ${muted}`}>
-                            <dt>Status</dt>
-                            <dd className="font-semibold text-slate-900">{adminDetail.is_active ? 'Active' : 'Inactive'}</dd>
+                            <dt>{t('inspector.status')}</dt>
+                            <dd className="font-semibold text-slate-900">{adminDetail.is_active ? t('common.active') : t('common.inactive')}</dd>
                           </div>
                         </dl>
-                        <p className="mb-2 mt-3 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">Permissions</p>
+                        <p className="mb-2 mt-3 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">{t('inspector.permissions')}</p>
                         <div className="flex flex-wrap gap-1">
                           {adminDetail.permissions.length ? (
                             adminDetail.permissions.map((p) => (
