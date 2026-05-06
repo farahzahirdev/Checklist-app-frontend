@@ -37,6 +37,10 @@ export type AdminCustomersResponse = {
 };
 
 export type AdminCustomerDetail = AdminCustomer & {
+  full_name?: string | null;
+  username?: string | null;
+  job_title?: string | null;
+  department?: string | null;
   permissions: Array<{ resource: string; action: string }>;
   primary_company_id?: string | null;
   company?: {

@@ -1345,6 +1345,39 @@ export default function UsersAccessMerged() {
                     {custInspTab === 'details' ? (
                       <div>
                         <div className="mb-4">
+                          <p className={`mb-2 text-[11px] font-bold uppercase text-slate-500`}>User Details</p>
+                          <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                            <div>
+                              <p className="text-[10px] text-slate-600">Email</p>
+                              <p className="text-[12px] font-semibold text-slate-900">{customerDetail.email}</p>
+                            </div>
+                            {customerDetail.full_name && (
+                              <div>
+                                <p className="text-[10px] text-slate-600">Full name</p>
+                                <p className="text-[12px] text-slate-700">{customerDetail.full_name}</p>
+                              </div>
+                            )}
+                            {customerDetail.username && (
+                              <div>
+                                <p className="text-[10px] text-slate-600">Username</p>
+                                <p className="text-[12px] text-slate-700">{customerDetail.username}</p>
+                              </div>
+                            )}
+                            {customerDetail.job_title && (
+                              <div>
+                                <p className="text-[10px] text-slate-600">Job title</p>
+                                <p className="text-[12px] text-slate-700">{customerDetail.job_title}</p>
+                              </div>
+                            )}
+                            {customerDetail.department && (
+                              <div>
+                                <p className="text-[10px] text-slate-600">Department</p>
+                                <p className="text-[12px] text-slate-700">{customerDetail.department}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mb-4">
                           <p className={`mb-2 text-[11px] font-bold uppercase text-slate-500`}>Company</p>
                           {customerDetail.company ? (
                             <div className="space-y-2 rounded-lg border border-blue-200 bg-blue-50 p-3">

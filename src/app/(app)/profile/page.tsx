@@ -2,13 +2,18 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
-import CompanyManagement from '@/components/company-management';
 import {
   changeCustomerPassword,
   getCustomerProfile,
   updateCustomerProfile,
   type CustomerProfile,
 } from '@/lib/customer-profile';
+import {
+  listMyCompanies,
+  updateCustomerCompany,
+  type CustomerCompany,
+  type UpdateCustomerCompanyPayload,
+} from '@/lib/customer-companies';
 
 function getPasswordPolicyError(password: string): string | null {
   if (password.length < 12) return 'Password must be at least 12 characters.';
@@ -26,15 +31,25 @@ function normalizeOptional(value: string): string | undefined {
 
 export default function CustomerProfilePage() {
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
+  const [company, setCompany] = useState<CustomerCompany | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingCompany, setLoadingCompany] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [savingCompany, setSavingCompany] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [error, setError] = useState('');
+  const [editingCompany, setEditingCompany] = useState(false);
 
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [department, setDepartment] = useState('');
+
+  const [companyName, setCompanyName] = useState('');
+  const [companyEmail, setCompanyEmail] = useState('');
+  const [companyWebsite, setCompanyWebsite] = useState('');
+  const [companyIndustry, setCompanyIndustry] = useState('');
+  const [companyCountry, setCompanyCountry] = useState('');
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -53,6 +68,25 @@ export default function CustomerProfilePage() {
       setUsername(data.username ?? '');
       setJobTitle(data.job_title ?? '');
       setDepartment(data.department ?? '');
+      
+      // Load company details
+      if (data.primary_company_id) {
+        setLoadingCompany(true);
+        try {
+          const companyList = await listMyCompanies();
+          if (companyList.companies && companyList.companies.length > 0) {
+            const primaryCompany = companyList.companies[0];
+            setCompany(primaryCompany);
+            setCompanyName(primaryCompany.name ?? '');
+            setCompanyEmail(primaryCompany.email ?? '');
+            setCompanyWebsite(primaryCompany.website ?? '');
+            setCompanyIndustry(primaryCompany.industry ?? '');
+            setCompanyCountry(primaryCompany.country ?? '');
+          }
+        } finally {
+          setLoadingCompany(false);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load profile.');
     } finally {
@@ -84,6 +118,36 @@ export default function CustomerProfilePage() {
       toast.error(err instanceof Error ? err.message : 'Failed to update profile.');
     } finally {
       setSavingProfile(false);
+    }
+  }
+
+  async function onSaveCompany(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!company) return;
+
+    setSavingCompany(true);
+    try {
+      const payload: UpdateCustomerCompanyPayload = {
+        name: companyName.trim() || undefined,
+        email: companyEmail.trim() || undefined,
+        website: companyWebsite.trim() || undefined,
+        industry: companyIndustry.trim() || undefined,
+        country: companyCountry.trim() || undefined,
+      };
+
+      const updated = await updateCustomerCompany(company.id, payload);
+      setCompany(updated);
+      setCompanyName(updated.name ?? '');
+      setCompanyEmail(updated.email ?? '');
+      setCompanyWebsite(updated.website ?? '');
+      setCompanyIndustry(updated.industry ?? '');
+      setCompanyCountry(updated.country ?? '');
+      setEditingCompany(false);
+      toast.success('Company details updated.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update company details.');
+    } finally {
+      setSavingCompany(false);
     }
   }
 
@@ -355,7 +419,128 @@ export default function CustomerProfilePage() {
       </article>
 
       <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-        <CompanyManagement />
+        <h2 className="text-lg font-semibold text-[#1f2d45]">Company details</h2>
+        <p className="mt-1 text-sm text-[#607594]">Update your company information.</p>
+
+        {!company ? (
+          <p className="mt-4 rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2 text-sm text-[#607594]">
+            No company assigned to your account.
+          </p>
+        ) : !editingCompany ? (
+          <div className="mt-4 space-y-3">
+            <div className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] p-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs text-[#4f6281] font-semibold">Company Name</p>
+                  <p className="mt-1 text-sm text-[#243555] font-medium">{company.name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-[#4f6281] font-semibold">Slug</p>
+                  <p className="mt-1 text-sm font-mono text-[#243555]">{company.slug}</p>
+                </div>
+                {company.email && (
+                  <div>
+                    <p className="text-xs text-[#4f6281] font-semibold">Email</p>
+                    <p className="mt-1 text-sm text-[#243555]">{company.email}</p>
+                  </div>
+                )}
+                {company.website && (
+                  <div>
+                    <p className="text-xs text-[#4f6281] font-semibold">Website</p>
+                    <p className="mt-1 text-sm text-[#243555]">{company.website}</p>
+                  </div>
+                )}
+                {company.industry && (
+                  <div>
+                    <p className="text-xs text-[#4f6281] font-semibold">Industry</p>
+                    <p className="mt-1 text-sm text-[#243555]">{company.industry}</p>
+                  </div>
+                )}
+                {company.country && (
+                  <div>
+                    <p className="text-xs text-[#4f6281] font-semibold">Country</p>
+                    <p className="mt-1 text-sm text-[#243555]">{company.country}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditingCompany(true)}
+              className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white hover:bg-[#223657]"
+            >
+              Edit Company Details
+            </button>
+          </div>
+        ) : (
+          <form className="mt-4 space-y-3" onSubmit={onSaveCompany}>
+            <label className="block space-y-1.5 text-sm">
+              <span className="text-[#4f6281]">Company Name <span className="text-[#c43e53]">*</span></span>
+              <input
+                type="text"
+                value={companyName}
+                onChange={(event) => setCompanyName(event.target.value)}
+                className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
+                required
+              />
+            </label>
+            <label className="block space-y-1.5 text-sm">
+              <span className="text-[#4f6281]">Email</span>
+              <input
+                type="email"
+                value={companyEmail}
+                onChange={(event) => setCompanyEmail(event.target.value)}
+                className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
+              />
+            </label>
+            <label className="block space-y-1.5 text-sm">
+              <span className="text-[#4f6281]">Website</span>
+              <input
+                type="text"
+                value={companyWebsite}
+                onChange={(event) => setCompanyWebsite(event.target.value)}
+                className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
+              />
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block space-y-1.5 text-sm">
+                <span className="text-[#4f6281]">Industry</span>
+                <input
+                  type="text"
+                  value={companyIndustry}
+                  onChange={(event) => setCompanyIndustry(event.target.value)}
+                  className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
+                />
+              </label>
+              <label className="block space-y-1.5 text-sm">
+                <span className="text-[#4f6281]">Country</span>
+                <input
+                  type="text"
+                  value={companyCountry}
+                  onChange={(event) => setCompanyCountry(event.target.value)}
+                  className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
+                />
+              </label>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="submit"
+                disabled={savingCompany}
+                className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
+              >
+                {savingCompany ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingCompany(false)}
+                disabled={savingCompany}
+                className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#243555] hover:bg-[#f7f9fe]"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
       </article>
     </section>
   );
