@@ -16,14 +16,13 @@ export type AssessmentSessionResponse = {
   is_new: boolean;
 };
 
-export async function startAssessment(payload: { checklist_id: string; company_id?: string }) {
-  return apiPost<AssessmentSessionResponse, { checklist_id: string; company_id?: string }>('/assessment/start', payload);
+export async function startAssessment(payload: { checklist_id: string }) {
+  return apiPost<AssessmentSessionResponse, { checklist_id: string }>('/assessment/start', payload);
 }
 
-export async function getCurrentAssessment(checklistId?: string, companyId?: string) {
+export async function getCurrentAssessment(checklistId?: string) {
   const query = new URLSearchParams();
   if (checklistId) query.set('checklist_id', checklistId);
-  if (companyId) query.set('company_id', companyId);
   const suffix = query.toString() ? `?${query.toString()}` : '';
   return apiGetWithAuth<AssessmentSessionResponse>(`/assessment/current${suffix}`);
 }
@@ -96,10 +95,9 @@ export type AssessmentCurrentDetailResponse = AssessmentSessionResponse & {
   sections: AssessmentDetailSection[];
 };
 
-export async function getCurrentAssessmentDetail(checklistId?: string, companyId?: string) {
+export async function getCurrentAssessmentDetail(checklistId?: string) {
   const query = new URLSearchParams();
   if (checklistId) query.set('checklist_id', checklistId);
-  if (companyId) query.set('company_id', companyId);
   const suffix = query.toString() ? `?${query.toString()}` : '';
   return apiGetWithAuth<AssessmentCurrentDetailResponse>(`/assessment/current/detail${suffix}`);
 }

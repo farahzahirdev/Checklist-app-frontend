@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { getActiveCompanyId } from '@/lib/company-context';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
 import { listPurchasedChecklistIds } from '@/lib/customer-payments';
 import { listCustomerAssessments } from '@/lib/customer-assessments';
@@ -469,19 +468,18 @@ export default function AssessmentPage() {
   }, [activeQuestionId]);
 
   async function ensureCurrentAssessmentId() {
-    const companyId = getActiveCompanyId() || undefined;
     if (assessmentId) {
       return assessmentId;
     }
     try {
-      const current = await getCurrentAssessment(undefined, companyId);
+      const current = await getCurrentAssessment(undefined);
       setAssessmentId(current.assessment_id);
       return current.assessment_id;
     } catch {
       if (!assessmentDetail?.checklist_id) {
         throw new Error('No active checklist found to start assessment.');
       }
-      const started = await startAssessment({ checklist_id: assessmentDetail.checklist_id, company_id: companyId });
+      const started = await startAssessment({ checklist_id: assessmentDetail.checklist_id });
       setAssessmentId(started.assessment_id);
       return started.assessment_id;
     }
@@ -494,16 +492,15 @@ export default function AssessmentPage() {
   }) {
     setInitialLoading(true);
     try {
-      const companyId = getActiveCompanyId() || undefined;
       let detail: AssessmentCurrentDetailResponse;
       try {
-        detail = await getCurrentAssessmentDetail(checklistIdFromQuery || undefined, companyId);
+        detail = await getCurrentAssessmentDetail(checklistIdFromQuery || undefined);
       } catch (initialErr) {
         if (!checklistIdFromQuery) {
           throw initialErr;
         }
         try {
-          const list = await listCustomerAssessments({ limit: 200, sort_by: 'updated_at', sort_order: 'desc', company_id: companyId });
+          const list = await listCustomerAssessments({ limit: 200, sort_by: 'updated_at', sort_order: 'desc' });
           const submittedForChecklist = (list.assessments ?? []).find(
             (item) => item.checklist_id === checklistIdFromQuery && item.status === 'submitted',
           );
@@ -516,8 +513,8 @@ export default function AssessmentPage() {
             throw lookupErr;
           }
         }
-        await startAssessment({ checklist_id: checklistIdFromQuery, company_id: companyId });
-        detail = await getCurrentAssessmentDetail(checklistIdFromQuery, companyId);
+        await startAssessment({ checklist_id: checklistIdFromQuery });
+        detail = await getCurrentAssessmentDetail(checklistIdFromQuery);
       }
       setIsSubmittedChecklist(detail.status === 'submitted');
       setAssessmentDetail(detail);
