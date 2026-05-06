@@ -18,7 +18,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   const navItems = [
     { href: '/admin', label: 'Dashboard', icon: 'home' },
-    { href: '/admin/companies', label: 'Companies', icon: 'box' },
     { href: '/admin/checklists', label: 'Checklist Content', icon: 'checklist' },
     { href: '/admin/users', label: 'Users & access', icon: 'users' },
     { href: '/admin/support', label: 'Support', icon: 'report' },

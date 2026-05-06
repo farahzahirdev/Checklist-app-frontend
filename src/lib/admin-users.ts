@@ -38,6 +38,17 @@ export type AdminCustomersResponse = {
 
 export type AdminCustomerDetail = AdminCustomer & {
   permissions: Array<{ resource: string; action: string }>;
+  primary_company_id?: string | null;
+  company?: {
+    id: string;
+    name: string;
+    slug: string;
+    email?: string | null;
+    website?: string | null;
+    industry?: string | null;
+    country?: string | null;
+    is_active: boolean;
+  };
 };
 
 type ListAdminUsersParams = {

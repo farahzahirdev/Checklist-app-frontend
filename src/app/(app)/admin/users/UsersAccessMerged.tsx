@@ -1344,6 +1344,57 @@ export default function UsersAccessMerged() {
                   <div className="p-3 sm:p-[18px]">
                     {custInspTab === 'details' ? (
                       <div>
+                        <div className="mb-4">
+                          <p className={`mb-2 text-[11px] font-bold uppercase text-slate-500`}>Company</p>
+                          {customerDetail.company ? (
+                            <div className="space-y-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
+                              <div>
+                                <p className="text-[10px] text-slate-600">Name</p>
+                                <p className="text-[12px] font-semibold text-slate-900">{customerDetail.company.name}</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-slate-600">Slug</p>
+                                <p className="text-[12px] font-mono text-slate-700">{customerDetail.company.slug}</p>
+                              </div>
+                              {customerDetail.company.email && (
+                                <div>
+                                  <p className="text-[10px] text-slate-600">Email</p>
+                                  <p className="text-[12px] text-slate-700">{customerDetail.company.email}</p>
+                                </div>
+                              )}
+                              {customerDetail.company.industry && (
+                                <div>
+                                  <p className="text-[10px] text-slate-600">Industry</p>
+                                  <p className="text-[12px] text-slate-700">{customerDetail.company.industry}</p>
+                                </div>
+                              )}
+                              {customerDetail.company.country && (
+                                <div>
+                                  <p className="text-[10px] text-slate-600">Country</p>
+                                  <p className="text-[12px] text-slate-700">{customerDetail.company.country}</p>
+                                </div>
+                              )}
+                              <div>
+                                <p className="text-[10px] text-slate-600">Status</p>
+                                <p className="text-[12px]">
+                                  {customerDetail.company.is_active ? (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-green-700">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
+                                      Active
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-gray-700">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-gray-600" />
+                                      Inactive
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-[12px] text-slate-500">No company assigned</p>
+                          )}
+                        </div>
                         <p className={`mb-2 text-[11px] font-bold uppercase text-slate-500`}>Permissions</p>
                         <div className="flex flex-wrap gap-1">
                           {customerDetail.permissions.map((p) => (

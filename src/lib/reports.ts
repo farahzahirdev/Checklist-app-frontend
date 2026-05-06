@@ -1,5 +1,4 @@
 import { apiGetWithAuth, apiPost, apiPut } from '@/lib/api';
-import { getCompanyQuerySuffix } from '@/lib/company-context';
 
 export type ReportStatus = 'draft_generated' | 'under_review' | 'changes_requested' | 'approved' | 'published';
 
@@ -129,12 +128,11 @@ export function generateDraftReport(assessmentId: string) {
   return apiPost<ReportResponse, { assessment_id: string }>(`/reports/draft`, { assessment_id: assessmentId });
 }
 
-export function getReportsList(params?: { status?: string; skip?: number; limit?: number; company_id?: string }) {
+export function getReportsList(params?: { status?: string; skip?: number; limit?: number }) {
   const query = new URLSearchParams();
   if (params?.status) query.set('status', params.status);
   if (typeof params?.skip === 'number') query.set('skip', String(params.skip));
   if (typeof params?.limit === 'number') query.set('limit', String(params.limit));
-  if (params?.company_id) query.set('company_id', params.company_id);
   const qs = query.toString();
   return apiGetWithAuth<{ reports: ReportListItem[]; total: number }>(`/reports${qs ? `?${qs}` : ''}`);
 }
@@ -143,9 +141,8 @@ export function getReport(reportId: string) {
   return apiGetWithAuth<ReportResponse>(`/reports/${reportId}`);
 }
 
-export function getCustomerReport(reportId: string, companyId?: string) {
-  const suffix = getCompanyQuerySuffix(companyId);
-  return apiGetWithAuth<ReportResponse>(`/customer/reports/${reportId}${suffix ? `?${suffix}` : ''}`);
+export function getCustomerReport(reportId: string) {
+  return apiGetWithAuth<ReportResponse>(`/customer/reports/${reportId}`);
 }
 
 export function getReportByAssessment(assessmentId: string) {
@@ -180,17 +177,14 @@ export function upsertReportSummary(reportId: string, data: UpsertReportSummaryR
   return apiPost<ReportSummaryItem, UpsertReportSummaryRequest>(`/reports/${reportId}/summaries`, data);
 }
 
-export function getCustomerReports(companyId?: string) {
-  const suffix = getCompanyQuerySuffix(companyId);
-  return apiGetWithAuth<ReportResponse[]>(`/customer/reports/my-reports${suffix ? `?${suffix}` : ''}`);
+export function getCustomerReports() {
+  return apiGetWithAuth<ReportResponse[]>('/customer/reports/my-reports');
 }
 
-export function getCustomerReportByAssessment(assessmentId: string, companyId?: string) {
-  const suffix = getCompanyQuerySuffix(companyId);
-  return apiGetWithAuth<ReportResponse>(`/customer/reports/assessment/${assessmentId}${suffix ? `?${suffix}` : ''}`);
+export function getCustomerReportByAssessment(assessmentId: string) {
+  return apiGetWithAuth<ReportResponse>(`/customer/reports/assessment/${assessmentId}`);
 }
 
-export function getCustomerReportData(reportId: string, companyId?: string) {
-  const suffix = getCompanyQuerySuffix(companyId);
-  return apiGetWithAuth<CustomerReportDataResponse>(`/customer/reports/${reportId}/data${suffix ? `?${suffix}` : ''}`);
+export function getCustomerReportData(reportId: string) {
+  return apiGetWithAuth<CustomerReportDataResponse>(`/customer/reports/${reportId}/data`);
 }

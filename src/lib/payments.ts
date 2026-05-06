@@ -1,5 +1,4 @@
 import { apiGetWithAuth, apiPost } from '@/lib/api';
-import { getCompanyQuerySuffix } from '@/lib/company-context';
 
 export type PaymentSetupRequest = {
   checklist_id: string;
@@ -52,16 +51,12 @@ export async function createStripeCheckoutSession(payload: {
   success_url: string;
   cancel_url: string;
   checklist_id?: string;
-  company_id?: string;
 }): Promise<CheckoutSessionResult> {
   const query = new URLSearchParams();
   query.set('success_url', payload.success_url);
   query.set('cancel_url', payload.cancel_url);
   if (payload.checklist_id) {
     query.set('checklist_id', payload.checklist_id);
-  }
-  if (payload.company_id) {
-    query.set('company_id', payload.company_id);
   }
 
   const response = await apiPost<CheckoutSessionResponse, Record<string, never>>(
