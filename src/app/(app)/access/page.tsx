@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { getActiveCompanyId } from '@/lib/company-context';
 import { getCurrentAssessment, startAssessment } from '@/lib/assessment';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
 import { listPurchasedChecklistIds } from '@/lib/customer-payments';
@@ -92,7 +91,7 @@ export default function AccessPage() {
     async function preloadSelectedAssessment() {
       if (!checklistIdFromQuery) return;
       try {
-        const response = await getCurrentAssessment(checklistIdFromQuery, getActiveCompanyId() || undefined);
+        const response = await getCurrentAssessment(checklistIdFromQuery);
         if (!mounted) return;
         setAssessment(response);
         setAssessmentsByChecklistId((previous) => ({ ...previous, [checklistIdFromQuery]: response }));
@@ -173,7 +172,7 @@ export default function AccessPage() {
     setMessage('');
     setLoading(true);
     try {
-      const response = await getCurrentAssessment(checklistId.trim() || undefined, getActiveCompanyId() || undefined);
+      const response = await getCurrentAssessment(checklistId.trim() || undefined);
       setAssessment(response);
       if (checklistId.trim()) {
         setAssessmentsByChecklistId((previous) => ({ ...previous, [checklistId.trim()]: response }));
@@ -202,7 +201,7 @@ export default function AccessPage() {
     }
     // Lazy-load current assessment for the selected checklist to support managing multiple checklists.
     let cancelled = false;
-    void getCurrentAssessment(checklistId.trim(), getActiveCompanyId() || undefined)
+    void getCurrentAssessment(checklistId.trim())
       .then((response) => {
         if (cancelled) return;
         setAssessment(response);
@@ -226,7 +225,7 @@ export default function AccessPage() {
     }
     setLoading(true);
     try {
-      const response = await startAssessment({ checklist_id: checklistId.trim(), company_id: getActiveCompanyId() || undefined });
+      const response = await startAssessment({ checklist_id: checklistId.trim() });
       setAssessment(response);
       setAssessmentsByChecklistId((previous) => ({ ...previous, [checklistId.trim()]: response }));
       setMessage('Assessment started. The 7-day completion window is now active.');

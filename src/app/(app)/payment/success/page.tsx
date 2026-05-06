@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { getActiveCompanyId } from '@/lib/company-context';
 import { getCurrentUser, persistAccessToken, startMfaSetup, verifyMfaCode } from '@/lib/auth';
 import { listPublishedCustomerChecklists, selectChecklistAfterPayment, type CustomerChecklist } from '@/lib/checklist-api';
 import { getUserPaymentStatus, type PaymentStatusResponse } from '@/lib/payments';
@@ -130,7 +129,7 @@ export default function PaymentSuccessPage() {
 
             if (preferredChecklistId) {
               try {
-                await selectChecklistAfterPayment(preferredChecklistId, getActiveCompanyId() || undefined);
+                await selectChecklistAfterPayment(preferredChecklistId);
                 rememberPurchasedChecklistId(preferredChecklistId);
                 const refreshed = await getUserPaymentStatus(currentUserId);
                 window.localStorage.removeItem(CHECKOUT_CHECKLIST_ID_STORAGE_KEY);

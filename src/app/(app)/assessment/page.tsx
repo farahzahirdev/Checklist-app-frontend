@@ -767,7 +767,7 @@ export default function AssessmentPage() {
     setLoading(true);
     try {
       const currentAssessmentId = await ensureCurrentAssessmentId();
-      const result = await submitAssessment(currentAssessmentId, getActiveCompanyId() || undefined);
+      const result = await submitAssessment(currentAssessmentId);
       setMessage(`Assessment submitted. Completion: ${result.completion_percent}%`);
       toast.success('Assessment submitted.');
       await loadAssessmentDetail({ suppressNotFoundError: true });
