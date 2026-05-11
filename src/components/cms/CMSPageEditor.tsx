@@ -5,7 +5,8 @@ import { PageDetail, PageSection } from '@/lib/api/cms-api';
 import { getPageBySlug, getPageById, updatePage, createPage } from '@/lib/api/cms-api';
 import { toast } from 'sonner';
 import { SectionEditor } from './SectionEditor';
-import { Plus, Save, Trash2 } from 'lucide-react';
+import { CMSPreview } from './CMSPreview';
+import { Plus, Save, Eye } from 'lucide-react';
 
 const LANGUAGES = [
   { code: 'cs', label: 'Czech' },
@@ -27,6 +28,7 @@ export function CMSPageEditor({ pageId }: CMSPageEditorProps) {
   const [slug, setSlug] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Load page data when language changes
   useEffect(() => {
@@ -224,6 +226,13 @@ export function CMSPageEditor({ pageId }: CMSPageEditorProps) {
         {/* Save Button */}
         <div className="flex justify-end gap-2 pt-4 border-t">
           <button
+            onClick={() => setShowPreview(true)}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded flex items-center gap-2"
+          >
+            <Eye className="w-4 h-4" />
+            Preview
+          </button>
+          <button
             onClick={handleSave}
             disabled={isSaving}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2 disabled:bg-blue-400"
@@ -233,6 +242,13 @@ export function CMSPageEditor({ pageId }: CMSPageEditorProps) {
           </button>
         </div>
       </div>
+
+      {/* Preview Modal */}
+      <CMSPreview
+        page={currentPage}
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+      />
 
       {/* Sections */}
       {currentPage && (
