@@ -385,9 +385,9 @@ function HomePageContent() {
   );
 }
 
-// CMS Integration Wrapper: Renders CMS page for "about-us" slug if available, otherwise shows hardcoded content
+// CMS Integration Wrapper: Renders CMS page for "home" slug if available, otherwise shows hardcoded content
 function HomePageWithCMS() {
-  const { page, loading } = useCMSPage('about-us');
+  const { page, loading } = useCMSPage('home');
   
   if (loading) {
     return (

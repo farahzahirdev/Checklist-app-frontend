@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { PageDetail, PageSection } from '@/lib/api/cms-api';
 import { getPageBySlug, getPageById, updatePage, createPage, createSection } from '@/lib/api/cms-api';
+import { ACCESS_TOKEN_STORAGE_KEY } from '@/lib/auth';
 import { toast } from 'sonner';
 import { EnhancedSectionEditor } from './EnhancedSectionEditor';
 import { Plus, Save, Eye, Edit3, Globe, FileText, Settings } from 'lucide-react';
@@ -70,7 +71,7 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
         page = await getPageById(pageId, lang);
       } else {
         // Load page by slug (for new pages)
-        page = await getPageBySlug(pageId, lang);
+        page = await getPageBySlug(pageId, lang, localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY));
       }
       
       setPages((prev) => ({ ...prev, [lang]: page }));

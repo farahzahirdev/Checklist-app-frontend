@@ -77,13 +77,15 @@ export async function getAllPages(
 
 export async function getPageBySlug(
   slug: string,
-  language: string
+  language: string,
+  authToken?: string | null
 ): Promise<PageDetail> {
   const response = await fetch(
     `${API_BASE_URL}/api/cms/pages/${slug}?language=${language}`,
     {
       headers: {
         'Content-Type': 'application/json',
+        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {}),
       },
     }
   );

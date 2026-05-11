@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { PageDetail, PageSection } from '@/lib/api/cms-api';
 import { getPageBySlug, getPageById, updatePage, createPage } from '@/lib/api/cms-api';
+import { ACCESS_TOKEN_STORAGE_KEY } from '@/lib/auth';
 import { toast } from 'sonner';
-import { SectionEditor } from './SectionEditor';
+import { EnhancedSectionEditor } from './EnhancedSectionEditor';
 import { CMSPreview } from './CMSPreview';
 import { Plus, Save, Eye } from 'lucide-react';
 
@@ -59,7 +60,7 @@ export function CMSPageEditor({ pageId }: CMSPageEditorProps) {
         page = await getPageById(pageId, lang);
       } else {
         // Load page by slug (for new pages)
-        page = await getPageBySlug(pageId, lang);
+        page = await getPageBySlug(pageId, lang, localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY));
       }
       
       setPages((prev) => ({ ...prev, [lang]: page }));
@@ -257,7 +258,7 @@ export function CMSPageEditor({ pageId }: CMSPageEditorProps) {
           <div className="space-y-3">
             {currentPage.sections?.length ? (
               currentPage.sections.map((section) => (
-                <SectionEditor
+                <EnhancedSectionEditor
                   key={section.id}
                   section={section}
                   onUpdate={() => {

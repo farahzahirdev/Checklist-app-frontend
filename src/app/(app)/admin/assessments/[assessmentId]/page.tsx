@@ -623,7 +623,7 @@ export default function AdminAssessmentReviewDetailPage() {
                                       type="button"
                                       onClick={() => {
                                         // Get preview URL and open in new window
-                                        fetch(`/api/api/v1/media/${file.media_id}/preview`)
+                                        fetch(`/api/v1/media/${file.media_id}/preview`)
                                           .then(response => response.json())
                                           .then(data => {
                                             window.open(data.preview_url, '_blank');
@@ -631,7 +631,7 @@ export default function AdminAssessmentReviewDetailPage() {
                                           .catch(error => {
                                             console.error('Error getting preview URL:', error);
                                             // Fallback to direct preview
-                                            window.open(`/api/api/v1/media/${file.media_id}/preview`, '_blank');
+                                            window.open(`/api/v1/media/${file.media_id}/preview`, '_blank');
                                           });
                                       }}
                                       className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f1f5f9]"
@@ -644,7 +644,7 @@ export default function AdminAssessmentReviewDetailPage() {
                                     type="button"
                                     onClick={() => {
                                       // Get preview URL for download (it returns the actual file)
-                                      fetch(`/api/api/v1/media/${file.media_id}/preview`)
+                                      fetch(`/api/v1/media/${file.media_id}/preview`)
                                         .then(response => response.json())
                                         .then(data => {
                                           // Create download link
