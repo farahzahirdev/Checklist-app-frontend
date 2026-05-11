@@ -417,7 +417,7 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
             </div>
 
             {/* Page Form */}
-            <div className="bg-white rounded-xl border p-6 mb-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6 shadow-sm">
               <div className="grid grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="block text-sm font-medium mb-2 flex items-center gap-2">
@@ -430,7 +430,7 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
                     onChange={(e) => setSlug(e.target.value)}
                     disabled={!!currentPage?.id}
                     placeholder="e.g., home, faq, products"
-                    className="w-full border px-3 py-2 rounded-lg disabled:bg-gray-50"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg bg-white text-gray-900 disabled:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">Unique identifier for this page</p>
                 </div>
@@ -444,7 +444,7 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Page title"
-                    className="w-full border px-3 py-2 rounded-lg"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -456,7 +456,7 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
                   onChange={(e) => setMetaDescription(e.target.value)}
                   placeholder="Description for search engines"
                   rows={2}
-                  className="w-full border px-3 py-2 rounded-lg"
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -466,7 +466,7 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as 'draft' | 'published')}
-                    className="w-full border px-3 py-2 rounded-lg"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="draft">Draft</option>
                     <option value="published">Published</option>
@@ -480,7 +480,7 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
                   <select
                     value={contentType}
                     onChange={(e) => setContentType(e.target.value)}
-                    className="w-full border px-3 py-2 rounded-lg"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="standard">Standard</option>
                     <option value="hero">Hero</option>
