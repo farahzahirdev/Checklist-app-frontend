@@ -79,25 +79,113 @@ function SectionRenderer({ section }: { section: PageSection }) {
 // Section Renderers
 
 function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
+  const backgroundImage = data.background_image
+    ? `linear-gradient(rgba(4, 9, 22, 0.56), rgba(4, 9, 22, 0.72)), url(${data.background_image})`
+    : 'linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%)';
+
   return (
-    <section className="py-12 md:py-20 px-4 bg-gradient-to-r from-blue-50 to-indigo-50">
-      <div className="max-w-4xl mx-auto text-center">
-        {data.title && <h1 className="text-4xl md:text-5xl font-bold mb-4">{data.title}</h1>}
-        {data.subtitle && <p className="text-lg md:text-xl text-gray-600 mb-8">{data.subtitle}</p>}
-        {data.button_text && data.button_link && (
-          <a
-            href={data.button_link}
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
-          >
-            {data.button_text}
-          </a>
-        )}
-        {data.image_url && (
-          <img
-            src={data.image_url}
-            alt={data.title || 'Hero'}
-            className="mt-8 rounded-lg shadow-lg max-w-full h-auto"
-          />
+    <section
+      className="px-4 py-8 md:py-10 text-white"
+      style={{
+        backgroundImage,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      <div className="mx-auto grid min-h-[400px] w-full max-w-6xl items-start gap-5 sm:min-h-[420px] md:gap-7 lg:min-h-[440px] lg:grid-cols-2 lg:items-center lg:gap-8 xl:max-w-6xl 2xl:max-w-[90rem]">
+        <div className="space-y-4">
+          {data.kicker && (
+            <p className="text-sm font-medium uppercase tracking-[0.24em] text-[#5ea2ff]">
+              {data.kicker}
+            </p>
+          )}
+          {data.title && <h1 className="max-w-xl text-4xl font-semibold leading-tight md:text-5xl">{data.title}</h1>}
+          {data.subtitle && <p className="max-w-xl text-lg text-[#d4e2f6] md:text-xl">{data.subtitle}</p>}
+          {data.description && <p className="max-w-xl text-sm leading-7 text-[#d4e2f6] md:text-base">{data.description}</p>}
+          {(data.buttons || data.button_text) && (
+            <div className="flex flex-wrap gap-3 pt-2">
+              {Array.isArray(data.buttons)
+                ? data.buttons.map((button: any, index: number) => (
+                    <a
+                      key={index}
+                      href={button.url || '#'}
+                      className={`inline-flex items-center rounded-lg px-5 py-3 text-sm font-medium transition ${
+                        button.primary
+                          ? 'bg-[#2e82ff] text-white hover:bg-[#276fd5]'
+                          : 'border border-white/25 bg-white/10 text-white hover:bg-white/15'
+                      }`}
+                    >
+                      {button.text}
+                    </a>
+                  ))
+                : data.button_text && data.button_link && (
+                    <a
+                      href={data.button_link}
+                      className="inline-flex items-center rounded-lg bg-[#2e82ff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#276fd5]"
+                    >
+                      {data.button_text}
+                    </a>
+                  )}
+            </div>
+          )}
+        </div>
+
+        {data.mockup && (
+          <div className="relative mx-auto w-full max-w-[620px] lg:max-w-[640px] lg:justify-self-end">
+            <div className="overflow-hidden rounded-2xl border border-[#325a99]/80 bg-[#edf1f9] text-[#152948] shadow-[0_24px_70px_rgba(0,0,0,0.55)]">
+              <div className="grid md:grid-cols-[180px_1fr]">
+                <aside className="h-full bg-[#0b1a39] p-2.5 text-[#dce8ff]">
+                  <p className="mb-2 text-sm font-semibold">{data.mockup.brand || 'AuditReady'}</p>
+                  <ul className="space-y-1.5 text-xs">
+                    {(data.mockup.nav ? Object.values(data.mockup.nav) : ['Dashboard', 'Checklists', 'Reports', 'Settings']).map((item: any, index: number) => (
+                      <li key={index} className={`rounded-md px-2 py-1.5 ${index === 0 ? 'bg-[#17376d]' : 'text-[#a0b4d5]'}`}>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </aside>
+                <div className="p-3">
+                  <div className="mb-2 rounded-xl bg-white p-2.5">
+                    <p className="text-sm font-semibold text-[#1a2c4f]">{data.mockup.dashboard?.title || 'Dashboard'}</p>
+                    <div className="mt-2 grid grid-cols-3 gap-2">
+                      {Object.entries(data.mockup.dashboard?.metrics || {
+                        overallReadiness: 'Overall Readiness',
+                        completed: 'Completed',
+                        openFindings: 'Open Findings',
+                      }).map(([key, label]) => (
+                        <div key={key} className="flex h-full min-h-[94px] flex-col rounded-lg border border-[#e2e8f5] bg-[#f8fbff] p-2">
+                          <p className="min-h-[24px] text-[11px] leading-[1.1] text-[#6f7f98]">{label}</p>
+                          <p className="min-h-[34px] text-xl font-bold leading-tight text-[#173a73] sm:text-2xl lg:text-[22px] xl:text-2xl 2xl:text-3xl">72%</p>
+                          <div className="mt-auto h-1.5 rounded-full bg-[#d6e2f7]">
+                            <div className="h-full w-[72%] rounded-full bg-[#2e82ff]" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid gap-1.5 sm:grid-cols-2">
+                    <div className="rounded-xl bg-white p-2.5">
+                      <p className="text-xs font-semibold text-[#263d62]">Recent Activity</p>
+                      <ul className="mt-1.5 space-y-1.5 text-[11px] text-[#4f668a]">
+                        <li>Audit Readiness Checklist</li>
+                        <li>Documentation Package</li>
+                        <li>NIS2 Gap Analysis</li>
+                      </ul>
+                    </div>
+                    <div className="rounded-xl bg-white p-2.5">
+                      <p className="text-xs font-semibold text-[#263d62]">Top Domains</p>
+                      <div className="mt-1.5 space-y-2 text-[11px] text-[#4f668a]">
+                        <div>Governance</div>
+                        <div>Risk Management</div>
+                        <div>Access Control</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </section>

@@ -48,17 +48,72 @@ function PreviewSection({ section, viewport }: any) {
   
   switch (section.section_type) {
     case 'hero':
+      const backgroundImage = section.data.background_image
+        ? `linear-gradient(rgba(4, 9, 22, 0.56), rgba(4, 9, 22, 0.72)), url(${section.data.background_image})`
+        : 'linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%)';
+
       return (
-        <div className={`${baseClasses} bg-gradient-to-br from-blue-600 to-blue-800 text-white`}>
-          <div className="text-xs font-semibold uppercase tracking-wider opacity-75">
-            {section.data.kicker || 'Hero Section'}
+        <div
+          className={`${baseClasses} text-white`}
+          style={{
+            backgroundImage,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }}
+        >
+          <div className="grid gap-6 lg:grid-cols-2 lg:items-center">
+            <div className="space-y-4">
+              <div className="text-xs font-semibold uppercase tracking-wider text-[#5ea2ff] opacity-90">
+                {section.data.kicker || 'Hero Section'}
+              </div>
+              <h1 className="text-2xl font-bold sm:text-3xl md:text-4xl">
+                {section.data.title}
+              </h1>
+              {section.data.subtitle && (
+                <p className="text-sm sm:text-base text-[#d4e2f6]">{section.data.subtitle}</p>
+              )}
+              {section.data.description && (
+                <p className="text-xs sm:text-sm leading-6 text-[#d4e2f6]">{section.data.description}</p>
+              )}
+            </div>
+
+            {section.data.mockup && (
+              <div className="overflow-hidden rounded-2xl border border-[#325a99]/80 bg-[#edf1f9] text-[#152948] shadow-[0_24px_70px_rgba(0,0,0,0.4)]">
+                <div className="grid md:grid-cols-[120px_1fr]">
+                  <aside className="bg-[#0b1a39] p-2 text-[#dce8ff]">
+                    <p className="mb-2 text-xs font-semibold">{section.data.mockup.brand || 'AuditReady'}</p>
+                    <ul className="space-y-1 text-[10px]">
+                      {(section.data.mockup.nav ? Object.values(section.data.mockup.nav) : ['Dashboard', 'Checklists', 'Reports', 'Settings']).map((item: any, index: number) => (
+                        <li key={index} className={`rounded px-2 py-1 ${index === 0 ? 'bg-[#17376d]' : 'text-[#a0b4d5]'}`}>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </aside>
+                  <div className="p-3">
+                    <div className="rounded-xl bg-white p-2.5">
+                      <p className="text-xs font-semibold text-[#1a2c4f]">{section.data.mockup.dashboard?.title || 'Dashboard'}</p>
+                      <div className="mt-2 grid grid-cols-3 gap-2">
+                        {Object.values(section.data.mockup.dashboard?.metrics || {
+                          overallReadiness: 'Overall Readiness',
+                          completed: 'Completed',
+                          openFindings: 'Open Findings',
+                        }).map((label: any, index: number) => (
+                          <div key={index} className="flex min-h-[72px] flex-col rounded-lg border border-[#e2e8f5] bg-[#f8fbff] p-2">
+                            <p className="text-[10px] leading-[1.1] text-[#6f7f98]">{label}</p>
+                            <div className="mt-auto h-1.5 rounded-full bg-[#d6e2f7]">
+                              <div className="h-full w-[72%] rounded-full bg-[#2e82ff]" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">
-            {section.data.title}
-          </h1>
-          {section.data.subtitle && (
-            <p className="text-sm sm:text-base opacity-90">{section.data.subtitle}</p>
-          )}
         </div>
       );
     
