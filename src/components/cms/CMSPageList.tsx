@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Trash2, Edit, Eye, Plus } from 'lucide-react';
+import { Trash2, Edit, Eye } from 'lucide-react';
 import { getAllPages, deletePage, togglePublishPage } from '@/lib/api/cms-api';
 import { toast } from 'sonner';
 
@@ -66,15 +66,9 @@ export function CMSPageList() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">CMS Pages</h1>
-        <Link
-          href="/admin/cms/new"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          New Page
-        </Link>
+      <div>
+        <h1 className="text-3xl font-bold">Manage Pages</h1>
+        <p className="text-gray-600 mt-1">Edit and publish existing pages</p>
       </div>
 
       {/* Filters */}
@@ -111,7 +105,7 @@ export function CMSPageList() {
           <div className="p-8 text-center">Loading pages...</div>
         ) : pages.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            No pages found. <Link href="/admin/cms/new" className="text-blue-600 hover:underline">Create one</Link>
+            No pages found
           </div>
         ) : (
           <table className="w-full">
