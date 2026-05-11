@@ -3,6 +3,7 @@
 import React from 'react';
 import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { PageDetail, PageSection } from '@/lib/api/cms-api';
+import { PublicFooter } from '@/components/public-footer';
 
 interface PageRendererProps {
   page: PageDetail | null;
@@ -31,6 +32,7 @@ export function PageRenderer({ page, fallback }: PageRendererProps) {
         // If page exists but has no sections, show fallback
         fallback
       )}
+      <PublicFooter />
     </main>
   );
 }
