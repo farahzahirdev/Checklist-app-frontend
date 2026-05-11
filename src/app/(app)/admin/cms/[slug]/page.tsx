@@ -1,4 +1,4 @@
-import { CMSPageEditor } from '@/components/cms/CMSPageEditor';
+import { EnhancedCMSPageEditor } from '@/components/cms/EnhancedCMSPageEditor';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
@@ -24,7 +24,7 @@ export default async function EditCMSPage({
         </Link>
       </div>
       <h1 className="text-3xl font-bold mb-6">Edit Page: {slug}</h1>
-      <CMSPageEditor pageId={slug} />
+      <EnhancedCMSPageEditor pageId={slug} />
     </div>
   );
 }

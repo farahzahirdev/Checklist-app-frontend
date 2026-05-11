@@ -47,6 +47,20 @@ function SectionRenderer({ section }: { section: PageSection }) {
       return <ProductSectionRenderer data={data} />;
     case 'faq':
       return <FAQSectionRenderer data={data} />;
+    case 'cards':
+      return <CardsSectionRenderer data={data} />;
+    case 'cta':
+      return <CTASectionRenderer data={data} />;
+    case 'trust':
+      return <TrustSectionRenderer data={data} />;
+    case 'how-it-works':
+      return <HowItWorksSectionRenderer data={data} />;
+    case 'documentation-grid':
+      return <DocumentationGridRenderer data={data} />;
+    case 'bundles':
+      return <BundlesSectionRenderer data={data} />;
+    case 'why-choose':
+      return <WhyChooseSectionRenderer data={data} />;
     case 'use_cases':
       return <UseCasesSectionRenderer data={data} />;
     case 'steps':
@@ -249,6 +263,196 @@ function StandardSectionRenderer({ data }: { data: Record<string, any> }) {
     <section className="py-12 px-4 bg-white">
       <div className="max-w-4xl mx-auto prose">
         {data.content && <div dangerouslySetInnerHTML={{ __html: data.content }} />}
+      </div>
+    </section>
+  );
+}
+
+// Enhanced section renderers for new section types
+
+function CardsSectionRenderer({ data }: { data: Record<string, any> }) {
+  return (
+    <section className="py-12 px-4 bg-white">
+      <div className="max-w-6xl mx-auto">
+        {data.title && <h2 className="text-3xl font-bold mb-8 text-center">{data.title}</h2>}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {(data.cards || []).map((card: any, index: number) => (
+            <div key={index} className="border rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition-shadow">
+              <h3 className="font-bold text-lg mb-3">{card.title}</h3>
+              {card.content && (
+                <div 
+                  className="prose max-w-none text-gray-600 mb-4"
+                  dangerouslySetInnerHTML={{ __html: card.content }}
+                />
+              )}
+              {card.points && (
+                <ul className="space-y-2">
+                  {card.points.map((point: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-green-600 mt-1 text-sm">✓</span>
+                      <span className="text-sm">{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CTASectionRenderer({ data }: { data: Record<string, any> }) {
+  return (
+    <section className="py-16 px-4 bg-gradient-to-r from-green-50 to-blue-50">
+      <div className="max-w-4xl mx-auto text-center">
+        {data.title && <h2 className="text-3xl font-bold mb-4">{data.title}</h2>}
+        {data.subtitle && (
+          <div 
+            className="prose prose-lg max-w-none text-gray-700 mb-8"
+            dangerouslySetInnerHTML={{ __html: data.subtitle }}
+          />
+        )}
+        <div className="flex gap-4 justify-center flex-wrap">
+          {(data.buttons || []).map((button: any, index: number) => (
+            <a
+              key={index}
+              href={button.url || '#'}
+              className={`px-6 py-3 rounded-lg font-medium ${
+                button.primary 
+                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                  : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {button.text}
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TrustSectionRenderer({ data }: { data: Record<string, any> }) {
+  return (
+    <section className="py-12 px-4 bg-gray-50">
+      <div className="max-w-6xl mx-auto">
+        {data.title && <h2 className="text-3xl font-bold mb-4 text-center">{data.title}</h2>}
+        {data.subtitle && <p className="text-lg text-gray-600 mb-8 text-center">{data.subtitle}</p>}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {(data.cards || []).map((card: any, index: number) => (
+            <div key={index} className="text-center p-6">
+              {card.icon && <div className="text-4xl mb-4">{card.icon}</div>}
+              <h3 className="font-semibold mb-2">{card.title}</h3>
+              <p className="text-gray-600">{card.content}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HowItWorksSectionRenderer({ data }: { data: Record<string, any> }) {
+  return (
+    <section className="py-12 px-4 bg-white">
+      <div className="max-w-4xl mx-auto">
+        {data.title && <h2 className="text-3xl font-bold mb-4 text-center">{data.title}</h2>}
+        {data.subtitle && <p className="text-lg text-gray-600 mb-8 text-center">{data.subtitle}</p>}
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+          {(data.steps || []).map((step: any, index: number) => (
+            <div key={index} className="text-center">
+              <div className="flex items-center justify-center h-12 w-12 rounded-full bg-blue-600 text-white font-bold text-lg mb-4">
+                {step.number || index + 1}
+              </div>
+              <h3 className="font-semibold mb-2">{step.title}</h3>
+              <p className="text-gray-600">{step.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DocumentationGridRenderer({ data }: { data: Record<string, any> }) {
+  return (
+    <section className="py-12 px-4 bg-white">
+      <div className="max-w-6xl mx-auto">
+        {data.title && <h2 className="text-3xl font-bold mb-4">{data.title}</h2>}
+        {data.subtitle && <p className="text-lg text-gray-600 mb-8">{data.subtitle}</p>}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {(data.documents || []).map((doc: any, index: number) => (
+            <div key={index} className="border rounded-lg p-6 hover:shadow-lg transition-shadow">
+              <h3 className="font-semibold mb-2">{doc.name}</h3>
+              <p className="text-gray-600 mb-4">{doc.subtitle}</p>
+              <div className="flex justify-between items-center">
+                <span className="text-blue-600 font-semibold">{doc.price}</span>
+                {doc.badge && (
+                  <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
+                    {doc.badge}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BundlesSectionRenderer({ data }: { data: Record<string, any> }) {
+  return (
+    <section className="py-12 px-4 bg-gray-50">
+      <div className="max-w-6xl mx-auto">
+        {data.title && <h2 className="text-3xl font-bold mb-4 text-center">{data.title}</h2>}
+        {data.subtitle && <p className="text-lg text-gray-600 mb-8 text-center">{data.subtitle}</p>}
+        <div className="grid gap-6 md:grid-cols-3">
+          {(data.bundles || []).map((bundle: any, index: number) => (
+            <div key={index} className={`border rounded-lg p-6 ${bundle.badge ? 'ring-2 ring-blue-500' : ''}`}>
+              {bundle.badge && (
+                <div className="bg-blue-600 text-white text-xs px-2 py-1 rounded text-center mb-4">
+                  {bundle.badge}
+                </div>
+              )}
+              <h3 className="font-bold text-lg mb-2">{bundle.title}</h3>
+              <p className="text-gray-600 mb-4">{bundle.subtitle}</p>
+              <div className="text-center mb-4">
+                <div className="text-3xl font-bold text-blue-600">{bundle.price}</div>
+                {bundle.originalPrice && (
+                  <div className="text-gray-500 line-through">{bundle.originalPrice}</div>
+                )}
+                {bundle.save && (
+                  <div className="text-green-600 font-semibold">{bundle.save}</div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function WhyChooseSectionRenderer({ data }: { data: Record<string, any> }) {
+  return (
+    <section className="py-12 px-4 bg-white">
+      <div className="max-w-4xl mx-auto">
+        {data.title && <h2 className="text-3xl font-bold mb-8 text-center">{data.title}</h2>}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {(data.points || []).map((point: string, index: number) => (
+            <div key={index} className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <div className="h-6 w-6 rounded-full bg-green-600 text-white flex items-center justify-center text-sm">
+                  ✓
+                </div>
+              </div>
+              <p className="text-gray-700">{point}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
