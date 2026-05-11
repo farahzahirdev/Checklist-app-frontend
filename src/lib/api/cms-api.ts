@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/lib/config';
+import { ACCESS_TOKEN_STORAGE_KEY } from '@/lib/auth';
 
 // Types
 export interface PageSection {
@@ -62,7 +63,7 @@ export async function getAllPages(
 
   const response = await fetch(`${API_BASE_URL}/api/cms/pages?${params}`, {
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)}`,
       'Content-Type': 'application/json',
     },
   });
@@ -108,7 +109,7 @@ export async function createPage(data: {
   const response = await fetch(`${API_BASE_URL}/api/cms/pages`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(data),
@@ -134,7 +135,7 @@ export async function updatePage(
   const response = await fetch(`${API_BASE_URL}/api/cms/pages/${pageId}`, {
     method: 'PUT',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(data),
@@ -155,7 +156,7 @@ export async function togglePublishPage(
   const response = await fetch(`${API_BASE_URL}/api/cms/pages/${pageId}/publish`, {
     method: 'PATCH',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ status }),
@@ -173,7 +174,7 @@ export async function deletePage(pageId: string): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/api/cms/pages/${pageId}`, {
     method: 'DELETE',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)}`,
     },
   });
 
@@ -198,7 +199,7 @@ export async function createSection(
   const response = await fetch(`${API_BASE_URL}/api/cms/sections`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(data),
@@ -223,7 +224,7 @@ export async function updateSection(
   const response = await fetch(`${API_BASE_URL}/api/cms/sections/${sectionId}`, {
     method: 'PUT',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(data),
@@ -241,7 +242,7 @@ export async function deleteSection(sectionId: string): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/api/cms/sections/${sectionId}`, {
     method: 'DELETE',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)}`,
     },
   });
 
@@ -265,7 +266,7 @@ export async function getAllImages(
 
   const response = await fetch(`${API_BASE_URL}/api/cms/images?${params}`, {
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)}`,
     },
   });
 
@@ -287,7 +288,7 @@ export async function uploadImage(
   const response = await fetch(`${API_BASE_URL}/api/cms/images/upload`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)}`,
     },
     body: formData,
   });
@@ -309,7 +310,7 @@ export async function updateImage(
   const response = await fetch(`${API_BASE_URL}/api/cms/images/${imageId}`, {
     method: 'PUT',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(data),
@@ -327,7 +328,7 @@ export async function deleteImage(imageId: string): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/api/cms/images/${imageId}`, {
     method: 'DELETE',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)}`,
     },
   });
 
