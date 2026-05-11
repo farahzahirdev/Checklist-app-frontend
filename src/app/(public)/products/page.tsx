@@ -413,8 +413,13 @@ function ProductsPageWithCMS() {
     );
   }
 
-  // PageRenderer handles both CMS page and fallback content
-  return <PageRenderer page={page} fallback={<ProductsPageContent />} />;
+  // PageRenderer handles both CMS page and fallback content, wrapped with footer
+  return (
+    <>
+      <PageRenderer page={page} fallback={<ProductsPageContent />} />
+      <PublicFooter />
+    </>
+  );
 }
 
 export default ProductsPageWithCMS;

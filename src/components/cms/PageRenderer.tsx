@@ -83,6 +83,94 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
   const heroImage = data.background_image && !data.background_image.startsWith('/assets/')
     ? data.background_image
     : heroBackground.src;
+  
+  // Check if this is a products-style hero (with highlights and radial gradient)
+  const isProductsHero = data.highlights && data.highlights.length > 0;
+  
+  if (isProductsHero) {
+    const backgroundImage = `radial-gradient(circle at 20% 20%, rgba(16, 55, 114, 0.62) 0%, rgba(7, 22, 47, 0.72) 45%, rgba(4, 16, 34, 0.78) 100%), url(${heroImage})`;
+    
+    return (
+      <section className="relative overflow-hidden border-b border-[#12315b]" style={{
+        backgroundImage,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}>
+        <div className="pointer-events-none absolute inset-0 opacity-35">
+          <div className="absolute -left-24 top-12 h-72 w-72 rounded-full bg-[#2262d9]/40 blur-3xl"></div>
+          <div className="absolute right-24 top-6 h-72 w-72 rounded-full bg-[#143f8f]/40 blur-3xl"></div>
+        </div>
+        <div className="relative mx-auto grid min-h-[520px] max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 md:px-6 md:py-12 lg:max-w-6xl lg:grid-cols-[1.05fr_0.95fr] xl:max-w-7xl 2xl:max-w-[90rem]">
+          <div>
+            {data.kicker && (
+              <p className="inline-flex rounded-full border border-[#255da8] bg-[#12366c] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#9ac3ff] motion-safe:animate-fade-in motion-safe:delay-75">
+                {data.kicker}
+              </p>
+            )}
+            {data.title && (
+              <h1 className="public-hero-title mt-4 text-white motion-safe:animate-fade-in-up motion-safe:delay-100">
+                {data.title}
+                {data.accent && (
+                  <>
+                    <br />
+                    <span className="text-[#3f8bff]">{data.accent}</span>
+                  </>
+                )}
+              </h1>
+            )}
+            {data.description && (
+              <p className="public-hero-subtitle mt-4 max-w-xl text-[#c7d8f8] motion-safe:animate-fade-in-up motion-safe:delay-200">
+                {data.description}
+              </p>
+            )}
+            {data.highlights && data.highlights.length > 0 && (
+              <div className="mt-7 grid gap-3 motion-safe:animate-fade-in-up motion-safe:delay-300 sm:grid-cols-3">
+                {data.highlights.map((highlight: any, index: number) => (
+                  <article key={index} className="rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 p-4 transition-colors duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5">
+                    <p className="text-sm font-semibold text-white">{highlight.title}</p>
+                    <p className="mt-1 text-xs text-[#a9c0e6]">{highlight.body}</p>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+          {data.mockup && (
+            <div className="relative motion-safe:animate-fade-in-right motion-safe:delay-200">
+              <div className="overflow-hidden rounded-2xl border border-[#2f4f86] bg-[#f8fbff] shadow-[0_20px_50px_rgba(0,0,0,0.45)] transition-shadow duration-500 ease-out motion-safe:hover:shadow-[0_24px_60px_rgba(0,0,0,0.42)]">
+                <div className="grid md:grid-cols-[175px_1fr]">
+                  <aside className="min-h-[340px] bg-[#091d3f] p-4 text-[#d7e6ff]">
+                    <p className="mb-4 text-sm font-semibold uppercase tracking-[0.15em]">{data.mockup.brand || 'AuditReady'}</p>
+                    <ul className="space-y-2.5 text-sm">
+                      {data.mockup.nav && Object.values(data.mockup.nav).map((item: any, index: number) => (
+                        <li key={index} className={`rounded-md px-2 py-1.5 ${index === 1 ? 'bg-[#163f7d]' : 'text-[#a8bedf]'}`}>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </aside>
+                  <div className="p-5 text-[#1f3253]">
+                    {data.mockup.library && (
+                      <>
+                        <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#4e6c96]">{data.mockup.library}</p>
+                        <div className="mt-3 space-y-2.5">
+                          {data.mockup.documents && data.mockup.documents.map((doc: string, index: number) => (
+                            <div key={index} className="rounded-lg border border-[#e2e8f4] bg-white p-3 text-base">{doc}</div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  }
+  
+  // Default home-style hero
   const backgroundImage = `linear-gradient(rgba(4, 9, 22, 0.56), rgba(4, 9, 22, 0.72)), url(${heroImage})`;
 
   return (
@@ -521,48 +609,98 @@ function TrustSectionRenderer({ data }: { data: Record<string, any> }) {
 
 function HowItWorksSectionRenderer({ data }: { data: Record<string, any> }) {
   return (
-    <section className="py-12 px-4 bg-white">
-      <div className="max-w-4xl mx-auto">
-        {data.title && <h2 className="text-3xl font-bold mb-4 text-center">{data.title}</h2>}
-        {data.subtitle && <p className="text-lg text-gray-600 mb-8 text-center">{data.subtitle}</p>}
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-          {(data.steps || []).map((step: any, index: number) => (
-            <div key={index} className="text-center">
-              <div className="flex items-center justify-center h-12 w-12 rounded-full bg-blue-600 text-white font-bold text-lg mb-4">
-                {step.number || index + 1}
+    <section className="mx-auto max-w-7xl space-y-4 px-4 py-10 sm:px-6 md:px-6 md:py-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
+      <article className="rounded-2xl border border-[#d7e7de] bg-[#edf7f0] p-5 md:p-6">
+        <div className="grid gap-3 md:grid-cols-[1.1fr_3fr]">
+          <div>
+            {data.title && <h3 className="text-3xl font-semibold text-[#1a2440]">{data.title}</h3>}
+            {data.subtitle && <p className="mt-2 text-sm text-[#5e7293]">{data.subtitle}</p>}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {(data.steps || []).map((step: any, index: number) => (
+              <div key={index} className="rounded-xl border border-[#d2e6da] bg-white/70 p-4">
+                <p className="text-sm font-semibold text-[#1f355d]">{step.title}</p>
+                <p className="mt-1 text-xs text-[#5e7293]">{step.body}</p>
               </div>
-              <h3 className="font-semibold mb-2">{step.title}</h3>
-              <p className="text-gray-600">{step.body}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      </article>
     </section>
   );
 }
 
 function DocumentationGridRenderer({ data }: { data: Record<string, any> }) {
+  const [activeCategory, setActiveCategory] = React.useState<string>('All');
+  
+  const filteredDocs = React.useMemo(() => {
+    if (activeCategory === 'All') return data.documents || [];
+    return (data.documents || []).filter((doc: any) => doc.category === activeCategory);
+  }, [activeCategory, data.documents]);
+
   return (
-    <section className="py-12 px-4 bg-white">
-      <div className="max-w-6xl mx-auto">
-        {data.title && <h2 className="text-3xl font-bold mb-4">{data.title}</h2>}
-        {data.subtitle && <p className="text-lg text-gray-600 mb-8">{data.subtitle}</p>}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {(data.documents || []).map((doc: any, index: number) => (
-            <div key={index} className="border rounded-lg p-6 hover:shadow-lg transition-shadow">
-              <h3 className="font-semibold mb-2">{doc.name}</h3>
-              <p className="text-gray-600 mb-4">{doc.subtitle}</p>
-              <div className="flex justify-between items-center">
-                <span className="text-blue-600 font-semibold">{doc.price}</span>
-                {doc.badge && (
-                  <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
-                    {doc.badge}
-                  </span>
-                )}
-              </div>
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-6 md:py-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
+      <div>
+        {data.title && <h3 className="text-4xl font-semibold text-[#1a2440]">{data.title}</h3>}
+        {data.subtitle && <p className="mt-2 text-base text-[#5e7293]">{data.subtitle}</p>}
+        {data.categories && (
+          <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Documentation categories">
+            {data.categories.map((category: string) => (
+              <button
+                key={category}
+                role="tab"
+                aria-selected={activeCategory === category}
+                onClick={() => setActiveCategory(category)}
+                className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
+                  activeCategory === category
+                    ? 'border-[#1f7bff] bg-[#1f7bff] text-white'
+                    : 'border-[#d7deeb] bg-white text-[#5e7293] hover:bg-[#f7f9ff]'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mt-4">
+        {filteredDocs.map((doc: any, index: number) => (
+          <article
+            key={index}
+            className="flex h-full flex-col rounded-2xl border border-[#d7deeb] bg-white p-4 shadow-sm transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-base font-semibold text-[#1f2741]">{doc.name}</h2>
+              {doc.badge && (
+                <span className="rounded-full bg-[#dbf8e9] px-2 py-0.5 text-[10px] font-semibold text-[#2f9c65]">
+                  {doc.badge}
+                </span>
+              )}
             </div>
-          ))}
-        </div>
+            <p className="mt-2 text-sm text-[#5e7293]">{doc.subtitle}</p>
+            {doc.points && (
+              <ul className="mt-3 space-y-1.5 text-xs text-[#5f7394]">
+                {doc.points.map((point: string, i: number) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#ddf5e8] text-[#2f9c65]">
+                      <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" aria-hidden="true">
+                        <path d="m4.2 8.1 2.2 2.2 5.2-5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
+                      </svg>
+                    </span>
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="mt-auto pt-5 text-2xl font-semibold text-[#1f355d]">{doc.price}</p>
+            <a
+              href="/register"
+              className="mt-3 flex w-full items-center justify-center rounded-lg border border-[#1f7bff] bg-[#1f7bff]/10 px-3 py-2 text-sm font-semibold text-[#1f7bff] transition-colors hover:bg-[#1f7bff]/20"
+            >
+              Get started
+            </a>
+          </article>
+        ))}
       </div>
     </section>
   );
@@ -570,55 +708,66 @@ function DocumentationGridRenderer({ data }: { data: Record<string, any> }) {
 
 function BundlesSectionRenderer({ data }: { data: Record<string, any> }) {
   return (
-    <section className="py-12 px-4 bg-gray-50">
-      <div className="max-w-6xl mx-auto">
-        {data.title && <h2 className="text-3xl font-bold mb-4 text-center">{data.title}</h2>}
-        {data.subtitle && <p className="text-lg text-gray-600 mb-8 text-center">{data.subtitle}</p>}
-        <div className="grid gap-6 md:grid-cols-3">
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-6 md:py-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
+      <article className="rounded-2xl border border-[#d7deeb] bg-[#eef2fa] p-5 transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md md:p-6">
+        {data.title && <h3 className="text-3xl font-semibold text-[#1a2440]">{data.title}</h3>}
+        {data.subtitle && <p className="mt-2 text-sm text-[#5e7293]">{data.subtitle}</p>}
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
           {(data.bundles || []).map((bundle: any, index: number) => (
-            <div key={index} className={`border rounded-lg p-6 ${bundle.badge ? 'ring-2 ring-blue-500' : ''}`}>
+            <div
+              key={index}
+              className={`flex h-full flex-col rounded-xl border bg-white p-4 text-center ${
+                bundle.badge ? 'border-2 border-[#2f7dff]' : 'border-[#d7deeb]'
+              }`}
+            >
               {bundle.badge && (
-                <div className="bg-blue-600 text-white text-xs px-2 py-1 rounded text-center mb-4">
+                <p className="inline-flex rounded-full bg-[#2f7dff] px-3 py-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-white">
                   {bundle.badge}
-                </div>
+                </p>
               )}
-              <h3 className="font-bold text-lg mb-2">{bundle.title}</h3>
-              <p className="text-gray-600 mb-4">{bundle.subtitle}</p>
-              <div className="text-center mb-4">
-                <div className="text-3xl font-bold text-blue-600">{bundle.price}</div>
-                {bundle.originalPrice && (
-                  <div className="text-gray-500 line-through">{bundle.originalPrice}</div>
-                )}
-                {bundle.save && (
-                  <div className="text-green-600 font-semibold">{bundle.save}</div>
-                )}
-              </div>
+              <p className="mt-2 font-semibold text-[#1f355d]">{bundle.title}</p>
+              <p className="mt-1 text-sm text-[#5e7293]">{bundle.subtitle}</p>
+              {bundle.save && <p className="mt-2 text-xs font-semibold text-[#2f9c65]">{bundle.save}</p>}
+              <p className="mt-auto pt-3 text-3xl font-bold text-[#1f355d]">{bundle.price}</p>
+              {bundle.originalPrice && (
+                <p className="mt-1 text-xs text-[#7e8fa9] line-through">{bundle.originalPrice}</p>
+              )}
+              <a
+                href="/register"
+                className={`mt-3 flex items-center justify-center rounded-lg border px-3 py-1.5 text-center text-sm font-semibold transition-colors ${
+                  bundle.badge
+                    ? 'border-[#1f7bff] bg-[#1f7bff] text-white hover:bg-[#2e87ff]'
+                    : 'border-[#b8c9e8] text-[#355d99] hover:bg-[#f3f7ff]'
+                }`}
+              >
+                Get started
+              </a>
             </div>
           ))}
         </div>
-      </div>
+      </article>
     </section>
   );
 }
 
 function WhyChooseSectionRenderer({ data }: { data: Record<string, any> }) {
   return (
-    <section className="py-12 px-4 bg-white">
-      <div className="max-w-4xl mx-auto">
-        {data.title && <h2 className="text-3xl font-bold mb-8 text-center">{data.title}</h2>}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-6 md:py-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
+      <article className="rounded-2xl border border-[#d7e7de] bg-[#edf7f0] p-5 transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md md:p-6">
+        {data.title && <h3 className="text-3xl font-semibold text-[#1f3a31]">{data.title}</h3>}
+        <ul className="mt-4 space-y-2.5 text-base leading-7 text-[#2f7f57]">
           {(data.points || []).map((point: string, index: number) => (
-            <div key={index} className="flex items-start gap-3">
-              <div className="flex-shrink-0">
-                <div className="h-6 w-6 rounded-full bg-green-600 text-white flex items-center justify-center text-sm">
-                  ✓
-                </div>
-              </div>
-              <p className="text-gray-700">{point}</p>
-            </div>
+            <li key={index} className="flex items-center gap-2.5">
+              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#ddf5e8] text-[#2f9c65]">
+                <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" aria-hidden="true">
+                  <path d="m4.2 8.1 2.2 2.2 5.2-5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
+                </svg>
+              </span>
+              {point}
+            </li>
           ))}
-        </div>
-      </div>
+        </ul>
+      </article>
     </section>
   );
 }
