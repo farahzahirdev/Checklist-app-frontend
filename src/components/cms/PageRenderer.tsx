@@ -149,11 +149,11 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
                   <div className="mb-2 rounded-xl bg-white p-2.5">
                     <p className="text-sm font-semibold text-[#1a2c4f]">{data.mockup.dashboard?.title || 'Dashboard'}</p>
                     <div className="mt-2 grid grid-cols-3 gap-2">
-                      {Object.entries(data.mockup.dashboard?.metrics || {
+                      {(Object.entries(data.mockup.dashboard?.metrics || {
                         overallReadiness: 'Overall Readiness',
                         completed: 'Completed',
                         openFindings: 'Open Findings',
-                      }).map(([key, label]) => (
+                      }) as Array<[string, string]>).map(([key, label]) => (
                         <div key={key} className="flex h-full min-h-[94px] flex-col rounded-lg border border-[#e2e8f5] bg-[#f8fbff] p-2">
                           <p className="min-h-[24px] text-[11px] leading-[1.1] text-[#6f7f98]">{label}</p>
                           <p className="min-h-[34px] text-xl font-bold leading-tight text-[#173a73] sm:text-2xl lg:text-[22px] xl:text-2xl 2xl:text-3xl">72%</p>
