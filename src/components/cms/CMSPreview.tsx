@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Monitor, Tablet, Smartphone, X } from 'lucide-react';
 import type { PageDetail } from '@/lib/api/cms-api';
+import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 
 interface CMSPreviewProps {
   page: PageDetail | null;
@@ -48,9 +49,10 @@ function PreviewSection({ section, viewport }: any) {
   
   switch (section.section_type) {
     case 'hero':
-      const backgroundImage = section.data.background_image
-        ? `linear-gradient(rgba(4, 9, 22, 0.56), rgba(4, 9, 22, 0.72)), url(${section.data.background_image})`
-        : 'linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%)';
+      const heroImage = section.data.background_image && !section.data.background_image.startsWith('/assets/')
+        ? section.data.background_image
+        : heroBackground.src;
+      const backgroundImage = `linear-gradient(rgba(4, 9, 22, 0.56), rgba(4, 9, 22, 0.72)), url(${heroImage})`;
 
       return (
         <div

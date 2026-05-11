@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { PageDetail, PageSection } from '@/lib/api/cms-api';
 
 interface PageRendererProps {
@@ -19,7 +20,7 @@ export function PageRenderer({ page, fallback }: PageRendererProps) {
   }
 
   return (
-    <div className="cms-page">
+    <main className="overflow-x-hidden bg-[#f3f5fb]">
       {page.sections && page.sections.length > 0 ? (
         page.sections
           .sort((a, b) => a.order - b.order)
@@ -30,7 +31,7 @@ export function PageRenderer({ page, fallback }: PageRendererProps) {
         // If page exists but has no sections, show fallback
         fallback
       )}
-    </div>
+    </main>
   );
 }
 
@@ -79,9 +80,10 @@ function SectionRenderer({ section }: { section: PageSection }) {
 // Section Renderers
 
 function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
-  const backgroundImage = data.background_image
-    ? `linear-gradient(rgba(4, 9, 22, 0.56), rgba(4, 9, 22, 0.72)), url(${data.background_image})`
-    : 'linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%)';
+  const heroImage = data.background_image && !data.background_image.startsWith('/assets/')
+    ? data.background_image
+    : heroBackground.src;
+  const backgroundImage = `linear-gradient(rgba(4, 9, 22, 0.56), rgba(4, 9, 22, 0.72)), url(${heroImage})`;
 
   return (
     <section
@@ -360,32 +362,64 @@ function StandardSectionRenderer({ data }: { data: Record<string, any> }) {
 
 function CardsSectionRenderer({ data }: { data: Record<string, any> }) {
   return (
-    <section className="py-12 px-4 bg-white">
-      <div className="max-w-6xl mx-auto">
-        {data.title && <h2 className="text-3xl font-bold mb-8 text-center">{data.title}</h2>}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {(data.cards || []).map((card: any, index: number) => (
-            <div key={index} className="border rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition-shadow">
-              <h3 className="font-bold text-lg mb-3">{card.title}</h3>
-              {card.content && (
-                <div 
-                  className="prose max-w-none text-gray-600 mb-4"
-                  dangerouslySetInnerHTML={{ __html: card.content }}
-                />
+    <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:px-8 md:py-12 lg:max-w-5xl lg:px-10 xl:max-w-6xl 2xl:max-w-[90rem]">
+      <div className="grid gap-4 lg:grid-cols-2">
+        {(data.cards || []).map((card: any, index: number) => (
+          <article 
+            key={index} 
+            className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8"
+            style={{ animationDelay: `${index * 100}ms` }}
+          >
+            <div className="flex items-start gap-4">
+              {card.icon && (
+                <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#eef2ff] text-[#2f7dff]">
+                  {card.icon === 'users' && (
+                    <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" aria-hidden="true">
+                      <circle cx="8" cy="10" r="3" stroke="currentColor" strokeWidth="1.8"></circle>
+                      <circle cx="16.5" cy="8.5" r="2.5" stroke="currentColor" strokeWidth="1.8"></circle>
+                      <path d="M4 19c0-2.6 2.1-4.7 4.7-4.7h1.1c2.6 0 4.7 2.1 4.7 4.7M13.3 18.5c.3-1.8 1.8-3.1 3.6-3.1h.9c1.3 0 2.4.6 3.1 1.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"></path>
+                    </svg>
+                  )}
+                  {card.icon === 'check' && (
+                    <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" aria-hidden="true">
+                      <circle cx="12" cy="11" r="6" stroke="currentColor" strokeWidth="1.8"></circle>
+                      <path d="m9.5 11.2 1.8 1.8 3.3-3.7M9 18.5l-1 2.5 4-1.3 4 1.3-1-2.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
+                    </svg>
+                  )}
+                  {card.icon === 'lightbulb' && (
+                    <svg viewBox="0 0 90 90" className="h-8 w-8 text-[#2f7dff]" fill="none" aria-hidden="true">
+                      <path d="M 60.453 29.767 c -4.971 -4.454 -11.394 -6.499 -18.088 -5.76 c -11.024 1.218 -19.632 10.146 -20.469 21.229" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"></path>
+                    </svg>
+                  )}
+                  {card.icon === 'target' && (
+                    <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" aria-hidden="true">
+                      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.8"></circle>
+                      <circle cx="12" cy="12" r="4.6" stroke="currentColor" strokeWidth="1.8"></circle>
+                      <circle cx="12" cy="12" r="1.3" fill="currentColor"></circle>
+                      <path d="m12 12 4.8-4.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"></path>
+                    </svg>
+                  )}
+                </span>
               )}
-              {card.points && (
-                <ul className="space-y-2">
-                  {card.points.map((point: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="text-green-600 mt-1 text-sm">✓</span>
-                      <span className="text-sm">{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <div>
+                <h3 className="text-2xl font-semibold text-[#1f2741] md:text-3xl">{card.title}</h3>
+                {card.content && (
+                  <p className="mt-2 whitespace-pre-line text-sm leading-7 text-[#55627e] md:text-[15px] md:leading-relaxed">{card.content}</p>
+                )}
+                {card.points && (
+                  <ul className="mt-3 space-y-2.5 text-sm leading-snug text-[#445675] md:text-[15px] md:leading-relaxed">
+                    {card.points.map((point: string, i: number) => (
+                      <li key={i} className="flex items-start gap-2.5">
+                        <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f7dff] text-[10px] font-bold leading-none text-white">✓</span>
+                        <span className="min-w-0">{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
-          ))}
-        </div>
+          </article>
+        ))}
       </div>
     </section>
   );
@@ -393,29 +427,38 @@ function CardsSectionRenderer({ data }: { data: Record<string, any> }) {
 
 function CTASectionRenderer({ data }: { data: Record<string, any> }) {
   return (
-    <section className="py-16 px-4 bg-gradient-to-r from-green-50 to-blue-50">
-      <div className="max-w-4xl mx-auto text-center">
-        {data.title && <h2 className="text-3xl font-bold mb-4">{data.title}</h2>}
-        {data.subtitle && (
-          <div 
-            className="prose prose-lg max-w-none text-gray-700 mb-8"
-            dangerouslySetInnerHTML={{ __html: data.subtitle }}
-          />
-        )}
-        <div className="flex gap-4 justify-center flex-wrap">
-          {(data.buttons || []).map((button: any, index: number) => (
-            <a
-              key={index}
-              href={button.url || '#'}
-              className={`px-6 py-3 rounded-lg font-medium ${
-                button.primary 
-                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                  : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              {button.text}
-            </a>
-          ))}
+    <section className="mx-auto max-w-6xl px-4 pb-14 sm:px-6 md:px-8 md:pb-16 lg:max-w-5xl lg:px-10 xl:max-w-6xl 2xl:max-w-[90rem]">
+      <div className="mt-8 rounded-2xl border border-[#264579] bg-[linear-gradient(120deg,#091229,#0b1a39_48%,#0e2348)] px-5 py-6 text-white motion-safe:animate-fade-in-up motion-safe:delay-150 sm:px-8 md:px-10 md:py-7">
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          <div className="flex min-w-0 items-center gap-5">
+            <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[#3a7ce2] bg-[#102a57] text-[#77aefc]">
+              <svg viewBox="0 0 24 24" className="h-9 w-9" fill="none" aria-hidden="true">
+                <path d="M12 2 4 5v6c0 5.3 3.4 9.6 8 11 4.6-1.4 8-5.7 8-11V5l-8-3Z" stroke="currentColor" strokeWidth="1.8"></path>
+              </svg>
+            </span>
+            <div className="min-w-0">
+              {data.title && <p className="text-2xl font-semibold md:text-4xl">{data.title}</p>}
+              {data.subtitle && <p className="mt-1 text-sm text-[#c7d8f8] md:text-base">{data.subtitle}</p>}
+            </div>
+          </div>
+          <div className="ml-auto flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            {(data.buttons || []).map((button: any, index: number) => (
+              <a
+                key={index}
+                href={button.url || '#'}
+                className={`inline-flex min-w-[180px] items-center justify-center gap-2 whitespace-nowrap rounded-xl px-6 py-3 text-base font-semibold transition-colors duration-200 active:scale-[0.98] motion-safe:active:transition-transform md:text-lg ${
+                  button.primary
+                    ? 'border border-[#1f7bff] bg-[#1f7bff] hover:bg-[#2e87ff]'
+                    : 'border border-[#456298] text-[#e5eeff] hover:bg-[#173160]'
+                }`}
+              >
+                {button.text}
+                <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" aria-hidden="true">
+                  <path d="M4 10h10m0 0-4-4m4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </a>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -424,19 +467,53 @@ function CTASectionRenderer({ data }: { data: Record<string, any> }) {
 
 function TrustSectionRenderer({ data }: { data: Record<string, any> }) {
   return (
-    <section className="py-12 px-4 bg-gray-50">
-      <div className="max-w-6xl mx-auto">
-        {data.title && <h2 className="text-3xl font-bold mb-4 text-center">{data.title}</h2>}
-        {data.subtitle && <p className="text-lg text-gray-600 mb-8 text-center">{data.subtitle}</p>}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {(data.cards || []).map((card: any, index: number) => (
-            <div key={index} className="text-center p-6">
-              {card.icon && <div className="text-4xl mb-4">{card.icon}</div>}
-              <h3 className="font-semibold mb-2">{card.title}</h3>
-              <p className="text-gray-600">{card.content}</p>
-            </div>
-          ))}
-        </div>
+    <section className="mx-auto max-w-6xl px-4 pb-14 sm:px-6 md:px-8 md:pb-16 lg:max-w-5xl lg:px-10 xl:max-w-6xl 2xl:max-w-[90rem]">
+      {data.title && (
+        <h3 className="text-center text-3xl font-semibold text-[#202743] motion-safe:animate-fade-in-up md:text-4xl">
+          {data.title}
+        </h3>
+      )}
+      {data.subtitle && (
+        <p className="mt-2 text-center text-base text-[#6f7893] motion-safe:animate-fade-in-up motion-safe:delay-75 md:text-lg">
+          {data.subtitle}
+        </p>
+      )}
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {(data.cards || []).map((card: any, index: number) => (
+          <article 
+            key={index} 
+            className="rounded-2xl border border-[#d7deeb] bg-white p-5 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md"
+            style={{ animationDelay: `${index * 100}ms` }}
+          >
+            {card.icon && (
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef2ff] text-[#2f7dff]">
+                {card.icon === 'document' && (
+                  <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" aria-hidden="true">
+                    <rect x="6" y="4" width="12" height="16" rx="2" stroke="currentColor" strokeWidth="1.8"></rect>
+                    <path d="M9 9h6M9 13h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"></path>
+                  </svg>
+                )}
+                {card.icon === 'graduation' && (
+                  <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" aria-hidden="true">
+                    <path d="m4 9 8-5 8 5-8 5-8-5Zm3 2.5v4.5c0 1.6 2.2 3 5 3s5-1.4 5-3v-4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"></path>
+                  </svg>
+                )}
+                {card.icon === 'shield' && (
+                  <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" aria-hidden="true">
+                    <path d="M12 2 4 5v6c0 5.3 3.4 9.6 8 11 4.6-1.4 8-5.7 8-11V5l-8-3Z" stroke="currentColor" strokeWidth="1.8"></path>
+                  </svg>
+                )}
+                {card.icon === 'handshake' && (
+                  <svg viewBox="0 0 90 90" className="h-7 w-7 text-[#2f7dff]" fill="none" aria-hidden="true">
+                    <path d="M 89.689 16.621 c -0.198 -0.188 -0.461 -0.284 -0.739 -0.274 c -6.479 0.321 -13.518 1.398 -22.148 3.389" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"></path>
+                  </svg>
+                )}
+              </span>
+            )}
+            <h4 className="mt-3 text-xl font-semibold text-[#1f2741] md:text-2xl">{card.title}</h4>
+            <p className="mt-2 text-sm leading-6 text-[#55627e] md:text-[15px] md:leading-relaxed">{card.content}</p>
+          </article>
+        ))}
       </div>
     </section>
   );
