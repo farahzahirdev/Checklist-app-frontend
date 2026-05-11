@@ -6,6 +6,8 @@ import type { Route } from 'next';
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { translate, useLocale } from '@/lib/i18n';
+import { useCMSPage } from '@/hooks/useCMSPage';
+import { PageRenderer } from '@/components/cms/PageRenderer';
 import {
   ACCESS_TOKEN_STORAGE_KEY,
   getRoleHomePath,
@@ -22,7 +24,7 @@ import { getUserPaymentStatus } from '@/lib/payments';
 import authBackground from '@/assets/cybersecurity-background.jpg';
 import { authPagesMessages } from '@/locales/auth-pages';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const { locale } = useLocale();
   const t = (key: string) => translate(authPagesMessages, locale, key);
@@ -411,3 +413,21 @@ export default function LoginPage() {
     </main>
   );
 }
+
+// CMS Integration Wrapper: Renders CMS page for "login" slug if available, otherwise shows hardcoded content
+function LoginPageWithCMS() {
+  const { page, loading } = useCMSPage('login');
+  
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f3f5fb]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#d6e2f7] border-t-[#2f7dff]" />
+      </div>
+    );
+  }
+
+  // PageRenderer handles both CMS page and fallback content
+  return <PageRenderer page={page} fallback={<LoginPageContent />} />;
+}
+
+export default LoginPageWithCMS;

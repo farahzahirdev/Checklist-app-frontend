@@ -5,6 +5,8 @@ import { PublicFooter } from '@/components/public-footer';
 import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { translate, useLocale } from '@/lib/i18n';
 import { faqMessages } from '@/locales/faq';
+import { useCMSPage } from '@/hooks/useCMSPage';
+import { PageRenderer } from '@/components/cms/PageRenderer';
 
 const FAQ_KEYS = [
   { q: 'qa.0.q', a: 'qa.0.a' },
@@ -15,7 +17,7 @@ const FAQ_KEYS = [
   { q: 'qa.5.q', a: 'qa.5.a' },
 ] as const;
 
-export default function FaqPage() {
+function FaqPageContent() {
   const { locale } = useLocale();
   const t = (key: string) => translate(faqMessages, locale, key);
   const [openIndex, setOpenIndex] = useState<number>(0);
@@ -113,3 +115,21 @@ export default function FaqPage() {
     </main>
   );
 }
+
+// CMS Integration Wrapper: Renders CMS page for "faq" slug if available, otherwise shows hardcoded content
+function FaqPageWithCMS() {
+  const { page, loading } = useCMSPage('faq');
+  
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f3f5fb]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#d6e2f7] border-t-[#2f7dff]" />
+      </div>
+    );
+  }
+
+  // PageRenderer handles both CMS page and fallback content
+  return <PageRenderer page={page} fallback={<FaqPageContent />} />;
+}
+
+export default FaqPageWithCMS;

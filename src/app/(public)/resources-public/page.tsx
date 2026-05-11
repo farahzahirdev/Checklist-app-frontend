@@ -5,6 +5,8 @@ import bgImage from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { PublicFooter } from '@/components/public-footer';
 import { useLocale, translate } from '@/lib/i18n';
 import { resourcesMessages } from '@/locales/resources';
+import { useCMSPage } from '@/hooks/useCMSPage';
+import { PageRenderer } from '@/components/cms/PageRenderer';
 
 function ArrowRightIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
@@ -88,7 +90,7 @@ const audienceDefs = [
   { titleKey: 'audiences.auditorsConsultants.title', bodyKey: 'audiences.auditorsConsultants.body', icon: 'users' },
 ];
 
-export default function ResourcesPage() {
+function ResourcesPageContent() {
   const { locale } = useLocale();
   const t = (key: string, values?: Record<string, string>) => translate(resourcesMessages, locale, key, values);
   const useCases = useCaseDefs.map((item) => ({
@@ -512,3 +514,21 @@ export default function ResourcesPage() {
     </main>
   );
 }
+
+// CMS Integration Wrapper: Renders CMS page for "resources-public" slug if available, otherwise shows hardcoded content
+function ResourcesPageWithCMS() {
+  const { page, loading } = useCMSPage('resources-public');
+  
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f3f5fb]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#d6e2f7] border-t-[#2f7dff]" />
+      </div>
+    );
+  }
+
+  // PageRenderer handles both CMS page and fallback content
+  return <PageRenderer page={page} fallback={<ResourcesPageContent />} />;
+}
+
+export default ResourcesPageWithCMS;

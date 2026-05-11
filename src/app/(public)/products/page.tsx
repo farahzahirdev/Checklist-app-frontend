@@ -6,6 +6,8 @@ import { PublicFooter } from '@/components/public-footer';
 import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { translate, useLocale } from '@/lib/i18n';
 import { productsMessages } from '@/locales/products';
+import { useCMSPage } from '@/hooks/useCMSPage';
+import { PageRenderer } from '@/components/cms/PageRenderer';
 
 const DOCUMENT_CATEGORIES = ['All', 'Access & Identity', 'Devices & Endpoints', 'Data Protection', 'Operations', 'Governance', 'Response'] as const;
 
@@ -83,7 +85,7 @@ function CheckBadgeIcon() {
   );
 }
 
-export default function ProductsPage() {
+function ProductsPageContent() {
   const { locale } = useLocale();
   const t = (key: string, values?: Record<string, string>) => translate(productsMessages, locale, key, values);
   const [activeCategory, setActiveCategory] = useState<DocumentationCategory>('All');
@@ -398,3 +400,21 @@ export default function ProductsPage() {
     </main>
   );
 }
+
+// CMS Integration Wrapper: Renders CMS page for "products" slug if available, otherwise shows hardcoded content
+function ProductsPageWithCMS() {
+  const { page, loading } = useCMSPage('products');
+  
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f3f5fb]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#d6e2f7] border-t-[#2f7dff]" />
+      </div>
+    );
+  }
+
+  // PageRenderer handles both CMS page and fallback content
+  return <PageRenderer page={page} fallback={<ProductsPageContent />} />;
+}
+
+export default ProductsPageWithCMS;

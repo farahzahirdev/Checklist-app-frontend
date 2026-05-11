@@ -5,6 +5,8 @@ import bgImage from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { PublicFooter } from '@/components/public-footer';
 import { translate, useLocale } from '@/lib/i18n';
 import { contactMessages } from '@/locales/contact';
+import { useCMSPage } from '@/hooks/useCMSPage';
+import { PageRenderer } from '@/components/cms/PageRenderer';
 
 function ArrowRightIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
@@ -14,7 +16,7 @@ function ArrowRightIcon({ className = 'h-4 w-4' }: { className?: string }) {
   );
 }
 
-export default function ContactPage() {
+function ContactPageContent() {
   const { locale } = useLocale();
   const t = (key: string) => translate(contactMessages, locale, key);
   const heroStyle = {
@@ -166,3 +168,21 @@ export default function ContactPage() {
     </main>
   );
 }
+
+// CMS Integration Wrapper: Renders CMS page for "contact" slug if available, otherwise shows hardcoded content
+function ContactPageWithCMS() {
+  const { page, loading } = useCMSPage('contact');
+  
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f3f5fb]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#d6e2f7] border-t-[#2f7dff]" />
+      </div>
+    );
+  }
+
+  // PageRenderer handles both CMS page and fallback content
+  return <PageRenderer page={page} fallback={<ContactPageContent />} />;
+}
+
+export default ContactPageWithCMS;

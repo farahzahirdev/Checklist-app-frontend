@@ -9,6 +9,8 @@ import { translate, useLocale } from '@/lib/i18n';
 import { getRoleHomePath, getRoleKey, persistAccessToken, registerAccount, startMfaSetup, verifyMfaCode } from '@/lib/auth';
 import authBackground from '@/assets/cybersecurity-background.jpg';
 import { authPagesMessages } from '@/locales/auth-pages';
+import { useCMSPage } from '@/hooks/useCMSPage';
+import { PageRenderer } from '@/components/cms/PageRenderer';
 
 function getPasswordPolicyError(password: string): string | null {
   if (password.length < 12) return 'errors.passwordMin';
@@ -24,7 +26,7 @@ function normalizeOptionalField(value: string) {
   return trimmed.length ? trimmed : undefined;
 }
 
-export default function RegisterPage() {
+function RegisterPageContent() {
   const router = useRouter();
   const { locale } = useLocale();
   const t = (key: string) => translate(authPagesMessages, locale, key);
@@ -477,3 +479,21 @@ export default function RegisterPage() {
     </main>
   );
 }
+
+// CMS Integration Wrapper: Renders CMS page for "register" slug if available, otherwise shows hardcoded content
+function RegisterPageWithCMS() {
+  const { page, loading } = useCMSPage('register');
+  
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f3f5fb]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#d6e2f7] border-t-[#2f7dff]" />
+      </div>
+    );
+  }
+
+  // PageRenderer handles both CMS page and fallback content
+  return <PageRenderer page={page} fallback={<RegisterPageContent />} />;
+}
+
+export default RegisterPageWithCMS;

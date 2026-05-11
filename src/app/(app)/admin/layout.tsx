@@ -39,6 +39,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { href: '/admin', labelKey: 'nav.dashboard', icon: 'home' },
     { href: '/admin/checklists', labelKey: 'nav.checklists', icon: 'checklist' },
     { href: '/admin/users', labelKey: 'nav.users', icon: 'users' },
+    { href: '/admin/cms', labelKey: 'nav.cms', icon: 'cms' },
     { href: '/admin/support', labelKey: 'nav.support', icon: 'report' },
     { href: '/admin/logs', labelKey: 'nav.logs', icon: 'shield' },
   ] as const;
@@ -103,6 +104,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     if (name === 'box') return <path d="M4 7.5 12 4l8 3.5v9L12 20l-8-3.5v-9ZM4 7.5l8 3.5 8-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />;
     if (name === 'users') return <path d="M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.5-1A2.5 2.5 0 1 0 14 6.5 2.5 2.5 0 0 0 16.5 9ZM4 19c0-2.8 2.2-5 5-5h1c2.8 0 5 2.2 5 5M14 18.6c.3-1.6 1.6-2.8 3.2-2.8h.8c1.2 0 2.2.5 2.8 1.3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />;
     if (name === 'shield') return <path d="M12 2 4 5v6c0 5.3 3.4 9.6 8 11 4.6-1.4 8-5.7 8-11V5l-8-3Z" stroke="currentColor" strokeWidth="1.8" />;
+    if (name === 'cms') return <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />;
     if (name === 'settings') return <path d="M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Zm8 2.5-1.5.8a6.7 6.7 0 0 1-.4 1l.8 1.5-1.8 1.8-1.5-.8a6.7 6.7 0 0 1-1 .4L14 20h-4l-.6-1.5a6.7 6.7 0 0 1-1-.4l-1.5.8-1.8-1.8.8-1.5a6.7 6.7 0 0 1-.4-1L4 12l1.5-.8c.1-.35.25-.69.4-1l-.8-1.5L6.9 6.9l1.5.8c.31-.16.65-.29 1-.4L10 6h4l.6 1.5c.35.1.69.24 1 .4l1.5-.8 1.8 1.8-.8 1.5c.15.31.29.65.4 1L20 12Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />;
     if (name === 'logout') return <path d="M10 18H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4M14 15l3-3-3-3M17 12H9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />;
     return null;

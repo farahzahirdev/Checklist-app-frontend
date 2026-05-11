@@ -2,8 +2,10 @@
 
 import { translate, useLocale } from '@/lib/i18n';
 import { legalPagesMessages } from '@/locales/legal-pages';
+import { useCMSPage } from '@/hooks/useCMSPage';
+import { PageRenderer } from '@/components/cms/PageRenderer';
 
-export default function CookiesPage() {
+function CookiesPageContent() {
   const { locale } = useLocale();
   const t = (key: string) => translate(legalPagesMessages, locale, key);
   return (
@@ -13,3 +15,21 @@ export default function CookiesPage() {
     </main>
   );
 }
+
+// CMS Integration Wrapper: Renders CMS page for "cookies" slug if available, otherwise shows hardcoded content
+function CookiesPageWithCMS() {
+  const { page, loading } = useCMSPage('cookies');
+  
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f3f5fb]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#d6e2f7] border-t-[#2f7dff]" />
+      </div>
+    );
+  }
+
+  // PageRenderer handles both CMS page and fallback content
+  return <PageRenderer page={page} fallback={<CookiesPageContent />} />;
+}
+
+export default CookiesPageWithCMS;
