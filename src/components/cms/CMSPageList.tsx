@@ -141,7 +141,7 @@ export function CMSPageList() {
                   </td>
                   <td className="px-6 py-4 flex gap-2">
                     <Link
-                      href={`/admin/cms/${page.id}`}
+                      href={`/admin/cms/${page.slug}`}
                       title="Edit"
                       className="text-blue-600 hover:text-blue-800"
                     >
