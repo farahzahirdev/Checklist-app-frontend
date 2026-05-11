@@ -98,6 +98,30 @@ export async function getPageBySlug(
   return response.json();
 }
 
+export async function getPageById(
+  pageId: string,
+  language: string
+): Promise<PageDetail> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/cms/pages/${pageId}?language=${language}`,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error(`Page '${pageId}' not found`);
+    }
+    throw new Error(`Failed to fetch page: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
 export async function createPage(data: {
   slug: string;
   language: string;

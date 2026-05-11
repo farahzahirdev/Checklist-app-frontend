@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { PageDetail, PageSection } from '@/lib/api/cms-api';
-import { getPageBySlug, updatePage, createPage, createSection } from '@/lib/api/cms-api';
+import { getPageBySlug, getPageById, updatePage, createPage, createSection } from '@/lib/api/cms-api';
 import { toast } from 'sonner';
 import { EnhancedSectionEditor } from './EnhancedSectionEditor';
 import { Plus, Save, Eye, Edit3, Globe, FileText, Settings } from 'lucide-react';
@@ -61,7 +61,18 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
 
     try {
       setLoading(true);
-      const page = await getPageBySlug(pageId, lang);
+      // Check if pageId is a UUID (existing page) or a slug (new page)
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(pageId);
+      
+      let page;
+      if (isUuid) {
+        // Load existing page by ID
+        page = await getPageById(pageId, lang);
+      } else {
+        // Load page by slug (for new pages)
+        page = await getPageBySlug(pageId, lang);
+      }
+      
       setPages((prev) => ({ ...prev, [lang]: page }));
       setCurrentPage(page);
       syncPageState(page);

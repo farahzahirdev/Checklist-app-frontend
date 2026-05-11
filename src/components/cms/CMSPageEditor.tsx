@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { PageDetail, PageSection } from '@/lib/api/cms-api';
-import { getPageBySlug, updatePage, createPage } from '@/lib/api/cms-api';
+import { getPageBySlug, getPageById, updatePage, createPage } from '@/lib/api/cms-api';
 import { toast } from 'sonner';
 import { SectionEditor } from './SectionEditor';
 import { Plus, Save, Trash2 } from 'lucide-react';
@@ -37,7 +37,7 @@ export function CMSPageEditor({ pageId }: CMSPageEditorProps) {
 
   const loadPage = async (lang: string) => {
     // For new page mode, we derive slug from pageId
-    // For existing pages, pageId would be the actual page ID
+    // For existing pages, pageId would be actual page ID
     if (!pageId) return;
 
     if (pages[lang]) {
@@ -48,7 +48,18 @@ export function CMSPageEditor({ pageId }: CMSPageEditorProps) {
 
     try {
       setLoading(true);
-      const page = await getPageBySlug(pageId, lang);
+      // Check if pageId is a UUID (existing page) or a slug (new page)
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(pageId);
+      
+      let page;
+      if (isUuid) {
+        // Load existing page by ID
+        page = await getPageById(pageId, lang);
+      } else {
+        // Load page by slug (for new pages)
+        page = await getPageBySlug(pageId, lang);
+      }
+      
       setPages((prev) => ({ ...prev, [lang]: page }));
       setCurrentPage(page);
       syncPageState(page);
