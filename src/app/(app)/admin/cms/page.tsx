@@ -5,9 +5,5 @@ export const metadata = {
 };
 
 export default function CMSPage() {
-  return (
-    <div className="p-6">
-      <CMSPageList />
-    </div>
-  );
+  return <CMSPageList />;
 }

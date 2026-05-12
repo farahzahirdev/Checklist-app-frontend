@@ -1,39 +1,47 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { PageSection } from '@/lib/api/cms-api';
 import { updateSection, deleteSection } from '@/lib/api/cms-api';
 import { toast } from 'sonner';
 import { Trash2, ChevronDown, ChevronUp, Eye, Edit3, Save, X } from 'lucide-react';
+import { translate, useLocale } from '@/lib/i18n';
+import { adminCmsMessages } from '@/locales/admin-cms';
+import { cmsBtnGhostClass, cmsBtnPrimaryClass, cmsHintClass, cmsInputClass, cmsJsonTextareaClass, cmsLabelClass, cmsTextareaClass } from '@/components/cms/cms-editor-styles';
 
 interface SectionEditorProps {
   section: PageSection;
   onUpdate?: () => void;
 }
 
+type CmsT = (key: string, values?: Record<string, string>) => string;
+
 // Rich text editor component
-function RichTextEditor({ 
-  value, 
-  onChange, 
+function RichTextEditor({
+  value,
+  onChange,
   placeholder = '',
-  className = '' 
-}: { 
-  value: string; 
-  onChange: (value: string) => void; 
-  placeholder?: string; 
-  className?: string; 
+  className = '',
+  t,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+  t: CmsT;
 }) {
   const [isHtmlMode, setIsHtmlMode] = useState(false);
 
   return (
-    <div className={`border rounded-lg overflow-hidden ${className}`}>
-      <div className="flex justify-between items-center px-3 py-2 bg-gray-50 border-b">
-        <span className="text-sm font-medium">Rich Text Editor</span>
+    <div className={`overflow-hidden rounded-xl border border-[#dbe4f4] [color-scheme:light] ${className}`}>
+      <div className="flex items-center justify-between border-b border-[#eef2fa] bg-[#f7f9fe] px-3 py-2">
+        <span className="text-sm font-medium text-[#243555]">{t('sectionEditor.richText.toolbar')}</span>
         <button
+          type="button"
           onClick={() => setIsHtmlMode(!isHtmlMode)}
-          className="text-xs px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+          className="rounded-lg border border-[#d4dced] bg-white px-2 py-1 text-xs font-semibold text-[#425f8f] hover:bg-[#edf4ff]"
         >
-          {isHtmlMode ? 'Visual' : 'HTML'}
+          {isHtmlMode ? t('sectionEditor.richText.visual') : t('sectionEditor.richText.html')}
         </button>
       </div>
       
@@ -43,59 +51,66 @@ function RichTextEditor({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           rows={6}
-          className="w-full px-3 py-2 font-mono text-sm border-0 focus:outline-none"
+          className={`${cmsTextareaClass} rounded-none rounded-b-xl border-0 border-t border-[#eef2fa] font-mono`}
         />
       ) : (
         <div className="min-h-[150px]">
-          <div className="flex gap-1 p-2 border-b bg-gray-50">
+          <div className="flex gap-1 border-b border-[#eef2fa] bg-[#f9fbff] p-2">
             <button
+              type="button"
               onClick={() => onChange(value + '<strong>Bold</strong>')}
-              className="px-2 py-1 text-xs font-bold border rounded hover:bg-gray-100"
-              title="Bold"
+              className="rounded border border-[#d4dced] px-2 py-1 text-xs font-bold hover:bg-white"
+              title={t('sectionEditor.richText.title.bold')}
             >
               B
             </button>
             <button
+              type="button"
               onClick={() => onChange(value + '<em>Italic</em>')}
-              className="px-2 py-1 text-xs italic border rounded hover:bg-gray-100"
-              title="Italic"
+              className="rounded border border-[#d4dced] px-2 py-1 text-xs italic hover:bg-white"
+              title={t('sectionEditor.richText.title.italic')}
             >
               I
             </button>
             <button
+              type="button"
               onClick={() => onChange(value + '<u>Underline</u>')}
-              className="px-2 py-1 text-xs underline border rounded hover:bg-gray-100"
-              title="Underline"
+              className="rounded border border-[#d4dced] px-2 py-1 text-xs underline hover:bg-white"
+              title={t('sectionEditor.richText.title.underline')}
             >
               U
             </button>
-            <div className="w-px bg-gray-300" />
+            <div className="h-4 w-px bg-[#dbe4f4]" />
             <button
+              type="button"
               onClick={() => onChange(value + '<h2>Heading</h2>')}
-              className="px-2 py-1 text-xs border rounded hover:bg-gray-100"
-              title="Heading"
+              className="rounded border border-[#d4dced] px-2 py-1 text-xs hover:bg-white"
+              title={t('sectionEditor.richText.title.h2')}
             >
               H2
             </button>
             <button
+              type="button"
               onClick={() => onChange(value + '<p>Paragraph</p>')}
-              className="px-2 py-1 text-xs border rounded hover:bg-gray-100"
-              title="Paragraph"
+              className="rounded border border-[#d4dced] px-2 py-1 text-xs hover:bg-white"
+              title={t('sectionEditor.richText.title.p')}
             >
               P
             </button>
             <button
+              type="button"
               onClick={() => onChange(value + '<ul><li>List item</li></ul>')}
-              className="px-2 py-1 text-xs border rounded hover:bg-gray-100"
-              title="Bullet List"
+              className="rounded border border-[#d4dced] px-2 py-1 text-xs hover:bg-white"
+              title={t('sectionEditor.richText.title.list')}
             >
               •
             </button>
-            <div className="w-px bg-gray-300" />
+            <div className="h-4 w-px bg-[#dbe4f4]" />
             <button
+              type="button"
               onClick={() => onChange(value + '<a href="#">Link</a>')}
-              className="px-2 py-1 text-xs border rounded hover:bg-gray-100"
-              title="Link"
+              className="rounded border border-[#d4dced] px-2 py-1 text-xs hover:bg-white"
+              title={t('sectionEditor.richText.title.link')}
             >
               🔗
             </button>
@@ -105,7 +120,7 @@ function RichTextEditor({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             rows={8}
-            className="w-full px-3 py-2 border-0 focus:outline-none resize-none"
+            className={`${cmsTextareaClass} rounded-none rounded-b-xl border-0 border-t border-[#eef2fa] resize-none`}
           />
         </div>
       )}
@@ -114,14 +129,16 @@ function RichTextEditor({
 }
 
 // Section type-specific editors
-function SectionDataEditor({ 
-  sectionType, 
-  data, 
-  onChange 
-}: { 
-  sectionType: string; 
-  data: any; 
-  onChange: (data: any) => void; 
+function SectionDataEditor({
+  sectionType,
+  data,
+  onChange,
+  t,
+}: {
+  sectionType: string;
+  data: any;
+  onChange: (data: any) => void;
+  t: CmsT;
 }) {
   const updateField = (field: string, value: any) => {
     onChange({ ...data, [field]: value });
@@ -151,51 +168,52 @@ function SectionDataEditor({
       return (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Kicker</label>
+            <label className={cmsLabelClass}>{t('sectionEditor.hero.kicker')}</label>
             <input
               type="text"
               value={data.kicker || ''}
               onChange={(e) => updateField('kicker', e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-              placeholder="e.g., About Us"
+              className={cmsInputClass}
+              placeholder={t('sectionEditor.hero.kickerPh')}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Title</label>
+            <label className={cmsLabelClass}>{t('sectionEditor.hero.title')}</label>
             <input
               type="text"
               value={data.title || ''}
               onChange={(e) => updateField('title', e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-              placeholder="Main title"
+              className={cmsInputClass}
+              placeholder={t('sectionEditor.hero.titlePh')}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Subtitle</label>
+            <label className={cmsLabelClass}>{t('sectionEditor.hero.subtitle')}</label>
             <input
               type="text"
               value={data.subtitle || ''}
               onChange={(e) => updateField('subtitle', e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-              placeholder="Subtitle text"
+              className={cmsInputClass}
+              placeholder={t('sectionEditor.hero.subtitlePh')}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Accent Text</label>
+            <label className={cmsLabelClass}>{t('sectionEditor.hero.accent')}</label>
             <input
               type="text"
               value={data.accent || ''}
               onChange={(e) => updateField('accent', e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-              placeholder="Highlighted accent text"
+              className={cmsInputClass}
+              placeholder={t('sectionEditor.hero.accentPh')}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Description</label>
+            <label className={cmsLabelClass}>{t('sectionEditor.hero.description')}</label>
             <RichTextEditor
               value={data.description || ''}
               onChange={(value) => updateField('description', value)}
-              placeholder="Main description text"
+              placeholder={t('sectionEditor.hero.descriptionPh')}
+              t={t}
             />
           </div>
         </div>
@@ -205,22 +223,22 @@ function SectionDataEditor({
       return (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Section Title</label>
+            <label className={cmsLabelClass}>{t('sectionEditor.cards.sectionTitle')}</label>
             <input
               type="text"
               value={data.title || ''}
               onChange={(e) => updateField('title', e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-              placeholder="Section title"
+              className={cmsInputClass}
+              placeholder={t('sectionEditor.cards.sectionTitlePh')}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Cards</label>
+            <label className={cmsLabelClass}>{t('sectionEditor.cards.cardsLabel')}</label>
             <div className="space-y-3">
               {(data.cards || []).map((card: any, index: number) => (
-                <div key={index} className="border rounded-lg p-4 bg-gray-50">
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-medium">Card {index + 1}</h4>
+                <div key={index} className="rounded-xl border border-[#dbe4f4] bg-[#f9fbff] p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h4 className="font-semibold text-[#243555]">{t('sectionEditor.cards.cardN', { n: String(index + 1) })}</h4>
                     <button
                       onClick={() => {
                         const newCards = [...(data.cards || [])];
@@ -237,18 +255,21 @@ function SectionDataEditor({
                       type="text"
                       value={card.title || ''}
                       onChange={(e) => updateNestedArrayField('cards', index, 'title', e.target.value)}
-                      className="w-full border px-3 py-2 rounded text-sm"
-                      placeholder="Card title"
+                      className={cmsInputClass}
+                      placeholder={t('sectionEditor.cards.cardTitlePh')}
                     />
                     <RichTextEditor
                       value={card.content || ''}
                       onChange={(value) => updateNestedArrayField('cards', index, 'content', value)}
-                      placeholder="Card content"
+                      placeholder={t('sectionEditor.cards.cardContentPh')}
                       className="text-sm"
+                      t={t}
                     />
                     {card.points && (
                       <div>
-                        <label className="block text-xs font-medium mb-1">Points (one per line)</label>
+                        <label className="mb-1 block text-xs font-semibold text-[#5b6f91]">
+                          {t('sectionEditor.cards.pointsLabel')}
+                        </label>
                         <textarea
                           value={card.points.join('\n') || ''}
                           onChange={(e) => {
@@ -257,8 +278,8 @@ function SectionDataEditor({
                             updateField('cards', newCards);
                           }}
                           rows={3}
-                          className="w-full border px-2 py-1 rounded text-xs"
-                          placeholder="• Point 1&#10;• Point 2"
+                          className={`${cmsInputClass} py-1.5 text-xs`}
+                          placeholder={t('sectionEditor.cards.pointsPh')}
                         />
                       </div>
                     )}
@@ -267,9 +288,9 @@ function SectionDataEditor({
               ))}
               <button
                 onClick={() => updateField('cards', [...(data.cards || []), { title: '', content: '', points: [] }])}
-                className="w-full py-2 border-2 border-dashed border-gray-300 rounded text-gray-600 hover:border-gray-400 hover:text-gray-700"
+                className="w-full rounded-xl border-2 border-dashed border-[#dbe4f4] py-2.5 text-sm font-semibold text-[#607594] transition-colors hover:border-[#b8c9e8] hover:bg-[#f9fbff] hover:text-[#2a3d5f]"
               >
-                + Add Card
+                {t('sectionEditor.cards.addCard')}
               </button>
             </div>
           </div>
@@ -280,32 +301,32 @@ function SectionDataEditor({
       return (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Section Title</label>
+            <label className={cmsLabelClass}>{t('sectionEditor.faq.sectionTitle')}</label>
             <input
               type="text"
               value={data.title || ''}
               onChange={(e) => updateField('title', e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-              placeholder="Section title"
+              className={cmsInputClass}
+              placeholder={t('sectionEditor.faq.sectionTitlePh')}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Subtitle</label>
+            <label className={cmsLabelClass}>{t('sectionEditor.faq.subtitle')}</label>
             <input
               type="text"
               value={data.subtitle || ''}
               onChange={(e) => updateField('subtitle', e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-              placeholder="Section subtitle"
+              className={cmsInputClass}
+              placeholder={t('sectionEditor.faq.subtitlePh')}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Questions & Answers</label>
+            <label className={cmsLabelClass}>{t('sectionEditor.faq.qaLabel')}</label>
             <div className="space-y-3">
               {(data.questions || []).map((qa: any, index: number) => (
-                <div key={index} className="border rounded-lg p-4 bg-gray-50">
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-medium">Q&A {index + 1}</h4>
+                <div key={index} className="rounded-xl border border-[#dbe4f4] bg-[#f9fbff] p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h4 className="font-semibold text-[#243555]">{t('sectionEditor.faq.qaN', { n: String(index + 1) })}</h4>
                     <button
                       onClick={() => {
                         const newQuestions = [...(data.questions || [])];
@@ -322,23 +343,24 @@ function SectionDataEditor({
                       type="text"
                       value={qa.question || ''}
                       onChange={(e) => updateNestedArrayField('questions', index, 'question', e.target.value)}
-                      className="w-full border px-3 py-2 rounded text-sm"
-                      placeholder="Question"
+                      className={cmsInputClass}
+                      placeholder={t('sectionEditor.faq.questionPh')}
                     />
                     <RichTextEditor
                       value={qa.answer || ''}
                       onChange={(value) => updateNestedArrayField('questions', index, 'answer', value)}
-                      placeholder="Answer"
+                      placeholder={t('sectionEditor.faq.answerPh')}
                       className="text-sm"
+                      t={t}
                     />
                   </div>
                 </div>
               ))}
               <button
                 onClick={() => updateField('questions', [...(data.questions || []), { question: '', answer: '' }])}
-                className="w-full py-2 border-2 border-dashed border-gray-300 rounded text-gray-600 hover:border-gray-400 hover:text-gray-700"
+                className="w-full rounded-xl border-2 border-dashed border-[#dbe4f4] py-2.5 text-sm font-semibold text-[#607594] transition-colors hover:border-[#b8c9e8] hover:bg-[#f9fbff] hover:text-[#2a3d5f]"
               >
-                + Add Question
+                {t('sectionEditor.faq.addPair')}
               </button>
             </div>
           </div>
@@ -349,25 +371,26 @@ function SectionDataEditor({
       return (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Title</label>
+            <label className={cmsLabelClass}>{t('sectionEditor.cta.title')}</label>
             <input
               type="text"
               value={data.title || ''}
               onChange={(e) => updateField('title', e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-              placeholder="CTA title"
+              className={cmsInputClass}
+              placeholder={t('sectionEditor.cta.titlePh')}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Subtitle</label>
+            <label className={cmsLabelClass}>{t('sectionEditor.cta.subtitle')}</label>
             <RichTextEditor
               value={data.subtitle || ''}
               onChange={(value) => updateField('subtitle', value)}
-              placeholder="CTA subtitle"
+              placeholder={t('sectionEditor.cta.subtitlePh')}
+              t={t}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Buttons</label>
+            <label className={cmsLabelClass}>{t('sectionEditor.cta.buttons')}</label>
             <div className="space-y-2">
               {(data.buttons || []).map((button: any, index: number) => (
                 <div key={index} className="flex gap-2">
@@ -375,23 +398,23 @@ function SectionDataEditor({
                     type="text"
                     value={button.text || ''}
                     onChange={(e) => updateNestedArrayField('buttons', index, 'text', e.target.value)}
-                    className="flex-1 border px-3 py-2 rounded text-sm"
-                    placeholder="Button text"
+                    className={`${cmsInputClass} flex-1 min-w-0`}
+                    placeholder={t('sectionEditor.cta.buttonTextPh')}
                   />
                   <input
                     type="text"
                     value={button.url || ''}
                     onChange={(e) => updateNestedArrayField('buttons', index, 'url', e.target.value)}
-                    className="flex-1 border px-3 py-2 rounded text-sm"
-                    placeholder="URL"
+                    className={`${cmsInputClass} flex-1 min-w-0`}
+                    placeholder={t('sectionEditor.cta.urlPh')}
                   />
                   <select
                     value={button.primary ? 'true' : 'false'}
                     onChange={(e) => updateNestedArrayField('buttons', index, 'primary', e.target.value === 'true')}
-                    className="border px-3 py-2 rounded text-sm"
+                    className={`${cmsInputClass} min-w-[100px] flex-1`}
                   >
-                    <option value="true">Primary</option>
-                    <option value="false">Secondary</option>
+                    <option value="true">{t('sectionEditor.cta.primary')}</option>
+                    <option value="false">{t('sectionEditor.cta.secondary')}</option>
                   </select>
                   <button
                     onClick={() => {
@@ -407,9 +430,9 @@ function SectionDataEditor({
               ))}
               <button
                 onClick={() => updateField('buttons', [...(data.buttons || []), { text: '', url: '', primary: false }])}
-                className="w-full py-2 border-2 border-dashed border-gray-300 rounded text-gray-600 hover:border-gray-400 hover:text-gray-700"
+                className="w-full rounded-xl border-2 border-dashed border-[#dbe4f4] py-2.5 text-sm font-semibold text-[#607594] transition-colors hover:border-[#b8c9e8] hover:bg-[#f9fbff] hover:text-[#2a3d5f]"
               >
-                + Add Button
+                {t('sectionEditor.cta.addButton')}
               </button>
             </div>
           </div>
@@ -419,7 +442,7 @@ function SectionDataEditor({
     default:
       return (
         <div>
-          <label className="block text-sm font-medium mb-2">Section Data (JSON)</label>
+          <label className={cmsLabelClass}>{t('sectionEditor.json.label')}</label>
           <textarea
             value={JSON.stringify(data, null, 2)}
             onChange={(e) => {
@@ -430,36 +453,59 @@ function SectionDataEditor({
               }
             }}
             rows={10}
-            className="w-full border px-3 py-2 rounded font-mono text-sm"
-            placeholder="{}"
+            spellCheck={false}
+            className={cmsJsonTextareaClass}
+            placeholder={t('sectionEditor.json.placeholder')}
           />
-          <p className="text-xs text-gray-500 mt-1">
-            Edit the JSON data structure for this section
-          </p>
+          <p className={cmsHintClass}>{t('sectionEditor.json.hint')}</p>
         </div>
       );
   }
 }
 
 export function EnhancedSectionEditor({ section, onUpdate }: SectionEditorProps) {
+  const { locale } = useLocale();
+  const t = useCallback(
+    (key: string, values?: Record<string, string>) => translate(adminCmsMessages, locale, key, values),
+    [locale]
+  );
+
+  const sectionTypeLabel = useMemo(() => {
+    const key = `sectionType.${section.section_type}.label`;
+    const resolved = translate(adminCmsMessages, locale, key);
+    return resolved === key ? section.section_type : resolved;
+  }, [locale, section.section_type]);
+
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sectionData, setSectionData] = useState(section.data || {});
   const [isPreview, setIsPreview] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
-  const handleDelete = async () => {
-    if (!window.confirm('Delete this section?')) return;
+  useEffect(() => {
+    if (!showDeleteModal) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape' && !deleteSubmitting) {
+        setShowDeleteModal(false);
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showDeleteModal, deleteSubmitting]);
 
+  const confirmDeleteSection = async () => {
     try {
-      setLoading(true);
+      setDeleteSubmitting(true);
       await deleteSection(section.id);
-      toast.success('Section deleted');
+      toast.success(t('sectionEditor.toast.deleted'));
+      setShowDeleteModal(false);
       onUpdate?.();
     } catch (error) {
-      toast.error('Failed to delete section');
+      toast.error(t('sectionEditor.toast.deleteFailed'));
       console.error(error);
     } finally {
-      setLoading(false);
+      setDeleteSubmitting(false);
     }
   };
 
@@ -467,92 +513,145 @@ export function EnhancedSectionEditor({ section, onUpdate }: SectionEditorProps)
     try {
       setLoading(true);
       await updateSection(section.id, { data: sectionData });
-      toast.success('Section updated');
+      toast.success(t('sectionEditor.toast.updated'));
       onUpdate?.();
     } catch (error) {
-      toast.error('Failed to update section');
+      toast.error(t('sectionEditor.toast.updateFailed'));
       console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
+  const togglePreviewOrEdit = () => {
+    if (!expanded) {
+      setExpanded(true);
+    }
+    setIsPreview((p) => !p);
+  };
+
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
-      <div className="flex justify-between items-center p-4 bg-gray-50">
+    <>
+      <div className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
+      <div className="flex items-center justify-between border-b border-[#eef2fa] bg-[linear-gradient(160deg,#ffffff_0%,#f7f9fe_100%)] px-4 py-3">
         <div>
-          <h3 className="font-medium capitalize">{section.section_type}</h3>
-          <p className="text-sm text-gray-500">Order: {section.order}</p>
+          <h3 className="font-semibold text-[#243555]">{sectionTypeLabel}</h3>
+          <p className="text-sm text-[#607594]">{t('sectionEditor.order', { order: String(section.order) })}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
-            onClick={() => setIsPreview(!isPreview)}
-            className={`p-2 rounded ${isPreview ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'}`}
-            title={isPreview ? 'Edit' : 'Preview'}
+            type="button"
+            onClick={togglePreviewOrEdit}
+            className={`rounded-lg p-2 ${
+              isPreview
+                ? 'border border-[#2f7dff] bg-[#edf4ff] text-[#10284f]'
+                : 'border border-[#d4dced] bg-white text-[#425f8f] hover:bg-[#f7f9fe]'
+            }`}
+            title={isPreview ? t('editor.toolbar.editMode') : t('editor.toolbar.preview')}
           >
-            {isPreview ? <Edit3 className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            {isPreview ? <Edit3 className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
           <button
-            onClick={handleDelete}
-            className="text-red-600 hover:text-red-800"
-            title="Delete section"
+            type="button"
+            onClick={() => setShowDeleteModal(true)}
+            className="rounded-lg p-2 text-[#c44f5f] transition-colors hover:bg-[#fff1f3]"
+            title={t('sectionEditor.actions.delete')}
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="h-4 w-4" />
           </button>
           <button
+            type="button"
             onClick={() => setExpanded(!expanded)}
-            className="text-gray-600 hover:bg-gray-100 p-1 rounded"
+            className="rounded-lg p-2 text-[#607594] hover:bg-[#eef2fa]"
           >
-            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
         </div>
       </div>
 
-      {expanded && (
-        <div className="border-t">
+      {expanded ? (
+        <div className="border-t border-[#eef2fa]">
           {isPreview ? (
             <div className="p-6">
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                <p className="text-sm text-blue-700">
-                  <strong>Preview Mode:</strong> This is how the section will appear on the frontend.
+              <div className="mb-4 rounded-xl border border-[#dbe4f4] bg-[#f9fbff] p-3">
+                <p className="text-sm text-[#425f8f]">
+                  <strong className="text-[#1f2d45]">{t('sectionEditor.preview.lead')}</strong>{' '}
+                  {t('sectionEditor.preview.body')}
                 </p>
               </div>
-              <SectionPreview sectionType={section.section_type} data={sectionData} />
+              <SectionPreview sectionType={section.section_type} data={sectionData} t={t} />
             </div>
           ) : (
-            <div className="p-4 space-y-4">
-              <SectionDataEditor
-                sectionType={section.section_type}
-                data={sectionData}
-                onChange={setSectionData}
-              />
+            <div className="space-y-4 p-4">
+              <SectionDataEditor sectionType={section.section_type} data={sectionData} onChange={setSectionData} t={t} />
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <button
-                  onClick={() => setExpanded(false)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
-                >
-                  Cancel
+              <div className="flex justify-end gap-2 border-t border-[#eef2fa] pt-4">
+                <button type="button" onClick={() => setExpanded(false)} className={cmsBtnGhostClass}>
+                  {t('editor.actions.cancel')}
                 </button>
-                <button
-                  onClick={handleSave}
-                  disabled={loading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2 disabled:bg-blue-400"
-                >
-                  <Save className="w-4 h-4" />
-                  {loading ? 'Saving...' : 'Save Changes'}
+                <button type="button" onClick={handleSave} disabled={loading} className={cmsBtnPrimaryClass}>
+                  <Save className="h-4 w-4" />
+                  {loading ? t('sectionEditor.saving') : t('sectionEditor.saveChanges')}
                 </button>
               </div>
             </div>
           )}
         </div>
-      )}
+      ) : null}
     </div>
+
+      {showDeleteModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4">
+          <div
+            className="w-full max-w-md rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cms-delete-section-modal-title"
+          >
+            <h2 id="cms-delete-section-modal-title" className="text-lg font-semibold text-[#1f2d45]">
+              {t('modal.deleteSection.title')}
+            </h2>
+            <p className="mt-2 text-sm text-[#607594]">
+              {t('modal.deleteSection.body', {
+                name: sectionTypeLabel,
+                order: String(section.order),
+              })}
+            </p>
+            <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleteSubmitting}
+                className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-sm font-semibold text-[#3e69b0] hover:bg-[#edf4ff] disabled:opacity-60"
+              >
+                {t('modal.deleteSection.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmDeleteSection()}
+                disabled={deleteSubmitting}
+                className="rounded-lg border border-[#d45f6b] bg-[#fff1f3] px-3 py-1.5 text-sm font-semibold text-[#a73a46] hover:bg-[#ffe6ea] disabled:opacity-60"
+              >
+                {deleteSubmitting ? t('modal.deleteSection.deleting') : t('modal.deleteSection.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
 
 // Simple preview component
-function SectionPreview({ sectionType, data }: { sectionType: string; data: any }) {
+function SectionPreview({
+  sectionType,
+  data,
+  t,
+}: {
+  sectionType: string;
+  data: any;
+  t: CmsT;
+}) {
   switch (sectionType) {
     case 'hero':
       return (
@@ -648,14 +747,18 @@ function SectionPreview({ sectionType, data }: { sectionType: string; data: any 
         </div>
       );
 
-    default:
+    default: {
+      const typeKey = `sectionType.${sectionType}.label`;
+      const resolved = t(typeKey);
+      const displayType = resolved === typeKey ? sectionType : resolved;
       return (
         <div className="p-6 border rounded-lg bg-gray-50">
-          <h3 className="font-medium mb-2">Section Type: {sectionType}</h3>
+          <h3 className="font-medium mb-2">{t('editor.preview.sectionType', { type: displayType })}</h3>
           <pre className="text-xs bg-white p-3 rounded border overflow-auto max-h-60">
             {JSON.stringify(data, null, 2)}
           </pre>
         </div>
       );
+    }
   }
 }

@@ -247,7 +247,7 @@ export function CMSPreview({ page, isOpen, onClose }: CMSPreviewProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+      <div className="flex max-h-[90vh] w-full max-w-7xl flex-col rounded-xl bg-white shadow-2xl xl:max-w-[90rem]">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b">
           <div>

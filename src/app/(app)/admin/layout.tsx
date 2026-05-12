@@ -22,7 +22,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const [langOpen, setLangOpen] = useState(false);
   const langRef = useRef<HTMLDivElement | null>(null);
 
-  const localeLabel = useMemo(() => (locale === 'en' ? 'EN' : 'CS'), [locale]);
+  const localeLabel = useMemo(
+    () => translate(adminMessages, locale, `lang.${locale}`),
+    [locale],
+  );
 
   useEffect(() => {
     function handleDocPointerDown(event: PointerEvent) {
@@ -183,7 +186,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <button
                   type="button"
                   onClick={() => setLangOpen((prev) => !prev)}
-                  aria-label="Language"
+                  aria-label={t('lang.label')}
                   aria-haspopup="listbox"
                   aria-expanded={langOpen}
                   className="flex w-full items-center justify-between gap-2 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-[#dce8ff] hover:bg-[#223657]"
@@ -201,7 +204,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 {langOpen ? (
                   <div
                     role="listbox"
-                    aria-label="Language"
+                    aria-label={t('lang.label')}
                     className="mt-2 w-full overflow-hidden rounded-xl border border-[#2d4f83] bg-[#0b1a39] shadow-[0_18px_40px_rgba(0,0,0,0.45)]"
                   >
                     <button
@@ -212,11 +215,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                         setLocale('cs');
                         setLangOpen(false);
                       }}
-                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
+                      className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm ${
                         locale === 'cs' ? 'bg-[#17376d] text-white' : 'text-[#e8f0ff] hover:bg-[#173160]'
                       }`}
                     >
-                      <span>CS</span>
+                      <span>{t('lang.cs')}</span>
                       {locale === 'cs' ? <span className="text-xs text-[#9ac3ff]">✓</span> : null}
                     </button>
                     <button
@@ -231,7 +234,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                         locale === 'en' ? 'bg-[#17376d] text-white' : 'text-[#e8f0ff] hover:bg-[#173160]'
                       }`}
                     >
-                      <span>EN</span>
+                      <span>{t('lang.en')}</span>
                       {locale === 'en' ? <span className="text-xs text-[#9ac3ff]">✓</span> : null}
                     </button>
                   </div>
@@ -272,10 +275,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <button
                   type="button"
                   onClick={() => setLangOpen((prev) => !prev)}
-                  aria-label="Language"
+                  aria-label={t('lang.label')}
                   aria-haspopup="listbox"
                   aria-expanded={langOpen}
-                  className="inline-flex min-w-[72px] items-center justify-between gap-2 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-[#dce8ff] hover:bg-[#223657]"
+                  className="inline-flex min-w-[7.5rem] items-center justify-between gap-2 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-[#dce8ff] hover:bg-[#223657]"
                 >
                   <span>{localeLabel}</span>
                   <svg
@@ -290,8 +293,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 {langOpen ? (
                   <div
                     role="listbox"
-                    aria-label="Language"
-                    className="absolute right-0 z-50 mt-2 w-[72px] overflow-hidden rounded-xl border border-[#2d4f83] bg-[#0b1a39] shadow-[0_18px_40px_rgba(0,0,0,0.45)]"
+                    aria-label={t('lang.label')}
+                    className="absolute right-0 z-50 mt-2 min-w-[9rem] overflow-hidden rounded-xl border border-[#2d4f83] bg-[#0b1a39] shadow-[0_18px_40px_rgba(0,0,0,0.45)]"
                   >
                     <button
                       type="button"
@@ -301,11 +304,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                         setLocale('cs');
                         setLangOpen(false);
                       }}
-                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
+                      className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm ${
                         locale === 'cs' ? 'bg-[#17376d] text-white' : 'text-[#e8f0ff] hover:bg-[#173160]'
                       }`}
                     >
-                      <span>CS</span>
+                      <span>{t('lang.cs')}</span>
                       {locale === 'cs' ? <span className="text-xs text-[#9ac3ff]">✓</span> : null}
                     </button>
                     <button
@@ -320,7 +323,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                         locale === 'en' ? 'bg-[#17376d] text-white' : 'text-[#e8f0ff] hover:bg-[#173160]'
                       }`}
                     >
-                      <span>EN</span>
+                      <span>{t('lang.en')}</span>
                       {locale === 'en' ? <span className="text-xs text-[#9ac3ff]">✓</span> : null}
                     </button>
                   </div>

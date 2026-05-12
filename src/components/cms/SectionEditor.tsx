@@ -1,12 +1,17 @@
 'use client';
 
-'use client';
-
 import React, { useState } from 'react';
 import { PageSection } from '@/lib/api/cms-api';
 import { updateSection, deleteSection } from '@/lib/api/cms-api';
 import { toast } from 'sonner';
 import { Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  cmsBtnGhostClass,
+  cmsBtnPrimaryClass,
+  cmsHintClass,
+  cmsJsonTextareaClass,
+  cmsLabelClass,
+} from '@/components/cms/cms-editor-styles';
 
 interface SectionEditorProps {
   section: PageSection;
@@ -78,9 +83,9 @@ export function SectionEditor({ section, onUpdate }: SectionEditorProps) {
       </div>
 
       {expanded && (
-        <div className="p-4 border-t space-y-4">
+        <div className="space-y-4 border-t border-[#eef2fa] p-4 [color-scheme:light]">
           <div>
-            <label className="block text-sm font-medium mb-2">Section Data (JSON)</label>
+            <label className={cmsLabelClass}>Section data (JSON)</label>
             <textarea
               value={JSON.stringify(sectionData, null, 2)}
               onChange={(e) => {
@@ -91,27 +96,19 @@ export function SectionEditor({ section, onUpdate }: SectionEditorProps) {
                 }
               }}
               rows={10}
-              className="w-full border px-3 py-2 rounded font-mono text-sm"
+              spellCheck={false}
+              className={cmsJsonTextareaClass}
               placeholder="{}"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Edit the JSON data structure for this section
-            </p>
+            <p className={cmsHintClass}>Edit the JSON data structure for this section</p>
           </div>
 
           <div className="flex justify-end gap-2">
-            <button
-              onClick={() => setExpanded(false)}
-              className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded"
-            >
+            <button type="button" onClick={() => setExpanded(false)} className={cmsBtnGhostClass}>
               Cancel
             </button>
-            <button
-              onClick={handleSave}
-              disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:bg-blue-400"
-            >
-              {loading ? 'Saving...' : 'Save Changes'}
+            <button type="button" onClick={handleSave} disabled={loading} className={cmsBtnPrimaryClass}>
+              {loading ? 'Saving…' : 'Save changes'}
             </button>
           </div>
         </div>

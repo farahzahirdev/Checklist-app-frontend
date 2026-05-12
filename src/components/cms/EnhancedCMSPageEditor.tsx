@@ -1,36 +1,62 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { PageDetail, PageSection } from '@/lib/api/cms-api';
 import { getPageBySlug, getPageById, updatePage, createPage, createSection } from '@/lib/api/cms-api';
 import { ACCESS_TOKEN_STORAGE_KEY } from '@/lib/auth';
 import { toast } from 'sonner';
 import { EnhancedSectionEditor } from './EnhancedSectionEditor';
 import { Plus, Save, Eye, Edit3, Globe, FileText, Settings } from 'lucide-react';
+import { CustomDropdown } from '@/components/admin/CustomDropdown';
+import { translate, useLocale } from '@/lib/i18n';
+import { adminCmsMessages } from '@/locales/admin-cms';
+import {
+  cmsAddSectionGridBtnClass,
+  cmsBtnGhostClass,
+  cmsBtnPreviewActiveClass,
+  cmsBtnPrimaryClass,
+  cmsBtnSecondaryClass,
+  cmsInputClass,
+  cmsLabelClass,
+  cmsLabelUpperClass,
+  cmsPanelClass,
+  cmsTabActiveClass,
+  cmsTabInactiveClass,
+  cmsTextareaClass,
+  cmsToolbarClass,
+} from '@/components/cms/cms-editor-styles';
 
-const LANGUAGES = [
-  { code: 'cs', label: 'Czech', flag: '🇨🇿' },
-  { code: 'en', label: 'English', flag: '🇬🇧' },
+const LANGUAGE_CODES = [
+  { code: 'cs' as const, flag: '🇨🇿' },
+  { code: 'en' as const, flag: '🇬🇧' },
 ];
 
-const SECTION_TYPES = [
-  { type: 'hero', label: 'Hero Section', description: 'Main hero banner with title and description' },
-  { type: 'cards', label: 'Cards Grid', description: 'Grid of feature cards or information blocks' },
-  { type: 'faq', label: 'FAQ Section', description: 'Frequently asked questions' },
-  { type: 'cta', label: 'Call to Action', description: 'Call-to-action section with buttons' },
-  { type: 'trust', label: 'Trust Badges', description: 'Trust indicators and credentials' },
-  { type: 'how-it-works', label: 'How It Works', description: 'Step-by-step process explanation' },
-  { type: 'documentation-grid', label: 'Documentation Grid', description: 'Product or document listings' },
-  { type: 'bundles', label: 'Product Bundles', description: 'Product packages and pricing' },
-  { type: 'why-choose', label: 'Why Choose Us', description: 'Benefits and advantages' },
-  { type: 'legal', label: 'Legal Content', description: 'Legal pages and policies' },
-];
+const SECTION_TYPE_IDS = [
+  'hero',
+  'cards',
+  'faq',
+  'cta',
+  'trust',
+  'how-it-works',
+  'documentation-grid',
+  'bundles',
+  'why-choose',
+  'legal',
+] as const;
+
+const CONTENT_TYPE_CODES = ['standard', 'hero', 'product_catalog', 'faq', 'legal'] as const;
 
 interface EnhancedCMSPageEditorProps {
   pageId?: string;
 }
 
 export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
+  const { locale } = useLocale();
+  const t = useCallback(
+    (key: string, values?: Record<string, string>) => translate(adminCmsMessages, locale, key, values),
+    [locale],
+  );
+
   const [language, setLanguage] = useState('cs');
   const [pages, setPages] = useState<Record<string, PageDetail | null>>({});
   const [currentPage, setCurrentPage] = useState<PageDetail | null>(null);
@@ -105,9 +131,26 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
     }
   };
 
+  const statusDropdownOptions = useMemo(
+    () => [
+      { value: 'draft', label: t('filter.draft') },
+      { value: 'published', label: t('filter.published') },
+    ],
+    [t],
+  );
+
+  const contentTypeDropdownOptions = useMemo(
+    () =>
+      CONTENT_TYPE_CODES.map((code) => ({
+        value: code,
+        label: t(`editor.contentType.${code}`),
+      })),
+    [t],
+  );
+
   const handleSave = async () => {
     if (!slug || !title) {
-      toast.error('Please fill in slug and title');
+      toast.error(t('editor.toast.slugTitleRequired'));
       return;
     }
 
@@ -124,7 +167,7 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
         });
         setPages((prev) => ({ ...prev, [language]: updated }));
         setCurrentPage(updated);
-        toast.success('Page updated successfully');
+        toast.success(t('editor.toast.updated'));
       } else {
         // Create new page
         const created = await createPage({
@@ -137,10 +180,10 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
         });
         setPages((prev) => ({ ...prev, [language]: created }));
         setCurrentPage(created);
-        toast.success('Page created successfully');
+        toast.success(t('editor.toast.created'));
       }
     } catch (error) {
-      toast.error('Failed to save page');
+      toast.error(t('editor.toast.saveFailed'));
       console.error(error);
     } finally {
       setIsSaving(false);
@@ -149,7 +192,7 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
 
   const handleAddSection = async (sectionType: string) => {
     if (!currentPage?.id) {
-      toast.error('Please save the page first');
+      toast.error(t('editor.toast.savePageFirst'));
       return;
     }
 
@@ -162,11 +205,13 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
       };
 
       await createSection(newSection);
-      toast.success(`Added ${sectionType} section`);
+      const sectionLabelKey = `sectionType.${sectionType}.label`;
+      const name = t(sectionLabelKey);
+      toast.success(t('editor.toast.sectionAdded', { name }));
       setShowAddSection(false);
       loadPage(language); // Reload to show new section
     } catch (error) {
-      toast.error('Failed to add section');
+      toast.error(t('editor.toast.sectionAddFailed'));
       console.error(error);
     }
   };
@@ -202,36 +247,39 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
     }
   };
 
-  const currentLanguageData = pages[language];
-
   const renderPreview = () => {
     if (!currentPage) return null;
 
     return (
-      <div className="max-w-4xl mx-auto p-6 bg-white min-h-screen">
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded">
-          <p className="text-sm text-blue-700">
-            <strong>Preview Mode:</strong> This is how the page will appear on the frontend. 
-            Language: <span className="font-semibold">{LANGUAGES.find(l => l.code === language)?.label}</span>
+      <div className="mx-auto w-full max-w-7xl bg-white p-6 xl:max-w-[90rem]">
+        <div className="mb-6 rounded-xl border border-[#dbe4f4] bg-[#f9fbff] p-4">
+          <p className="text-sm text-[#425f8f]">
+            <strong className="text-[#1f2d45]">{t('editor.preview.lead')}</strong> {t('editor.preview.body')}{' '}
+            {t('editor.preview.language')}{' '}
+            <span className="font-semibold">{t(`editor.lang.${language}`)}</span>
           </p>
         </div>
 
         {/* Preview Header */}
-        <header className="mb-8 pb-6 border-b">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{title}</h1>
-          {metaDescription && (
-            <p className="text-gray-600 italic">{metaDescription}</p>
-          )}
-          <div className="mt-4 flex gap-2">
-            <span className={`px-2 py-1 text-xs rounded ${
-              status === 'published' 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-yellow-100 text-yellow-800'
-            }`}>
-              {status === 'published' ? 'Published' : 'Draft'}
+        <header className="mb-8 border-b border-[#eef2fa] pb-6">
+          <h1 className="mb-2 text-3xl font-semibold tracking-tight text-[#1f2d45]">{title}</h1>
+          {metaDescription && <p className="italic text-[#607594]">{metaDescription}</p>}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span
+              className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+                status === 'published'
+                  ? 'border-[#b8e0c8] bg-[#e8f4ec] text-[#1d6b45]'
+                  : 'border-[#cfe0ff] bg-[#edf4ff] text-[#2d5599]'
+              }`}
+            >
+              {status === 'published' ? t('filter.published') : t('filter.draft')}
             </span>
-            <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-800">
-              {contentType}
+            <span className="rounded-full border border-[#d4dced] bg-white px-2.5 py-0.5 text-xs font-semibold text-[#425f8f]">
+              {(() => {
+                const ctKey = `editor.contentType.${contentType}`;
+                const lbl = t(ctKey);
+                return lbl === ctKey ? contentType : lbl;
+              })()}
             </span>
           </div>
         </header>
@@ -345,8 +393,8 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
 
       default:
         return (
-          <div className="p-6 border rounded-lg bg-gray-50">
-            <h3 className="font-medium mb-4">Section Type: {section.section_type}</h3>
+          <div className="rounded-lg border bg-gray-50 p-6">
+            <h3 className="mb-4 font-medium">{t('editor.preview.sectionType', { type: section.section_type })}</h3>
             <pre className="text-sm bg-white p-4 rounded border overflow-auto max-h-96">
               {JSON.stringify(section.data, null, 2)}
             </pre>
@@ -356,180 +404,154 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
   };
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-gray-900">
-              {pageId ? `Edit Page: ${pageId}` : 'Create New Page'}
-            </h1>
-            <button
-              onClick={() => setIsPreview(!isPreview)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
-                isPreview 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {isPreview ? <Edit3 className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              {isPreview ? 'Edit Mode' : 'Preview Mode'}
-            </button>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium disabled:bg-blue-400"
-            >
-              <Save className="w-4 h-4" />
-              {isSaving ? 'Saving...' : 'Save'}
-            </button>
-          </div>
+    <div className="flex min-h-0 flex-col gap-5">
+      <div className={cmsToolbarClass}>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsPreview(!isPreview)}
+            className={isPreview ? cmsBtnPreviewActiveClass : cmsBtnSecondaryClass}
+          >
+            {isPreview ? <Edit3 className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {isPreview ? t('editor.toolbar.editMode') : t('editor.toolbar.preview')}
+          </button>
+          {loading ? <span className="text-sm text-[#607594]">{t('editor.loading')}</span> : null}
         </div>
+        <button type="button" onClick={handleSave} disabled={isSaving} className={cmsBtnPrimaryClass}>
+          <Save className="h-4 w-4" />
+          {isSaving ? t('editor.saving') : t('editor.save')}
+        </button>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="min-h-0 flex-1">
         {isPreview ? (
           renderPreview()
         ) : (
-          <div className="max-w-6xl mx-auto p-6">
-            {/* Language Tabs */}
-            <div className="mb-6 border-b">
-              <div className="flex gap-6">
-                {LANGUAGES.map((lang) => (
+          <div className="mx-auto w-full max-w-7xl space-y-6 xl:max-w-[90rem] 2xl:max-w-[100rem]">
+            <div className="border-b border-[#eef2fa]">
+              <div className="flex gap-8">
+                {LANGUAGE_CODES.map((lang) => (
                   <button
                     key={lang.code}
+                    type="button"
                     onClick={() => setLanguage(lang.code)}
-                    className={`pb-3 px-1 font-medium border-b-2 transition-colors ${
-                      language === lang.code
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-600 hover:text-gray-900'
+                    className={`px-1 pb-3 text-sm font-semibold transition-colors ${
+                      language === lang.code ? cmsTabActiveClass : cmsTabInactiveClass
                     }`}
                   >
                     <span className="mr-2">{lang.flag}</span>
-                    {lang.label}
-                    {currentLanguageData && <span className="ml-2 text-xs text-green-600">✓</span>}
+                    {t(`editor.lang.${lang.code}`)}
+                    {pages[lang.code] ? (
+                      <span className="ml-2 text-xs font-medium text-[#1d6b45]">✓</span>
+                    ) : null}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Page Form */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6 shadow-sm">
-              <div className="grid grid-cols-2 gap-6 mb-6">
+            <div className={`${cmsPanelClass} space-y-6`}>
+              <div className="grid gap-6 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-                    <Globe className="w-4 h-4" />
-                    Page Slug
+                  <label className={`${cmsLabelClass} flex items-center gap-2`}>
+                    <Globe className="h-4 w-4 text-[#5b6f91]" aria-hidden />
+                    {t('editor.field.pageSlug')}
                   </label>
                   <input
                     type="text"
                     value={slug}
                     onChange={(e) => setSlug(e.target.value)}
                     disabled={!!currentPage?.id}
-                    placeholder="e.g., home, faq, products"
-                    className="w-full border border-gray-300 px-3 py-2 rounded-lg bg-white text-gray-900 disabled:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder={t('editor.field.slugPlaceholder')}
+                    className={cmsInputClass}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Unique identifier for this page</p>
+                  <p className="mt-1 text-xs text-[#607594]">{t('editor.field.slugHint')}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Title
+                  <label className={`${cmsLabelClass} flex items-center gap-2`}>
+                    <FileText className="h-4 w-4 text-[#5b6f91]" aria-hidden />
+                    {t('editor.field.title')}
                   </label>
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Page title"
-                    className="w-full border border-gray-300 px-3 py-2 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder={t('editor.field.titlePlaceholder')}
+                    className={cmsInputClass}
                   />
                 </div>
               </div>
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium mb-2">Meta Description (SEO)</label>
+              <div>
+                <label className={cmsLabelClass}>{t('editor.field.metaDescription')}</label>
                 <textarea
                   value={metaDescription}
                   onChange={(e) => setMetaDescription(e.target.value)}
-                  placeholder="Description for search engines"
+                  placeholder={t('editor.field.metaPlaceholder')}
                   rows={2}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={cmsTextareaClass}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Status</label>
-                  <select
+              <div className="grid gap-6 md:grid-cols-2">
+                <label className="space-y-1">
+                  <span className={cmsLabelUpperClass}>{t('filter.status')}</span>
+                  <CustomDropdown
                     value={status}
-                    onChange={(e) => setStatus(e.target.value as 'draft' | 'published')}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-                    <Settings className="w-4 h-4" />
-                    Content Type
-                  </label>
-                  <select
+                    onChange={(next) => setStatus(next as 'draft' | 'published')}
+                    placeholder={t('filter.draft')}
+                    options={statusDropdownOptions}
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className={`${cmsLabelUpperClass} flex items-center gap-2`}>
+                    <Settings className="h-3.5 w-3.5 text-[#5b6f91]" aria-hidden />
+                    {t('editor.field.contentType')}
+                  </span>
+                  <CustomDropdown
                     value={contentType}
-                    onChange={(e) => setContentType(e.target.value)}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="standard">Standard</option>
-                    <option value="hero">Hero</option>
-                    <option value="product_catalog">Product Catalog</option>
-                    <option value="faq">FAQ</option>
-                    <option value="legal">Legal</option>
-                  </select>
-                </div>
+                    onChange={(next) => setContentType(next)}
+                    placeholder={t('editor.contentType.standard')}
+                    options={contentTypeDropdownOptions}
+                  />
+                </label>
               </div>
             </div>
 
-            {/* Sections */}
-            {currentPage && (
+            {currentPage ? (
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold">Page Sections</h2>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-xl font-semibold text-[#243555]">{t('editor.sections.heading')}</h2>
                   <button
+                    type="button"
                     onClick={() => setShowAddSection(!showAddSection)}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium"
+                    className={cmsBtnPrimaryClass}
                   >
-                    <Plus className="w-4 h-4" />
-                    Add Section
+                    <Plus className="h-4 w-4" />
+                    {t('editor.sections.add')}
                   </button>
                 </div>
 
-                {showAddSection && (
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 bg-gray-50">
-                    <h3 className="font-medium mb-4">Choose Section Type</h3>
+                {showAddSection ? (
+                  <div className="rounded-2xl border-2 border-dashed border-[#dbe4f4] bg-[#f9fbff] p-6">
+                    <h3 className="mb-4 font-semibold text-[#243555]">{t('editor.sections.chooseType')}</h3>
                     <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                      {SECTION_TYPES.map((type) => (
+                      {SECTION_TYPE_IDS.map((typeId) => (
                         <button
-                          key={type.type}
-                          onClick={() => handleAddSection(type.type)}
-                          className="p-4 border rounded-lg bg-white hover:bg-blue-50 hover:border-blue-300 text-left transition-colors"
+                          key={typeId}
+                          type="button"
+                          onClick={() => handleAddSection(typeId)}
+                          className={cmsAddSectionGridBtnClass}
                         >
-                          <h4 className="font-medium mb-1">{type.label}</h4>
-                          <p className="text-xs text-gray-600">{type.description}</p>
+                          <h4 className="mb-1 font-semibold text-[#1f2d45]">{t(`sectionType.${typeId}.label`)}</h4>
+                          <p className="text-xs text-[#607594]">{t(`sectionType.${typeId}.description`)}</p>
                         </button>
                       ))}
                     </div>
-                    <button
-                      onClick={() => setShowAddSection(false)}
-                      className="mt-4 text-gray-600 hover:text-gray-800"
-                    >
-                      Cancel
+                    <button type="button" onClick={() => setShowAddSection(false)} className={`${cmsBtnGhostClass} mt-4`}>
+                      {t('editor.actions.cancel')}
                     </button>
                   </div>
-                )}
+                ) : null}
 
                 <div className="space-y-4">
                   {currentPage.sections?.length ? (
@@ -545,20 +567,21 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
                       />
                     ))
                   ) : (
-                    <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-xl">
-                      <p className="text-gray-500 mb-4">No sections yet</p>
+                    <div className="rounded-2xl border-2 border-dashed border-[#dbe4f4] py-12 text-center">
+                      <p className="mb-4 text-[#607594]">{t('editor.sections.none')}</p>
                       <button
+                        type="button"
                         onClick={() => setShowAddSection(true)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2"
+                        className={cmsBtnPrimaryClass}
                       >
-                        <Plus className="w-4 h-4" />
-                        Add Your First Section
+                        <Plus className="h-4 w-4" />
+                        {t('editor.sections.addFirst')}
                       </button>
                     </div>
                   )}
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
         )}
       </div>

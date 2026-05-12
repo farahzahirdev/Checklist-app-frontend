@@ -1,24 +1,43 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { PageDetail, PageSection } from '@/lib/api/cms-api';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import { PageDetail } from '@/lib/api/cms-api';
 import { getPageBySlug, getPageById, updatePage, createPage } from '@/lib/api/cms-api';
 import { ACCESS_TOKEN_STORAGE_KEY } from '@/lib/auth';
 import { toast } from 'sonner';
 import { EnhancedSectionEditor } from './EnhancedSectionEditor';
 import { CMSPreview } from './CMSPreview';
 import { Plus, Save, Eye } from 'lucide-react';
+import { CustomDropdown } from '@/components/admin/CustomDropdown';
+import { translate, useLocale } from '@/lib/i18n';
+import { adminCmsMessages } from '@/locales/admin-cms';
+import {
+  cmsBtnPrimaryClass,
+  cmsBtnSecondaryClass,
+  cmsInputClass,
+  cmsLabelClass,
+  cmsLabelUpperClass,
+  cmsPanelClass,
+  cmsTabActiveClass,
+  cmsTabInactiveClass,
+  cmsTextareaClass,
+} from '@/components/cms/cms-editor-styles';
 
-const LANGUAGES = [
-  { code: 'cs', label: 'Czech' },
-  { code: 'en', label: 'English' },
-];
+const LANGUAGE_CODES = [{ code: 'cs' as const }, { code: 'en' as const }];
+
+const CONTENT_TYPE_CODES = ['standard', 'hero', 'product_catalog', 'faq', 'legal'] as const;
 
 interface CMSPageEditorProps {
   pageId?: string;
 }
 
 export function CMSPageEditor({ pageId }: CMSPageEditorProps) {
+  const { locale } = useLocale();
+  const t = useCallback(
+    (key: string, values?: Record<string, string>) => translate(adminCmsMessages, locale, key, values),
+    [locale],
+  );
+
   const [language, setLanguage] = useState('cs');
   const [pages, setPages] = useState<Record<string, PageDetail | null>>({});
   const [currentPage, setCurrentPage] = useState<PageDetail | null>(null);
@@ -94,7 +113,7 @@ export function CMSPageEditor({ pageId }: CMSPageEditorProps) {
 
   const handleSave = async () => {
     if (!slug || !title) {
-      toast.error('Please fill in slug and title');
+      toast.error(t('editor.toast.slugTitleRequired'));
       return;
     }
 
@@ -111,7 +130,7 @@ export function CMSPageEditor({ pageId }: CMSPageEditorProps) {
         });
         setPages((prev) => ({ ...prev, [language]: updated }));
         setCurrentPage(updated);
-        toast.success('Page updated successfully');
+        toast.success(t('editor.toast.updated'));
       } else {
         // Create new page
         const created = await createPage({
@@ -124,122 +143,121 @@ export function CMSPageEditor({ pageId }: CMSPageEditorProps) {
         });
         setPages((prev) => ({ ...prev, [language]: created }));
         setCurrentPage(created);
-        toast.success('Page created successfully');
+        toast.success(t('editor.toast.created'));
       }
     } catch (error) {
-      toast.error('Failed to save page');
+      toast.error(t('editor.toast.saveFailed'));
       console.error(error);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const currentLanguageData = pages[language];
+  const statusDropdownOptions = useMemo(
+    () => [
+      { value: 'draft', label: t('filter.draft') },
+      { value: 'published', label: t('filter.published') },
+    ],
+    [t],
+  );
+
+  const contentTypeDropdownOptions = useMemo(
+    () =>
+      CONTENT_TYPE_CODES.map((code) => ({
+        value: code,
+        label: t(`editor.contentType.${code}`),
+      })),
+    [t],
+  );
 
   return (
     <div className="space-y-6">
-      {/* Language Tabs */}
-      <div className="border-b">
-        <div className="flex gap-4">
-          {LANGUAGES.map((lang) => (
+      <div className="border-b border-[#eef2fa]">
+        <div className="flex gap-8">
+          {LANGUAGE_CODES.map((lang) => (
             <button
               key={lang.code}
+              type="button"
               onClick={() => setLanguage(lang.code)}
-              className={`px-4 py-2 font-medium border-b-2 ${
-                language === lang.code
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              className={`px-1 pb-3 text-sm font-semibold transition-colors ${
+                language === lang.code ? cmsTabActiveClass : cmsTabInactiveClass
               }`}
             >
-              {lang.label}
-              {currentLanguageData && <span className="ml-2 text-xs text-green-600">✓</span>}
+              {t(`editor.lang.${lang.code}`)}
+              {pages[lang.code] ? (
+                <span className="ml-2 text-xs font-medium text-[#1d6b45]">✓</span>
+              ) : null}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Form */}
-      <div className="bg-white rounded-lg border p-6 space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+      <div className={`${cmsPanelClass} space-y-6`}>
+        <div className="grid gap-6 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium mb-2">Page Slug</label>
+            <label className={cmsLabelClass}>{t('editor.field.pageSlug')}</label>
             <input
               type="text"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
               disabled={!!currentPage?.id}
-              placeholder="e.g., home, faq, products"
-              className="w-full border px-3 py-2 rounded disabled:bg-gray-50"
+              placeholder={t('editor.field.slugPlaceholder')}
+              className={cmsInputClass}
             />
-            <p className="text-xs text-gray-500 mt-1">Unique identifier for this page</p>
+            <p className="mt-1 text-xs text-[#607594]">{t('editor.field.slugHint')}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Title</label>
+            <label className={cmsLabelClass}>{t('editor.field.title')}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Page title"
-              className="w-full border px-3 py-2 rounded"
+              placeholder={t('editor.field.titlePlaceholder')}
+              className={cmsInputClass}
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">Meta Description (SEO)</label>
+          <label className={cmsLabelClass}>{t('editor.field.metaDescription')}</label>
           <textarea
             value={metaDescription}
             onChange={(e) => setMetaDescription(e.target.value)}
-            placeholder="Description for search engines"
+            placeholder={t('editor.field.metaPlaceholder')}
             rows={2}
-            className="w-full border px-3 py-2 rounded"
+            className={cmsTextareaClass}
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Status</label>
-            <select
+        <div className="grid gap-6 md:grid-cols-2">
+          <label className="space-y-1">
+            <span className={cmsLabelUpperClass}>{t('filter.status')}</span>
+            <CustomDropdown
               value={status}
-              onChange={(e) => setStatus(e.target.value as 'draft' | 'published')}
-              className="w-full border px-3 py-2 rounded"
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Content Type</label>
-            <select
+              onChange={(next) => setStatus(next as 'draft' | 'published')}
+              placeholder={t('filter.draft')}
+              options={statusDropdownOptions}
+            />
+          </label>
+          <label className="space-y-1">
+            <span className={cmsLabelUpperClass}>{t('editor.field.contentType')}</span>
+            <CustomDropdown
               value={contentType}
-              onChange={(e) => setContentType(e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-            >
-              <option value="standard">Standard</option>
-              <option value="hero">Hero</option>
-              <option value="product_catalog">Product Catalog</option>
-              <option value="faq">FAQ</option>
-              <option value="legal">Legal</option>
-            </select>
-          </div>
+              onChange={(next) => setContentType(next)}
+              placeholder={t('editor.contentType.standard')}
+              options={contentTypeDropdownOptions}
+            />
+          </label>
         </div>
 
-        {/* Save Button */}
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <button
-            onClick={() => setShowPreview(true)}
-            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded flex items-center gap-2"
-          >
-            <Eye className="w-4 h-4" />
-            Preview
+        <div className="flex flex-wrap justify-end gap-2 border-t border-[#eef2fa] pt-4">
+          <button type="button" onClick={() => setShowPreview(true)} className={cmsBtnSecondaryClass}>
+            <Eye className="h-4 w-4" />
+            {t('editor.toolbar.preview')}
           </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2 disabled:bg-blue-400"
-          >
-            <Save className="w-4 h-4" />
-            {isSaving ? 'Saving...' : 'Save'}
+          <button type="button" onClick={handleSave} disabled={isSaving} className={cmsBtnPrimaryClass}>
+            <Save className="h-4 w-4" />
+            {isSaving ? t('editor.saving') : t('editor.save')}
           </button>
         </div>
       </div>
@@ -252,9 +270,9 @@ export function CMSPageEditor({ pageId }: CMSPageEditorProps) {
       />
 
       {/* Sections */}
-      {currentPage && (
+      {currentPage ? (
         <div className="space-y-4">
-          <h2 className="text-xl font-bold">Page Sections</h2>
+          <h2 className="text-xl font-semibold text-[#243555]">{t('editor.sections.heading')}</h2>
           <div className="space-y-3">
             {currentPage.sections?.length ? (
               currentPage.sections.map((section) => (
@@ -262,7 +280,6 @@ export function CMSPageEditor({ pageId }: CMSPageEditorProps) {
                   key={section.id}
                   section={section}
                   onUpdate={() => {
-                    // Reload page after section update
                     if (currentPage.id) {
                       loadPage(language);
                     }
@@ -270,15 +287,15 @@ export function CMSPageEditor({ pageId }: CMSPageEditorProps) {
                 />
               ))
             ) : (
-              <p className="text-gray-500">No sections yet</p>
+              <p className="text-[#607594]">{t('editor.sections.none')}</p>
             )}
           </div>
-          <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Add Section
+          <button type="button" className={cmsBtnPrimaryClass}>
+            <Plus className="h-4 w-4" />
+            {t('editor.sections.add')}
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

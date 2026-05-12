@@ -373,10 +373,10 @@ export default function CustomerProfilePage() {
                   </div>
                 </div>
               </div>
-              {companyMeta ? (
+              {companyMeta?.region ? (
                 <p className="text-xs text-[#6c83a8]">
                   {t('company.meta')}
-                  {companyMeta.region ? ` • ${companyMeta.region}` : ''}
+                  {` • ${companyMeta.region}`}
                 </p>
               ) : null}
             </div>

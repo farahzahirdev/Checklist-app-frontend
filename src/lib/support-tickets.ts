@@ -1,5 +1,9 @@
 import { apiGetWithAuth, apiPatch, apiPost } from '@/lib/api';
 
+/** Client and server should agree; used for UI validation before POST. */
+export const SUPPORT_TICKET_SUBJECT_MAX_LENGTH = 200;
+export const SUPPORT_TICKET_MESSAGE_MAX_LENGTH = 5000;
+
 export type SupportTicketStatus = 'open' | 'waiting_customer' | 'resolved' | 'closed';
 
 export type SupportTicketAudience = 'customer' | 'admin';

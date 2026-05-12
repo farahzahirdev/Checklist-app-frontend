@@ -25,6 +25,7 @@ import {
   type RbacRole,
 } from '@/lib/rbac';
 import { useAdminAccess } from '@/lib/admin-access';
+import { formatPermissionLine } from '@/lib/permission-labels';
 
 export default function AdminRbacPage() {
   const { isReadOnly } = useAdminAccess();
@@ -506,8 +507,8 @@ export default function AdminRbacPage() {
                   {userPermissionsResult.length ? (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {userPermissionsResult.map((permission) => (
-                        <span key={permission.id} className="rounded-md border border-[#dde5f3] bg-white px-2 py-0.5 text-xs font-mono text-[#2a3d5f]">
-                          {permission.resource}:{permission.action}
+                        <span key={permission.id} className="rounded-md border border-[#dde5f3] bg-white px-2 py-0.5 text-xs text-[#2a3d5f]">
+                          {formatPermissionLine(permission)}
                         </span>
                       ))}
                     </div>
@@ -537,7 +538,11 @@ export default function AdminRbacPage() {
                 <span>Permission</span>
                 <select value={selectedPermissionId} onChange={(e) => setSelectedPermissionId(e.target.value)} className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm">
                   <option value="">Choose a permission…</option>
-                  {permissions.map((permission) => <option key={permission.id} value={permission.id}>{permission.resource}:{permission.action}</option>)}
+                  {permissions.map((permission) => (
+                    <option key={permission.id} value={permission.id}>
+                      {formatPermissionLine(permission)}
+                    </option>
+                  ))}
                 </select>
               </label>
             </div>
@@ -571,8 +576,8 @@ export default function AdminRbacPage() {
                 {selectedRoleDetail.permissions.length ? (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {selectedRoleDetail.permissions.map((permission) => (
-                      <span key={permission.id} className="rounded-md border border-[#dde5f3] bg-white px-2 py-0.5 text-xs font-mono text-[#2a3d5f]">
-                        {permission.resource}:{permission.action}
+                      <span key={permission.id} className="rounded-md border border-[#dde5f3] bg-white px-2 py-0.5 text-xs text-[#2a3d5f]">
+                        {formatPermissionLine(permission)}
                       </span>
                     ))}
                   </div>
@@ -671,7 +676,11 @@ export default function AdminRbacPage() {
               </select>
               <select value={selectedCheckPermissionId} onChange={(e) => setSelectedCheckPermissionId(e.target.value)} className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm">
                 <option value="">Choose a permission…</option>
-                {permissions.map((permission) => <option key={permission.id} value={permission.id}>{permission.resource}:{permission.action}</option>)}
+                {permissions.map((permission) => (
+                    <option key={permission.id} value={permission.id}>
+                      {formatPermissionLine(permission)}
+                    </option>
+                  ))}
               </select>
             </div>
             <button type="button" disabled={Boolean(actionLoading)} onClick={() => void onCheckSelectedPermission()} className="mt-3 rounded-xl border border-[#1f2d45] bg-[#1f2d45] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">
@@ -703,11 +712,19 @@ export default function AdminRbacPage() {
               </button>
               {multiPermissionResult ? (
                 <div className="mt-3 rounded-xl bg-[#f7f9fe] p-3">
-                  {Object.entries(multiPermissionResult).map(([key, allowed]) => (
-                    <p key={key} className="text-sm text-[#2a3d5f]">
-                      <span className="font-mono">{key}</span>: <span className={allowed ? 'text-[#2f9960]' : 'text-[#c43e53]'}>{allowed ? 'Allowed' : 'Denied'}</span>
-                    </p>
-                  ))}
+                  {Object.entries(multiPermissionResult).map(([key, allowed]) => {
+                    const perm = permissions.find((p) => `${p.resource}:${p.action}` === key);
+                    const label = perm ? formatPermissionLine(perm) : key;
+                    return (
+                      <p key={key} className="text-sm text-[#2a3d5f]">
+                        <span className="font-medium">{label}</span>
+                        {' — '}
+                        <span className={allowed ? 'font-semibold text-[#2f9960]' : 'font-semibold text-[#c43e53]'}>
+                          {allowed ? 'Allowed' : 'Denied'}
+                        </span>
+                      </p>
+                    );
+                  })}
                 </div>
               ) : null}
             </div>
@@ -748,8 +765,8 @@ export default function AdminRbacPage() {
                 {userPermissionsResult.length ? (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {userPermissionsResult.map((permission) => (
-                      <span key={permission.id} className="rounded-md border border-[#dde5f3] bg-white px-2 py-0.5 text-xs font-mono text-[#2a3d5f]">
-                        {permission.resource}:{permission.action}
+                      <span key={permission.id} className="rounded-md border border-[#dde5f3] bg-white px-2 py-0.5 text-xs text-[#2a3d5f]">
+                        {formatPermissionLine(permission)}
                       </span>
                     ))}
                   </div>

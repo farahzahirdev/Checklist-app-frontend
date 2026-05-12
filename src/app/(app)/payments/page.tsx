@@ -329,13 +329,16 @@ export default function PaymentsPage() {
         ) : null}
 
         <div className="overflow-hidden rounded-xl border border-[#dbe4f4] bg-white shadow-sm">
-          <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-[#eef2fa] bg-[#f7f9fe] px-4 py-2 text-xs font-medium text-[#5f7395]">
+          <div className="grid grid-cols-[1fr_8rem] gap-3 border-b border-[#eef2fa] bg-[#f7f9fe] px-4 py-2 text-xs font-medium text-[#5f7395] sm:grid-cols-[1fr_9rem]">
             <span>{t('table.payment')}</span>
-            <span className="text-right">{t('table.status')}</span>
+            <span className="text-center">{t('table.status')}</span>
           </div>
           <ul className="divide-y divide-[#eef2fa]">
             {(paymentsLoading ? [] : payments).map((item) => (
-              <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+              <li
+                key={item.id}
+                className="grid grid-cols-[1fr_8rem] items-center gap-3 px-4 py-3 sm:grid-cols-[1fr_9rem]"
+              >
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-[#1f2d45]">{item.checklist_title}</p>
                   <p className="mt-0.5 truncate text-xs text-[#607594]">
@@ -343,9 +346,11 @@ export default function PaymentsPage() {
                     {formatDate(item.created_at)}
                   </p>
                 </div>
-                <span className="shrink-0 rounded-full border border-[#d4dced] bg-[#f7f9fe] px-3 py-1 text-xs font-semibold text-[#2a3d5f]">
-                  {formatStatusLabel(item.status)}
-                </span>
+                <div className="flex justify-center">
+                  <span className="inline-flex shrink-0 rounded-full border border-[#d4dced] bg-[#f7f9fe] px-3 py-1 text-center text-xs font-semibold text-[#2a3d5f]">
+                    {formatStatusLabel(item.status)}
+                  </span>
+                </div>
               </li>
             ))}
             {paymentsLoading ? (
@@ -386,13 +391,16 @@ export default function PaymentsPage() {
             </p>
           ) : (
             <div className="mt-3 overflow-hidden rounded-xl border border-[#dbe4f4] bg-white shadow-sm">
-              <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-[#eef2fa] bg-[#f7f9fe] px-4 py-2 text-xs font-medium text-[#5f7395]">
+              <div className="grid grid-cols-[1fr_8rem] gap-3 border-b border-[#eef2fa] bg-[#f7f9fe] px-4 py-2 text-xs font-medium text-[#5f7395] sm:grid-cols-[1fr_9rem]">
                 <span>{t('table.payment')}</span>
-                <span className="text-right">{t('table.status')}</span>
+                <span className="text-center">{t('table.status')}</span>
               </div>
               <ul className="divide-y divide-[#eef2fa]">
                 {recentPayments.map((item) => (
-                  <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                  <li
+                    key={item.id}
+                    className="grid grid-cols-[1fr_8rem] items-center gap-3 px-4 py-3 sm:grid-cols-[1fr_9rem]"
+                  >
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-[#1f2d45]">{item.checklist_title}</p>
                       <p className="mt-0.5 truncate text-xs text-[#607594]">
@@ -400,9 +408,11 @@ export default function PaymentsPage() {
                         {formatDate(item.paid_at ?? item.created_at)}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-full border border-[#d4dced] bg-[#f7f9fe] px-3 py-1 text-xs font-semibold text-[#2a3d5f]">
-                      {formatStatusLabel(item.status)}
-                    </span>
+                    <div className="flex justify-center">
+                      <span className="inline-flex shrink-0 rounded-full border border-[#d4dced] bg-[#f7f9fe] px-3 py-1 text-center text-xs font-semibold text-[#2a3d5f]">
+                        {formatStatusLabel(item.status)}
+                      </span>
+                    </div>
                   </li>
                 ))}
               </ul>
