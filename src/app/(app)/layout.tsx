@@ -11,6 +11,7 @@ import { translate, useLocale } from '@/lib/i18n';
 import { customerLayoutMessages } from '@/locales/customer-layout';
 import {
   ACCESS_TOKEN_STORAGE_KEY,
+  AUTH_STATE_CHANGED_EVENT,
   clearRoleSwitchSession,
   getCurrentUser,
   getUserDisplayName,
@@ -127,8 +128,10 @@ export default function AppLayout({
     }
 
     void checkAuth();
+    window.addEventListener(AUTH_STATE_CHANGED_EVENT, checkAuth);
     return () => {
       cancelled = true;
+      window.removeEventListener(AUTH_STATE_CHANGED_EVENT, checkAuth);
     };
   }, [router]);
 
