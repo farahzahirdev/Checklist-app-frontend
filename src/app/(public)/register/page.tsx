@@ -71,6 +71,26 @@ function RegisterPageContent() {
         toast.error(t('errors.passwordMismatch'));
         return;
       }
+      const trimmedCompany = companyName.trim();
+      if (!trimmedCompany) {
+        toast.error(t('errors.companyNameRequired'));
+        return;
+      }
+      const trimmedIndustry = companyIndustry.trim();
+      const trimmedSize = companySize.trim();
+      const trimmedRegion = companyRegion.trim();
+      if (!trimmedIndustry) {
+        toast.error(t('errors.companyIndustryRequired'));
+        return;
+      }
+      if (!trimmedSize) {
+        toast.error(t('errors.companySizeRequired'));
+        return;
+      }
+      if (!trimmedRegion) {
+        toast.error(t('errors.companyRegionRequired'));
+        return;
+      }
       const passwordPolicyError = getPasswordPolicyError(normalizedPassword);
       if (passwordPolicyError) {
         toast.error(t(passwordPolicyError));
@@ -81,12 +101,12 @@ function RegisterPageContent() {
         password: normalizedPassword,
         full_name: normalizeOptionalField(fullName),
         username: normalizeOptionalField(username),
-        company_name: normalizeOptionalField(companyName),
+        company_name: trimmedCompany,
         job_title: normalizeOptionalField(jobTitle),
         department: normalizeOptionalField(department),
-        company_industry: normalizeOptionalField(companyIndustry),
-        company_size: normalizeOptionalField(companySize),
-        company_region: normalizeOptionalField(companyRegion),
+        company_industry: trimmedIndustry,
+        company_size: trimmedSize,
+        company_region: trimmedRegion,
       });
       const role = getRoleKey(data.user.role);
       const destination = role === 'customer' ? '/payment' : getRoleHomePath(data.user.role);
@@ -230,6 +250,7 @@ function RegisterPageContent() {
                   type="text"
                   name="company_name"
                   autoComplete="organization"
+                  required
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
@@ -261,6 +282,7 @@ function RegisterPageContent() {
                 <input
                   type="text"
                   name="company_industry"
+                  required
                   value={companyIndustry}
                   onChange={(e) => setCompanyIndustry(e.target.value)}
                   className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
@@ -271,6 +293,7 @@ function RegisterPageContent() {
                 <input
                   type="text"
                   name="company_size"
+                  required
                   value={companySize}
                   onChange={(e) => setCompanySize(e.target.value)}
                   className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
@@ -281,6 +304,7 @@ function RegisterPageContent() {
                 <input
                   type="text"
                   name="company_region"
+                  required
                   value={companyRegion}
                   onChange={(e) => setCompanyRegion(e.target.value)}
                   className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"

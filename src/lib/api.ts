@@ -120,6 +120,21 @@ export async function apiGetWithAuth<T>(path: string, auth?: ApiAuth): Promise<T
   return (raw ? JSON.parse(raw) : null) as T;
 }
 
+/** Authenticated GET returning a binary body (e.g. PDF). Omits JSON Content-Type. */
+export async function apiGetBlobWithAuth(path: string, auth?: ApiAuth): Promise<Blob> {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+    headers: buildHeaders(auth, { includeJsonContentType: false }),
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    const raw = await response.text();
+    throw new Error(errorMessageFromResponse(response.status, raw));
+  }
+
+  return response.blob();
+}
+
 export async function apiPost<TResponse, TPayload>(
   path: string,
   payload: TPayload,

@@ -15,14 +15,10 @@ import {
   type ReportFindingItem,
   type ReportSummaryItem,
 } from '@/lib/reports';
-import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
-import {
-  ADMIN_KPI_DARK_CARD_CLASS,
-  ADMIN_KPI_DARK_LABEL_CLASS,
-  ADMIN_PAGE_HERO_EYEBROW_CLASS,
-  ADMIN_PAGE_HERO_HEADER_CLASS,
-  ADMIN_PAGE_HERO_TITLE_CLASS,
-} from '@/app/(app)/admin/admin-page-title';
+import { findingPriorityLabel, formatReportDateTime } from '@/lib/format-report';
+import { AdminReportAssessmentHero } from '@/components/report/AdminReportAssessmentHero';
+import { AdminReportMaturityDomainSection } from '@/components/report/AdminReportMaturityDomainSection';
+import { AdminReportFindingsDomainsSection } from '@/components/report/AdminReportFindingsDomainsSection';
 
 export default function AdminReportDetailPage() {
   const params = useParams();
@@ -166,76 +162,18 @@ export default function AdminReportDetailPage() {
     );
   }
 
-  const statusColors = {
-    draft_generated: 'bg-[#fff4df] text-[#b6862f]',
-    under_review: 'bg-[#eaf2ff] text-[#3f74df]',
-    changes_requested: 'bg-[#fff4df] text-[#b6862f]',
-    approved: 'bg-[#e9f8ef] text-[#2f9960]',
-    published: 'bg-[#e9f8ef] text-[#2f9960]',
-  };
-
-  const statusLabels = {
-    draft_generated: 'Draft',
-    under_review: 'Under Review',
-    changes_requested: 'Changes Requested',
-    approved: 'Approved',
-    published: 'Published',
-  };
-
   return (
-    <section className="space-y-6">
-      <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
-        <AdminBreadcrumbs
-          variant="onDark"
-          items={[
-            { label: 'Dashboard', href: '/admin' },
-            { label: 'Reports', href: '/admin/reports' },
-            { label: 'Report Details' },
-          ]}
-        />
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>Report Details</p>
-            <h1 className={ADMIN_PAGE_HERO_TITLE_CLASS}>Assessment Report</h1>
-          </div>
-          <div className="flex shrink-0 items-center gap-3">
-            <span className={`rounded-md px-3 py-1 text-sm font-semibold ${statusColors[report.status]}`}>
-              {statusLabels[report.status]}
-            </span>
-          </div>
-        </div>
-      </header>
+    <section className="min-w-0 space-y-6">
+      <AdminReportAssessmentHero report={report} findings={findings} summaries={summaries} />
 
-      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
-        <article className={ADMIN_KPI_DARK_CARD_CLASS}>
-          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Findings</p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums text-[#ffd89c]">{report.findings_count}</p>
-        </article>
-        <article className={ADMIN_KPI_DARK_CARD_CLASS}>
-          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Summaries</p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums text-[#a9c7ff]">{report.summaries_count}</p>
-        </article>
-        <article className={ADMIN_KPI_DARK_CARD_CLASS}>
-          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Generated</p>
-          <p className="mt-2 text-base font-semibold leading-snug text-[#c4d6f7]">
-            {report.draft_generated_at ? new Date(report.draft_generated_at).toLocaleDateString() : '-'}
-          </p>
-        </article>
-        <article className={ADMIN_KPI_DARK_CARD_CLASS}>
-          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>Last Action</p>
-          <p className="mt-2 text-base font-semibold leading-snug text-[#c4d6f7]">
-            {report.approved_at
-              ? new Date(report.approved_at).toLocaleDateString()
-              : report.reviewed_at
-                ? new Date(report.reviewed_at).toLocaleDateString()
-                : report.draft_generated_at
-                  ? new Date(report.draft_generated_at).toLocaleDateString()
-                  : '-'}
-          </p>
-        </article>
-      </div>
+      <AdminReportMaturityDomainSection report={report} />
 
-      <div className="flex gap-3">
+      <AdminReportFindingsDomainsSection report={report} findings={findings} summaries={summaries} />
+
+      {(report.status === 'draft_generated' ||
+        report.status === 'under_review' ||
+        report.status === 'approved') && (
+      <div className="flex flex-wrap gap-3">
         {report.status === 'draft_generated' && (
           <button
             type="button"
@@ -280,19 +218,23 @@ export default function AdminReportDetailPage() {
           </button>
         )}
       </div>
+      )}
 
       {(report.final_pdf_storage_key || report.final_pdf_published_at) && (
         <article className="rounded-2xl border border-[#dbe4f4] bg-white px-4 py-3 shadow-sm">
           <h2 className="text-sm font-semibold text-[#243555]">Publication</h2>
           <div className="mt-2 grid gap-2 text-sm text-[#607594] md:grid-cols-2">
             <p>PDF key: {report.final_pdf_storage_key || 'Not set'}</p>
-            <p>Published at: {report.final_pdf_published_at ? new Date(report.final_pdf_published_at).toLocaleString() : 'Not published yet'}</p>
+            <p>
+              Published at:{' '}
+              {report.final_pdf_published_at ? formatReportDateTime(report.final_pdf_published_at) : 'Not published yet'}
+            </p>
           </div>
         </article>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-3">
+      <div id="admin-report-findings" className="grid min-w-0 gap-6 scroll-mt-24 xl:grid-cols-2">
+        <section className="min-w-0 space-y-3">
           <h2 className="text-xl font-semibold text-[#243555]">Findings ({findings.length})</h2>
           <div className="space-y-3">
             {findings.map((finding) => (
@@ -303,7 +245,7 @@ export default function AdminReportDetailPage() {
                     finding.priority === 'medium' ? 'bg-[#fef3c7] text-[#d97706]' :
                     'bg-[#e0e7ff] text-[#3730a3]'
                   }`}>
-                    {finding.priority.toUpperCase()}
+                    {findingPriorityLabel(finding.priority)}
                   </span>
                 </div>
                 <p className="text-sm text-[#2b3e60] mb-2">{finding.finding_text}</p>
@@ -321,19 +263,29 @@ export default function AdminReportDetailPage() {
           </div>
         </section>
 
-        <section className="space-y-3">
+        <section id="admin-section-summaries-detail" className="min-w-0 scroll-mt-24 space-y-3">
           <h2 className="text-xl font-semibold text-[#243555]">Section Summaries ({summaries.length})</h2>
           <div className="space-y-3">
-            {summaries.map((summary) => (
-              <article key={summary.id} className="rounded-xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
+            {summaries.map((summary, idx) => {
+              const summaryKey =
+                (typeof summary.id === 'string' && summary.id.trim() !== '' ? summary.id : null) ??
+                `summary-${[summary.section_id, summary.chapter_code].filter(Boolean).join('-') || 'row'}-${idx}`;
+              return (
+              <article
+                key={summaryKey}
+                className="rounded-xl border border-[#e2e8f5] bg-white p-4 shadow-sm"
+              >
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold text-[#243555]">
                     {summary.chapter_code || 'General Section'}
                   </h3>
                 </div>
-                <p className="text-sm text-[#2b3e60]">{summary.summary_text}</p>
+                <p className="text-sm text-[#2b3e60]">
+                  {summary.summary_text?.trim() ? summary.summary_text : 'No narrative text for this section yet.'}
+                </p>
               </article>
-            ))}
+              );
+            })}
             {!summaries.length && (
               <p className="text-sm text-[#607594]">No section summaries found.</p>
             )}

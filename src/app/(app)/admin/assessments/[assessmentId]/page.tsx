@@ -150,8 +150,9 @@ export default function AdminAssessmentReviewDetailPage() {
   const t = (key: string) => translate(adminAssessmentReviewDetailMessages, locale, key);
   const statusLabel = (status: string | null | undefined) => {
     if (!status) return t('status.unknown');
-    const exact = translate(adminAssessmentReviewDetailMessages, locale, `status.${status}`);
-    if (exact) return exact;
+    const key = `status.${status}`;
+    const exact = translate(adminAssessmentReviewDetailMessages, locale, key);
+    if (exact !== key) return exact;
     return String(status).split('_').join(' ');
   };
 
@@ -163,7 +164,7 @@ export default function AdminAssessmentReviewDetailPage() {
   const [recommendations, setRecommendations] = useState('');
   const [drafts, setDrafts] = useState<Record<string, ReviewDraft>>({});
   const [suggestionErrors, setSuggestionErrors] = useState<Record<string, string>>({});
-  const [reviewStatusLabel, setReviewStatusLabel] = useState('pending_review');
+  const [reviewStatusLabel, setReviewStatusLabel] = useState('pending');
   const [historyByReviewId, setHistoryByReviewId] = useState<Record<string, AssessmentReviewHistoryEntry[]>>({});
   const [fullHistoryByReviewId, setFullHistoryByReviewId] = useState<Record<string, AssessmentReviewHistoryEntry[]>>({});
   const [expandedHistory, setExpandedHistory] = useState<Record<string, boolean>>({});
@@ -186,7 +187,7 @@ export default function AdminAssessmentReviewDetailPage() {
       if (typeof statusResponse.status === 'string') {
         setReviewStatusLabel(statusResponse.status);
       } else {
-        setReviewStatusLabel(response.assessment_status || 'pending_review');
+        setReviewStatusLabel(response.assessment_status || 'pending');
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('toasts.loadFailed'));
@@ -458,7 +459,7 @@ export default function AdminAssessmentReviewDetailPage() {
               {detail?.customer_name || detail?.customer_email || '-'} — {detail?.checklist_title || '-'}
             </p>
             <p className="mt-1 text-xs font-medium text-[#9db8e6]">
-              {statusLabel(reviewStatusLabel || detail?.assessment_status || 'pending_review')} ·{' '}
+              {statusLabel(reviewStatusLabel || detail?.assessment_status || 'pending')} ·{' '}
               {formatDateTime(detail?.submitted_at)}
             </p>
           </div>

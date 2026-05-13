@@ -34,7 +34,8 @@ export const authPagesMessages: TranslationMessages = {
     'login.mfa.setup.completing': 'Completing setup…',
 
     'register.title': 'Create an account',
-    'register.subtitle': 'Use a strong password with at least 12 characters and mixed character types.',
+    'register.subtitle':
+      'Enter your organization details (required for billing and checkout), then use a strong password with at least 12 characters and mixed character types.',
     'register.submit': 'Register',
     'register.submitting': 'Creating account…',
     'register.haveAccount': 'Already have an account?',
@@ -43,12 +44,12 @@ export const authPagesMessages: TranslationMessages = {
 
     'register.fields.fullName': 'Full name (optional)',
     'register.fields.username': 'Username (optional)',
-    'register.fields.companyName': 'Company name (optional)',
+    'register.fields.companyName': 'Company or organization name',
     'register.fields.jobTitle': 'Job title (optional)',
     'register.fields.department': 'Department (optional)',
-    'register.fields.companyIndustry': 'Company industry (optional)',
-    'register.fields.companySize': 'Company size (optional)',
-    'register.fields.companyRegion': 'Company region (optional)',
+    'register.fields.companyIndustry': 'Company industry',
+    'register.fields.companySize': 'Company size',
+    'register.fields.companyRegion': 'Company region',
     'register.passwordPolicyHint':
       'Min 12 chars, with uppercase, lowercase, number, special character, and no spaces.',
 
@@ -61,6 +62,10 @@ export const authPagesMessages: TranslationMessages = {
     'errors.passwordUpper': 'Password must include at least one uppercase letter (A-Z).',
     'errors.passwordNumber': 'Password must include at least one number (0-9).',
     'errors.passwordSpecial': 'Password must include at least one special character.',
+    'errors.companyNameRequired': 'Please enter your company or organization name.',
+    'errors.companyIndustryRequired': 'Please enter your company industry.',
+    'errors.companySizeRequired': 'Please enter your company size.',
+    'errors.companyRegionRequired': 'Please enter your company region.',
     'errors.signInNoToken': 'Sign in did not return an access token.',
     'errors.registrationNoToken': 'Registration did not return an access token.',
     'errors.signInFailed': 'Sign in failed',
@@ -112,7 +117,8 @@ export const authPagesMessages: TranslationMessages = {
     'login.mfa.setup.completing': 'Dokončuji…',
 
     'register.title': 'Vytvořit účet',
-    'register.subtitle': 'Použijte silné heslo (alespoň 12 znaků) a kombinaci různých typů znaků.',
+    'register.subtitle':
+      'Zadejte údaje o organizaci (nutné pro platby a checkout), poté použijte silné heslo (alespoň 12 znaků) a kombinaci různých typů znaků.',
     'register.submit': 'Registrovat',
     'register.submitting': 'Vytvářím účet…',
     'register.haveAccount': 'Už máte účet?',
@@ -121,12 +127,12 @@ export const authPagesMessages: TranslationMessages = {
 
     'register.fields.fullName': 'Celé jméno (volitelné)',
     'register.fields.username': 'Uživatelské jméno (volitelné)',
-    'register.fields.companyName': 'Název firmy (volitelné)',
+    'register.fields.companyName': 'Název firmy nebo organizace',
     'register.fields.jobTitle': 'Pozice (volitelné)',
     'register.fields.department': 'Oddělení (volitelné)',
-    'register.fields.companyIndustry': 'Odvětví (volitelné)',
-    'register.fields.companySize': 'Velikost firmy (volitelné)',
-    'register.fields.companyRegion': 'Region (volitelné)',
+    'register.fields.companyIndustry': 'Odvětví firmy',
+    'register.fields.companySize': 'Velikost firmy',
+    'register.fields.companyRegion': 'Region firmy',
     'register.passwordPolicyHint':
       'Min. 12 znaků, velké/malé písmeno, číslo, speciální znak a bez mezer.',
 
@@ -139,6 +145,10 @@ export const authPagesMessages: TranslationMessages = {
     'errors.passwordUpper': 'Heslo musí obsahovat alespoň jedno velké písmeno (A-Z).',
     'errors.passwordNumber': 'Heslo musí obsahovat alespoň jedno číslo (0-9).',
     'errors.passwordSpecial': 'Heslo musí obsahovat alespoň jeden speciální znak.',
+    'errors.companyNameRequired': 'Zadejte prosím název firmy nebo organizace.',
+    'errors.companyIndustryRequired': 'Zadejte prosím odvětví firmy.',
+    'errors.companySizeRequired': 'Zadejte prosím velikost firmy.',
+    'errors.companyRegionRequired': 'Zadejte prosím region firmy.',
     'errors.signInNoToken': 'Přihlášení nevrátilo access token.',
     'errors.registrationNoToken': 'Registrace nevrátila access token.',
     'errors.signInFailed': 'Přihlášení se nezdařilo',

@@ -15,23 +15,21 @@ interface PageRendererProps {
  * Maps section types to their corresponding display components
  */
 export function PageRenderer({ page, fallback }: PageRendererProps) {
-  // If no page from CMS, show fallback
-  if (!page) {
+  // If no CMS page, or the CMS page has no sections, defer entirely to the
+  // fallback. The fallback is responsible for rendering its own footer (if any),
+  // so we must not also append one here — that would render two footers when
+  // the CMS row exists but is empty.
+  if (!page || !page.sections || page.sections.length === 0) {
     return <>{fallback}</>;
   }
 
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
-      {page.sections && page.sections.length > 0 ? (
-        page.sections
-          .sort((a, b) => a.order - b.order)
-          .map((section) => (
-            <SectionRenderer key={section.id} section={section} />
-          ))
-      ) : (
-        // If page exists but has no sections, show fallback
-        fallback
-      )}
+      {page.sections
+        .sort((a, b) => a.order - b.order)
+        .map((section) => (
+          <SectionRenderer key={section.id} section={section} />
+        ))}
       <PublicFooter />
     </main>
   );
@@ -432,16 +430,18 @@ function ContactInfoSectionRenderer({ data }: { data: Record<string, any> }) {
 
 function LegalSectionRenderer({ data }: { data: Record<string, any> }) {
   return (
-    <section className="py-12 px-4 bg-white max-w-4xl mx-auto prose prose-sm">
-      {data.content && <div dangerouslySetInnerHTML={{ __html: data.content }} />}
+    <section className="bg-white px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl text-[15px] leading-7 text-black [&_a]:text-[#1f7bff] [&_a]:underline [&_h1]:mb-3 [&_h1]:text-3xl [&_h1]:font-semibold [&_h1]:text-black sm:[&_h1]:text-4xl [&_h2]:mt-10 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-black [&_h3]:mt-6 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-black [&_li]:mt-1 [&_ol]:mt-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:marker:text-black">
+        {data.content && <div dangerouslySetInnerHTML={{ __html: data.content }} />}
+      </div>
     </section>
   );
 }
 
 function StandardSectionRenderer({ data }: { data: Record<string, any> }) {
   return (
-    <section className="py-12 px-4 bg-white">
-      <div className="max-w-4xl mx-auto prose">
+    <section className="bg-white px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl text-[15px] leading-7 text-black [&_a]:text-[#1f7bff] [&_a]:underline [&_h1]:mb-3 [&_h1]:text-3xl [&_h1]:font-semibold [&_h1]:text-black sm:[&_h1]:text-4xl [&_h2]:mt-10 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-black [&_h3]:mt-6 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-black [&_li]:mt-1 [&_ol]:mt-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:marker:text-black">
         {data.content && <div dangerouslySetInnerHTML={{ __html: data.content }} />}
       </div>
     </section>
