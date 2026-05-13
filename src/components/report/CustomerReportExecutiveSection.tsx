@@ -472,27 +472,21 @@ export function CustomerReportExecutiveSection({
   return (
     <div className="overflow-hidden rounded-2xl border border-[#c9d6ee] bg-[#eef2f9] shadow-[0_8px_40px_-16px_rgba(15,23,42,0.15)]">
       <div className="flex flex-col lg:flex-row lg:items-stretch">
-        <aside className="flex w-full flex-col justify-between bg-[linear-gradient(180deg,#050f24_0%,#0a1a3d_55%,#0d2149_100%)] px-5 py-6 text-white sm:px-6 lg:max-w-[min(100%,320px)] lg:shrink-0 lg:border-r lg:border-white/10">
+        <aside className="flex w-full flex-col justify-between bg-[linear-gradient(180deg,#050f24_0%,#0a1a3d_55%,#0d2149_100%)] px-4 py-5 text-white sm:px-5 lg:max-w-[min(100%,260px)] lg:shrink-0 lg:border-r lg:border-white/10">
           <div>
-            <div className="flex items-center gap-2.5">
-              <ShieldLogo className="h-9 w-9 shrink-0" />
-              <span className="text-lg font-semibold tracking-tight">Checklist KB</span>
-            </div>
-            <p className="mt-8 text-[0.65rem] font-semibold uppercase tracking-[0.26em] text-[#8fb0e6]">
-              Security assessment report
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">Executive summary</h1>
+            <h1 className="text-xl font-semibold leading-tight tracking-tight sm:text-2xl">Executive summary</h1>
+            <p className="mt-1 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-[#8fb0e6]">Security report</p>
 
-            <dl className="mt-8 space-y-5 text-sm">
-              <div className="flex gap-3">
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[#93c5fd]" aria-hidden>
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <dl className="mt-5 space-y-3.5 text-sm">
+              <div className="flex gap-2.5">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[#93c5fd]" aria-hidden>
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6">
                     <path d="M4 20V10M4 10l6-4 6 4 6-4v10" strokeLinecap="round" strokeLinejoin="round" />
                     <path d="M10 10v10M14 10v10" strokeLinecap="round" />
                   </svg>
                 </span>
-                <div>
-                  <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#8fb0e6]">Company</dt>
+                <div className="min-w-0">
+                  <dt className="text-[0.6rem] font-semibold uppercase tracking-wide text-[#8fb0e6]">Company</dt>
                   <dd className="mt-0.5 font-semibold text-white">{companyName}</dd>
                   <dd className="text-xs text-[#b8cce8]">
                     {companyWebsite ? (
@@ -517,46 +511,46 @@ export function CustomerReportExecutiveSection({
                   </dd>
                 </div>
               </div>
-              <div className="flex gap-3">
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[#93c5fd]" aria-hidden>
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <div className="flex gap-2.5">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[#93c5fd]" aria-hidden>
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6">
                     <rect x="3" y="5" width="18" height="16" rx="2" />
                     <path d="M8 3v4M16 3v4M3 11h18" strokeLinecap="round" />
                   </svg>
                 </span>
                 <div>
-                  <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#8fb0e6]">
-                    Assessment date
-                  </dt>
+                  <dt className="text-[0.6rem] font-semibold uppercase tracking-wide text-[#8fb0e6]">Date</dt>
                   <dd className="mt-0.5 font-semibold">{formatReportDate(data.assessment_date)}</dd>
                 </div>
               </div>
-              <div className="flex gap-3">
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[#93c5fd]" aria-hidden>
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <div className="flex gap-2.5">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[#93c5fd]" aria-hidden>
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6">
                     <path d="M4 7h16v10H4z" strokeLinejoin="round" />
                     <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                   </svg>
                 </span>
-                <div>
-                  <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#8fb0e6]">Report ID</dt>
-                  <dd className="mt-0.5 font-mono text-sm font-semibold tracking-wide text-[#e0ecff]">{reportDisplayId(report)}</dd>
+                <div className="min-w-0">
+                  <dt className="text-[0.6rem] font-semibold uppercase tracking-wide text-[#8fb0e6]">Report ID</dt>
+                  <dd className="mt-0.5 break-all font-mono text-xs font-semibold tracking-wide text-[#e0ecff]">
+                    {reportDisplayId(report)}
+                  </dd>
                 </div>
               </div>
             </dl>
           </div>
 
-          <div className="mt-10 flex gap-2.5 rounded-xl border border-white/10 bg-white/5 p-3 text-xs leading-snug text-[#c7d9f5] lg:mt-12">
-            <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-[#93c5fd]" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+          <div className="mt-6 flex gap-2 rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-[0.7rem] leading-snug text-[#c7d9f5] lg:mt-8">
+            <svg viewBox="0 0 24 24" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#93c5fd]" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
               <path d="M12 3l8 4v5c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V7l8-4Z" strokeLinejoin="round" />
               <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <p>This report is confidential and intended for internal use only.</p>
+            <p>Confidential — internal use only.</p>
           </div>
         </aside>
 
-        <div className="min-w-0 flex-1 bg-[#f4f7fc] p-4 sm:p-5 md:p-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 flex-1 bg-[#f4f7fc] p-3 sm:p-4 md:p-5">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <Link href={'/reports' as Route} className="text-sm font-semibold text-[#0066ff] hover:underline">
               ← Back to reports
             </Link>
@@ -568,22 +562,22 @@ export function CustomerReportExecutiveSection({
             </div>
           </div>
 
-          <div className="flex gap-4 rounded-2xl border border-[#bfdbfe] bg-[#e8f2ff] px-4 py-4 sm:px-5 sm:py-5">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-[#0066ff] shadow-sm" aria-hidden>
-              <ShieldLogo className="h-8 w-8" />
+          <div className="flex gap-3 rounded-xl border border-[#bfdbfe] bg-[#e8f2ff] px-3 py-3 sm:px-4 sm:py-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-[#0066ff] shadow-sm" aria-hidden>
+              <ShieldLogo className="h-7 w-7" />
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-[#0f172a] sm:text-xl">
+            <div className="min-w-0">
+              <h2 className="text-base font-bold leading-snug text-[#0f172a] sm:text-lg">
                 Your security. Clear insights. Confident next steps.
               </h2>
-              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-[#64748b]">
+              <p className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-[#64748b]">
                 {data.checklist_title}
               </p>
-              <p className="mt-2 text-sm leading-relaxed text-[#475569] sm:text-[0.9375rem]">{bannerBody}</p>
+              <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-[#475569] sm:text-[0.9375rem]">{bannerBody}</p>
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
               <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#64748b]">Maturity score</p>
               <MaturityRing percent={overallPct} label={maturityLabel} />
@@ -675,71 +669,74 @@ export function CustomerReportExecutiveSection({
               <JumpLink href="#maturity-overview">See mapping →</JumpLink>
             </article>
           </div>
+        </div>
+      </div>
 
-          <div className="mt-4 grid gap-4 xl:grid-cols-12">
-            <article id="maturity-overview" className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5 xl:col-span-8 scroll-mt-24">
-              <h3 className="text-lg font-semibold text-[#0f172a]">Maturity overview</h3>
-              <p className="mt-1 text-sm text-[#64748b]">
-                Current performance across assessment areas. “vs last” is shown only when a prior assessment exists in your data (otherwise —).
-              </p>
-              <div className="mt-4 flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-between">
-                {radarSeries ? (
-                  <DynamicRadarChart
-                    labels={radarSeries.labels}
-                    values={radarSeries.values}
-                    targetValues={radarSeries.targetValues}
-                  />
-                ) : (
-                  <p className="max-w-xs text-center text-sm text-[#64748b]">
-                    Add at least two scored areas (sections, chapters, or domains) to show a radar chart.
-                  </p>
-                )}
-                <div className="w-full min-w-0 flex-1 overflow-x-auto">
-                  <table className="w-full min-w-[280px] text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-[#e8edf5] text-[0.65rem] font-semibold uppercase tracking-wide text-[#64748b]">
-                        <th className="pb-2 pr-2">Domain</th>
-                        <th className="pb-2 pr-2">Score</th>
-                        <th className="pb-2">vs last</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {domainRows.length ? (
-                        domainRows.map((row, idx) => {
-                          const barColor =
-                            row.pct >= 80 ? 'bg-emerald-500' : row.pct >= 60 ? 'bg-[#0066ff]' : row.pct >= 45 ? 'bg-amber-500' : 'bg-red-500';
-                          return (
-                            <tr key={`${row.title}-${idx}`} className="border-b border-[#f1f5f9] last:border-0">
-                              <td className="py-2.5 pr-2 font-medium text-[#0f172a]">{row.title}</td>
-                              <td className="py-2.5 pr-2">
-                                <div className="flex items-center gap-2">
-                                  <div className="h-2 w-20 overflow-hidden rounded-full bg-[#eef2f9]">
-                                    <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.min(row.pct, 100)}%` }} />
-                                  </div>
-                                  <span className="tabular-nums font-semibold text-[#0f172a]">{row.pct}%</span>
+      <div className="border-t border-[#dce5f2] bg-[#f4f7fc] px-3 py-4 sm:px-5 md:px-6">
+        <div className="space-y-4">
+          <article id="maturity-overview" className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5 scroll-mt-24">
+            <h3 className="text-lg font-semibold text-[#0f172a]">Maturity overview</h3>
+            <p className="mt-1 text-sm text-[#64748b]">
+              Current performance across assessment areas. “vs last” is shown only when a prior assessment exists in your data (otherwise —).
+            </p>
+            <div className="mt-4 flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-between">
+              {radarSeries ? (
+                <DynamicRadarChart
+                  labels={radarSeries.labels}
+                  values={radarSeries.values}
+                  targetValues={radarSeries.targetValues}
+                />
+              ) : (
+                <p className="max-w-xs text-center text-sm text-[#64748b]">
+                  Add at least two scored areas (sections, chapters, or domains) to show a radar chart.
+                </p>
+              )}
+              <div className="w-full min-w-0 flex-1 overflow-x-auto">
+                <table className="w-full min-w-[280px] text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-[#e8edf5] text-[0.65rem] font-semibold uppercase tracking-wide text-[#64748b]">
+                      <th className="pb-2 pr-2">Domain</th>
+                      <th className="pb-2 pr-2">Score</th>
+                      <th className="pb-2">vs last</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {domainRows.length ? (
+                      domainRows.map((row, idx) => {
+                        const barColor =
+                          row.pct >= 80 ? 'bg-emerald-500' : row.pct >= 60 ? 'bg-[#0066ff]' : row.pct >= 45 ? 'bg-amber-500' : 'bg-red-500';
+                        return (
+                          <tr key={`${row.title}-${idx}`} className="border-b border-[#f1f5f9] last:border-0">
+                            <td className="py-2.5 pr-2 font-medium text-[#0f172a]">{row.title}</td>
+                            <td className="py-2.5 pr-2">
+                              <div className="flex items-center gap-2">
+                                <div className="h-2 w-20 overflow-hidden rounded-full bg-[#eef2f9]">
+                                  <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.min(row.pct, 100)}%` }} />
                                 </div>
-                              </td>
-                              <td className="py-2.5 text-xs font-semibold text-[#64748b]" title="No prior assessment in payload">
-                                {row.vsLast}
-                              </td>
-                            </tr>
-                          );
-                        })
-                      ) : (
-                        <tr>
-                          <td colSpan={3} className="py-4 text-sm text-[#64748b]">
-                            No domain or chapter breakdown in this report yet.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                                <span className="tabular-nums font-semibold text-[#0f172a]">{row.pct}%</span>
+                              </div>
+                            </td>
+                            <td className="py-2.5 text-xs font-semibold text-[#64748b]" title="No prior assessment in payload">
+                              {row.vsLast}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={3} className="py-4 text-sm text-[#64748b]">
+                          No domain or chapter breakdown in this report yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
-            </article>
+            </div>
+          </article>
 
-            <div className="flex flex-col gap-4 xl:col-span-4">
-              <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
+          <div className="grid gap-4 md:grid-cols-3">
+            <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
                 <h3 className="text-base font-semibold text-[#0f172a]">Highlights</h3>
                 <ul className="mt-3 space-y-3 text-sm text-[#475569]">
                   {highlights.map((h, i) => (
@@ -755,9 +752,9 @@ export function CustomerReportExecutiveSection({
                   ))}
                 </ul>
                 <JumpLink href="#detailed-findings">See all findings →</JumpLink>
-              </article>
+            </article>
 
-              <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
+            <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
                 <h3 className="text-base font-semibold text-[#0f172a]">Top priorities</h3>
                 <ul className="mt-3 space-y-3">
                   {data.findings
@@ -779,9 +776,9 @@ export function CustomerReportExecutiveSection({
                 {data.findings.length > 0 ? (
                   <JumpLink href="#detailed-findings">See all {data.findings.length} findings →</JumpLink>
                 ) : null}
-              </article>
+            </article>
 
-              <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
+            <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
                 <h3 className="text-base font-semibold text-[#0f172a]">What&apos;s next?</h3>
                 <ol className="mt-4 space-y-4">
                   {whatsNext.map((step, i) => (
@@ -799,8 +796,7 @@ export function CustomerReportExecutiveSection({
                 >
                   View recommendations
                 </a>
-              </article>
-            </div>
+            </article>
           </div>
 
           <section className="mt-6" aria-labelledby="cust-top-findings">
