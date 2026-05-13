@@ -12,6 +12,7 @@ import { customerLayoutMessages } from '@/locales/customer-layout';
 import {
   ACCESS_TOKEN_STORAGE_KEY,
   AUTH_STATE_CHANGED_EVENT,
+  ROLE_SWITCH_ACTIVE_STORAGE_KEY,
   clearRoleSwitchSession,
   getCurrentUser,
   getUserDisplayName,
