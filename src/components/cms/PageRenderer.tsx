@@ -85,6 +85,80 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
   const heroImage = data.background_image && !data.background_image.startsWith('/assets/')
     ? data.background_image
     : heroBackground.src;
+
+  // Contact-page hero: render form + direct contact card when form data is provided.
+  if (data.form && data.directContact) {
+    const contactBackground = `linear-gradient(rgba(243, 246, 255, 0.88), rgba(243, 246, 255, 0.92)), url(${heroImage})`;
+
+    return (
+      <section
+        className="px-4 py-8 md:py-12"
+        style={{
+          backgroundImage: contactBackground,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        <div className="mx-auto grid min-h-[560px] w-full max-w-7xl gap-8 sm:px-2 md:px-6 lg:max-w-6xl lg:grid-cols-[1.05fr_0.95fr] xl:max-w-7xl 2xl:max-w-[90rem]">
+          <div className="space-y-6">
+            <div className="space-y-3">
+              {data.kicker && <p className="public-eyebrow text-[#4d7fd3]">{data.kicker}</p>}
+              {data.title && <h1 className="public-hero-title text-[#1a2440]">{data.title}</h1>}
+              {data.subtitle && <p className="public-hero-subtitle max-w-lg text-[#334768]">{data.subtitle}</p>}
+            </div>
+
+            <form className="max-w-xl space-y-4 rounded-2xl border border-[#d7deeb] bg-white p-5 shadow-sm sm:p-6">
+              <label className="block">
+                <span className="text-sm font-medium text-[#2d3f62]">{data.form.name || 'Name'}</span>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-[#f7f9ff] px-3 py-2 text-[#1d2a42] outline-none"
+                />
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-[#2d3f62]">{data.form.email || 'Email'}</span>
+                <input
+                  type="email"
+                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-[#f7f9ff] px-3 py-2 text-[#1d2a42] outline-none"
+                />
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-[#2d3f62]">{data.form.company || 'Company'}</span>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-[#f7f9ff] px-3 py-2 text-[#1d2a42] outline-none"
+                />
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-[#2d3f62]">{data.form.message || 'Message'}</span>
+                <textarea
+                  rows={3}
+                  placeholder={data.form.messagePlaceholder || ''}
+                  className="mt-1 w-full rounded-lg border border-[#d5deef] bg-[#f7f9ff] px-3 py-2 text-[#1d2a42] outline-none"
+                />
+              </label>
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-6 py-3 text-lg font-semibold text-white"
+              >
+                {data.form.sendButton || 'Send Message'}
+              </button>
+            </form>
+          </div>
+
+          <div className="flex items-start lg:pt-[86px]">
+            <div className="w-full max-w-xl rounded-2xl border border-[#d7deeb] bg-white p-6 shadow-sm sm:p-8">
+              <h2 className="text-2xl font-semibold text-[#1f2741] sm:text-3xl">{data.directContact.title || 'Direct contact'}</h2>
+              {data.directContact.subtitle && <p className="mt-2 text-lg text-[#4c5f80] sm:text-xl">{data.directContact.subtitle}</p>}
+              {data.directContact.email && <p className="mt-6 text-lg font-semibold text-[#1f2741] sm:text-2xl lg:text-3xl">{data.directContact.email}</p>}
+              {data.directContact.responseTime && <p className="mt-5 text-lg text-[#4c5f80] sm:text-xl">{data.directContact.responseTime}</p>}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
   
   // Check if this is a products-style hero (with highlights and radial gradient)
   const isProductsHero = data.highlights && data.highlights.length > 0;
