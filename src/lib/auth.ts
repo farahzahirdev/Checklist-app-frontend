@@ -59,6 +59,7 @@ export function beginRoleSwitchSession(temporaryToken: string) {
   if (currentToken) {
     window.localStorage.setItem(ORIGINAL_ACCESS_TOKEN_STORAGE_KEY, currentToken);
   }
+  console.log('[auth] beginRoleSwitchSession - setting ROLE_SWITCH_ACTIVE_STORAGE_KEY to "1"');
   window.localStorage.setItem(ROLE_SWITCH_ACTIVE_STORAGE_KEY, '1');
   window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, temporaryToken);
   notifyAuthStateChanged();
@@ -68,13 +69,17 @@ export function isRoleSwitchSessionActive() {
   if (typeof window === 'undefined') {
     return false;
   }
-  return window.localStorage.getItem(ROLE_SWITCH_ACTIVE_STORAGE_KEY) === '1';
+  const flag = window.localStorage.getItem(ROLE_SWITCH_ACTIVE_STORAGE_KEY);
+  const result = flag === '1';
+  console.log('[auth] isRoleSwitchSessionActive - flag value:', flag, 'result:', result);
+  return result;
 }
 
 export function clearRoleSwitchSession() {
   if (typeof window === 'undefined') {
     return;
   }
+  console.log('[auth] clearRoleSwitchSession - clearing role switch flags');
   window.localStorage.removeItem(ORIGINAL_ACCESS_TOKEN_STORAGE_KEY);
   window.localStorage.removeItem(ROLE_SWITCH_ACTIVE_STORAGE_KEY);
   notifyAuthStateChanged();

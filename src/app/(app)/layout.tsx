@@ -113,9 +113,11 @@ export default function AppLayout({
       try {
         const response = await getCurrentUser();
         if (cancelled) return;
+        const roleSwitchActiveValue = isRoleSwitchSessionActive();
+        console.log('[Layout] checkAuth - roleSwitchActive:', roleSwitchActiveValue);
         setRole(getRoleKey(response.user.role));
         setDisplayName(getUserDisplayName(response.user));
-        setRoleSwitchActive(isRoleSwitchSessionActive());
+        setRoleSwitchActive(roleSwitchActiveValue);
         setMfaRequired(Boolean(response.mfa_required));
         setMfaEnabled(Boolean(response.mfa_enabled));
         setAuthReady(true);

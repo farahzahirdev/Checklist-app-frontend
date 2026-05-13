@@ -883,7 +883,11 @@ export default function UsersAccessMerged() {
         reason: switchReason,
         duration_minutes: switchDuration,
       });
-      if (response.temporary_token) beginRoleSwitchSession(response.temporary_token);
+      console.log('[onSwitchRole] API response:', response);
+      if (response.temporary_token) {
+        console.log('[onSwitchRole] Calling beginRoleSwitchSession with token:', response.temporary_token);
+        beginRoleSwitchSession(response.temporary_token);
+      }
       toast.success('Switched.');
       const sr = response.switched_to_role.toLowerCase();
       router.push(sr === 'customer' ? '/dashboard' : '/admin');
