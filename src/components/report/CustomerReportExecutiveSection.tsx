@@ -382,29 +382,7 @@ export function CustomerReportExecutiveSection({
   }, [data.checklist_title, data.completion_percentage, data.findings.length, overallPct]);
 
   const questionBreakdown = useMemo(() => {
-    const dist = data.question_score_distribution;
-    if (Array.isArray(dist) && dist.length > 0) {
-      const maxS = Math.max(...dist.map((d) => d.score), 0);
-      if (maxS >= 2) {
-        const answered = dist.filter((d) => d.score >= maxS).reduce((a, d) => a + d.count, 0);
-        const partial = dist.filter((d) => d.score > 0 && d.score < maxS).reduce((a, d) => a + d.count, 0);
-        const unanswered = dist.filter((d) => d.score === 0).reduce((a, d) => a + d.count, 0);
-        const total = answered + partial + unanswered;
-        if (total > 0) {
-          return {
-            mode: 'answered_partial' as const,
-            total,
-            answered,
-            partial,
-            unanswered,
-            answeredPct: Math.round((answered / total) * 100),
-            partialPct: Math.round((partial / total) * 100),
-            unansweredPct: Math.round((unanswered / total) * 100),
-          };
-        }
-      }
-      return { mode: 'distribution' as const, dist };
-    }
+    /** Prefer explicit counts — `question_score_distribution` is score bands, not answered vs partial. */
     const total = data.total_questions;
     const answered = data.answered_questions;
     if (typeof total === 'number' && total > 0 && typeof answered === 'number') {
@@ -420,6 +398,12 @@ export function CustomerReportExecutiveSection({
         unansweredPct,
       };
     }
+
+    const dist = data.question_score_distribution;
+    if (Array.isArray(dist) && dist.length > 0) {
+      return { mode: 'distribution' as const, dist };
+    }
+
     return {
       mode: 'completion_only' as const,
       completion: Math.round(data.completion_percentage),
@@ -625,34 +609,7 @@ export function CustomerReportExecutiveSection({
             </article>
             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
               <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#64748b]">Total questions</p>
-              {questionBreakdown.mode === 'answered_partial' ? (
-                <>
-                  <p className="mt-2 text-3xl font-bold tabular-nums text-[#0f172a]">{questionBreakdown.total}</p>
-                  <ul className="mt-3 space-y-1.5 text-sm text-[#475569]">
-                    <li className="flex justify-between">
-                      <span>Answered</span>
-                      <span className="font-semibold text-[#0f172a]">
-                        {questionBreakdown.answered}{' '}
-                        <span className="font-normal text-[#64748b]">({questionBreakdown.answeredPct}%)</span>
-                      </span>
-                    </li>
-                    <li className="flex justify-between">
-                      <span>Partly</span>
-                      <span className="font-semibold text-[#0f172a]">
-                        {questionBreakdown.partial}{' '}
-                        <span className="font-normal text-[#64748b]">({questionBreakdown.partialPct}%)</span>
-                      </span>
-                    </li>
-                    <li className="flex justify-between">
-                      <span>Unanswered</span>
-                      <span className="font-semibold text-[#0f172a]">
-                        {questionBreakdown.unanswered}{' '}
-                        <span className="font-normal text-[#64748b]">({questionBreakdown.unansweredPct}%)</span>
-                      </span>
-                    </li>
-                  </ul>
-                </>
-              ) : questionBreakdown.mode === 'distribution' ? (
+              {questionBreakdown.mode === 'distribution' ? (
                 <>
                   <p className="mt-2 text-xs font-semibold text-[#64748b]">Score distribution</p>
                   <ul className="mt-2 space-y-1.5 text-sm text-[#475569]">
