@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { translate, useLocale } from '@/lib/i18n';
@@ -48,6 +48,13 @@ import {
 import { useAdminAccess } from '@/lib/admin-access';
 import { ADMIN_PAGE_TITLE_CLASS } from '@/app/(app)/admin/admin-page-title';
 import { beginRoleSwitchSession, clearRoleSwitchSession } from '@/lib/auth';
+import {
+  formatActionLabel,
+  formatPermissionLine,
+  formatPermissionRowLabel,
+  formatResourceTitle,
+  permissionKey,
+} from '@/lib/permission-labels';
 
 const shell =
   'min-h-full rounded-[18px] border border-slate-200 bg-gradient-to-b from-white to-slate-50 text-slate-900 shadow-sm';
@@ -140,18 +147,6 @@ function colorFor(email: string) {
   return COLORS[h % COLORS.length];
 }
 
-function humanizeToken(value: string) {
-  return value
-    .split('_')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-}
-
-function formatPermissionLabel(resource: string, action: string) {
-  return `${humanizeToken(resource)}: ${humanizeToken(action)}`;
-}
-
 function permissionBadgeClass(resource: string) {
   const palette: Record<string, string> = {
     user_management: 'border-rose-200 bg-rose-50 text-rose-800',
@@ -169,7 +164,105 @@ function permissionBadgeClass(resource: string) {
   return palette[resource] ?? 'border-slate-200 bg-slate-50 text-slate-700';
 }
 
-function Badge({ children, v }: { children: React.ReactNode; v: 'green' | 'blue' | 'gold' | 'red' | 'gray' }) {
+type PermissionMatrixProps = {
+  permissionsList: RbacPermission[];
+  selectedKeys: Set<string>;
+  onChange: (next: Set<string>) => void;
+  disabled?: boolean;
+};
+
+function RbacPermissionMatrix({ permissionsList, selectedKeys, onChange, disabled }: PermissionMatrixProps) {
+  const grouped = useMemo(() => {
+    const active = permissionsList.filter((p) => p.is_active);
+    const byRes = new Map<string, RbacPermission[]>();
+    for (const p of active) {
+      const list = byRes.get(p.resource) ?? [];
+      list.push(p);
+      byRes.set(p.resource, list);
+    }
+    for (const list of byRes.values()) {
+      list.sort((a, b) => formatActionLabel(a.action).localeCompare(formatActionLabel(b.action)));
+    }
+    return [...byRes.entries()].sort((a, b) => formatResourceTitle(a[0]).localeCompare(formatResourceTitle(b[0])));
+  }, [permissionsList]);
+
+  const toggleKey = (key: string) => {
+    if (disabled) return;
+    const next = new Set(selectedKeys);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    onChange(next);
+  };
+
+  const selectAllResource = (resource: string, select: boolean) => {
+    if (disabled) return;
+    const next = new Set(selectedKeys);
+    const perms = grouped.find(([r]) => r === resource)?.[1] ?? [];
+    for (const p of perms) {
+      const k = permissionKey(p.resource, p.action);
+      if (select) next.add(k);
+      else next.delete(k);
+    }
+    onChange(next);
+  };
+
+  if (!grouped.length) {
+    return <p className={`text-[12px] ${muted}`}>No permissions available.</p>;
+  }
+
+  return (
+    <div className={`max-h-[min(360px,50vh)] space-y-3 overflow-y-auto pr-1 ${scrollYScrollbarHidden}`}>
+      {grouped.map(([resource, perms]) => {
+        const total = perms.length;
+        const selectedCount = perms.filter((p) => selectedKeys.has(permissionKey(p.resource, p.action))).length;
+        const allSelected = selectedCount === total && total > 0;
+        return (
+          <div key={resource} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+              <p className="text-[13px] font-bold text-slate-900">{formatResourceTitle(resource)}</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-[11px] font-semibold tabular-nums text-slate-500">
+                  {selectedCount}/{total} selected
+                </span>
+                <button
+                  type="button"
+                  disabled={disabled}
+                  className="text-[11px] font-semibold text-[#10284F] underline-offset-2 hover:underline disabled:opacity-50"
+                  onClick={() => selectAllResource(resource, !allSelected)}
+                >
+                  {allSelected ? 'Deselect all' : 'Select all'}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-1">
+              {perms.map((p) => {
+                const k = permissionKey(p.resource, p.action);
+                const checked = selectedKeys.has(k);
+                return (
+                  <label
+                    key={p.id}
+                    className="flex cursor-pointer items-start gap-2 rounded-lg px-1 py-1.5 hover:bg-slate-50 has-[:disabled]:cursor-not-allowed"
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 accent-[#10284F]"
+                      checked={checked}
+                      disabled={disabled}
+                      onChange={() => toggleKey(k)}
+                    />
+                    <span className="text-[12px] font-medium leading-snug text-slate-900">{formatPermissionRowLabel(p)}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Badge({ children, v }: { children: ReactNode; v: 'green' | 'blue' | 'gold' | 'red' | 'gray' }) {
   const m = {
     green: 'border-emerald-200 bg-emerald-50 text-emerald-800',
     blue: 'border-blue-200 bg-blue-50 text-blue-800',
@@ -190,6 +283,24 @@ function recordChild(obj: Record<string, unknown> | null | undefined, key: strin
   const v = obj[key];
   if (v && typeof v === 'object' && !Array.isArray(v)) return v as Record<string, unknown>;
   return null;
+}
+
+function pairsFromPermissionKeySet(keys: Set<string>): Array<[string, string]> {
+  const pairs: Array<[string, string]> = [];
+  for (const key of keys) {
+    const idx = key.indexOf(':');
+    if (idx <= 0) continue;
+    const res = key.slice(0, idx).trim();
+    const act = key.slice(idx + 1).trim();
+    if (res && act) pairs.push([res, act]);
+  }
+  return pairs;
+}
+
+function permissionIdsFromKeySet(keys: Set<string>, list: RbacPermission[]): string[] {
+  return Array.from(keys)
+    .map((k) => list.find((p) => permissionKey(p.resource, p.action) === k)?.id ?? null)
+    .filter((id): id is string => Boolean(id));
 }
 
 export default function UsersAccessMerged() {
@@ -213,7 +324,7 @@ export default function UsersAccessMerged() {
 
   const [newRoleCode, setNewRoleCode] = useState<'admin' | 'auditor'>('auditor');
   const [roleReason, setRoleReason] = useState('Role update requested by admin');
-  const [permissionsInput, setPermissionsInput] = useState('dashboard:read,report:read');
+  const [inspectorPermSelected, setInspectorPermSelected] = useState<Set<string>>(() => new Set());
   const [resetPasswordValue, setResetPasswordValue] = useState('');
   const [resetPasswordReason, setResetPasswordReason] = useState('Admin requested password reset');
   const [switchRole, setSwitchRole] = useState<'customer' | 'auditor'>('customer');
@@ -236,6 +347,7 @@ export default function UsersAccessMerged() {
   const [custInspTab, setCustInspTab] = useState<'details' | 'dashboard' | 'actions'>('details');
 
   const [targetUserId, setTargetUserId] = useState('');
+  const [targetUserMenuOpen, setTargetUserMenuOpen] = useState(false);
   const [targetRoleId, setTargetRoleId] = useState('');
   const [targetRoleMenuOpen, setTargetRoleMenuOpen] = useState(false);
   const [targetRoleSearchQuery, setTargetRoleSearchQuery] = useState('');
@@ -245,7 +357,7 @@ export default function UsersAccessMerged() {
   const [selectedPermissionId, setSelectedPermissionId] = useState('');
   const [permissionMenuOpen, setPermissionMenuOpen] = useState(false);
   const [permissionSearchQuery, setPermissionSearchQuery] = useState('');
-  const [bulkPermissionKeys, setBulkPermissionKeys] = useState('dashboard:read,report:read');
+  const [bulkRolePermSelected, setBulkRolePermSelected] = useState<Set<string>>(() => new Set());
   const [bulkRoleCodes, setBulkRoleCodes] = useState('auditor');
   const [newRoleCodeCreate, setNewRoleCodeCreate] = useState('');
   const [newRoleName, setNewRoleName] = useState('');
@@ -258,7 +370,7 @@ export default function UsersAccessMerged() {
   const [roleUpdateActive, setRoleUpdateActive] = useState(true);
   const [selectedCheckPermissionId, setSelectedCheckPermissionId] = useState('');
   const [permissionCheckResult, setPermissionCheckResult] = useState<{ allowed: boolean; reason?: string } | null>(null);
-  const [multiPermissionKeys, setMultiPermissionKeys] = useState('dashboard:read,report:read');
+  const [multiCheckPermSelected, setMultiCheckPermSelected] = useState<Set<string>>(() => new Set());
   const [multiPermissionResult, setMultiPermissionResult] = useState<Record<string, boolean> | null>(null);
   const [lookupUserId, setLookupUserId] = useState('');
   const [userRolesResult, setUserRolesResult] = useState<Array<{ id: string; code: string; name: string }>>([]);
@@ -284,7 +396,7 @@ export default function UsersAccessMerged() {
   const [customPermUserId, setCustomPermUserId] = useState('');
   const [customPermUserMenuOpen, setCustomPermUserMenuOpen] = useState(false);
   const [customPermUserSearchQuery, setCustomPermUserSearchQuery] = useState('');
-  const [customPermKeys, setCustomPermKeys] = useState('dashboard:read,report:read');
+  const [customPermSelected, setCustomPermSelected] = useState<Set<string>>(() => new Set());
   const [rbacDetailRoles, setRbacDetailRoles] = useState<Array<{ id: string; code: string; name: string }>>([]);
   const [rbacDetailPerms, setRbacDetailPerms] = useState<Array<{ id: string; resource: string; action: string; description: string }>>([]);
 
@@ -305,19 +417,6 @@ export default function UsersAccessMerged() {
     if (userStatusFilter === 'inactive') u = u.filter((x) => !x.is_active);
     return u;
   }, [adminUsers, userStatusFilter]);
-
-  const permissionIdsFromKeys = useCallback(
-    (input: string) => {
-      const keys = input
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean);
-      return keys
-        .map((key) => permissions.find((p) => `${p.resource}:${p.action}` === key)?.id ?? null)
-        .filter((id): id is string => Boolean(id));
-    },
-    [permissions],
-  );
 
   const selectedPermission = useMemo(
     () => permissions.find((p) => p.id === selectedPermissionId) ?? null,
@@ -353,7 +452,10 @@ export default function UsersAccessMerged() {
   const filteredPermissionOptions = useMemo(() => {
     const q = permissionSearchQuery.trim().toLowerCase();
     if (!q) return permissions;
-    return permissions.filter((p) => `${p.resource}:${p.action}`.toLowerCase().includes(q));
+    return permissions.filter((p) => {
+      const blob = `${p.resource}:${p.action} ${p.description ?? ''} ${formatPermissionLine(p)}`.toLowerCase();
+      return blob.includes(q);
+    });
   }, [permissions, permissionSearchQuery]);
   const selectedCheckPermission = useMemo(
     () => permissions.find((p) => p.id === selectedCheckPermissionId) ?? null,
@@ -362,7 +464,10 @@ export default function UsersAccessMerged() {
   const filteredCheckPermissionOptions = useMemo(() => {
     const q = checkPermissionSearchQuery.trim().toLowerCase();
     if (!q) return permissions;
-    return permissions.filter((p) => `${p.resource}:${p.action}`.toLowerCase().includes(q));
+    return permissions.filter((p) => {
+      const blob = `${p.resource}:${p.action} ${p.description ?? ''} ${formatPermissionLine(p)}`.toLowerCase();
+      return blob.includes(q);
+    });
   }, [permissions, checkPermissionSearchQuery]);
   const selectedTargetUser = useMemo(
     () => allUsers.find((u) => u.id === targetUserId) ?? null,
@@ -393,15 +498,6 @@ export default function UsersAccessMerged() {
     },
     [roles],
   );
-
-  const permissionPairsFromKeys = (input: string): Array<[string, string]> =>
-    input
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .map((item) => item.split(':'))
-      .filter((parts): parts is [string, string] => parts.length === 2 && Boolean(parts[0]) && Boolean(parts[1]))
-      .map(([resource, action]) => [resource.trim(), action.trim()]);
 
   const loadLists = useCallback(async () => {
     setListsLoading(true);
@@ -520,6 +616,39 @@ export default function UsersAccessMerged() {
   }, [selectedCustomerId]);
 
   useEffect(() => {
+    if (!adminDetail) {
+      setInspectorPermSelected(new Set());
+      return;
+    }
+    setInspectorPermSelected(new Set(adminDetail.permissions.map((p) => permissionKey(p.resource, p.action))));
+  }, [adminDetail]);
+
+  useEffect(() => {
+    if (!customPermUserId) {
+      setCustomPermSelected(new Set());
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const data = await getUserPermissions(customPermUserId);
+        if (cancelled) return;
+        const list = Array.isArray(data.permissions) ? data.permissions : [];
+        setCustomPermSelected(new Set(list.map((p) => permissionKey(p.resource, p.action))));
+      } catch {
+        if (!cancelled) setCustomPermSelected(new Set());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [customPermUserId]);
+
+  useEffect(() => {
+    setBulkRolePermSelected(new Set());
+  }, [selectedRoleId]);
+
+  useEffect(() => {
     const r = roles.find((item) => item.id === selectedRoleId);
     if (!r) return;
     setRoleUpdateName(r.name);
@@ -534,6 +663,7 @@ export default function UsersAccessMerged() {
     setRbacDetailPerms([]);
     setPermissionCheckResult(null);
     setMultiPermissionResult(null);
+    setMultiCheckPermSelected(new Set());
     setRolesFetched(false);
     setPermissionsFetched(false);
   }, [targetUserId]);
@@ -640,8 +770,8 @@ export default function UsersAccessMerged() {
   async function onAssignPerms(e: FormEvent) {
     e.preventDefault();
     if (!selectedAdminId) return toast.error('Select a user.');
-    const pairs = permissionPairsFromKeys(permissionsInput);
-    if (!pairs.length) return toast.error('Use resource:action format.');
+    const pairs = pairsFromPermissionKeySet(inspectorPermSelected);
+    if (!pairs.length) return toast.error('Select at least one permission.');
     setActionLoading('assign-perms');
     setLoading(true);
     try {
@@ -798,8 +928,8 @@ export default function UsersAccessMerged() {
   }
 
   async function onMultiCheck() {
-    const pairs = permissionPairsFromKeys(multiPermissionKeys);
-    if (!pairs.length) return toast.error('Enter permission keys.');
+    const pairs = pairsFromPermissionKeySet(multiCheckPermSelected);
+    if (!pairs.length) return toast.error('Select at least one permission.');
     await runRbacAction(async () => {
       const data = await checkPermissions(pairs, targetUserId || undefined);
       setMultiPermissionResult(data.permissions ?? {});
@@ -852,8 +982,8 @@ export default function UsersAccessMerged() {
 
   async function onCustomAssign() {
     if (!customPermUserId) return toast.error('Select user.');
-    const pairs = permissionPairsFromKeys(customPermKeys);
-    if (!pairs.length) return toast.error('Invalid keys.');
+    const pairs = pairsFromPermissionKeySet(customPermSelected);
+    if (!pairs.length) return toast.error('Select at least one permission.');
     setActionLoading('custp');
     setLoading(true);
     try {
@@ -874,6 +1004,9 @@ export default function UsersAccessMerged() {
     try {
       await resetUserPermissions(customPermUserId);
       toast.success('Reset.');
+      const data = await getUserPermissions(customPermUserId);
+      const list = Array.isArray(data.permissions) ? data.permissions : [];
+      setCustomPermSelected(new Set(list.map((p) => permissionKey(p.resource, p.action))));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed');
     } finally {
@@ -1158,7 +1291,7 @@ export default function UsersAccessMerged() {
                                 key={`${p.resource}:${p.action}`}
                                 className={`rounded-md border px-2 py-0.5 text-[10px] ${permissionBadgeClass(p.resource)}`}
                               >
-                                {formatPermissionLabel(p.resource, p.action)}
+                                {formatPermissionLine(p)}
                               </code>
                             ))
                           ) : (
@@ -1184,7 +1317,12 @@ export default function UsersAccessMerged() {
                           <label className="block text-[10px] font-bold uppercase tracking-[0.09em] text-slate-600">
                             Custom permissions (auditors)
                           </label>
-                          <input className={inp} value={permissionsInput} onChange={(e) => setPermissionsInput(e.target.value)} />
+                          <RbacPermissionMatrix
+                            permissionsList={permissions}
+                            selectedKeys={inspectorPermSelected}
+                            onChange={setInspectorPermSelected}
+                            disabled={loading}
+                          />
                           <div className="flex gap-2">
                             <button type="submit" className={`${btnPri} flex-1`} disabled={loading}>
                               Assign
@@ -1251,12 +1389,11 @@ export default function UsersAccessMerged() {
                 <div className="overflow-x-auto">
                   <div className="min-w-[360px]">
                     <div
-                      className={`grid grid-cols-[38px_1fr_90px_80px] gap-2 border-b ${line} bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase text-slate-500 sm:grid-cols-[38px_1fr_90px_80px] sm:gap-3 sm:px-[18px]`}
+                      className={`grid grid-cols-[38px_1fr_90px] gap-2 border-b ${line} bg-slate-100 px-3 py-2 text-[10px] font-bold uppercase text-slate-500 sm:gap-3 sm:px-[18px]`}
                     >
                       <div />
                       <div>Customer</div>
                       <div>Status</div>
-                      <div className="hidden sm:block">Plan</div>
                     </div>
                     <div>
                       {listsLoading ? (
@@ -1282,7 +1419,7 @@ export default function UsersAccessMerged() {
                                   setSelectedCustomerId(c.id);
                                 }
                               }}
-                              className={`group grid cursor-pointer grid-cols-[38px_1fr_90px_80px] gap-2 border-b border-[rgba(155,181,224,0.06)] px-3 py-2.5 hover:bg-[#eef4ff] sm:grid-cols-[38px_1fr_90px_80px] sm:gap-3 sm:px-[18px] ${
+                              className={`group grid cursor-pointer grid-cols-[38px_1fr_90px] gap-2 border-b border-[rgba(155,181,224,0.06)] px-3 py-2.5 hover:bg-[#eef4ff] sm:gap-3 sm:px-[18px] ${
                                 sel ? 'border-l-2 border-l-[#10284F] bg-gradient-to-r from-[#eef4ff] to-transparent pl-3 sm:pl-4' : ''
                               }`}
                             >
@@ -1298,9 +1435,6 @@ export default function UsersAccessMerged() {
                               </div>
                               <div className="min-w-0">
                                 <Badge v={c.is_active ? 'green' : 'gray'}>{c.is_active ? 'Active' : 'Inactive'}</Badge>
-                              </div>
-                              <div className="hidden min-w-0 sm:block">
-                                <Badge v="blue">—</Badge>
                               </div>
                             </div>
                           );
@@ -1436,7 +1570,7 @@ export default function UsersAccessMerged() {
                         <div className="flex flex-wrap gap-1">
                           {customerDetail.permissions.map((p) => (
                             <code key={`${p.resource}:${p.action}`} className={`rounded-md border px-2 py-0.5 text-[10px] ${permissionBadgeClass(p.resource)}`}>
-                              {formatPermissionLabel(p.resource, p.action)}
+                              {formatPermissionLine(p)}
                             </code>
                           ))}
                         </div>
@@ -1509,25 +1643,73 @@ export default function UsersAccessMerged() {
                   <h2 className="text-[14px] font-bold sm:text-[15px]">Assign / remove role</h2>
                 </div>
                 <div className="space-y-3 p-3 sm:p-[18px]">
-                  <input
-                    className={inp}
-                    placeholder="Search users…"
-                    value={isReadOnly ? auditorUserSearch : rbacUserSearch}
-                    onChange={(e) => (isReadOnly ? setAuditorUserSearch(e.target.value) : setRbacUserSearch(e.target.value))}
-                  />
-                  <div className={`max-h-40 space-y-1 ${scrollYScrollbarHidden}`}>
-                    {filteredRbacUsers.map((u) => (
+                  <div>
+                    <label className={`mb-1 block text-[10px] font-bold uppercase ${muted}`}>User</label>
+                    <div
+                      className="relative"
+                      onBlur={(event) => {
+                        const next = event.relatedTarget as Node | null;
+                        if (next && event.currentTarget.contains(next)) return;
+                        setTargetUserMenuOpen(false);
+                      }}
+                    >
                       <button
-                        key={u.id}
                         type="button"
-                        onClick={() => setTargetUserId(u.id)}
-                        className={`w-full rounded-lg border px-2 py-1.5 text-left text-[12px] ${
-                          targetUserId === u.id ? 'border-[#10284F] bg-[#eef4ff]' : `${line} border bg-white hover:bg-slate-50`
-                        }`}
+                        disabled={listsLoading}
+                        className={`${inp} flex w-full items-center justify-between gap-2 text-left disabled:opacity-60`}
+                        onClick={() => setTargetUserMenuOpen((open) => !open)}
+                        aria-haspopup="listbox"
+                        aria-expanded={targetUserMenuOpen}
                       >
-                        {u.email} <span className={muted}>({u.role})</span>
+                        <span className="truncate">
+                          {selectedTargetUser
+                            ? `${selectedTargetUser.email} (${selectedTargetUser.role})`
+                            : 'Choose user…'}
+                        </span>
+                        <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-black" fill="none" aria-hidden="true">
+                          <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
                       </button>
-                    ))}
+                      {targetUserMenuOpen ? (
+                        <div className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-[0_10px_30px_rgba(15,23,42,0.14)]">
+                          <input
+                            className={`${inp} py-1.5 text-[12px]`}
+                            placeholder="Search users…"
+                            value={isReadOnly ? auditorUserSearch : rbacUserSearch}
+                            onChange={(e) => (isReadOnly ? setAuditorUserSearch(e.target.value) : setRbacUserSearch(e.target.value))}
+                            autoFocus
+                          />
+                          <div className={`mt-2 max-h-44 space-y-1 pr-1 ${scrollYScrollbarHidden}`}>
+                            {(() => {
+                              const selected = targetUserId ? allUsers.find((u) => u.id === targetUserId) : null;
+                              const inFiltered = selected && filteredRbacUsers.some((u) => u.id === targetUserId);
+                              const rows =
+                                selected && !inFiltered ? [selected, ...filteredRbacUsers] : filteredRbacUsers;
+                              return rows.map((u) => {
+                                const isSelected = u.id === targetUserId;
+                                return (
+                                  <button
+                                    key={u.id}
+                                    type="button"
+                                    role="option"
+                                    aria-selected={isSelected}
+                                    className={`w-full rounded-lg px-2 py-1.5 text-left text-[12px] ${
+                                      isSelected ? 'bg-[#e9f1ff] text-[#10284F]' : 'text-slate-700 hover:bg-slate-100'
+                                    }`}
+                                    onClick={() => {
+                                      setTargetUserId(u.id);
+                                      setTargetUserMenuOpen(false);
+                                    }}
+                                  >
+                                    {u.email} <span className={muted}>({u.role})</span>
+                                  </button>
+                                );
+                              });
+                            })()}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                   {auditorUserListUnavailable ? <p className={`text-xs ${muted}`}>User listing may be unavailable in auditor mode.</p> : null}
                   {!isReadOnly ? (
@@ -1660,7 +1842,7 @@ export default function UsersAccessMerged() {
                         <div className="mt-1 flex flex-wrap gap-1">
                           {rbacDetailPerms.map((p) => (
                             <code key={p.id} className={`rounded-md border px-2 py-0.5 text-[10px] ${permissionBadgeClass(p.resource)}`}>
-                              {formatPermissionLabel(p.resource, p.action)}
+                              {formatPermissionLine(p)}
                             </code>
                           ))}
                         </div>
@@ -1746,7 +1928,7 @@ export default function UsersAccessMerged() {
                         aria-expanded={permissionMenuOpen}
                       >
                         <span className="truncate">
-                          {selectedPermission ? formatPermissionLabel(selectedPermission.resource, selectedPermission.action) : 'Permission…'}
+                          {selectedPermission ? formatPermissionLine(selectedPermission) : 'Permission…'}
                         </span>
                         <svg
                           viewBox="0 0 20 20"
@@ -1769,7 +1951,7 @@ export default function UsersAccessMerged() {
                           <div className={`mt-2 max-h-44 space-y-1 pr-1 ${scrollYScrollbarHidden}`}>
                             {filteredPermissionOptions.length ? (
                               filteredPermissionOptions.map((p) => {
-                                const optionLabel = formatPermissionLabel(p.resource, p.action);
+                                const optionLabel = formatPermissionLine(p);
                                 const isSelected = p.id === selectedPermissionId;
                                 return (
                                   <button
@@ -1841,14 +2023,20 @@ export default function UsersAccessMerged() {
                       <div className="mt-2 flex flex-wrap gap-1">
                         {selectedRoleDetail.permissions.map((p) => (
                           <code key={p.id} className={`rounded-md border px-2 py-0.5 text-[10px] ${permissionBadgeClass(p.resource)}`}>
-                            {formatPermissionLabel(p.resource, p.action)}
+                            {formatPermissionLine(p)}
                           </code>
                         ))}
                       </div>
                     </div>
                   ) : null}
-                  <p className={`text-[10px] font-bold uppercase ${muted}`}>Bulk permission keys</p>
-                  <input className={inp} value={bulkPermissionKeys} onChange={(e) => setBulkPermissionKeys(e.target.value)} />
+                  <p className={`text-[10px] font-bold uppercase ${muted}`}>Bulk assign / remove</p>
+                  <p className={`text-[11px] ${muted}`}>Select permissions below, then assign to or remove from the role above.</p>
+                  <RbacPermissionMatrix
+                    permissionsList={permissions}
+                    selectedKeys={bulkRolePermSelected}
+                    onChange={setBulkRolePermSelected}
+                    disabled={Boolean(actionLoading) || isReadOnly}
+                  />
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -1857,8 +2045,8 @@ export default function UsersAccessMerged() {
                       onClick={() =>
                         void runRbacAction(() => {
                           if (!selectedRoleId) throw new Error('Role required.');
-                          const ids = permissionIdsFromKeys(bulkPermissionKeys);
-                          if (!ids.length) throw new Error('Valid keys required.');
+                          const ids = permissionIdsFromKeySet(bulkRolePermSelected, permissions);
+                          if (!ids.length) throw new Error('Select at least one permission.');
                           return assignPermissionsBulk(selectedRoleId, ids);
                         }, 'Bulk assigned.', 'bap')
                       }
@@ -1872,8 +2060,8 @@ export default function UsersAccessMerged() {
                       onClick={() =>
                         void runRbacAction(() => {
                           if (!selectedRoleId) throw new Error('Role required.');
-                          const ids = permissionIdsFromKeys(bulkPermissionKeys);
-                          if (!ids.length) throw new Error('Valid keys required.');
+                          const ids = permissionIdsFromKeySet(bulkRolePermSelected, permissions);
+                          if (!ids.length) throw new Error('Select at least one permission.');
                           return removePermissionsBulk(selectedRoleId, ids);
                         }, 'Bulk removed.', 'brp')
                       }
@@ -1970,7 +2158,7 @@ export default function UsersAccessMerged() {
                   <h2 className="text-[14px] font-bold sm:text-[15px]">Custom permissions (auditors)</h2>
                 </div>
                 <div className="space-y-2 p-3 sm:p-[18px]">
-                  <p className={`text-[12px] ${muted}`}>Applies to auditor-role users. Format resource:action</p>
+                  <p className={`text-[12px] ${muted}`}>Applies to auditor-role users. Pick permissions below; technical IDs are not shown.</p>
                   <div
                     className="relative"
                     onBlur={(event) => {
@@ -2026,7 +2214,12 @@ export default function UsersAccessMerged() {
                       </div>
                     ) : null}
                   </div>
-                  <input className={inp} value={customPermKeys} onChange={(e) => setCustomPermKeys(e.target.value)} disabled={isReadOnly} />
+                  <RbacPermissionMatrix
+                    permissionsList={permissions}
+                    selectedKeys={customPermSelected}
+                    onChange={setCustomPermSelected}
+                    disabled={isReadOnly}
+                  />
                   <div className="flex gap-2">
                     <button type="button" className={btnPri} disabled={isReadOnly} onClick={() => void onCustomAssign()}>
                       Assign
@@ -2134,7 +2327,7 @@ export default function UsersAccessMerged() {
                     aria-expanded={checkPermissionMenuOpen}
                   >
                     <span className="truncate">
-                      {selectedCheckPermission ? formatPermissionLabel(selectedCheckPermission.resource, selectedCheckPermission.action) : 'Permission…'}
+                      {selectedCheckPermission ? formatPermissionLine(selectedCheckPermission) : 'Permission…'}
                     </span>
                     <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-black" fill="none" aria-hidden="true">
                       <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" />
@@ -2152,7 +2345,7 @@ export default function UsersAccessMerged() {
                       <div className={`mt-2 max-h-44 space-y-1 pr-1 ${scrollYScrollbarHidden}`}>
                         {filteredCheckPermissionOptions.length ? (
                           filteredCheckPermissionOptions.map((p) => {
-                            const optionLabel = formatPermissionLabel(p.resource, p.action);
+                            const optionLabel = formatPermissionLine(p);
                             const isSelected = p.id === selectedCheckPermissionId;
                             return (
                               <button
@@ -2194,18 +2387,30 @@ export default function UsersAccessMerged() {
                   </p>
                 ) : null}
                 <p className={`text-[10px] font-bold uppercase ${muted}`}>Multi check</p>
-                <input className={inp} value={multiPermissionKeys} onChange={(e) => setMultiPermissionKeys(e.target.value)} />
+                <p className={`text-[11px] ${muted}`}>Select permissions to evaluate for the user above (or your session if none).</p>
+                <RbacPermissionMatrix
+                  permissionsList={permissions}
+                  selectedKeys={multiCheckPermSelected}
+                  onChange={setMultiCheckPermSelected}
+                  disabled={Boolean(actionLoading)}
+                />
                 <button type="button" className={btnPri} onClick={() => void onMultiCheck()} disabled={Boolean(actionLoading)}>
                   Run multi-check
                 </button>
                 {multiPermissionResult ? (
                   <div className={`rounded-xl border ${line} p-3 text-[12px]`}>
-                    {Object.entries(multiPermissionResult).map(([k, ok]) => (
-                      <div key={k} className="flex justify-between border-b border-[rgba(155,181,224,0.06)] py-1 last:border-0">
-                        <code className={muted}>{k}</code>
-                        <span className={ok ? 'font-semibold text-emerald-800' : 'font-semibold text-red-800'}>{ok ? 'Allowed' : 'Denied'}</span>
-                      </div>
-                    ))}
+                    {Object.entries(multiPermissionResult).map(([k, ok]) => {
+                      const perm = permissions.find((p) => permissionKey(p.resource, p.action) === k);
+                      const label = perm ? formatPermissionLine(perm) : k;
+                      return (
+                        <div key={k} className="flex justify-between border-b border-[rgba(155,181,224,0.06)] py-1 last:border-0">
+                          <span className="pr-2 font-medium text-slate-800">{label}</span>
+                          <span className={ok ? 'font-semibold text-emerald-800' : 'font-semibold text-red-800'}>
+                            {ok ? 'Allowed' : 'Denied'}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : null}
               </div>
@@ -2313,7 +2518,7 @@ export default function UsersAccessMerged() {
                     <div className="mt-2 flex flex-wrap gap-1">
                       {userPermissionsResult.map((p) => (
                         <code key={p.id} className={`rounded-md border px-2 py-0.5 text-[10px] ${permissionBadgeClass(p.resource)}`}>
-                          {formatPermissionLabel(p.resource, p.action)}
+                          {formatPermissionLine(p)}
                         </code>
                       ))}
                     </div>

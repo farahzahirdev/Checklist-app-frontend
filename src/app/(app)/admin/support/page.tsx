@@ -7,6 +7,7 @@ import {
   getAdminSupportTicket,
   listAdminSupportTickets,
   replyToSupportTicket,
+  SUPPORT_TICKET_MESSAGE_MAX_LENGTH,
   updateSupportTicketStatus,
   type SupportTicket,
   type SupportTicketStatus,
@@ -28,7 +29,7 @@ function formatDate(value: string | null | undefined) {
 
 export default function AdminSupportPage() {
   const { locale } = useLocale();
-  const t = (key: string) => translate(adminSupportMessages, locale, key);
+  const t = (key: string, values?: Record<string, string>) => translate(adminSupportMessages, locale, key, values);
   const statusLabel = (status: SupportTicketStatus) => t(`status.${status}`);
   const roleLabel = (role: string) => translate(adminSupportMessages, locale, `role.${role}`) || role;
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -94,6 +95,10 @@ export default function AdminSupportPage() {
     }
     if (!replyMessage.trim()) {
       toast.error(t('errors.replyRequired'));
+      return;
+    }
+    if (replyMessage.length > SUPPORT_TICKET_MESSAGE_MAX_LENGTH) {
+      toast.error(t('errors.replyTooLong', { max: String(SUPPORT_TICKET_MESSAGE_MAX_LENGTH) }));
       return;
     }
     setActionLoading('reply');
@@ -263,9 +268,10 @@ export default function AdminSupportPage() {
                   <span className="font-medium text-[#566b8d]">{t('reply.label')}</span>
                   <textarea
                     value={replyMessage}
+                    maxLength={SUPPORT_TICKET_MESSAGE_MAX_LENGTH}
                     onChange={(event) => setReplyMessage(event.target.value)}
                     rows={4}
-                    className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
+                    className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0"
                     placeholder={t('reply.placeholder')}
                   />
                 </label>

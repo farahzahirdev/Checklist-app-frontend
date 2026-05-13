@@ -13,6 +13,8 @@ export const adminMessages: TranslationMessages = {
     'actions.openSidebar': 'Open sidebar',
     'brand.name': 'AuditReady',
     'lang.label': 'Language',
+    'lang.en': 'English',
+    'lang.cs': 'Czech',
   },
   cs: {
     'nav.dashboard': 'Přehled',
@@ -26,6 +28,8 @@ export const adminMessages: TranslationMessages = {
     'actions.openSidebar': 'Otevřít menu',
     'brand.name': 'AuditReady',
     'lang.label': 'Jazyk',
+    'lang.en': 'Angličtina',
+    'lang.cs': 'Čeština',
   },
 };
 

@@ -137,7 +137,7 @@ export function getCustomer(customerId: string) {
   return apiGetWithAuth<AdminCustomerDetail>(`/admin/customers/${customerId}`);
 }
 
-export function deactivateCustomer(customerId: string, payload: { reason: string; permanent: boolean }) {
+export function deactivateCustomer(customerId: string, payload: { reason: string; permanent?: boolean }) {
   return apiPost<Record<string, unknown>, typeof payload>(`/admin/customers/${customerId}/deactivate`, payload);
 }
 

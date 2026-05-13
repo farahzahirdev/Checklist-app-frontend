@@ -105,6 +105,23 @@ function normalizeAnswerValue(value?: string | null) {
   return v;
 }
 
+/** Customer assessment: severity colors for `security_level` (high / medium / low). */
+function assessmentSecurityLevelStyles(level: string | undefined | null): { text: string; dot: string } {
+  const key = String(level ?? '')
+    .toLowerCase()
+    .trim();
+  if (key === 'high') {
+    return { text: 'text-[#b91c1c]', dot: 'bg-[#dc2626]' };
+  }
+  if (key === 'medium') {
+    return { text: 'text-[#b45309]', dot: 'bg-[#f59e0b]' };
+  }
+  if (key === 'low') {
+    return { text: 'text-[#15803d]', dot: 'bg-[#22c55e]' };
+  }
+  return { text: 'text-[#1f2d45]', dot: 'bg-[#94a3b8]' };
+}
+
 function isHttpUrl(value?: string | null) {
   if (!value) return false;
   return /^https?:\/\//i.test(value);
@@ -243,6 +260,12 @@ export default function AssessmentPage() {
     () => sanitizeRichHtml(activeQuestion?.expected_implementation),
     [activeQuestion?.expected_implementation],
   );
+  const activeQuestionSeverity = useMemo(() => {
+    const raw = activeQuestion?.security_level;
+    const display = raw?.trim() ? raw : '-';
+    const styles = assessmentSecurityLevelStyles(raw);
+    return { display, styles };
+  }, [activeQuestion?.security_level]);
   const effectiveChecklistId = checklistIdFromQuery || assessmentDetail?.checklist_id || '';
 
   useEffect(() => {
@@ -1129,9 +1152,15 @@ export default function AssessmentPage() {
                     </div>
                     <div className="rounded-md bg-[#f7f9fe] p-2 text-xs">
                       <p className="text-[#607594]">Severity</p>
-                      <p className="mt-1 inline-flex items-center gap-1.5 font-semibold capitalize text-[#b23a4f]">
-                        <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#d95c71]" />
-                        {activeQuestion.security_level ?? '-'}
+                      <p
+                        className={`mt-1 inline-flex items-center gap-1.5 font-semibold capitalize ${activeQuestionSeverity.styles.text}`}
+                      >
+                        {activeQuestionSeverity.display !== '-' ? (
+                          <span
+                            className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${activeQuestionSeverity.styles.dot}`}
+                          />
+                        ) : null}
+                        {activeQuestionSeverity.display}
                       </p>
                     </div>
                   </div>

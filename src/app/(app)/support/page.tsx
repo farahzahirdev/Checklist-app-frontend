@@ -8,10 +8,15 @@ import {
   getMySupportTicket,
   listMySupportTickets,
   replyMySupportTicket,
+  SUPPORT_TICKET_MESSAGE_MAX_LENGTH,
+  SUPPORT_TICKET_SUBJECT_MAX_LENGTH,
   type SupportTicket,
 } from '@/lib/support-tickets';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerSupportMessages } from '@/locales/customer-support';
+
+const supportTextareaScrollbarHideClass =
+  'max-h-44 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0';
 
 function formatDate(value: string | null | undefined) {
   if (!value) return 'n/a';
@@ -20,7 +25,8 @@ function formatDate(value: string | null | undefined) {
 
 export default function SupportPage() {
   const { locale } = useLocale();
-  const t = (key: string) => translate(customerSupportMessages, locale, key);
+  const t = (key: string, values?: Record<string, string>) =>
+    translate(customerSupportMessages, locale, key, values);
   const roleLabel = (role: string) => translate(customerSupportMessages, locale, `role.${role}`) || role;
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState('');
@@ -80,6 +86,14 @@ export default function SupportPage() {
       toast.error(t('errors.requiredSubjectMessage'));
       return;
     }
+    if (subject.length > SUPPORT_TICKET_SUBJECT_MAX_LENGTH) {
+      toast.error(t('errors.subjectTooLong', { max: String(SUPPORT_TICKET_SUBJECT_MAX_LENGTH) }));
+      return;
+    }
+    if (message.length > SUPPORT_TICKET_MESSAGE_MAX_LENGTH) {
+      toast.error(t('errors.messageTooLong', { max: String(SUPPORT_TICKET_MESSAGE_MAX_LENGTH) }));
+      return;
+    }
     setActionLoading('create');
     try {
       const ticket = await createMySupportTicket({ subject, message });
@@ -104,6 +118,10 @@ export default function SupportPage() {
     }
     if (!replyMessage.trim()) {
       toast.error(t('errors.replyRequired'));
+      return;
+    }
+    if (replyMessage.length > SUPPORT_TICKET_MESSAGE_MAX_LENGTH) {
+      toast.error(t('errors.replyTooLong', { max: String(SUPPORT_TICKET_MESSAGE_MAX_LENGTH) }));
       return;
     }
     setActionLoading('reply');
@@ -137,6 +155,7 @@ export default function SupportPage() {
               <input
                 type="text"
                 value={subject}
+                maxLength={SUPPORT_TICKET_SUBJECT_MAX_LENGTH}
                 onChange={(event) => setSubject(event.target.value)}
                 className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
                 placeholder={t('fields.subjectPlaceholder')}
@@ -146,9 +165,10 @@ export default function SupportPage() {
               <span className="font-medium text-[#566b8d]">{t('fields.message')}</span>
               <textarea
                 value={message}
+                maxLength={SUPPORT_TICKET_MESSAGE_MAX_LENGTH}
                 onChange={(event) => setMessage(event.target.value)}
                 rows={5}
-                className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
+                className={`w-full resize-y rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7] ${supportTextareaScrollbarHideClass}`}
                 placeholder={t('fields.messagePlaceholder')}
               />
             </label>
@@ -247,9 +267,10 @@ export default function SupportPage() {
                   <span className="font-medium text-[#566b8d]">{t('reply.label')}</span>
                   <textarea
                     value={replyMessage}
+                    maxLength={SUPPORT_TICKET_MESSAGE_MAX_LENGTH}
                     onChange={(event) => setReplyMessage(event.target.value)}
                     rows={4}
-                    className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
+                    className={`w-full resize-y rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-[#2a3d5f] outline-none focus:border-[#7ea6e7] ${supportTextareaScrollbarHideClass}`}
                     placeholder={t('reply.placeholder')}
                   />
                 </label>

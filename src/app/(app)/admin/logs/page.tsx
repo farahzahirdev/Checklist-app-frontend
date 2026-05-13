@@ -11,17 +11,16 @@ import {
   ADMIN_PAGE_HERO_TITLE_CLASS,
 } from '@/app/(app)/admin/admin-page-title';
 import { adminLogsMessages } from '@/locales/admin-logs';
+import { CustomDropdown } from '@/components/admin/CustomDropdown';
 
-const severityClass: Record<string, string> = {
-  Info: 'bg-[#eaf2ff] text-[#3f74df]',
-  Warning: 'bg-[#fff4df] text-[#b6862f]',
-  Critical: 'bg-[#ffedf0] text-[#cc5163]',
+const resultBadgeClass: Record<'success' | 'failed', string> = {
+  success: 'bg-[#eaf2ff] text-[#3f74df]',
+  failed: 'bg-[#ffedf0] text-[#cc5163]',
 };
 
-function severityFromLog(log: AuditLog): 'Info' | 'Warning' | 'Critical' {
-  if (log.success === false || log.error_message) return 'Critical';
-  if ((log.actor_role || '').toLowerCase() === 'system') return 'Warning';
-  return 'Info';
+function outcomeKeyFromLog(log: AuditLog): 'success' | 'failed' {
+  if (log.success === false || log.error_message) return 'failed';
+  return 'success';
 }
 
 function formatTimestamp(value: string) {
@@ -48,111 +47,6 @@ function toIsoFromDate(value: string, endOfDay = false): string | undefined {
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
-type DropdownOption = { value: string; label: string };
-type DropdownGroup = { label: string; options: DropdownOption[] };
-
-const hiddenScrollbar = '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0';
-
-function CustomDropdown({
-  value,
-  onChange,
-  placeholder,
-  options,
-  groups,
-  disabled = false,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-  options?: DropdownOption[];
-  groups?: DropdownGroup[];
-  disabled?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const selectedLabel = useMemo(() => {
-    if (!value) return placeholder;
-    const flat = [...(options ?? []), ...(groups?.flatMap((group) => group.options) ?? [])];
-    return flat.find((option) => option.value === value)?.label ?? placeholder;
-  }, [groups, options, placeholder, value]);
-
-  return (
-    <div
-      className="relative"
-      onBlur={(event) => {
-        const next = event.relatedTarget as Node | null;
-        if (next && event.currentTarget.contains(next)) return;
-        setOpen(false);
-      }}
-    >
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => setOpen((current) => !current)}
-        className="flex w-full items-center justify-between gap-2 rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#2a3d5f] outline-none focus:border-[#7ea6e7] disabled:opacity-50"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        <span className="truncate text-left">{selectedLabel}</span>
-        <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-[#425f8f]" fill="none" aria-hidden="true">
-          <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-      {open ? (
-        <div
-          className={`absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-[#d4dced] bg-white p-1 shadow-[0_10px_30px_rgba(15,23,42,0.14)] ${hiddenScrollbar}`}
-          onWheel={(event) => {
-            const el = event.currentTarget;
-            const atTop = el.scrollTop <= 0;
-            const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-            if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) {
-              event.preventDefault();
-            }
-          }}
-        >
-          {(groups ?? []).map((group) => (
-            <div key={group.label} className="mb-1">
-              <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-black">{group.label}</p>
-              {group.options.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="option"
-                  aria-selected={value === option.value}
-                  className={`w-full rounded-lg px-2 py-1.5 text-left text-xs ${value === option.value ? 'bg-[#e9f1ff] text-[#10284F]' : 'text-[#2a3d5f] hover:bg-[#f4f7ff]'}`}
-                  onClick={() => {
-                    onChange(option.value);
-                    setOpen(false);
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          ))}
-          {(options ?? []).map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              role="option"
-              aria-selected={value === option.value}
-              className={`w-full rounded-lg px-2 py-1.5 text-left text-xs ${value === option.value ? 'bg-[#e9f1ff] text-[#10284F]' : 'text-[#2a3d5f] hover:bg-[#f4f7ff]'}`}
-              onClick={() => {
-                onChange(option.value);
-                setOpen(false);
-              }}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-      <svg viewBox="0 0 20 20" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-transparent" fill="none" aria-hidden="true">
-        <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </div>
-  );
-}
-
 export default function AdminAuditLogsPage() {
   const { locale } = useLocale();
   const t = (key: string) => translate(adminLogsMessages, locale, key);
@@ -171,6 +65,7 @@ export default function AdminAuditLogsPage() {
   const [orderDirection, setOrderDirection] = useState<'asc' | 'desc'>('desc');
   const [skip, setSkip] = useState(0);
   const [limit, setLimit] = useState(25);
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const currentPage = Math.floor(skip / limit) + 1;
@@ -221,7 +116,7 @@ export default function AdminAuditLogsPage() {
     }
 
     void load();
-  }, [query]);
+  }, [query, refreshNonce]);
 
   function exportCurrentRowsCsv() {
     if (!logs.length) {
@@ -264,10 +159,22 @@ export default function AdminAuditLogsPage() {
 
   return (
     <section className="space-y-4">
-      <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
-        <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>{t('hero.eyebrow')}</p>
-        <h1 className={ADMIN_PAGE_HERO_TITLE_CLASS}>{t('hero.title')}</h1>
-        <p className={ADMIN_PAGE_HERO_SUBTITLE_CLASS}>{t('hero.subtitle')}</p>
+      <header
+        className={`${ADMIN_PAGE_HERO_HEADER_CLASS} flex flex-wrap items-center justify-between gap-3`}
+      >
+        <div className="min-w-0">
+          <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>{t('hero.eyebrow')}</p>
+          <h1 className={ADMIN_PAGE_HERO_TITLE_CLASS}>{t('hero.title')}</h1>
+          <p className={ADMIN_PAGE_HERO_SUBTITLE_CLASS}>{t('hero.subtitle')}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setRefreshNonce((n) => n + 1)}
+          disabled={loading}
+          className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-[#dce8ff] hover:bg-[#223657] disabled:opacity-60"
+        >
+          {loading ? t('actions.refreshing') : t('actions.refresh')}
+        </button>
       </header>
 
       <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
@@ -402,7 +309,7 @@ export default function AdminAuditLogsPage() {
                 <th className="py-2 pr-4">{t('table.action')}</th>
                 <th className="py-2 pr-4">{t('table.target')}</th>
                 <th className="py-2 pr-4">{t('table.timestamp')}</th>
-                <th className="py-2">{t('table.severity')}</th>
+                <th className="py-2">{t('table.result')}</th>
               </tr>
             </thead>
             <tbody>
@@ -417,7 +324,7 @@ export default function AdminAuditLogsPage() {
                 </tr>
               ) : null}
               {logs.map((log) => {
-                const severity = severityFromLog(log);
+                const outcome = outcomeKeyFromLog(log);
                 const actor = log.actor_name || log.actor_email || (log.actor_role ? humanizeToken(log.actor_role) : 'Unknown');
                 const targetRaw = log.target_user_email || log.target_user_name || log.target_entity || log.target_id || '-';
                 const target = targetRaw.includes('@') ? targetRaw : humanizeToken(targetRaw);
@@ -428,7 +335,12 @@ export default function AdminAuditLogsPage() {
                   <td className="py-3 pr-4 text-[#5f7395]">{target}</td>
                   <td className="py-3 pr-4 text-[#5f7395]">{formatTimestamp(log.created_at)}</td>
                   <td className="py-3">
-                    <span className={`rounded-md px-2 py-1 text-xs font-semibold ${severityClass[severity]}`}>{t(`severity.${severity.toLowerCase()}`)}</span>
+                    <span
+                      className={`rounded-md px-2 py-1 text-xs font-semibold ${resultBadgeClass[outcome]}`}
+                      title={outcome === 'failed' && log.error_message ? log.error_message : undefined}
+                    >
+                      {t(`result.${outcome}`)}
+                    </span>
                   </td>
                 </tr>
               );

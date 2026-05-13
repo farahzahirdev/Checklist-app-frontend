@@ -18,6 +18,11 @@ export const adminUsersAccessMessages: TranslationMessages = {
     'tabs.rbac': 'Roles & permissions',
     'tabs.check': 'Permission check',
     'tabs.roleswitch': 'Role switch',
+    'roleswitch.reasonLabel': 'Reason for switching',
+    'roleswitch.reasonRequired': 'Required for audit logs.',
+    'roleswitch.durationLabel': 'Switch duration (minutes)',
+    'roleswitch.durationHint':
+      'How long your session stays in the selected role. You can return sooner with End switch.',
     'users.sectionTitle': 'Admin & auditor users',
     'users.sectionHint': 'Click a row to inspect and manage',
     'users.searchPlaceholder': 'Search email…',
@@ -57,6 +62,11 @@ export const adminUsersAccessMessages: TranslationMessages = {
     'tabs.rbac': 'Role & oprávnění',
     'tabs.check': 'Kontrola oprávnění',
     'tabs.roleswitch': 'Přepnutí role',
+    'roleswitch.reasonLabel': 'Důvod přepnutí',
+    'roleswitch.reasonRequired': 'Povinné pro auditní záznamy.',
+    'roleswitch.durationLabel': 'Délka přepnutí (minuty)',
+    'roleswitch.durationHint':
+      'Jak dlouho zůstane relace ve zvolené roli. Dříve se vrátíte pomocí Ukončit přepnutí.',
     'users.sectionTitle': 'Admin & auditor uživatelé',
     'users.sectionHint': 'Klikněte na řádek pro zobrazení detailu a správu',
     'users.searchPlaceholder': 'Hledat e-mail…',
