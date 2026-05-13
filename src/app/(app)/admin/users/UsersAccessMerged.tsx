@@ -887,11 +887,20 @@ export default function UsersAccessMerged() {
       if (response.temporary_token) {
         console.log('[onSwitchRole] Calling beginRoleSwitchSession with token:', response.temporary_token);
         beginRoleSwitchSession(response.temporary_token);
+        // Store flag before navigation to ensure it persists
+        if (typeof window !== 'undefined') {
+          console.log('[onSwitchRole] Verifying localStorage after beginRoleSwitchSession:', {
+            switchActiveFlag: window.localStorage.getItem('checklist_role_switch_active'),
+            currentToken: window.localStorage.getItem('checklist_access_token')?.substring(0, 20) + '...',
+          });
+        }
       }
       toast.success('Switched.');
       const sr = response.switched_to_role.toLowerCase();
-      router.push(sr === 'customer' ? '/dashboard' : '/admin');
-      router.refresh();
+      const targetPath = sr === 'customer' ? '/dashboard' : '/admin';
+      console.log('[onSwitchRole] Navigating to:', targetPath);
+      router.push(targetPath);
+      // Don't refresh - let the layout's auth event listener handle the state update
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed');
     } finally {

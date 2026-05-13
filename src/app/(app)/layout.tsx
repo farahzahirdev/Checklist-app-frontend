@@ -114,7 +114,11 @@ export default function AppLayout({
         const response = await getCurrentUser();
         if (cancelled) return;
         const roleSwitchActiveValue = isRoleSwitchSessionActive();
-        console.log('[Layout] checkAuth - roleSwitchActive:', roleSwitchActiveValue);
+        console.log('[Layout] checkAuth - roleSwitchActive:', roleSwitchActiveValue, 'role:', response.user.role, 'localStorage:', {
+          token: token.substring(0, 20) + '...',
+          switchActiveFlag: window.localStorage.getItem(ROLE_SWITCH_ACTIVE_STORAGE_KEY),
+          originalToken: window.localStorage.getItem('checklist_original_access_token')?.substring(0, 20) + '...'
+        });
         setRole(getRoleKey(response.user.role));
         setDisplayName(getUserDisplayName(response.user));
         setRoleSwitchActive(roleSwitchActiveValue);
