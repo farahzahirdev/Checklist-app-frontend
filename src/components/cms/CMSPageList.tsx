@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { Trash2, Edit, Eye, EyeOff, Search } from 'lucide-react';
 import {
   getAllPages,
@@ -19,6 +18,11 @@ import { translate, useLocale } from '@/lib/i18n';
 import { adminCmsMessages } from '@/locales/admin-cms';
 import { CustomDropdown } from '@/components/admin/CustomDropdown';
 import { applyStringFieldUpdates, flattenStringFields } from '@/lib/cms-section-string-fields';
+import {
+  ADMIN_PAGE_HERO_EYEBROW_CLASS,
+  ADMIN_PAGE_HERO_HEADER_CLASS,
+  ADMIN_PAGE_HERO_TITLE_CLASS,
+} from '@/app/(app)/admin/admin-page-title';
 
 interface PageListItem {
   id: string;
@@ -354,11 +358,17 @@ export function CMSPageList() {
   const dateFmt = locale === 'cs' ? 'cs-CZ' : 'en-US';
 
   const badgeTypesForGroup = (g: PageGroup): string[] => {
-    const types = new Set<string>();
+    const seen = new Set<string>();
+    const out: string[] = [];
     for (const p of [g.cs, g.en, ...g.other]) {
-      if (p) types.add(p.content_type);
+      if (!p) continue;
+      const raw = p.content_type;
+      const ct = typeof raw === 'string' ? raw.trim() : String(raw ?? '').trim();
+      if (!ct || seen.has(ct)) continue;
+      seen.add(ct);
+      out.push(ct);
     }
-    return [...types];
+    return out;
   };
 
   function LangColumn({
@@ -446,30 +456,23 @@ export function CMSPageList() {
     <div className="relative w-full min-w-0 text-[#182843]">
       <h2 className="sr-only">{t('translationList.srOnly')}</h2>
 
-      <div className="sticky top-0 z-10 -mx-4 border-b border-[#e2e8f5] bg-white px-4 pb-4 pt-1 md:-mx-5 md:px-5">
-        <div className="mb-4 flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-[22px] font-medium text-[#1f2d45]">{t('translationList.title')}</h1>
-            <div className="mt-1 flex flex-wrap gap-6 text-[13px] text-[#607594]">
-              <span>
-                <span className="mr-1 font-medium text-[#1f2d45]">{loading ? '—' : grouped.length}</span>
-                {t('translationList.statPages')}
-              </span>
-              <span>
-                <span className="mr-1 font-medium text-[#1f2d45]">{loading ? '—' : languageCount}</span>
-                {t('translationList.statLanguages')}
-              </span>
-            </div>
+      <div className="sticky top-0 z-10 -mx-4 space-y-3 bg-transparent px-4 pb-4 pt-1 md:-mx-5 md:px-5">
+        <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
+          <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>{t('list.heroEyebrow')}</p>
+          <h1 className={ADMIN_PAGE_HERO_TITLE_CLASS}>{t('translationList.title')}</h1>
+          <div className="mt-2 flex flex-wrap gap-6 text-sm text-[#c4d6f7]">
+            <span>
+              <span className="mr-1 font-semibold text-white">{loading ? '—' : grouped.length}</span>
+              {t('translationList.statPages')}
+            </span>
+            <span>
+              <span className="mr-1 font-semibold text-white">{loading ? '—' : languageCount}</span>
+              {t('translationList.statLanguages')}
+            </span>
           </div>
-          <Link
-            href="/admin/cms/new"
-            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#1f2d45] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
-          >
-            {t('translationList.newPage')}
-          </Link>
-        </div>
+        </header>
 
-        <div className="flex w-full flex-wrap items-center gap-3">
+        <div className="flex w-full flex-wrap items-center gap-3 rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm">
           <div className="relative min-w-[200px] flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#9aa8c4]" aria-hidden />
             <input
@@ -546,7 +549,7 @@ export function CMSPageList() {
                       </thead>
                       <tbody className="divide-y divide-[#eef2fa]">
                         {translationPaths.map((path) => (
-                          <tr key={path}>
+                          <tr key={`${sectionKey}-${path}`}>
                             <td className="align-top px-3 py-2 font-mono text-xs text-[#425f8f]">{path}</td>
                             <td className="px-3 py-2">
                               <textarea
@@ -600,9 +603,9 @@ export function CMSPageList() {
                   <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
                     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                       <code className="rounded bg-[#f1f4fb] px-2 py-1 font-mono text-[13px] text-[#425f8f]">{g.slug}</code>
-                      {types.map((ct) => (
+                      {types.map((ct, idx) => (
                         <span
-                          key={ct}
+                          key={`${g.slug}-content-type-${idx}-${ct}`}
                           className="inline-flex items-center gap-1 rounded-xl bg-[#f1f4fb] px-2 py-0.5 text-[11px] text-[#607594]"
                         >
                           {contentTypeLabel(locale, ct, t)}
