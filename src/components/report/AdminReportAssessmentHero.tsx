@@ -4,15 +4,17 @@ import type { ReactNode } from 'react';
 import { useId } from 'react';
 import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
 import { formatReportCalendarDate } from '@/lib/format-report';
+import { translate, useLocale, type Locale } from '@/lib/i18n';
+import { adminReportDetailMessages } from '@/locales/admin-report-detail';
 import type { ReportFindingItem, ReportResponse, ReportSectionOverview, ReportStatus, ReportSummaryItem } from '@/lib/reports';
 import { aggregateReportSectionOverviews } from '@/lib/reports';
 
-const STATUS_UI: Record<ReportStatus, { label: string; className: string }> = {
-  draft_generated: { label: 'Draft', className: 'bg-[#fff4df] text-[#b6862f]' },
-  under_review: { label: 'Under Review', className: 'bg-[#eaf2ff] text-[#3f74df]' },
-  changes_requested: { label: 'Changes Requested', className: 'bg-[#fff4df] text-[#b6862f]' },
-  approved: { label: 'Approved', className: 'bg-[#e9f8ef] text-[#2f9960]' },
-  published: { label: 'Published', className: 'bg-[#e9f8ef] text-[#2f9960]' },
+const STATUS_UI_CLASS: Record<ReportStatus, string> = {
+  draft_generated: 'bg-[#fff4df] text-[#b6862f]',
+  under_review: 'bg-[#eaf2ff] text-[#3f74df]',
+  changes_requested: 'bg-[#fff4df] text-[#b6862f]',
+  approved: 'bg-[#e9f8ef] text-[#2f9960]',
+  published: 'bg-[#e9f8ef] text-[#2f9960]',
 };
 
 function reportDisplayCode(report: ReportResponse): string {
@@ -20,7 +22,11 @@ function reportDisplayCode(report: ReportResponse): string {
   return c || report.id;
 }
 
-function summarySectionLabel(summary: ReportSummaryItem, overviews: ReportSectionOverview[]): string {
+function summarySectionLabel(
+  summary: ReportSummaryItem,
+  overviews: ReportSectionOverview[],
+  sectionFallback: string,
+): string {
   const sid = summary.section_id;
   if (sid) {
     const ov = overviews.find((o) => o.section_id === sid);
@@ -28,14 +34,14 @@ function summarySectionLabel(summary: ReportSummaryItem, overviews: ReportSectio
     if (t) return t;
   }
   const ch = summary.chapter_code?.trim();
-  return ch || 'Section';
+  return ch || sectionFallback;
 }
 
-function maturityLabelFromPct(pct: number): string {
-  if (pct >= 80) return 'Established';
-  if (pct >= 60) return 'Developing';
-  if (pct >= 40) return 'Emerging';
-  return 'Early';
+function maturityLabelFromPct(pct: number, locale: Locale): string {
+  if (pct >= 80) return translate(adminReportDetailMessages, locale, 'hero.maturity.established');
+  if (pct >= 60) return translate(adminReportDetailMessages, locale, 'hero.maturity.developing');
+  if (pct >= 40) return translate(adminReportDetailMessages, locale, 'hero.maturity.emerging');
+  return translate(adminReportDetailMessages, locale, 'hero.maturity.early');
 }
 
 function ShieldMark({ className }: { className?: string }) {
@@ -177,15 +183,23 @@ export function AdminReportAssessmentHero({
   findings: ReportFindingItem[];
   summaries: ReportSummaryItem[];
 }) {
+  const { locale } = useLocale();
+  const t = (key: string, values?: Record<string, string>) => translate(adminReportDetailMessages, locale, key, values);
+
   const overviews = [...(report.section_overviews ?? [])].sort((a, b) =>
     (a.section_code ?? a.chapter_code ?? '').localeCompare(b.section_code ?? b.chapter_code ?? ''),
   );
   const agg = aggregateReportSectionOverviews(overviews);
   const maturityPct = agg?.weightedPercentage ?? 0;
-  const maturityLabel = agg ? maturityLabelFromPct(maturityPct) : 'No score data';
+  const maturityLabel = agg
+    ? maturityLabelFromPct(maturityPct, locale)
+    : translate(adminReportDetailMessages, locale, 'hero.maturity.noData');
 
-  const statusUi = STATUS_UI[report.status];
-  const client = report.company_name?.trim() || '—';
+  const statusUi = {
+    label: translate(adminReportDetailMessages, locale, `hero.status.${report.status}`),
+    className: STATUS_UI_CLASS[report.status],
+  };
+  const client = report.company_name?.trim() || t('hero.emDash');
   const assessDate = formatReportCalendarDate(report.draft_generated_at);
   const reportCode = reportDisplayCode(report);
   const high = findings.filter((f) => f.priority === 'high').length;
@@ -193,7 +207,7 @@ export function AdminReportAssessmentHero({
   const low = findings.filter((f) => f.priority === 'low').length;
   const description = report.company_description?.trim() ?? '';
 
-  const summaryLabels = summaries.map((s) => summarySectionLabel(s, overviews));
+  const summaryLabels = summaries.map((s) => summarySectionLabel(s, overviews, t('maturity.fallbackSection')));
   const uniqueSummaryLabels = [...new Set(summaryLabels)];
 
   return (
@@ -219,8 +233,8 @@ export function AdminReportAssessmentHero({
             <AdminBreadcrumbs
               variant="onDark"
               items={[
-                { label: 'Dashboard', href: '/admin' },
-                { label: 'Reports', href: '/admin/reports' },
+                { label: t('hero.crumbs.dashboard'), href: '/admin' },
+                { label: t('hero.crumbs.reports'), href: '/admin/reports' },
                 { label: reportCode },
               ]}
             />
@@ -229,7 +243,7 @@ export function AdminReportAssessmentHero({
                 {statusUi.label}
               </span>
               <span className="rounded-full border border-[#60a5fa]/50 bg-[#1e3a8a]/60 px-2.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-[#bfdbfe] backdrop-blur-sm sm:px-3 sm:py-1 sm:text-[0.65rem] sm:tracking-[0.2em]">
-                Confidential
+                {t('hero.confidential')}
               </span>
             </div>
           </div>
@@ -238,19 +252,19 @@ export function AdminReportAssessmentHero({
             <div className="min-w-0 max-w-2xl flex-1">
               <div className="flex items-center gap-2">
                 <ShieldMark className="h-8 w-8 shrink-0 sm:h-9 sm:w-9" />
-                <span className="text-base font-semibold tracking-tight text-white sm:text-lg">Checklist KB</span>
+                <span className="text-base font-semibold tracking-tight text-white sm:text-lg">{t('hero.brand')}</span>
               </div>
               <p className="mt-2.5 text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-[#94b8f0] sm:tracking-[0.26em]">
-                Security assessment report
+                {t('hero.eyebrow')}
               </p>
               <h1 className="mt-1 text-2xl font-semibold leading-snug tracking-tight text-white sm:text-3xl md:text-[1.75rem]">
-                Security Assessment Report
+                {t('hero.title')}
               </h1>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#b8cce8] sm:text-[0.95rem]">
-                Clear insights. Confident next steps.
+                {t('hero.tagline')}
               </p>
-              {client !== '—' ? (
-                <p className="mt-1.5 max-w-xl text-sm text-[#c7d9f5] sm:text-base">Prepared for {client}.</p>
+              {client !== t('hero.emDash') ? (
+                <p className="mt-1.5 max-w-xl text-sm text-[#c7d9f5] sm:text-base">{t('hero.preparedFor', { client })}</p>
               ) : null}
             </div>
             <HeroShieldArt className="mx-auto shrink-0 xl:mx-0 xl:pr-2" />
@@ -258,15 +272,15 @@ export function AdminReportAssessmentHero({
 
           <dl className="mt-5 grid gap-3 border-t border-white/10 pt-4 sm:grid-cols-3 sm:gap-4">
             <div>
-              <dt className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-[#8fb0e6] sm:text-[0.65rem]">Client</dt>
+              <dt className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-[#8fb0e6] sm:text-[0.65rem]">{t('hero.client')}</dt>
               <dd className="mt-0.5 text-sm font-semibold text-white">{client}</dd>
             </div>
             <div>
-              <dt className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-[#8fb0e6] sm:text-[0.65rem]">Assessment date</dt>
+              <dt className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-[#8fb0e6] sm:text-[0.65rem]">{t('hero.assessmentDate')}</dt>
               <dd className="mt-0.5 text-sm font-semibold text-white">{assessDate}</dd>
             </div>
             <div>
-              <dt className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-[#8fb0e6] sm:text-[0.65rem]">Report ID</dt>
+              <dt className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-[#8fb0e6] sm:text-[0.65rem]">{t('hero.reportId')}</dt>
               <dd className="mt-0.5 font-mono text-sm font-semibold tracking-wide text-[#e0ecff] break-all">{reportCode}</dd>
             </div>
           </dl>
@@ -278,30 +292,29 @@ export function AdminReportAssessmentHero({
         <div className="grid gap-4 xl:grid-cols-12 xl:gap-5 xl:items-stretch">
           <div className="min-w-0 xl:col-span-5">
             <article className="h-full min-h-[10.5rem] rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] sm:p-6">
-              <h2 className="text-lg font-semibold text-[#0f172a]">Executive summary</h2>
+              <h2 className="text-lg font-semibold text-[#0f172a]">{t('hero.exec.title')}</h2>
               <div className="mt-4 space-y-3 text-sm leading-relaxed text-[#475569]">
                 {agg ? (
                   <p>
-                    This assessment reflects <span className="font-semibold text-[#0f172a]">{agg.totalQuestions}</span>{' '}
-                    scored control questions across your checklist sections. Overall maturity is assessed as{' '}
-                    <span className="font-semibold text-[#2563eb]">{maturityLabel}</span> (
-                    <span className="font-semibold text-[#0f172a]">{agg.weightedPercentage}%</span> weighted across
-                    sections). Workflow status:{' '}
-                    <span className="font-semibold text-[#0f172a]">{statusUi.label}</span>.
+                    {t('hero.exec.withAgg', {
+                      total: String(agg.totalQuestions),
+                      maturity: maturityLabel,
+                      weighted: String(agg.weightedPercentage),
+                      status: statusUi.label,
+                    })}
                   </p>
                 ) : (
-                  <p>
-                    Section score breakdown is not on this report yet. Workflow status:{' '}
-                    <span className="font-semibold text-[#0f172a]">{statusUi.label}</span>. Review findings below to
-                    continue the report cycle.
-                  </p>
+                  <p>{t('hero.exec.noAgg', { status: statusUi.label })}</p>
                 )}
                 <p>
-                  Recorded findings: <span className="font-semibold text-[#0f172a]">{findings.length}</span>
+                  {t('hero.exec.findingsCount')}{' '}
+                  <span className="font-semibold text-[#0f172a]">{findings.length}</span>
                   {report.findings_count !== findings.length ? (
-                    <span className="text-[#64748b]"> (report total: {report.findings_count})</span>
+                    <span className="text-[#64748b]">
+                      {t('hero.exec.reportTotal', { n: String(report.findings_count) })}
+                    </span>
                   ) : null}
-                  . Section summaries:{' '}
+                  . {t('hero.exec.summariesCount')}{' '}
                   <span className="font-semibold text-[#0f172a]">{summaries.length}</span>
                   {uniqueSummaryLabels.length ? (
                     <>
@@ -319,52 +332,58 @@ export function AdminReportAssessmentHero({
 
           <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:col-span-7 xl:grid-cols-4">
             <StatCard
-              title="Maturity score"
-              footer={<p className="text-xs text-[#64748b]">Trend vs last assessment when history is available.</p>}
+              title={t('hero.stat.maturity')}
+              footer={<p className="text-xs text-[#64748b]">{t('hero.stat.maturityFooter')}</p>}
             >
               {agg ? (
                 <AdminMaturityDonut percent={maturityPct} label={maturityLabel} />
               ) : (
-                <p className="text-sm text-[#64748b]">Add scored sections on the report to show maturity.</p>
+                <p className="text-sm text-[#64748b]">{t('hero.stat.maturityEmpty')}</p>
               )}
             </StatCard>
 
             <StatCard
-              title="Top priorities"
+              title={t('hero.stat.priorities')}
               footer={
                 findings.length > 0 ? (
-                  footerLink('#admin-report-findings', 'View findings →')
+                  footerLink('#admin-report-findings', t('hero.stat.viewFindings'))
                 ) : (
-                  <p className="text-xs text-[#64748b]">Findings appear here when the report lists them.</p>
+                  <p className="text-xs text-[#64748b]">{t('hero.stat.prioritiesEmpty')}</p>
                 )
               }
             >
               <ul className="space-y-2.5">
                 <li className="flex items-center justify-between gap-2 text-sm">
                   <span className="font-semibold text-[#0f172a]">{high}</span>
-                  <span className="rounded-md bg-[#fee2e2] px-2.5 py-0.5 text-xs font-semibold text-[#b91c1c]">High</span>
+                  <span className="rounded-md bg-[#fee2e2] px-2.5 py-0.5 text-xs font-semibold text-[#b91c1c]">
+                    {t('hero.priority.high')}
+                  </span>
                 </li>
                 <li className="flex items-center justify-between gap-2 text-sm">
                   <span className="font-semibold text-[#0f172a]">{medium}</span>
-                  <span className="rounded-md bg-[#ffedd5] px-2.5 py-0.5 text-xs font-semibold text-[#c2410c]">Medium</span>
+                  <span className="rounded-md bg-[#ffedd5] px-2.5 py-0.5 text-xs font-semibold text-[#c2410c]">
+                    {t('hero.priority.medium')}
+                  </span>
                 </li>
                 <li className="flex items-center justify-between gap-2 text-sm">
                   <span className="font-semibold text-[#0f172a]">{low}</span>
-                  <span className="rounded-md bg-[#dcfce7] px-2.5 py-0.5 text-xs font-semibold text-[#15803d]">Low</span>
+                  <span className="rounded-md bg-[#dcfce7] px-2.5 py-0.5 text-xs font-semibold text-[#15803d]">
+                    {t('hero.priority.low')}
+                  </span>
                 </li>
               </ul>
             </StatCard>
 
             <StatCard
-              title="Total questions"
-              footer={<p className="text-xs text-[#64748b]">Totals come from scored sections on this report.</p>}
+              title={t('hero.stat.questions')}
+              footer={<p className="text-xs text-[#64748b]">{t('hero.stat.questionsFooter')}</p>}
             >
               {agg && agg.totalQuestions > 0 ? (
                 <>
                   <p className="text-3xl font-bold tabular-nums tracking-tight text-[#0f172a]">{agg.totalQuestions}</p>
                   <ul className="mt-3 space-y-1.5 text-sm text-[#475569]">
                     <li className="flex justify-between gap-2">
-                      <span>Answered</span>
+                      <span>{t('hero.stat.answered')}</span>
                       <span className="font-semibold text-[#0f172a]">
                         {agg.answeredQuestions}{' '}
                         <span className="text-[#64748b]">
@@ -373,7 +392,7 @@ export function AdminReportAssessmentHero({
                       </span>
                     </li>
                     <li className="flex justify-between gap-2">
-                      <span>Partially / open</span>
+                      <span>{t('hero.stat.partial')}</span>
                       <span className="font-semibold text-[#0f172a]">
                         {Math.max(0, agg.totalQuestions - agg.answeredQuestions)}{' '}
                         <span className="text-[#64748b]">
@@ -388,24 +407,24 @@ export function AdminReportAssessmentHero({
                   </ul>
                 </>
               ) : (
-                <p className="text-sm text-[#64748b]">Question totals appear when the report includes section scores.</p>
+                <p className="text-sm text-[#64748b]">{t('hero.stat.questionsEmpty')}</p>
               )}
             </StatCard>
 
             <StatCard
-              title="Sections covered"
+              title={t('hero.stat.sections')}
               footer={
                 summaries.length > 0 ? (
-                  footerLink('#admin-section-summaries-detail', 'View section summaries →')
+                  footerLink('#admin-section-summaries-detail', t('hero.stat.viewSummaries'))
                 ) : (
-                  <p className="text-xs text-[#64748b]">Section summaries appear when the API returns rows for this report.</p>
+                  <p className="text-xs text-[#64748b]">{t('hero.stat.sectionsFooter')}</p>
                 )
               }
             >
               {summaries.length ? (
                 <ul className="space-y-2">
                   {summaries.slice(0, 8).map((s, idx) => {
-                    const label = summarySectionLabel(s, overviews);
+                    const label = summarySectionLabel(s, overviews, t('maturity.fallbackSection'));
                     const code = s.chapter_code?.trim();
                     const line = code && code !== label ? `${code} — ${label}` : label;
                     return (
@@ -427,7 +446,7 @@ export function AdminReportAssessmentHero({
                   })}
                 </ul>
               ) : (
-                <p className="text-sm text-[#64748b]">No section summaries for this report yet.</p>
+                <p className="text-sm text-[#64748b]">{t('hero.stat.sectionsEmpty')}</p>
               )}
             </StatCard>
           </div>

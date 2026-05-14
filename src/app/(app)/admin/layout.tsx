@@ -2,41 +2,24 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AUTH_STATE_CHANGED_EVENT, getCurrentUser, getRoleKey, getUserDisplayName, logoutAccount, persistAccessToken, type UserRoleKey } from '@/lib/auth';
 import { AdminAccessProvider } from '@/lib/admin-access';
+import { AdminLanguageSwitcher } from '@/components/admin-language-switcher';
 import { translate, useLocale } from '@/lib/i18n';
 import { adminMessages } from '@/locales/admin';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { locale, setLocale } = useLocale();
+  const { locale } = useLocale();
   const t = (key: string) => translate(adminMessages, locale, key);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [role, setRole] = useState<UserRoleKey | ''>('');
   const [roleLoaded, setRoleLoaded] = useState(false);
   const [displayName, setDisplayName] = useState('User');
-  const [langOpen, setLangOpen] = useState(false);
-  const langRef = useRef<HTMLDivElement | null>(null);
-
-  const localeLabel = useMemo(
-    () => translate(adminMessages, locale, `lang.${locale}`),
-    [locale],
-  );
-
-  useEffect(() => {
-    function handleDocPointerDown(event: PointerEvent) {
-      const target = event.target as Node | null;
-      if (target && langRef.current && !langRef.current.contains(target)) {
-        setLangOpen(false);
-      }
-    }
-    document.addEventListener('pointerdown', handleDocPointerDown);
-    return () => document.removeEventListener('pointerdown', handleDocPointerDown);
-  }, []);
 
   const navItems = [
     { href: '/admin', labelKey: 'nav.dashboard', icon: 'home' },
@@ -186,64 +169,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               );
             })}
             <div className="mt-2 lg:hidden">
-              <div className="relative" ref={langRef}>
-                <button
-                  type="button"
-                  onClick={() => setLangOpen((prev) => !prev)}
-                  aria-label={t('lang.label')}
-                  aria-haspopup="listbox"
-                  aria-expanded={langOpen}
-                  className="flex w-full items-center justify-between gap-2 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-[#dce8ff] hover:bg-[#223657]"
-                >
-                  <span>{localeLabel}</span>
-                  <svg
-                    viewBox="0 0 20 20"
-                    className={`h-4 w-4 text-[#b8c9e8] transition-transform duration-150 ${langOpen ? 'rotate-180' : ''}`}
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <path d="m6 8 4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-                {langOpen ? (
-                  <div
-                    role="listbox"
-                    aria-label={t('lang.label')}
-                    className="mt-2 w-full overflow-hidden rounded-xl border border-[#2d4f83] bg-[#0b1a39] shadow-[0_18px_40px_rgba(0,0,0,0.45)]"
-                  >
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={locale === 'cs'}
-                      onClick={() => {
-                        setLocale('cs');
-                        setLangOpen(false);
-                      }}
-                      className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm ${
-                        locale === 'cs' ? 'bg-[#17376d] text-white' : 'text-[#e8f0ff] hover:bg-[#173160]'
-                      }`}
-                    >
-                      <span>{t('lang.cs')}</span>
-                      {locale === 'cs' ? <span className="text-xs text-[#9ac3ff]">✓</span> : null}
-                    </button>
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={locale === 'en'}
-                      onClick={() => {
-                        setLocale('en');
-                        setLangOpen(false);
-                      }}
-                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
-                        locale === 'en' ? 'bg-[#17376d] text-white' : 'text-[#e8f0ff] hover:bg-[#173160]'
-                      }`}
-                    >
-                      <span>{t('lang.en')}</span>
-                      {locale === 'en' ? <span className="text-xs text-[#9ac3ff]">✓</span> : null}
-                    </button>
-                  </div>
-                ) : null}
-              </div>
+              <AdminLanguageSwitcher fullWidth />
             </div>
             <button
               type="button"
@@ -275,63 +201,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               </button>
             </div>
             <div className="flex items-center gap-3">
-              <div className="relative hidden lg:block" ref={langRef}>
-                <button
-                  type="button"
-                  onClick={() => setLangOpen((prev) => !prev)}
-                  aria-label={t('lang.label')}
-                  aria-haspopup="listbox"
-                  aria-expanded={langOpen}
-                  className="inline-flex min-w-[7.5rem] items-center justify-between gap-2 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-[#dce8ff] hover:bg-[#223657]"
-                >
-                  <span>{localeLabel}</span>
-                  <svg
-                    viewBox="0 0 20 20"
-                    className={`h-4 w-4 text-[#b8c9e8] transition-transform duration-150 ${langOpen ? 'rotate-180' : ''}`}
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <path d="m6 8 4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-                {langOpen ? (
-                  <div
-                    role="listbox"
-                    aria-label={t('lang.label')}
-                    className="absolute right-0 z-50 mt-2 min-w-[9rem] overflow-hidden rounded-xl border border-[#2d4f83] bg-[#0b1a39] shadow-[0_18px_40px_rgba(0,0,0,0.45)]"
-                  >
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={locale === 'cs'}
-                      onClick={() => {
-                        setLocale('cs');
-                        setLangOpen(false);
-                      }}
-                      className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm ${
-                        locale === 'cs' ? 'bg-[#17376d] text-white' : 'text-[#e8f0ff] hover:bg-[#173160]'
-                      }`}
-                    >
-                      <span>{t('lang.cs')}</span>
-                      {locale === 'cs' ? <span className="text-xs text-[#9ac3ff]">✓</span> : null}
-                    </button>
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={locale === 'en'}
-                      onClick={() => {
-                        setLocale('en');
-                        setLangOpen(false);
-                      }}
-                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
-                        locale === 'en' ? 'bg-[#17376d] text-white' : 'text-[#e8f0ff] hover:bg-[#173160]'
-                      }`}
-                    >
-                      <span>{t('lang.en')}</span>
-                      {locale === 'en' ? <span className="text-xs text-[#9ac3ff]">✓</span> : null}
-                    </button>
-                  </div>
-                ) : null}
+              <div className="hidden lg:block">
+                <AdminLanguageSwitcher align="right" />
               </div>
               <button
                 type="button"

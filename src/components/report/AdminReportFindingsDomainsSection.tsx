@@ -1,6 +1,8 @@
 'use client';
 
 import type { ReportFindingItem, ReportResponse, ReportSectionOverview, ReportSummaryItem } from '@/lib/reports';
+import { translate, useLocale } from '@/lib/i18n';
+import { adminReportDetailMessages } from '@/locales/admin-report-detail';
 
 type DomainIconName =
   | 'governance'
@@ -117,6 +119,7 @@ function RiskColumn({
   count,
   items,
   findingsLinkLabel,
+  emptyCategoryLabel,
 }: {
   variant: 'high' | 'medium' | 'low';
   label: string;
@@ -124,6 +127,7 @@ function RiskColumn({
   items: string[];
   /** Shown only when count > 0; scrolls to the findings list (not filtered by band). */
   findingsLinkLabel: string;
+  emptyCategoryLabel: string;
 }) {
   const border =
     variant === 'high'
@@ -162,7 +166,7 @@ function RiskColumn({
             {findingsLinkLabel}
           </a>
         ) : (
-          <p className="text-sm text-[#94a3b8]">No findings in this category.</p>
+          <p className="text-sm text-[#94a3b8]">{emptyCategoryLabel}</p>
         )}
       </div>
     </article>
@@ -192,25 +196,39 @@ function mergeSectionNarrative(section: ReportSectionOverview, summaries: Report
   return m || null;
 }
 
-function sectionCardBody(section: ReportSectionOverview, summaries: ReportSummaryItem[]): string {
+function sectionCardBody(
+  section: ReportSectionOverview,
+  summaries: ReportSummaryItem[],
+  t: (key: string, values?: Record<string, string>) => string,
+): string {
   const n = mergeSectionNarrative(section, summaries);
   if (n) return n;
   const q = section.question_count ?? 0;
   const aq = section.answered_question_count ?? 0;
-  return `Score ${section.score}/${section.max_score} (${Number(section.percentage).toFixed(1)}%). ${aq}/${q} questions with recorded answers in this section.`;
+  return t('findings.sectionCard.stats', {
+    score: String(section.score ?? ''),
+    max: String(section.max_score ?? ''),
+    pct: Number(section.percentage).toFixed(1),
+    aq: String(aq),
+    q: String(q),
+  });
 }
 
-function strengthsForSection(pct: number): string[] {
-  if (pct >= 70) return ['Section score is on track (≥70%).'];
+function strengthsForSection(pct: number, t: (key: string) => string): string[] {
+  if (pct >= 70) return [t('findings.strength.onTrack')];
   return [];
 }
 
-function needsForSection(pct: number, s: ReportSectionOverview): string[] {
+function needsForSection(
+  pct: number,
+  s: ReportSectionOverview,
+  t: (key: string, values?: Record<string, string>) => string,
+): string[] {
   const out: string[] = [];
-  if (pct < 70) out.push('Score below 70%; prioritize improvements here.');
+  if (pct < 70) out.push(t('findings.needs.below70'));
   const q = s.question_count ?? 0;
   const aq = s.answered_question_count ?? 0;
-  if (q > 0 && aq < q) out.push(`${q - aq} question(s) still open in this section.`);
+  if (q > 0 && aq < q) out.push(t('findings.needs.openQuestions', { n: String(q - aq) }));
   return out;
 }
 
@@ -223,6 +241,8 @@ export function AdminReportFindingsDomainsSection({
   findings: ReportFindingItem[];
   summaries: ReportSummaryItem[];
 }) {
+  const { locale } = useLocale();
+  const t = (key: string, values?: Record<string, string>) => translate(adminReportDetailMessages, locale, key, values);
   const sections = [...(report.section_overviews ?? [])].sort((a, b) =>
     (a.section_code ?? a.chapter_code ?? '').localeCompare(b.section_code ?? b.chapter_code ?? ''),
   );
@@ -248,39 +268,42 @@ export function AdminReportFindingsDomainsSection({
     <div className="min-w-0 space-y-10 rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6 md:p-8">
       <section aria-labelledby="top-findings-heading">
         <h2 id="top-findings-heading" className="text-xl font-semibold text-[#0f172a] sm:text-2xl">
-          Top findings
+          {t('findings.top.title')}
         </h2>
-        <p className="mt-1 text-sm text-[#64748b] sm:text-base">A closer look at your strongest and weakest areas.</p>
+        <p className="mt-1 text-sm text-[#64748b] sm:text-base">{t('findings.top.subtitle')}</p>
 
         <div className={`mt-6 grid min-w-0 gap-4 ${hasExcerpt ? 'xl:grid-cols-12' : ''}`}>
           <div className={`grid min-w-0 gap-4 sm:grid-cols-3 ${hasExcerpt ? 'xl:col-span-8' : ''}`}>
             <RiskColumn
               variant="high"
-              label="High risk"
+              label={t('findings.risk.high')}
               count={high.length}
               items={topFindingLines(findings, 'high')}
-              findingsLinkLabel="View findings list →"
+              findingsLinkLabel={t('findings.viewList')}
+              emptyCategoryLabel={t('findings.category.empty')}
             />
             <RiskColumn
               variant="medium"
-              label="Medium risk"
+              label={t('findings.risk.medium')}
               count={medium.length}
               items={topFindingLines(findings, 'medium')}
-              findingsLinkLabel="View findings list →"
+              findingsLinkLabel={t('findings.viewList')}
+              emptyCategoryLabel={t('findings.category.empty')}
             />
             <RiskColumn
               variant="low"
-              label="Low risk"
+              label={t('findings.risk.low')}
               count={low.length}
               items={topFindingLines(findings, 'low')}
-              findingsLinkLabel="View findings list →"
+              findingsLinkLabel={t('findings.viewList')}
+              emptyCategoryLabel={t('findings.category.empty')}
             />
           </div>
 
           {hasExcerpt ? (
             <aside className="flex min-w-0 xl:col-span-4">
               <div className="flex w-full flex-col rounded-2xl border border-[#dbe4f4] bg-[#f4f7fc] p-5 sm:p-6">
-                <p className="text-xs font-bold uppercase tracking-wide text-[#3e69b0]">Auditor&apos;s note</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-[#3e69b0]">{t('findings.auditorNote')}</p>
                 <div className="mt-3 flex items-start gap-3">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#3b82f6] text-white">
                     <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
@@ -290,7 +313,7 @@ export function AdminReportFindingsDomainsSection({
                   </div>
                   <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#334155]">{excerpt}</p>
                 </div>
-                <p className="mt-4 text-right text-sm font-semibold text-[#475569]">— Lead Auditor</p>
+                <p className="mt-4 text-right text-sm font-semibold text-[#475569]">{t('findings.leadAuditor')}</p>
               </div>
             </aside>
           ) : null}
@@ -299,20 +322,17 @@ export function AdminReportFindingsDomainsSection({
 
       <section aria-labelledby="domain-summaries-heading" className="border-t border-[#eef2f9] pt-10">
         <h2 id="domain-summaries-heading" className="text-xl font-semibold text-[#0f172a] sm:text-2xl">
-          Domain summaries
+          {t('findings.domainSummaries.title')}
         </h2>
-        <p className="mt-1 text-sm text-[#64748b] sm:text-base">
-          Each domain maps to a checklist section. Data from <code className="rounded bg-[#f1f5f9] px-1 text-xs">section_overviews</code> on
-          this report.
-        </p>
+        <p className="mt-1 text-sm text-[#64748b] sm:text-base">{t('findings.domainSummaries.subtitle')}</p>
 
         <div className="mt-6 grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {sections.length > 0 ? (
             sections.map((s, i) => {
               const pct = Math.round(Math.min(100, Math.max(0, Number(s.percentage) || 0)));
-              const title = (s.section_title ?? s.section_code ?? 'Section').trim();
-              const strengths = strengthsForSection(pct);
-              const needs = needsForSection(pct, s);
+              const title = (s.section_title ?? s.section_code ?? t('maturity.fallbackSection')).trim();
+              const strengths = strengthsForSection(pct, t);
+              const needs = needsForSection(pct, s, t);
               return (
                 <article
                   key={s.section_id}
@@ -325,13 +345,13 @@ export function AdminReportFindingsDomainsSection({
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-lg font-bold tabular-nums text-[#0f172a]">{pct}%</p>
-                      <p className="text-xs font-semibold text-[#64748b]">Score</p>
+                      <p className="text-xs font-semibold text-[#64748b]">{t('findings.scoreLabel')}</p>
                     </div>
                   </div>
-                  <p className="mt-3 flex-1 text-sm leading-relaxed text-[#475569]">{sectionCardBody(s, summaries)}</p>
+                  <p className="mt-3 flex-1 text-sm leading-relaxed text-[#475569]">{sectionCardBody(s, summaries, t)}</p>
                   <div className="mt-4 space-y-3 text-sm">
                     <div>
-                      <p className="font-bold text-[#0f172a]">Key strengths</p>
+                      <p className="font-bold text-[#0f172a]">{t('findings.keyStrengths')}</p>
                       {strengths.length ? (
                         <ul className="mt-1 list-inside list-disc text-[#475569]">
                           {strengths.map((x) => (
@@ -339,11 +359,11 @@ export function AdminReportFindingsDomainsSection({
                           ))}
                         </ul>
                       ) : (
-                        <p className="mt-1 text-[#94a3b8]">—</p>
+                        <p className="mt-1 text-[#94a3b8]">{t('maturity.dash')}</p>
                       )}
                     </div>
                     <div>
-                      <p className="font-bold text-[#0f172a]">Needs attention</p>
+                      <p className="font-bold text-[#0f172a]">{t('findings.needsAttention')}</p>
                       {needs.length ? (
                         <ul className="mt-1 list-inside list-disc text-[#475569]">
                           {needs.map((x) => (
@@ -351,13 +371,13 @@ export function AdminReportFindingsDomainsSection({
                           ))}
                         </ul>
                       ) : (
-                        <p className="mt-1 text-[#94a3b8]">—</p>
+                        <p className="mt-1 text-[#94a3b8]">{t('maturity.dash')}</p>
                       )}
                     </div>
                   </div>
                   <div className="mt-4 border-t border-[#e8edf5] pt-3">
                     <a href={assessmentHref} className="text-sm font-semibold text-[#2563eb] transition hover:text-[#1d4ed8]">
-                      Open assessment →
+                      {t('findings.openAssessment')}
                     </a>
                   </div>
                 </article>
@@ -371,25 +391,22 @@ export function AdminReportFindingsDomainsSection({
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <DomainIcon name={SUMMARY_ICON_CYCLE[i % SUMMARY_ICON_CYCLE.length]} />
-                  <h3 className="truncate text-base font-semibold text-[#0f172a]">{s.chapter_code?.trim() || 'Chapter'}</h3>
+                  <h3 className="truncate text-base font-semibold text-[#0f172a]">{s.chapter_code?.trim() || t('findings.fallbackChapter')}</h3>
                 </div>
                 <p className="mt-3 flex-1 text-sm leading-relaxed text-[#475569]">{s.summary_text}</p>
               </article>
             ))
           ) : (
             <article className="flex flex-col rounded-2xl border border-dashed border-[#cbd5e1] bg-[#f8fafc] p-5 sm:col-span-2 xl:col-span-4">
-              <h3 className="text-base font-semibold text-[#0f172a]">No section overview data</h3>
-              <p className="mt-2 text-sm text-[#64748b]">
-                When the report includes <code className="rounded bg-[#f1f5f9] px-1 text-xs">section_overviews</code>, domain cards and the
-                maturity table populate automatically.
-              </p>
+              <h3 className="text-base font-semibold text-[#0f172a]">{t('findings.noOverview.title')}</h3>
+              <p className="mt-2 text-sm text-[#64748b]">{t('findings.noOverview.body')}</p>
             </article>
           )}
         </div>
       </section>
 
       <footer className="flex flex-col gap-2 border-t border-[#e2e8f0] pt-5 text-xs text-[#64748b] sm:flex-row sm:items-center sm:justify-between sm:text-sm">
-        <p>This report is confidential and intended for internal use only.</p>
+        <p>{t('findings.footer.confidential')}</p>
         <p className="font-mono text-[#334155]">{reportCode}</p>
       </footer>
     </div>

@@ -3,15 +3,22 @@
 import Link from 'next/link';
 import type { Route } from 'next';
 import type { ReactNode } from 'react';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { CustomerReportDataResponse, CustomerReportDomainDatum, CustomerReportSummary } from '@/lib/reports';
 import { customerReportOverallPercentage, sectionScoreDisplayName } from '@/lib/reports';
-import { getSeverityColor, getSeverityLabel } from '@/components/report/report-dashboard';
+import { getSeverityColor, riskBandLabel } from '@/components/report/report-dashboard';
+import { translate, useLocale } from '@/lib/i18n';
+import { customerReportMessages } from '@/locales/customer-report';
+import {
+  ReportMaturitySectionSpiderChart,
+  buildMaturitySpiderSeries,
+  type MaturitySpiderSourceRow,
+} from '@/components/report/ReportMaturitySpiderChart';
 
-function formatReportDate(value: string | null | undefined) {
+function formatReportDate(value: string | null | undefined, dateLocale: string) {
   if (!value) return '—';
   const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString(undefined, { dateStyle: 'long' });
+  return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString(dateLocale, { dateStyle: 'long' });
 }
 
 function emailDomain(email: string) {
@@ -19,11 +26,14 @@ function emailDomain(email: string) {
   return i >= 0 ? email.slice(i + 1) : email;
 }
 
-function maturityWordFromPct(pct: number) {
-  if (pct >= 80) return 'Established';
-  if (pct >= 60) return 'Developing';
-  if (pct >= 40) return 'Emerging';
-  return 'Early';
+function maturityWordFromPct(
+  pct: number,
+  t: (key: string, values?: Record<string, string>) => string
+) {
+  if (pct >= 80) return t('exec.maturity.established');
+  if (pct >= 60) return t('exec.maturity.developing');
+  if (pct >= 40) return t('exec.maturity.emerging');
+  return t('exec.maturity.early');
 }
 
 function reportDisplayId(report: CustomerReportSummary) {
@@ -32,7 +42,11 @@ function reportDisplayId(report: CustomerReportSummary) {
   return `RPT-${report.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`;
 }
 
-function domainDatumLabel(d: CustomerReportDomainDatum, index: number): string {
+function domainDatumLabel(
+  d: CustomerReportDomainDatum,
+  index: number,
+  fallbackLabel: (n: number) => string
+): string {
   const raw =
     d.title ??
     d.domain ??
@@ -41,7 +55,7 @@ function domainDatumLabel(d: CustomerReportDomainDatum, index: number): string {
     d.chapter_title ??
     d.report_domain;
   const s = raw != null ? String(raw).trim() : '';
-  return s || `Domain ${index + 1}`;
+  return s || fallbackLabel(index + 1);
 }
 
 function domainDatumPct(d: CustomerReportDomainDatum): number {
@@ -126,12 +140,6 @@ function MaturityRing({ percent, label }: { percent: number; label: string }) {
   );
 }
 
-function shortLabel(text: string, max = 14) {
-  const t = text.trim();
-  if (t.length <= max) return t;
-  return `${t.slice(0, max - 1)}…`;
-}
-
 function readOptionalTargetPct(row: unknown): number | null {
   if (!row || typeof row !== 'object') return null;
   const o = row as Record<string, unknown>;
@@ -142,92 +150,6 @@ function readOptionalTargetPct(row: unknown): number | null {
     if (Number.isFinite(n)) return Math.min(100, Math.max(0, Math.round(n)));
   }
   return null;
-}
-
-function DynamicRadarChart({
-  labels,
-  values,
-  targetValues,
-}: {
-  labels: string[];
-  values: number[];
-  targetValues?: number[] | null;
-}) {
-  const cx = 150;
-  const cy = 150;
-  const rMax = 95;
-  const n = labels.length;
-  const toPoint = (value: number, i: number) => {
-    const angle = (-Math.PI / 2 + (2 * Math.PI * i) / n) as number;
-    const rad = rMax * (Math.min(100, Math.max(0, value)) / 100);
-    return [cx + rad * Math.cos(angle), cy + rad * Math.sin(angle)] as const;
-  };
-  const curPts = values.map((v, i) => toPoint(v, i));
-  const curPoly = curPts.map(([x, y]) => `${x},${y}`).join(' ');
-  const tgt =
-    Array.isArray(targetValues) && targetValues.length === n
-      ? targetValues.map((v, i) => toPoint(v, i))
-      : null;
-  const tgtPoly = tgt ? tgt.map(([x, y]) => `${x},${y}`).join(' ') : '';
-  const gridLevels = [25, 50, 75, 100];
-
-  return (
-    <div className="flex w-full max-w-[280px] flex-col items-center">
-    <svg viewBox="0 0 300 300" className="h-auto w-full max-w-[280px]" aria-label="Score overview by area">
-      {gridLevels.map((lvl) => {
-        const ring = labels.map((_, i) => {
-          const angle = (-Math.PI / 2 + (2 * Math.PI * i) / n) as number;
-          const rad = rMax * (lvl / 100);
-          return [cx + rad * Math.cos(angle), cy + rad * Math.sin(angle)] as const;
-        });
-        const d = `M ${ring.map(([x, y]) => `${x} ${y}`).join(' L ')} Z`;
-        return <path key={lvl} d={d} fill="none" stroke="#e2e8f0" strokeWidth="1" />;
-      })}
-      {labels.map((label, i) => {
-        const angle = (-Math.PI / 2 + (2 * Math.PI * i) / n) as number;
-        const x1 = cx + 28 * Math.cos(angle);
-        const y1 = cy + 28 * Math.sin(angle);
-        const x2 = cx + rMax * Math.cos(angle);
-        const y2 = cy + rMax * Math.sin(angle);
-        const tx = cx + (rMax + 18) * Math.cos(angle);
-        const ty = cy + (rMax + 18) * Math.sin(angle);
-        return (
-          <g key={`${label}-${i}`}>
-            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#e8edf5" strokeWidth="1" />
-            <text
-              x={tx}
-              y={ty}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              className="fill-[#64748b] text-[9px] font-medium"
-              style={{ fontSize: '9px' }}
-            >
-              {shortLabel(label, 12)}
-            </text>
-          </g>
-        );
-      })}
-      {tgt ? (
-        <polygon points={tgtPoly} fill="none" stroke="#22c55e" strokeWidth="2" strokeDasharray="6 4" opacity={0.88} />
-      ) : null}
-      <polygon points={curPoly} fill="rgba(0,102,255,0.12)" stroke="#0066ff" strokeWidth="2.5" strokeLinejoin="round" />
-    </svg>
-      <div className="mt-2 flex flex-wrap items-center justify-center gap-4 text-[0.65rem] font-semibold text-[#64748b]">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-4 rounded-sm bg-[#0066ff]/80" aria-hidden />
-          Current
-        </span>
-        {tgt ? (
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-0.5 w-4 border-t-2 border-dashed border-emerald-500" aria-hidden />
-            Target
-          </span>
-        ) : (
-          <span className="text-center text-[#94a3b8]">Target when API includes target scores</span>
-        )}
-      </div>
-    </div>
-  );
 }
 
 function RiskShield({ variant }: { variant: 'high' | 'medium' | 'low' }) {
@@ -252,23 +174,34 @@ export function CustomerReportExecutiveSection({
   data: CustomerReportDataResponse;
   report: CustomerReportSummary;
 }) {
+  const { locale } = useLocale();
+  const dateLocale = locale === 'cs' ? 'cs-CZ' : 'en-GB';
+  const t = useCallback(
+    (key: string, values?: Record<string, string>) => translate(customerReportMessages, locale, key, values),
+    [locale]
+  );
+
   const overallPct = customerReportOverallPercentage(data);
-  const maturityLabel = maturityWordFromPct(overallPct);
+  const maturityLabel = maturityWordFromPct(overallPct, t);
   const severity = getSeverityColor(overallPct);
 
   const companyName = data.company_name ?? report.company_name ?? data.customer_name;
   const companyWebsite = data.company_website ?? report.company_website;
 
   const workflowUi = useMemo(() => {
-    const map: Record<CustomerReportSummary['status'], { label: string; className: string }> = {
-      draft_generated: { label: 'Draft', className: 'bg-[#fff4df] text-[#b45309]' },
-      under_review: { label: 'Under review', className: 'bg-[#dbeafe] text-[#1d4ed8]' },
-      changes_requested: { label: 'Changes requested', className: 'bg-[#ffedd5] text-[#c2410c]' },
-      approved: { label: 'Approved', className: 'bg-[#dcfce7] text-[#15803d]' },
-      published: { label: 'Published', className: 'bg-[#dcfce7] text-[#15803d]' },
+    const map: Record<
+      CustomerReportSummary['status'],
+      { labelKey: string; className: string }
+    > = {
+      draft_generated: { labelKey: 'exec.workflow.draft_generated', className: 'bg-[#fff4df] text-[#b45309]' },
+      under_review: { labelKey: 'exec.workflow.under_review', className: 'bg-[#dbeafe] text-[#1d4ed8]' },
+      changes_requested: { labelKey: 'exec.workflow.changes_requested', className: 'bg-[#ffedd5] text-[#c2410c]' },
+      approved: { labelKey: 'exec.workflow.approved', className: 'bg-[#dcfce7] text-[#15803d]' },
+      published: { labelKey: 'exec.workflow.published', className: 'bg-[#dcfce7] text-[#15803d]' },
     };
-    return map[report.status];
-  }, [report.status]);
+    const cfg = map[report.status];
+    return { label: t(cfg.labelKey), className: cfg.className };
+  }, [report.status, t]);
 
   const priorityCounts = useMemo(() => {
     const high = data.findings.filter((f) => f.priority === 'high').length;
@@ -293,54 +226,56 @@ export function CustomerReportExecutiveSection({
     };
   }, [data.findings]);
 
-  const radarSeries = useMemo(() => {
-    const targetsFromRows = (rows: unknown[], n: number): number[] | null => {
-      const slice = rows.slice(0, n);
-      const mapped = slice.map((row) => readOptionalTargetPct(row));
-      if (mapped.length !== n || mapped.some((x) => x === null)) return null;
-      return mapped as number[];
-    };
-
-    const fromSections = data.section_scores.slice(0, 10).map((s) => ({
-      label: sectionScoreDisplayName(s),
-      pct: Math.round(s.percentage),
-    }));
-    if (fromSections.length >= 2) {
-      const labels = fromSections.map((x) => x.label);
-      const values = fromSections.map((x) => x.pct);
-      const targetValues = targetsFromRows(data.section_scores, labels.length);
-      return { labels, values, targetValues };
-    }
+  const maturitySpiderSourceRows = useMemo((): MaturitySpiderSourceRow[] => {
+    const fallback = (n: number) => t('exec.domainFallback', { n: String(n) });
     const dd = data.domain_data;
-    if (Array.isArray(dd) && dd.length >= 2) {
-      const rows = dd.slice(0, 10).map((d, i) => ({
-        label: domainDatumLabel(d, i),
-        pct: domainDatumPct(d),
+    if (Array.isArray(dd) && dd.length) {
+      return dd.slice(0, 10).map((d, i) => ({
+        section_title: domainDatumLabel(d, i, fallback),
+        section_code: typeof d.section_code === 'string' ? d.section_code : null,
+        chapter_code: typeof d.chapter_code === 'string' ? d.chapter_code : null,
+        percentage: domainDatumPct(d),
+        target_percentage: readOptionalTargetPct(d),
       }));
-      const labels = rows.map((x) => x.label);
-      const values = rows.map((x) => x.pct);
-      const targetValues = targetsFromRows(dd, labels.length);
-      return { labels, values, targetValues };
     }
-    const chapters = data.chapter_data.slice(0, 10).map((ch) => ({
-      label: ch.title,
-      pct: Math.round(ch.percentage),
+    const chapters = data.chapter_data;
+    if (chapters.length) {
+      return chapters.map((ch) => ({
+        section_title: ch.title,
+        section_code: null,
+        chapter_code: ch.chapter_code,
+        percentage: ch.percentage,
+        target_percentage: readOptionalTargetPct(ch),
+      }));
+    }
+    return data.section_scores.slice(0, 10).map((s) => ({
+      section_title: sectionScoreDisplayName(s),
+      section_code: s.section_code ?? null,
+      chapter_code: null,
+      percentage: s.percentage,
+      target_percentage: readOptionalTargetPct(s),
     }));
-    if (chapters.length >= 2) {
-      const labels = chapters.map((x) => x.label);
-      const values = chapters.map((x) => x.pct);
-      const targetValues = targetsFromRows(data.chapter_data, labels.length);
-      return { labels, values, targetValues };
-    }
-    return null;
-  }, [data.section_scores, data.domain_data, data.chapter_data]);
+  }, [data.domain_data, data.chapter_data, data.section_scores, t]);
+
+  const sortedMaturitySpiderRows = useMemo(() => {
+    return [...maturitySpiderSourceRows].sort((a, b) =>
+      (a.section_code ?? a.chapter_code ?? '').localeCompare(b.section_code ?? b.chapter_code ?? ''),
+    );
+  }, [maturitySpiderSourceRows]);
+
+  const maturitySpider = useMemo(() => {
+    const sectionFallback = t('exec.maturity.fallbackSection');
+    const hintOne = (shortLabelText: string) => t('exec.maturity.spider.hintOne', { label: shortLabelText });
+    const hintTwo = (l1: string, l2: string) => t('exec.maturity.spider.hintTwo', { l1, l2 });
+    return buildMaturitySpiderSeries(sortedMaturitySpiderRows, sectionFallback, hintOne, hintTwo);
+  }, [sortedMaturitySpiderRows, t]);
 
   const domainRows = useMemo(() => {
     const vs = '—' as const;
     const dd = data.domain_data;
     if (Array.isArray(dd) && dd.length) {
       return dd.slice(0, 12).map((d, i) => ({
-        title: domainDatumLabel(d, i),
+        title: domainDatumLabel(d, i, (n) => t('exec.domainFallback', { n: String(n) })),
         pct: domainDatumPct(d),
         vsLast: vs,
       }));
@@ -358,7 +293,7 @@ export function CustomerReportExecutiveSection({
       pct: Math.round(s.percentage),
       vsLast: vs,
     }));
-  }, [data.domain_data, data.chapter_data, data.section_scores]);
+  }, [data.domain_data, data.chapter_data, data.section_scores, t]);
 
   const frameworkBullets = useMemo(() => {
     if (data.chapter_data.length) {
@@ -368,18 +303,19 @@ export function CustomerReportExecutiveSection({
   }, [data.chapter_data, data.checklist_title]);
 
   const bannerBody = useMemo(() => {
-    const parts: string[] = [];
-    parts.push(
-      `This view reflects your results for ${data.checklist_title}. Overall maturity is about ${Math.round(overallPct)}% of the maximum checklist score.`,
-    );
-    parts.push(`Checklist completion is ${Math.round(data.completion_percentage)}%.`);
-    if (data.findings.length) {
-      parts.push(`The assessment recorded ${data.findings.length} finding${data.findings.length === 1 ? '' : 's'} for follow-up.`);
-    } else {
-      parts.push('No formal findings were recorded for this assessment.');
-    }
-    return parts.join(' ');
-  }, [data.checklist_title, data.completion_percentage, data.findings.length, overallPct]);
+    const intro = t('exec.banner.intro', {
+      checklist: data.checklist_title,
+      overallPct: String(Math.round(overallPct)),
+      completion: String(Math.round(data.completion_percentage)),
+    });
+    const findingsPart =
+      data.findings.length === 0
+        ? t('exec.banner.noFindings')
+        : data.findings.length === 1
+          ? t('exec.banner.findingsOne')
+          : t('exec.banner.findingsPlural', { n: String(data.findings.length) });
+    return `${intro} ${findingsPart}`;
+  }, [data.checklist_title, data.completion_percentage, data.findings.length, overallPct, t]);
 
   const questionBreakdown = useMemo(() => {
     /** Prefer explicit counts — `question_score_distribution` is score bands, not answered vs partial. */
@@ -412,9 +348,9 @@ export function CustomerReportExecutiveSection({
 
   const highlights = useMemo(() => {
     const labelFor = (tone: 'strong' | 'attention' | 'progress') => {
-      if (tone === 'strong') return 'Strong';
-      if (tone === 'attention') return 'Needs attention';
-      return 'Good progress';
+      if (tone === 'strong') return t('exec.highlight.strong');
+      if (tone === 'attention') return t('exec.highlight.attention');
+      return t('exec.highlight.progress');
     };
     const fromSummaries = data.section_summaries.slice(0, 3).map((s) => ({
       tone: 'progress' as const,
@@ -430,14 +366,20 @@ export function CustomerReportExecutiveSection({
       built.push({
         tone: 'strong',
         label: labelFor('strong'),
-        text: `${sectionScoreDisplayName(s)} is performing well (${Math.round(s.percentage)}%).`,
+        text: t('exec.highlight.performingWell', {
+          section: sectionScoreDisplayName(s),
+          pct: String(Math.round(s.percentage)),
+        }),
       });
     }
     for (const s of weak) {
       built.push({
         tone: 'attention',
         label: labelFor('attention'),
-        text: `${sectionScoreDisplayName(s)} may need attention (${Math.round(s.percentage)}%).`,
+        text: t('exec.highlight.needsAttention', {
+          section: sectionScoreDisplayName(s),
+          pct: String(Math.round(s.percentage)),
+        }),
       });
     }
     if (built.length) return built.slice(0, 3);
@@ -445,10 +387,10 @@ export function CustomerReportExecutiveSection({
       {
         tone: 'progress' as const,
         label: labelFor('progress'),
-        text: 'Review section scores and findings below for a full picture of control maturity.',
+        text: t('exec.highlight.fallback'),
       },
     ];
-  }, [data.section_summaries, data.section_scores]);
+  }, [data.section_summaries, data.section_scores, t]);
 
   const whatsNext = useMemo(() => {
     const fromSuggestions = data.public_suggestions
@@ -458,14 +400,14 @@ export function CustomerReportExecutiveSection({
     if (fromSuggestions.length) return fromSuggestions;
     const steps: string[] = [];
     if (data.findings.length) {
-      steps.push('Review prioritized findings with owners and agree remediation timelines.');
+      steps.push(t('exec.whatsNext.withFindings'));
     }
-    steps.push('Share this report with stakeholders responsible for the assessed controls.');
-    steps.push('Track improvements and plan a follow-up assessment when remediation work is done.');
+    steps.push(t('exec.whatsNext.share'));
+    steps.push(t('exec.whatsNext.track'));
     return steps;
-  }, [data.public_suggestions, data.findings.length]);
+  }, [data.public_suggestions, data.findings.length, t]);
 
-  const findingDomain = (f: (typeof data.findings)[0]) => f.report_domain?.trim() || 'General';
+  const findingDomainLabel = (f: (typeof data.findings)[0]) => f.report_domain?.trim() || t('exec.domain.general');
 
   const recommendationsHref = data.public_suggestions.length > 0 ? '#report-suggestions' : '#detailed-findings';
 
@@ -474,8 +416,8 @@ export function CustomerReportExecutiveSection({
       <div className="flex flex-col lg:flex-row lg:items-stretch">
         <aside className="flex w-full flex-col justify-between bg-[linear-gradient(180deg,#050f24_0%,#0a1a3d_55%,#0d2149_100%)] px-4 py-5 text-white sm:px-5 lg:max-w-[min(100%,260px)] lg:shrink-0 lg:border-r lg:border-white/10">
           <div>
-            <h1 className="text-xl font-semibold leading-tight tracking-tight sm:text-2xl">Executive summary</h1>
-            <p className="mt-1 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-[#8fb0e6]">Security report</p>
+            <h1 className="text-xl font-semibold leading-tight tracking-tight sm:text-2xl">{t('exec.aside.title')}</h1>
+            <p className="mt-1 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-[#8fb0e6]">{t('exec.aside.kicker')}</p>
 
             <dl className="mt-5 space-y-3.5 text-sm">
               <div className="flex gap-2.5">
@@ -486,7 +428,7 @@ export function CustomerReportExecutiveSection({
                   </svg>
                 </span>
                 <div className="min-w-0">
-                  <dt className="text-[0.6rem] font-semibold uppercase tracking-wide text-[#8fb0e6]">Company</dt>
+                  <dt className="text-[0.6rem] font-semibold uppercase tracking-wide text-[#8fb0e6]">{t('exec.aside.company')}</dt>
                   <dd className="mt-0.5 font-semibold text-white">{companyName}</dd>
                   <dd className="text-xs text-[#b8cce8]">
                     {companyWebsite ? (
@@ -519,8 +461,8 @@ export function CustomerReportExecutiveSection({
                   </svg>
                 </span>
                 <div>
-                  <dt className="text-[0.6rem] font-semibold uppercase tracking-wide text-[#8fb0e6]">Date</dt>
-                  <dd className="mt-0.5 font-semibold">{formatReportDate(data.assessment_date)}</dd>
+                  <dt className="text-[0.6rem] font-semibold uppercase tracking-wide text-[#8fb0e6]">{t('exec.aside.date')}</dt>
+                  <dd className="mt-0.5 font-semibold">{formatReportDate(data.assessment_date, dateLocale)}</dd>
                 </div>
               </div>
               <div className="flex gap-2.5">
@@ -531,7 +473,7 @@ export function CustomerReportExecutiveSection({
                   </svg>
                 </span>
                 <div className="min-w-0">
-                  <dt className="text-[0.6rem] font-semibold uppercase tracking-wide text-[#8fb0e6]">Report ID</dt>
+                  <dt className="text-[0.6rem] font-semibold uppercase tracking-wide text-[#8fb0e6]">{t('exec.aside.reportId')}</dt>
                   <dd className="mt-0.5 break-all font-mono text-xs font-semibold tracking-wide text-[#e0ecff]">
                     {reportDisplayId(report)}
                   </dd>
@@ -545,19 +487,19 @@ export function CustomerReportExecutiveSection({
               <path d="M12 3l8 4v5c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V7l8-4Z" strokeLinejoin="round" />
               <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <p>Confidential — internal use only.</p>
+            <p>{t('exec.aside.confidential')}</p>
           </div>
         </aside>
 
         <div className="min-w-0 flex-1 bg-[#f4f7fc] p-3 sm:p-4 md:p-5">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <Link href={'/reports' as Route} className="text-sm font-semibold text-[#0066ff] hover:underline">
-              ← Back to reports
+              {t('exec.backToReports')}
             </Link>
             <div className="flex flex-wrap items-center gap-2">
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${workflowUi.className}`}>{workflowUi.label}</span>
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${severity.badge}`}>
-                {getSeverityLabel(overallPct)}
+                {riskBandLabel(overallPct, t)}
               </span>
             </div>
           </div>
@@ -567,9 +509,7 @@ export function CustomerReportExecutiveSection({
               <ShieldLogo className="h-7 w-7" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-base font-bold leading-snug text-[#0f172a] sm:text-lg">
-                Your security. Clear insights. Confident next steps.
-              </h2>
+              <h2 className="text-base font-bold leading-snug text-[#0f172a] sm:text-lg">{t('exec.hero.title')}</h2>
               <p className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-[#64748b]">
                 {data.checklist_title}
               </p>
@@ -579,37 +519,37 @@ export function CustomerReportExecutiveSection({
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#64748b]">Maturity score</p>
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#64748b]">{t('exec.card.maturityScore')}</p>
               <MaturityRing percent={overallPct} label={maturityLabel} />
-              <p className="mt-2 text-center text-xs text-[#64748b]">Prior assessment comparison is not included in this report.</p>
+              <p className="mt-2 text-center text-xs text-[#64748b]">{t('exec.card.maturityNote')}</p>
               <p className="mt-1 text-center text-sm font-semibold text-[#334155]">
-                Checklist completion {Math.round(data.completion_percentage)}%
+                {t('exec.card.completionLine', { pct: String(Math.round(data.completion_percentage)) })}
               </p>
             </article>
             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#64748b]">Top priorities</p>
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#64748b]">{t('exec.card.topPriorities')}</p>
               <ul className="mt-3 space-y-2 text-sm">
                 <li className="flex justify-between font-semibold text-[#b91c1c]">
-                  <span>{priorityCounts.high}</span> High
+                  <span>{priorityCounts.high}</span> {t('exec.card.priority.high')}
                 </li>
                 <li className="flex justify-between font-semibold text-[#c2410c]">
-                  <span>{priorityCounts.medium}</span> Medium
+                  <span>{priorityCounts.medium}</span> {t('exec.card.priority.medium')}
                 </li>
                 <li className="flex justify-between font-semibold text-[#15803d]">
-                  <span>{priorityCounts.low}</span> Low
+                  <span>{priorityCounts.low}</span> {t('exec.card.priority.low')}
                 </li>
               </ul>
-              <JumpLink href="#detailed-findings">See details →</JumpLink>
+              <JumpLink href="#detailed-findings">{t('exec.jump.seeDetails')}</JumpLink>
             </article>
             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#64748b]">Total questions</p>
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#64748b]">{t('exec.card.totalQuestions')}</p>
               {questionBreakdown.mode === 'distribution' ? (
                 <>
-                  <p className="mt-2 text-xs font-semibold text-[#64748b]">Score distribution</p>
+                  <p className="mt-2 text-xs font-semibold text-[#64748b]">{t('exec.card.scoreDistribution')}</p>
                   <ul className="mt-2 space-y-1.5 text-sm text-[#475569]">
                     {questionBreakdown.dist.map((row, idx) => (
                       <li key={`${row.score}-${idx}`} className="flex justify-between">
-                        <span>Score {row.score}</span>
+                        <span>{t('exec.card.scoreRow', { score: String(row.score) })}</span>
                         <span className="font-semibold text-[#0f172a]">
                           {row.count}{' '}
                           <span className="font-normal text-[#64748b]">({Math.round(row.percentage)}%)</span>
@@ -623,14 +563,14 @@ export function CustomerReportExecutiveSection({
                   <p className="mt-2 text-3xl font-bold tabular-nums text-[#0f172a]">{questionBreakdown.total}</p>
                   <ul className="mt-3 space-y-1.5 text-sm text-[#475569]">
                     <li className="flex justify-between">
-                      <span>Answered</span>
+                      <span>{t('exec.card.answered')}</span>
                       <span className="font-semibold text-[#0f172a]">
                         {questionBreakdown.answered}{' '}
                         <span className="font-normal text-[#64748b]">({questionBreakdown.answeredPct}%)</span>
                       </span>
                     </li>
                     <li className="flex justify-between">
-                      <span>Unanswered</span>
+                      <span>{t('exec.card.unanswered')}</span>
                       <span className="font-semibold text-[#0f172a]">
                         {questionBreakdown.unanswered}{' '}
                         <span className="font-normal text-[#64748b]">({questionBreakdown.unansweredPct}%)</span>
@@ -641,13 +581,13 @@ export function CustomerReportExecutiveSection({
               ) : (
                 <>
                   <p className="mt-2 text-3xl font-bold tabular-nums text-[#0f172a]">{questionBreakdown.completion}%</p>
-                  <p className="mt-2 text-sm text-[#475569]">Checklist completion (per-question counts not provided for this report).</p>
+                  <p className="mt-2 text-sm text-[#475569]">{t('exec.card.completionOnlyNote')}</p>
                 </>
               )}
-              <JumpLink href="#detailed-findings">See details →</JumpLink>
+              <JumpLink href="#detailed-findings">{t('exec.jump.seeDetails')}</JumpLink>
             </article>
             <article id="framework-areas" className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5 scroll-mt-24">
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#64748b]">Standards covered</p>
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#64748b]">{t('exec.card.standardsCovered')}</p>
               <ul className="mt-3 space-y-2">
                 {frameworkBullets.map((title, idx) => (
                   <li key={`${title}-${idx}`} className="flex items-center gap-2 text-sm font-medium text-[#0f172a]">
@@ -662,11 +602,11 @@ export function CustomerReportExecutiveSection({
               </ul>
               {data.standard_covered_all != null ? (
                 <p className="mt-3 text-xs text-[#64748b]">
-                  <span className="font-semibold text-[#475569]">All standards covered:</span>{' '}
-                  {data.standard_covered_all ? 'Yes' : 'No'}
+                  <span className="font-semibold text-[#475569]">{t('exec.card.allStandards')}</span>{' '}
+                  {data.standard_covered_all ? t('exec.card.yes') : t('exec.card.no')}
                 </p>
               ) : null}
-              <JumpLink href="#maturity-overview">See mapping →</JumpLink>
+              <JumpLink href="#maturity-overview">{t('exec.jump.seeMapping')}</JumpLink>
             </article>
           </div>
         </div>
@@ -675,29 +615,32 @@ export function CustomerReportExecutiveSection({
       <div className="border-t border-[#dce5f2] bg-[#f4f7fc] px-3 py-4 sm:px-5 md:px-6">
         <div className="space-y-4">
           <article id="maturity-overview" className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5 scroll-mt-24">
-            <h3 className="text-lg font-semibold text-[#0f172a]">Maturity overview</h3>
-            <p className="mt-1 text-sm text-[#64748b]">
-              Current performance across assessment areas. “vs last” is shown only when a prior assessment exists in your data (otherwise —).
-            </p>
+            <h3 className="text-lg font-semibold text-[#0f172a]">{t('exec.maturity.title')}</h3>
+            <p className="mt-1 text-sm text-[#64748b]">{t('exec.maturity.subtitle')}</p>
             <div className="mt-4 flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-between">
-              {radarSeries ? (
-                <DynamicRadarChart
-                  labels={radarSeries.labels}
-                  values={radarSeries.values}
-                  targetValues={radarSeries.targetValues}
+              {maturitySpider ? (
+                <ReportMaturitySectionSpiderChart
+                  labels={maturitySpider.labels}
+                  values={maturitySpider.values}
+                  targetValues={maturitySpider.targetValues}
+                  areaHint={maturitySpider.areaHint}
+                  ariaLabel={t('exec.radar.aria')}
+                  legendCurrent={t('exec.radar.legendCurrent')}
+                  legendTarget={t('exec.radar.legendTarget')}
+                  legendTargetWhenApi={t('exec.radar.legendTargetHint')}
+                  currentStroke="#0066ff"
+                  currentFill="rgba(0,102,255,0.14)"
                 />
               ) : (
-                <p className="max-w-xs text-center text-sm text-[#64748b]">
-                  Add at least two scored areas (sections, chapters, or domains) to show a radar chart.
-                </p>
+                <p className="max-w-xs text-center text-sm text-[#64748b]">{t('exec.maturity.chartEmpty')}</p>
               )}
               <div className="w-full min-w-0 flex-1 overflow-x-auto">
                 <table className="w-full min-w-[280px] text-left text-sm">
                   <thead>
                     <tr className="border-b border-[#e8edf5] text-[0.65rem] font-semibold uppercase tracking-wide text-[#64748b]">
-                      <th className="pb-2 pr-2">Domain</th>
-                      <th className="pb-2 pr-2">Score</th>
-                      <th className="pb-2">vs last</th>
+                      <th className="pb-2 pr-2">{t('exec.maturity.col.domain')}</th>
+                      <th className="pb-2 pr-2">{t('exec.maturity.col.score')}</th>
+                      <th className="pb-2">{t('exec.maturity.col.vsLast')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -716,7 +659,7 @@ export function CustomerReportExecutiveSection({
                                 <span className="tabular-nums font-semibold text-[#0f172a]">{row.pct}%</span>
                               </div>
                             </td>
-                            <td className="py-2.5 text-xs font-semibold text-[#64748b]" title="No prior assessment in payload">
+                            <td className="py-2.5 text-xs font-semibold text-[#64748b]" title={t('exec.maturity.vsLastTitle')}>
                               {row.vsLast}
                             </td>
                           </tr>
@@ -725,7 +668,7 @@ export function CustomerReportExecutiveSection({
                     ) : (
                       <tr>
                         <td colSpan={3} className="py-4 text-sm text-[#64748b]">
-                          No domain or chapter breakdown in this report yet.
+                          {t('exec.maturity.noBreakdown')}
                         </td>
                       </tr>
                     )}
@@ -737,7 +680,7 @@ export function CustomerReportExecutiveSection({
 
           <div className="grid gap-4 md:grid-cols-3">
             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
-                <h3 className="text-base font-semibold text-[#0f172a]">Highlights</h3>
+                <h3 className="text-base font-semibold text-[#0f172a]">{t('exec.highlights.title')}</h3>
                 <ul className="mt-3 space-y-3 text-sm text-[#475569]">
                   {highlights.map((h, i) => (
                     <li key={`hl-${i}-${h.text.slice(0, 24)}`} className="flex gap-2">
@@ -751,35 +694,35 @@ export function CustomerReportExecutiveSection({
                     </li>
                   ))}
                 </ul>
-                <JumpLink href="#detailed-findings">See all findings →</JumpLink>
+                <JumpLink href="#detailed-findings">{t('exec.jump.allFindings')}</JumpLink>
             </article>
 
             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
-                <h3 className="text-base font-semibold text-[#0f172a]">Top priorities</h3>
+                <h3 className="text-base font-semibold text-[#0f172a]">{t('exec.topPriorities.title')}</h3>
                 <ul className="mt-3 space-y-3">
                   {data.findings
                     .filter((f) => f.priority === 'high')
                     .slice(0, 4)
                     .map((f, i) => (
                       <li key={`${f.question_text}-${i}`} className="rounded-xl border border-[#fee2e2] bg-[#fffafa] p-3">
-                        <span className="text-[0.65rem] font-bold uppercase tracking-wide text-[#b91c1c]">High</span>
+                        <span className="text-[0.65rem] font-bold uppercase tracking-wide text-[#b91c1c]">{t('exec.topPriorities.badgeHigh')}</span>
                         <p className="mt-1 text-sm font-semibold text-[#0f172a]">{f.question_text}</p>
                         <p className="mt-1 text-xs text-[#64748b]">
-                          H-{String(i + 1).padStart(2, '0')} · {findingDomain(f)}
+                          H-{String(i + 1).padStart(2, '0')} · {findingDomainLabel(f)}
                         </p>
                       </li>
                     ))}
                   {!data.findings.some((f) => f.priority === 'high') ? (
-                    <li className="text-sm text-[#64748b]">No high-priority findings recorded.</li>
+                    <li className="text-sm text-[#64748b]">{t('exec.topPriorities.noHigh')}</li>
                   ) : null}
                 </ul>
                 {data.findings.length > 0 ? (
-                  <JumpLink href="#detailed-findings">See all {data.findings.length} findings →</JumpLink>
+                  <JumpLink href="#detailed-findings">{t('exec.jump.seeAllCount', { n: String(data.findings.length) })}</JumpLink>
                 ) : null}
             </article>
 
             <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
-                <h3 className="text-base font-semibold text-[#0f172a]">What&apos;s next?</h3>
+                <h3 className="text-base font-semibold text-[#0f172a]">{t('exec.whatsNext.title')}</h3>
                 <ol className="mt-4 space-y-4">
                   {whatsNext.map((step, i) => (
                     <li key={`${step}-${i}`} className="flex gap-3">
@@ -794,16 +737,16 @@ export function CustomerReportExecutiveSection({
                   href={recommendationsHref}
                   className="mt-5 block w-full rounded-xl bg-[#0066ff] py-2.5 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-[#0052cc] scroll-mt-24"
                 >
-                  View recommendations
+                  {t('exec.whatsNext.cta')}
                 </a>
             </article>
           </div>
 
           <section className="mt-6" aria-labelledby="cust-top-findings">
             <h3 id="cust-top-findings" className="text-lg font-semibold text-[#0f172a]">
-              Top findings
+              {t('exec.topFindings.title')}
             </h3>
-            <p className="mt-1 text-sm text-[#64748b]">Highest-impact gaps and observations from this assessment.</p>
+            <p className="mt-1 text-sm text-[#64748b]">{t('exec.topFindings.subtitle')}</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <article className="rounded-2xl border border-red-200 bg-white p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-2">
@@ -819,10 +762,10 @@ export function CustomerReportExecutiveSection({
                       </li>
                     ))
                   ) : (
-                    <li className="text-sm text-[#64748b]">No high-priority findings.</li>
+                    <li className="text-sm text-[#64748b]">{t('exec.topFindings.noHigh')}</li>
                   )}
                 </ul>
-                <JumpLink href="#detailed-findings">View all high-risk findings →</JumpLink>
+                <JumpLink href="#detailed-findings">{t('exec.jump.viewAllHigh')}</JumpLink>
               </article>
               <article className="rounded-2xl border border-orange-200 bg-white p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-2">
@@ -838,10 +781,10 @@ export function CustomerReportExecutiveSection({
                       </li>
                     ))
                   ) : (
-                    <li className="text-sm text-[#64748b]">No medium-priority findings.</li>
+                    <li className="text-sm text-[#64748b]">{t('exec.topFindings.noMedium')}</li>
                   )}
                 </ul>
-                <JumpLink href="#detailed-findings">View all medium-risk findings →</JumpLink>
+                <JumpLink href="#detailed-findings">{t('exec.jump.viewAllMedium')}</JumpLink>
               </article>
               <article className="rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-2">
@@ -857,17 +800,17 @@ export function CustomerReportExecutiveSection({
                       </li>
                     ))
                   ) : (
-                    <li className="text-sm text-[#64748b]">No low-priority findings.</li>
+                    <li className="text-sm text-[#64748b]">{t('exec.topFindings.noLow')}</li>
                   )}
                 </ul>
-                <JumpLink href="#detailed-findings">View all low-risk findings →</JumpLink>
+                <JumpLink href="#detailed-findings">{t('exec.jump.viewAllLow')}</JumpLink>
               </article>
             </div>
           </section>
 
           <footer className="mt-8 flex flex-col gap-2 border-t border-[#dce5f2] pt-4 text-xs text-[#64748b] sm:flex-row sm:justify-between sm:text-sm">
-            <p>This report is confidential and intended for internal use only.</p>
-            <p className="tabular-nums">Report ref: {report.id.slice(0, 8)}…</p>
+            <p>{t('exec.footer.confidential')}</p>
+            <p className="tabular-nums">{t('exec.footer.ref', { id: report.id.slice(0, 8) })}</p>
           </footer>
         </div>
       </div>

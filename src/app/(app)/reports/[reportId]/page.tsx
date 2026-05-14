@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { CustomerReportExecutiveSection } from '@/components/report/CustomerReportExecutiveSection';
@@ -14,17 +14,24 @@ import {
   type CustomerReportDataResponse,
   type CustomerReportSummary,
 } from '@/lib/reports';
+import { translate, useLocale } from '@/lib/i18n';
+import { customerReportMessages } from '@/locales/customer-report';
 
 export default function CustomerReportPage() {
   const params = useParams();
   const reportId = params.reportId as string;
+  const { locale } = useLocale();
+  const t = useCallback(
+    (key: string, values?: Record<string, string>) => translate(customerReportMessages, locale, key, values),
+    [locale]
+  );
 
   const [report, setReport] = useState<CustomerReportSummary | null>(null);
   const [data, setData] = useState<CustomerReportDataResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  async function loadReport() {
+  const loadReport = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -35,17 +42,17 @@ export default function CustomerReportPage() {
       setReport(reportResponse);
       setData(reportData);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to load report';
+      const msg = err instanceof Error ? err.message : t('detail.errors.load');
       setError(msg);
       toast.error(msg);
     } finally {
       setLoading(false);
     }
-  }
+  }, [reportId, t]);
 
   useEffect(() => {
     void loadReport();
-  }, [reportId]);
+  }, [loadReport]);
 
   if (loading) {
     return (
@@ -67,10 +74,10 @@ export default function CustomerReportPage() {
     return (
       <section className="space-y-4">
         <div className="rounded-lg border border-[#f0c7cf] bg-[#fff2f4] px-3 py-2 text-sm text-[#b63d51]">
-          {error || 'Report not found'}
+          {error || t('detail.notFound')}
         </div>
         <Link href="/dashboard" className="text-sm font-semibold text-[#3e69b0] hover:underline">
-          Back to dashboard
+          {t('detail.backDashboard')}
         </Link>
       </section>
     );
@@ -86,7 +93,7 @@ export default function CustomerReportPage() {
 
       {!isPublished ? (
         <p className="rounded-xl border border-[#f2dfad] bg-[#fff9ea] px-4 py-3 text-sm text-[#835f12]">
-          This report is approved but not yet published. It will appear on the customer dashboard once the admin publishes it.
+          {t('detail.unpublished')}
         </p>
       ) : null}
 

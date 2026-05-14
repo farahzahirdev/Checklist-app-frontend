@@ -4,6 +4,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import type { CustomerReportDataResponse } from '@/lib/reports';
 import { downloadCustomerReportPdf } from '@/lib/reports';
+import { translate, useLocale } from '@/lib/i18n';
+import { customerReportMessages } from '@/locales/customer-report';
 
 type PreviewRow = {
   id: string;
@@ -18,19 +20,13 @@ type PreviewRow = {
 
 const PRIORITY_ORDER: Record<'high' | 'medium' | 'low', number> = { high: 0, medium: 1, low: 2 };
 
-const IMPACT_FOR_PRIORITY: Record<'high' | 'medium' | 'low', string> = {
-  high: 'High',
-  medium: 'Medium',
-  low: 'Low',
-};
-
-function toneText(t: 'high' | 'medium' | 'low') {
-  if (t === 'high') return 'font-semibold text-red-600';
-  if (t === 'medium') return 'font-semibold text-orange-600';
+function priorityRowToneClass(tone: 'high' | 'medium' | 'low') {
+  if (tone === 'high') return 'font-semibold text-red-600';
+  if (tone === 'medium') return 'font-semibold text-orange-600';
   return 'font-semibold text-emerald-600';
 }
 
-function ReportCoverMock({ title }: { title: string }) {
+function ReportCoverMock({ title, kicker, line1, line2 }: { title: string; kicker: string; line1: string; line2: string }) {
   return (
     <div
       className="relative mx-auto aspect-[3/4] w-full max-w-[140px] overflow-hidden rounded-lg shadow-lg ring-1 ring-black/10"
@@ -39,19 +35,15 @@ function ReportCoverMock({ title }: { title: string }) {
       <div className="absolute inset-0 bg-[linear-gradient(145deg,#0a1628_0%,#132a52_45%,#1e3a8a_100%)]" />
       <div className="absolute -right-6 top-0 h-3/4 w-2/3 rounded-full bg-[#3b82f6]/25 blur-2xl" />
       <div className="relative flex h-full flex-col justify-between p-3 text-white">
-        <div className="text-[0.5rem] font-semibold uppercase tracking-wider text-[#93c5fd]">Checklist KB</div>
+        <div className="text-[0.5rem] font-semibold uppercase tracking-wider text-[#93c5fd]">{kicker}</div>
         <div>
-          <p className="text-[0.55rem] font-bold uppercase leading-tight text-white/90">Security assessment</p>
-          <p className="text-[0.55rem] font-bold uppercase leading-tight text-white/90">Report</p>
+          <p className="text-[0.55rem] font-bold uppercase leading-tight text-white/90">{line1}</p>
+          <p className="text-[0.55rem] font-bold uppercase leading-tight text-white/90">{line2}</p>
           <p className="mt-1 text-[0.5rem] font-semibold leading-tight text-[#bfdbfe] line-clamp-3">{title}</p>
         </div>
       </div>
     </div>
   );
-}
-
-function findingDomain(f: CustomerReportDataResponse['findings'][0]) {
-  return f.report_domain?.trim() || 'General';
 }
 
 export function CustomerReportFindingsPreviewSection({
@@ -63,7 +55,16 @@ export function CustomerReportFindingsPreviewSection({
   reportId: string;
   canDownloadPdf: boolean;
 }) {
-  const [downloading, setDownloading] = useState(false);
+  const { locale } = useLocale();
+  const t = useCallback(
+    (key: string, values?: Record<string, string>) => translate(customerReportMessages, locale, key, values),
+    [locale]
+  );
+
+  const priorityLabel = useCallback(
+    (p: 'high' | 'medium' | 'low') => t(`preview.priority.${p}`),
+    [t]
+  );
 
   const rows = useMemo(() => {
     const sorted = [...data.findings].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
@@ -75,15 +76,27 @@ export function CustomerReportFindingsPreviewSection({
         id: `${prefix}-${String(idx + 1).padStart(2, '0')}`,
         idTone: tone,
         finding: f.question_text.length > 80 ? `${f.question_text.slice(0, 78)}…` : f.question_text,
-        domain: findingDomain(f),
-        risk: tone === 'high' ? 'High' : tone === 'medium' ? 'Medium' : 'Low',
+        domain: f.report_domain?.trim() || t('preview.domain.general'),
+        risk: priorityLabel(tone),
         riskTone: tone,
-        impact: IMPACT_FOR_PRIORITY[tone],
+        impact: priorityLabel(tone),
         recommendation: rec.length > 140 ? `${rec.slice(0, 138)}…` : rec || '—',
       };
     });
     return built;
-  }, [data.findings]);
+  }, [data.findings, t, priorityLabel]);
+
+  const pdfBullets = useMemo(
+    () => [
+      t('preview.pdf.bullet1'),
+      t('preview.pdf.bullet2'),
+      t('preview.pdf.bullet3'),
+      t('preview.pdf.bullet4'),
+    ],
+    [t]
+  );
+
+  const [downloading, setDownloading] = useState(false);
 
   const handleExportPdf = useCallback(async () => {
     if (!canDownloadPdf) return;
@@ -96,45 +109,43 @@ export function CustomerReportFindingsPreviewSection({
       a.download = `report-${reportId}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Download started');
+      toast.success(t('preview.pdf.toastStarted'));
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Download failed';
+      const msg = e instanceof Error ? e.message : t('preview.pdf.downloadFailed');
       toast.error(msg);
     } finally {
       setDownloading(false);
     }
-  }, [canDownloadPdf, reportId]);
+  }, [canDownloadPdf, reportId, t]);
 
   return (
     <div id="detailed-findings" className="scroll-mt-24">
       <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
         <div className="lg:col-span-8">
-          <h2 className="text-xl font-bold text-[#0f172a] sm:text-2xl">Detailed findings preview</h2>
-          <p className="mt-1 text-sm text-[#64748b] sm:text-base">
-            Representative findings from this assessment (up to 25 rows, sorted by severity).
-          </p>
+          <h2 className="text-xl font-bold text-[#0f172a] sm:text-2xl">{t('preview.title')}</h2>
+          <p className="mt-1 text-sm text-[#64748b] sm:text-base">{t('preview.subtitle')}</p>
 
           <div className="mt-4 overflow-hidden rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-[#e8edf5] bg-[#f8fafc] text-[0.65rem] font-semibold uppercase tracking-wide text-[#64748b]">
-                    <th className="whitespace-nowrap px-3 py-3 pl-4">ID</th>
-                    <th className="whitespace-nowrap px-3 py-3">Finding</th>
-                    <th className="whitespace-nowrap px-3 py-3">Domain</th>
-                    <th className="whitespace-nowrap px-3 py-3">Risk</th>
-                    <th className="whitespace-nowrap px-3 py-3">Impact</th>
-                    <th className="whitespace-nowrap px-3 py-3 pr-4">Recommendation</th>
+                    <th className="whitespace-nowrap px-3 py-3 pl-4">{t('preview.col.id')}</th>
+                    <th className="whitespace-nowrap px-3 py-3">{t('preview.col.finding')}</th>
+                    <th className="whitespace-nowrap px-3 py-3">{t('preview.col.domain')}</th>
+                    <th className="whitespace-nowrap px-3 py-3">{t('preview.col.risk')}</th>
+                    <th className="whitespace-nowrap px-3 py-3">{t('preview.col.impact')}</th>
+                    <th className="whitespace-nowrap px-3 py-3 pr-4">{t('preview.col.recommendation')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.length ? (
                     rows.map((row) => (
                       <tr key={row.id} className="border-b border-[#f1f5f9] last:border-0">
-                        <td className={`whitespace-nowrap px-3 py-3 pl-4 align-top ${toneText(row.idTone)}`}>{row.id}</td>
+                        <td className={`whitespace-nowrap px-3 py-3 pl-4 align-top ${priorityRowToneClass(row.idTone)}`}>{row.id}</td>
                         <td className="max-w-[200px] px-3 py-3 align-top font-medium text-[#0f172a]">{row.finding}</td>
                         <td className="whitespace-nowrap px-3 py-3 align-top text-[#475569]">{row.domain}</td>
-                        <td className={`whitespace-nowrap px-3 py-3 align-top ${toneText(row.riskTone)}`}>{row.risk}</td>
+                        <td className={`whitespace-nowrap px-3 py-3 align-top ${priorityRowToneClass(row.riskTone)}`}>{row.risk}</td>
                         <td className="whitespace-nowrap px-3 py-3 align-top text-[#334155]">{row.impact}</td>
                         <td className="px-3 py-3 pr-4 align-top text-[#475569]">{row.recommendation}</td>
                       </tr>
@@ -142,7 +153,7 @@ export function CustomerReportFindingsPreviewSection({
                   ) : (
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-sm text-[#64748b]">
-                        No findings recorded for this report.
+                        {t('preview.empty')}
                       </td>
                     </tr>
                   )}
@@ -154,12 +165,17 @@ export function CustomerReportFindingsPreviewSection({
 
         <aside className="lg:col-span-4">
           <div className="rounded-2xl border border-[#bfdbfe] bg-[#eff6ff] p-5 shadow-sm sm:p-6">
-            <h3 className="text-lg font-bold text-[#0f172a]">Includes full report (PDF)</h3>
+            <h3 className="text-lg font-bold text-[#0f172a]">{t('preview.pdf.title')}</h3>
             <div className="mt-5 flex justify-center">
-              <ReportCoverMock title={data.checklist_title} />
+              <ReportCoverMock
+                title={data.checklist_title}
+                kicker={t('preview.cover.kicker')}
+                line1={t('preview.cover.line1')}
+                line2={t('preview.cover.line2')}
+              />
             </div>
             <ul className="mt-5 space-y-2.5 text-sm text-[#334155]">
-              {['Detailed findings', 'Evidence references', 'Recommendations', 'Exportable data'].map((item) => (
+              {pdfBullets.map((item) => (
                 <li key={item} className="flex items-start gap-2">
                   <span className="mt-0.5 text-[#0066ff]" aria-hidden>
                     <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
@@ -175,12 +191,12 @@ export function CustomerReportFindingsPreviewSection({
               disabled={!canDownloadPdf || downloading}
               onClick={() => void handleExportPdf()}
               className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[#0066ff] bg-white py-2.5 text-sm font-semibold text-[#0066ff] shadow-sm transition hover:bg-[#f0f7ff] disabled:cursor-not-allowed disabled:opacity-60"
-              title={canDownloadPdf ? 'Download PDF' : 'PDF download is available when the report is published'}
+              title={canDownloadPdf ? t('preview.pdf.downloadTitle') : t('preview.pdf.waitTitle')}
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                 <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              {downloading ? 'Preparing…' : canDownloadPdf ? 'Export options' : 'Export when published'}
+              {downloading ? t('preview.pdf.preparing') : canDownloadPdf ? t('preview.pdf.exportOptions') : t('preview.pdf.exportWhenPublished')}
             </button>
           </div>
         </aside>

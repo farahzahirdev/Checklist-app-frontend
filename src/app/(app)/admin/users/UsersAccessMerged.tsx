@@ -2567,7 +2567,7 @@ export default function UsersAccessMerged() {
                     className={`rounded-[14px] border p-3 text-center text-slate-800 ${switchRole === 'auditor' ? 'border-[#10284F] bg-[#eef4ff]' : `${line} border bg-white hover:bg-slate-50`}`}
                   >
                     <p className="font-bold">Auditor</p>
-                    <p className={`text-[10px] ${muted}`}>Read-only admin</p>
+                    <p className={`text-[10px] ${muted}`}>{t('roleswitch.readOnlyAdmin')}</p>
                   </button>
                 </div>
                 <input className={inp} value={switchReason} onChange={(e) => setSwitchReason(e.target.value)} placeholder="Reason *" />
