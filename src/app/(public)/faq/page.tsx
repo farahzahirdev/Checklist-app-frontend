@@ -84,7 +84,7 @@ function FaqPageContent() {
                   >
                     <div className="min-h-0 overflow-hidden">
                       <div className="border-t border-gray-100 px-6 py-5">
-                        <p className="max-w-5xl text-gray-600">{faq.a}</p>
+                        <p className="text-gray-600">{faq.a}</p>
                       </div>
                     </div>
                   </div>

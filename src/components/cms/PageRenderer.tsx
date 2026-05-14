@@ -424,8 +424,8 @@ function FAQSectionRenderer({ data }: { data: Record<string, any> }) {
   const items = data.questions || data.items || [];
 
   return (
-    <section className="bg-[#f3f5fb] px-4 py-12 text-gray-600">
-      <div className="mx-auto max-w-3xl">
+    <section className="bg-[#f3f5fb] px-4 py-12 text-gray-600 sm:px-6 md:px-6">
+      <div className="mx-auto max-w-7xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         {(data.title || data.subtitle) && (
           <div className="mb-8 text-center">
             {data.title && <h2 className="public-section-title text-gray-700">{data.title}</h2>}
