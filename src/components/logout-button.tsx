@@ -14,14 +14,18 @@ export function LogoutButton() {
 
   async function handleLogout() {
     setLoading(true);
+    // Clear local token and navigate immediately to avoid any in-flight
+    // authenticated API calls using the old token. Call server logout
+    // in the background (best-effort).
     try {
-      await logoutAccount();
-    } catch {
-      // API logout is stateless; still clear client token.
-    } finally {
       persistAccessToken(null);
-      setLoading(false);
       router.push('/login');
+      // fire-and-forget server logout
+      void logoutAccount().catch(() => {
+        /* swallow errors - token already cleared locally */
+      });
+    } finally {
+      setLoading(false);
       router.refresh();
     }
   }

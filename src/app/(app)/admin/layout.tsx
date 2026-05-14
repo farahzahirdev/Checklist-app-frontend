@@ -88,15 +88,17 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   async function handleLogout() {
     setLogoutLoading(true);
+    // Clear local token and navigate first to ensure immediate sign-out UX.
     try {
-      await logoutAccount();
-    } catch {
-      // API logout may fail if token is already invalid.
-    } finally {
       persistAccessToken(null);
-      setLogoutLoading(false);
       setMobileNavOpen(false);
       router.push('/login');
+      // best-effort server logout without blocking navigation
+      void logoutAccount().catch(() => {
+        // ignore server logout errors
+      });
+    } finally {
+      setLogoutLoading(false);
       router.refresh();
     }
   }
