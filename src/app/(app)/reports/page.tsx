@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { getCustomerReports, type ReportResponse } from '@/lib/reports';
+import { getCustomerReports, type CustomerReportSummary } from '@/lib/reports';
 import { useLocale } from '@/lib/i18n';
 
-const statusLabels: Record<ReportResponse['status'], string> = {
+const statusLabels: Record<CustomerReportSummary['status'], string> = {
   draft_generated: 'Draft',
   under_review: 'Under Review',
   changes_requested: 'Changes Requested',
@@ -16,7 +16,7 @@ const statusLabels: Record<ReportResponse['status'], string> = {
 
 export default function ReportsPage() {
   const { locale } = useLocale();
-  const [reports, setReports] = useState<ReportResponse[]>([]);
+  const [reports, setReports] = useState<CustomerReportSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -63,7 +63,9 @@ export default function ReportsPage() {
             {reports.map((report) => (
               <li key={report.id} className="grid grid-cols-[1.1fr_0.9fr_auto] items-center gap-3 px-4 py-3">
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-[#1f2d45]">Assessment Report</p>
+                  <p className="truncate font-semibold text-[#1f2d45]">
+                    {report.company_name?.trim() || 'Assessment report'}
+                  </p>
                   <p className="mt-0.5 truncate text-xs text-[#607594]">
                     Approved {report.approved_at ? new Date(report.approved_at).toLocaleDateString() : 'recently'}
                     {' • '}

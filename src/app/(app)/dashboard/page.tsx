@@ -9,7 +9,7 @@ import {
   type CustomerDashboardSummary,
 } from '@/lib/dashboard';
 import { listCustomerAssessments, type CustomerAssessmentListItem } from '@/lib/customer-assessments';
-import { getCustomerReports, type ReportResponse } from '@/lib/reports';
+import { getCustomerReports, type CustomerReportSummary } from '@/lib/reports';
 import { formatStatusLabel } from '@/lib/status-format';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerDashboardMessages } from '@/locales/customer-dashboard';
@@ -20,7 +20,7 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState<CustomerDashboardSummary | null>(null);
   const [enhanced, setEnhanced] = useState<CustomerDashboardEnhanced | null>(null);
   const [assessments, setAssessments] = useState<CustomerAssessmentListItem[]>([]);
-  const [reports, setReports] = useState<ReportResponse[]>([]);
+  const [reports, setReports] = useState<CustomerReportSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [permissionBlocked, setPermissionBlocked] = useState(false);

@@ -1,10 +1,12 @@
 import { apiDelete, apiGetWithAuth, apiPost, apiPut } from '@/lib/api';
 
 export type AssessmentReviewStatus =
+  | 'pending'
   | 'pending_review'
   | 'in_progress'
   | 'completed'
   | 'changes_requested'
+  | 'rejected'
   | 'approved'
   | string;
 

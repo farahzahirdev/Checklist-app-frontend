@@ -1,7 +1,11 @@
 'use client';
 
 import { useMemo } from 'react';
-import { CustomerReportDataResponse } from '@/lib/reports';
+import {
+  CustomerReportDataResponse,
+  customerReportOverallPercentage,
+  sectionScoreDisplayName,
+} from '@/lib/reports';
 
 interface ReportDashboardProps {
   data: CustomerReportDataResponse;
@@ -102,13 +106,13 @@ function RiskAssessmentSummary({ sections, findings }: { sections: any[]; findin
       <article className="rounded-lg border border-[#fee2e2] bg-[#fef2f2] p-3">
         <p className="text-xs font-semibold uppercase text-[#7f1d1d]">High Risk Areas</p>
         <p className="mt-2 text-2xl font-bold text-[#dc2626]">{highRiskSections.length}</p>
-        <p className="mt-1 text-xs text-[#991b1b]">{highRiskSections.map((s) => s.section_name).join(', ') || 'None'}</p>
+        <p className="mt-1 text-xs text-[#991b1b]">{highRiskSections.map((s) => sectionScoreDisplayName(s)).join(', ') || 'None'}</p>
       </article>
 
       <article className="rounded-lg border border-[#fef3c7] bg-[#fffbeb] p-3">
         <p className="text-xs font-semibold uppercase text-[#78350f]">Medium Risk Areas</p>
         <p className="mt-2 text-2xl font-bold text-[#d97706]">{mediumRiskSections.length}</p>
-        <p className="mt-1 text-xs text-[#92400e]">{mediumRiskSections.map((s) => s.section_name).slice(0, 2).join(', ') || 'None'}</p>
+        <p className="mt-1 text-xs text-[#92400e]">{mediumRiskSections.map((s) => sectionScoreDisplayName(s)).slice(0, 2).join(', ') || 'None'}</p>
       </article>
 
       <article className="rounded-lg border border-[#fecaca] bg-[#fee2e2] p-3">
@@ -135,7 +139,7 @@ function ScoreBreakdown({ sections, chapters }: { sections: any[]; chapters: any
             return (
               <div key={section.section_id} className="rounded-lg border border-[#e2e8f5] bg-white p-3 shadow-sm">
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <h4 className="text-sm font-semibold text-[#243555]">{section.section_name}</h4>
+                  <h4 className="text-sm font-semibold text-[#243555]">{sectionScoreDisplayName(section)}</h4>
                   <span className={`text-sm font-bold ${severity.text}`}>{Math.round(section.percentage)}%</span>
                 </div>
                 <div className="h-2 rounded-full bg-[#e5e7eb] overflow-hidden">
@@ -186,7 +190,7 @@ function ScoreBreakdown({ sections, chapters }: { sections: any[]; chapters: any
 /**
  * Findings priority filter and display
  */
-function FindingsSection({ findings }: { findings: any[] }) {
+function FindingsSection({ findings, id }: { findings: any[]; id?: string }) {
   const findingsByPriority = useMemo(() => {
     return {
       high: findings.filter((f) => f.priority === 'high'),
@@ -207,7 +211,7 @@ function FindingsSection({ findings }: { findings: any[] }) {
   };
 
   return (
-    <section className="space-y-4">
+    <section id={id} className="space-y-4 scroll-mt-24">
       <h2 className="text-xl font-semibold text-[#243555]">Findings & Recommendations</h2>
 
       {/* Priority Summary */}
@@ -240,10 +244,11 @@ function FindingsSection({ findings }: { findings: any[] }) {
                     </div>
                     <p className="text-sm font-semibold text-[#243555] mt-1">{finding.question_text}</p>
                     <p className="mt-2 text-sm text-[#6a7d9a]">
-                      <span className="font-semibold">Answer:</span> {finding.answer}
+                      <span className="font-semibold">Answer:</span> {finding.answer?.trim() ? finding.answer : '—'}
                     </p>
                     <p className="mt-2 text-sm text-[#2b3e60]">
-                      <span className="font-semibold">Recommendation:</span> {finding.recommendation}
+                      <span className="font-semibold">Recommendation:</span>{' '}
+                      {finding.recommendation?.trim() ? finding.recommendation : '—'}
                     </p>
                   </div>
                 </div>
@@ -260,7 +265,7 @@ function FindingsSection({ findings }: { findings: any[] }) {
  * Main Report Dashboard Component
  */
 export function ReportDashboard({ data, reportId }: ReportDashboardProps) {
-  const overallPercentage = (data.overall_score / data.max_possible_score) * 100;
+  const overallPercentage = customerReportOverallPercentage(data);
 
   return (
     <div className="space-y-6">
@@ -305,7 +310,7 @@ export function ReportDashboard({ data, reportId }: ReportDashboardProps) {
       <ScoreBreakdown sections={data.section_scores} chapters={data.chapter_data} />
 
       {/* Findings */}
-      <FindingsSection findings={data.findings} />
+      <FindingsSection findings={data.findings} id="report-findings-dashboard" />
 
       {/* Admin Summaries */}
       {data.section_summaries.length > 0 && (
@@ -324,7 +329,7 @@ export function ReportDashboard({ data, reportId }: ReportDashboardProps) {
 
       {/* Public Suggestions */}
       {data.public_suggestions.length > 0 && (
-        <section className="space-y-3">
+        <section id="report-suggestions" className="space-y-3 scroll-mt-24">
           <h2 className="text-xl font-semibold text-[#243555]">Suggestions for Improvement</h2>
           <div className="space-y-3">
             {data.public_suggestions.map((suggestion, index) => (

@@ -23,10 +23,12 @@ import {
 import { adminAssessmentsMessages } from '@/locales/admin-assessments';
 
 const statusClass: Record<string, string> = {
+  pending: 'bg-[#fff4df] text-[#b6862f]',
   pending_review: 'bg-[#fff4df] text-[#b6862f]',
   in_progress: 'bg-[#eef4ff] text-[#3f74df]',
   completed: 'bg-[#e9f8ef] text-[#2f9960]',
   approved: 'bg-[#e9f8ef] text-[#2f9960]',
+  rejected: 'bg-[#ffedf0] text-[#cc5163]',
   changes_requested: 'bg-[#ffedf0] text-[#cc5163]',
 };
 
@@ -50,8 +52,10 @@ export default function AdminAssessmentsPage() {
   const t = (key: string) => translate(adminAssessmentsMessages, locale, key);
   const statusLabel = (status: string | null | undefined) => {
     if (!status) return t('status.unknown');
-    const exact = translate(adminAssessmentsMessages, locale, `status.${status}`);
-    return exact || formatStatusFallback(status) || t('status.unknown');
+    const key = `status.${status}`;
+    const exact = translate(adminAssessmentsMessages, locale, key);
+    if (exact !== key) return exact;
+    return formatStatusFallback(status) || t('status.unknown');
   };
   const [summary, setSummary] = useState<AssessmentReviewSummary | null>(null);
   const [rows, setRows] = useState<AssessmentReviewItem[]>([]);
@@ -171,11 +175,11 @@ export default function AdminAssessmentsPage() {
               className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#1f2d45] focus:bg-white"
             >
               <option className="bg-white text-[#1f2d45]" value="">{t('filters.allStatuses')}</option>
-              <option className="bg-white text-[#1f2d45]" value="pending_review">{t('status.pending_review')}</option>
+              <option className="bg-white text-[#1f2d45]" value="pending">{t('status.pending')}</option>
               <option className="bg-white text-[#1f2d45]" value="in_progress">{t('status.in_progress')}</option>
               <option className="bg-white text-[#1f2d45]" value="completed">{t('status.completed')}</option>
               <option className="bg-white text-[#1f2d45]" value="changes_requested">{t('status.changes_requested')}</option>
-              <option className="bg-white text-[#1f2d45]" value="approved">{t('status.approved')}</option>
+              <option className="bg-white text-[#1f2d45]" value="rejected">{t('status.rejected')}</option>
             </select>
             <select
               value={String(limit)}

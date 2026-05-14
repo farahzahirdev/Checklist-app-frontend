@@ -102,14 +102,14 @@ export function restoreOriginalAccessToken() {
 export type RegisterPayload = {
   email: string;
   password: string;
+  company_name: string;
+  company_industry: string;
+  company_size: string;
+  company_region: string;
   full_name?: string;
   username?: string;
-  company_name?: string;
   job_title?: string;
   department?: string;
-  company_industry?: string;
-  company_size?: string;
-  company_region?: string;
 };
 
 export async function registerAccount(payload: RegisterPayload) {
