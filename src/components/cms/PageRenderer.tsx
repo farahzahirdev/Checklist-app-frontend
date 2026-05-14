@@ -10,6 +10,35 @@ interface PageRendererProps {
   fallback: React.ReactNode;
 }
 
+/** Same button list shape as CTASectionRenderer (avoids duplicate blocks when CMS has two near-identical CTAs). */
+function ctaActionSignature(data: Record<string, any>): string {
+  const d = data || {};
+  const buttons: any[] =
+    Array.isArray(d.buttons) && d.buttons.length > 0
+      ? d.buttons
+      : d.button && typeof d.button === 'object'
+        ? [d.button]
+        : [];
+  const parts = buttons.map((b) => `${String(b.text ?? '')}|${String(b.url ?? '')}|${b.primary ? '1' : '0'}`);
+  return `${String(d.title ?? '')}\t${parts.join(';')}`;
+}
+
+function dedupeSequentialDuplicateCtas(sections: PageSection[]): PageSection[] {
+  const sorted = [...sections].sort((a, b) => a.order - b.order);
+  const out: PageSection[] = [];
+  for (const section of sorted) {
+    if (section.section_type === 'cta') {
+      const sig = ctaActionSignature(section.data || {});
+      const prev = out[out.length - 1];
+      if (prev?.section_type === 'cta' && ctaActionSignature(prev.data || {}) === sig) {
+        continue;
+      }
+    }
+    out.push(section);
+  }
+  return out;
+}
+
 /**
  * Renders a CMS page or fallback content
  * Maps section types to their corresponding display components
@@ -23,13 +52,13 @@ export function PageRenderer({ page, fallback }: PageRendererProps) {
     return <>{fallback}</>;
   }
 
+  const sections = dedupeSequentialDuplicateCtas(page.sections);
+
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
-      {page.sections
-        .sort((a, b) => a.order - b.order)
-        .map((section) => (
-          <SectionRenderer key={section.id} section={section} />
-        ))}
+      {sections.map((section) => (
+        <SectionRenderer key={section.id} section={section} />
+      ))}
       <PublicFooter />
     </main>
   );
@@ -392,12 +421,17 @@ function ProductSectionRenderer({ data }: { data: Record<string, any> }) {
 }
 
 function FAQSectionRenderer({ data }: { data: Record<string, any> }) {
-  const items = data.items || [];
+  const items = data.questions || data.items || [];
 
   return (
-    <section className="py-12 px-4 bg-gray-50">
-      <div className="max-w-3xl mx-auto">
-        {data.title && <h2 className="text-3xl font-bold mb-8 text-center">{data.title}</h2>}
+    <section className="bg-[#f3f5fb] px-4 py-12 text-gray-600">
+      <div className="mx-auto max-w-3xl">
+        {(data.title || data.subtitle) && (
+          <div className="mb-8 text-center">
+            {data.title && <h2 className="public-section-title text-gray-700">{data.title}</h2>}
+            {data.subtitle && <p className="mt-2 text-sm text-gray-500">{data.subtitle}</p>}
+          </div>
+        )}
         <div className="space-y-4">
           {items.map((item: any, idx: number) => (
             <FAQItem key={idx} question={item.question} answer={item.answer} />
@@ -412,17 +446,36 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = React.useState(false);
 
   return (
-    <details
-      className="border rounded-lg p-4 cursor-pointer"
-      open={open}
-      onClick={() => setOpen(!open)}
-    >
-      <summary className="font-medium flex justify-between items-center">
-        {question}
-        <span>{open ? '−' : '+'}</span>
-      </summary>
-      <p className="mt-3 text-gray-600">{answer}</p>
-    </details>
+    <article className="overflow-hidden rounded-xl border border-gray-200 bg-white text-gray-700 shadow-sm transition-shadow motion-safe:hover:shadow-sm">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-base font-semibold text-gray-700"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+      >
+        <span>{question}</span>
+        <span
+          className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm ${
+            open
+              ? 'border-gray-300 bg-gray-100 text-gray-600'
+              : 'border-gray-200 bg-gray-50 text-gray-500'
+          }`}
+        >
+          {open ? '−' : '+'}
+        </span>
+      </button>
+      <div
+        className={`grid transition-all duration-300 ease-out ${
+          open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="border-t border-gray-100 px-5 pb-4">
+            <p className="pt-4 leading-relaxed text-gray-600">{answer}</p>
+          </div>
+        </div>
+      </div>
+    </article>
   );
 }
 

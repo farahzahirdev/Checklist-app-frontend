@@ -20,7 +20,7 @@ const FAQ_KEYS = [
 function FaqPageContent() {
   const { locale } = useLocale();
   const t = (key: string) => translate(faqMessages, locale, key);
-  const [openIndex, setOpenIndex] = useState<number>(0);
+  const [openIndex, setOpenIndex] = useState<number>(-1);
 
   const faqs = FAQ_KEYS.map((item) => ({ q: t(item.q), a: t(item.a) }));
 
@@ -53,25 +53,25 @@ function FaqPageContent() {
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-6 md:py-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <div className="rounded-2xl border border-[#dce5f2] bg-[#edf2fa] p-5 transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-md sm:p-6">
-          <h2 className="public-section-title text-[#1a2440]">{t('section.title')}</h2>
-          <p className="mt-2 text-sm text-[#5e7293]">{t('section.subtitle')}</p>
+          <h2 className="public-section-title text-gray-700">{t('section.title')}</h2>
+          <p className="mt-2 text-sm text-gray-500">{t('section.subtitle')}</p>
           <div className="mt-6 space-y-4">
             {faqs.map((faq, index) => {
               const isOpen = openIndex === index;
               return (
-                <article key={faq.q} className="overflow-hidden rounded-xl border border-[#d7deeb] bg-white transition-shadow duration-300 motion-safe:hover:shadow-sm">
+                <article key={faq.q} className="overflow-hidden rounded-xl border border-gray-200 bg-white transition-shadow duration-300 motion-safe:hover:shadow-sm">
                   <button
                     type="button"
                     onClick={() => setOpenIndex((current) => (current === index ? -1 : index))}
                     className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
                     aria-expanded={isOpen}
                   >
-                    <h3 className="text-lg font-semibold text-[#1f2741]">{faq.q}</h3>
+                    <h3 className="text-lg font-semibold text-gray-700">{faq.q}</h3>
                     <span
                       className={`inline-flex h-7 w-7 items-center justify-center rounded-full border text-sm transition ${
                         isOpen
-                          ? 'border-[#3b7df0] bg-[#eaf1ff] text-[#2f6ee0]'
-                          : 'border-[#d7deeb] bg-[#f7f9ff] text-[#7a8ca8]'
+                          ? 'border-gray-300 bg-gray-100 text-gray-600'
+                          : 'border-gray-200 bg-gray-50 text-gray-500'
                       }`}
                     >
                       {isOpen ? '−' : '+'}
@@ -82,9 +82,9 @@ function FaqPageContent() {
                       isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
                     }`}
                   >
-                    <div className="overflow-hidden">
-                      <div className="border-t border-[#e6ecf7] px-6 py-5">
-                        <p className="max-w-5xl text-[#56617f]">{faq.a}</p>
+                    <div className="min-h-0 overflow-hidden">
+                      <div className="border-t border-gray-100 px-6 py-5">
+                        <p className="max-w-5xl text-gray-600">{faq.a}</p>
                       </div>
                     </div>
                   </div>

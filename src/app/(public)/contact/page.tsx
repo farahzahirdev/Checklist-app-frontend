@@ -129,41 +129,6 @@ function ContactPageContent() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:px-6 md:py-10 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
-        <div className="rounded-2xl border border-[#d7deeb] bg-white p-5 shadow-sm transition-shadow duration-300 motion-safe:animate-fade-in-up motion-safe:hover:shadow-md md:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-5">
-            <div className="flex items-center gap-4">
-              <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-[#d7deeb] bg-[#eef2ff] text-[#2f7dff]">
-                <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" aria-hidden="true">
-                  <path d="M12 2 4 5v6c0 5.3 3.4 9.6 8 11 4.6-1.4 8-5.7 8-11V5l-8-3Z" stroke="currentColor" strokeWidth="1.8" />
-                </svg>
-              </span>
-              <div>
-                <p className="text-2xl font-semibold text-[#1f2741] md:text-3xl">{t('bottom.title')}</p>
-                <p className="mt-1 text-base text-[#546684] md:text-lg">{t('bottom.subtitle')}</p>
-              </div>
-            </div>
-
-            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              <Link
-                href="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-7 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
-              >
-                {t('cta.getAccess')}
-                <ArrowRightIcon />
-              </Link>
-              <Link
-                href="/products/audit-readiness-checklist"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#cfd8ea] bg-white px-7 py-3 text-base font-semibold text-[#233553] transition-colors duration-200 hover:bg-[#f7f9ff] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
-              >
-                {t('cta.viewProducts')}
-                <ArrowRightIcon />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <PublicFooter />
     </main>
   );

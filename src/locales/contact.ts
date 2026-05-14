@@ -18,8 +18,6 @@ export const contactMessages: TranslationMessages = {
     'cta.subtitle': 'Get access to our tools and simplify your cybersecurity audit process.',
     'cta.getAccess': 'Get Access',
     'cta.viewProducts': 'View Products',
-    'bottom.title': 'Start your assessment today',
-    'bottom.subtitle': 'Sign up now and simplify your cybersecurity audit process.',
   },
   cs: {
     'hero.kicker': 'Kontaktujte nás',
@@ -39,7 +37,5 @@ export const contactMessages: TranslationMessages = {
     'cta.subtitle': 'Získejte přístup k našim nástrojům a zjednodušte audit kybernetické bezpečnosti.',
     'cta.getAccess': 'Získat přístup',
     'cta.viewProducts': 'Zobrazit produkty',
-    'bottom.title': 'Začněte s hodnocením ještě dnes',
-    'bottom.subtitle': 'Zaregistrujte se a zjednodušte audit kybernetické bezpečnosti.',
   },
 };
