@@ -9,7 +9,6 @@ import React, {
   useState,
 } from "react";
 import {
-  Trash2,
   Edit,
   Eye,
   EyeOff,
@@ -19,7 +18,6 @@ import {
 } from "lucide-react";
 import {
   getAllPages,
-  deletePage,
   togglePublishPage,
   getPageBySlug,
   updatePage,
@@ -154,8 +152,6 @@ export function CMSPageList() {
   const [draftCsTitle, setDraftCsTitle] = useState("");
   const [draftEnTitle, setDraftEnTitle] = useState("");
   const [savingTitles, setSavingTitles] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState<PageListItem | null>(null);
-  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const sectionAccordionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const loadPages = useCallback(async () => {
@@ -221,17 +217,6 @@ export function CMSPageList() {
       cancelled = true;
     };
   }, [slugFilter, loadSlugDetails]);
-
-  useEffect(() => {
-    if (!pendingDelete) return;
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setPendingDelete(null);
-      }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [pendingDelete]);
 
   const sectionPairs = useMemo(
     () => buildSectionPairs(detailCs, detailEn),
@@ -304,23 +289,6 @@ export function CMSPageList() {
     () => new Set(filteredPages.map((p) => p.language)).size,
     [filteredPages],
   );
-
-  const confirmDeletePage = async () => {
-    if (!pendingDelete) return;
-    setDeleteSubmitting(true);
-    try {
-      await deletePage(pendingDelete.id);
-      toast.success(t("toast.deleteSuccess"));
-      setPendingDelete(null);
-      void loadPages();
-      if (slugFilter === pendingDelete.slug) void loadSlugDetails(slugFilter);
-    } catch (error) {
-      toast.error(t("toast.deleteError"));
-      console.error(error);
-    } finally {
-      setDeleteSubmitting(false);
-    }
-  };
 
   const handleTogglePublish = async (pageId: string, currentStatus: string) => {
     try {
@@ -515,14 +483,6 @@ export function CMSPageList() {
             ) : (
               <Eye className="h-4 w-4" aria-hidden />
             )}
-          </button>
-          <button
-            type="button"
-            onClick={() => setPendingDelete(row)}
-            title={t("actions.delete")}
-            className="inline-flex rounded-md p-1.5 text-[#c44f5f] transition-colors hover:bg-[#fff1f3] hover:text-[#a73a46]"
-          >
-            <Trash2 className="h-4 w-4" aria-hidden />
           </button>
         </div>
       </div>
@@ -894,14 +854,6 @@ export function CMSPageList() {
                                 <Eye className="h-4 w-4" aria-hidden />
                               )}
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => setPendingDelete(row)}
-                              title={t("actions.delete")}
-                              className="inline-flex rounded-md p-1.5 text-[#c44f5f] transition-colors hover:bg-[#fff1f3]"
-                            >
-                              <Trash2 className="h-4 w-4" aria-hidden />
-                            </button>
                           </div>
                         </li>
                       ))}
@@ -913,50 +865,6 @@ export function CMSPageList() {
           </div>
         )}
       </div>
-
-      {pendingDelete ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4">
-          <div
-            className="w-full max-w-md rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="cms-delete-modal-title"
-          >
-            <h2
-              id="cms-delete-modal-title"
-              className="text-lg font-semibold text-[#1f2d45]"
-            >
-              {t("modal.delete.title")}
-            </h2>
-            <p className="mt-2 text-sm text-[#607594]">
-              {t("modal.delete.body", {
-                title: pendingDelete.title,
-                slug: pendingDelete.slug,
-              })}
-            </p>
-            <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setPendingDelete(null)}
-                disabled={deleteSubmitting}
-                className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-sm font-semibold text-[#3e69b0] hover:bg-[#edf4ff] disabled:opacity-60"
-              >
-                {t("modal.delete.cancel")}
-              </button>
-              <button
-                type="button"
-                onClick={() => void confirmDeletePage()}
-                disabled={deleteSubmitting}
-                className="rounded-lg border border-[#d45f6b] bg-[#fff1f3] px-3 py-1.5 text-sm font-semibold text-[#a73a46] hover:bg-[#ffe6ea] disabled:opacity-60"
-              >
-                {deleteSubmitting
-                  ? t("modal.delete.deleting")
-                  : t("modal.delete.confirm")}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

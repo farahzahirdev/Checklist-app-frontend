@@ -28,7 +28,7 @@ export const adminMessages: TranslationMessages = {
     'actions.openSidebar': 'Otevřít menu',
     'brand.name': 'AuditReady',
     'lang.label': 'Jazyk',
-    'lang.en': 'Angličtina',
+    'lang.en': 'English',
     'lang.cs': 'Čeština',
   },
 };

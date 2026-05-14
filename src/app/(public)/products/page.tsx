@@ -413,13 +413,8 @@ function ProductsPageWithCMS() {
     );
   }
 
-  // PageRenderer handles both CMS page and fallback content, wrapped with footer
-  return (
-    <>
-      <PageRenderer page={page} fallback={<ProductsPageContent />} />
-      <PublicFooter />
-    </>
-  );
+  // Footer: PageRenderer appends it for CMS pages; ProductsPageContent includes it for fallback.
+  return <PageRenderer page={page} fallback={<ProductsPageContent />} />;
 }
 
 export default ProductsPageWithCMS;
