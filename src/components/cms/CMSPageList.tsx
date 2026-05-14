@@ -605,7 +605,7 @@ export function CMSPageList() {
                             />
                           )}
                           <span className="min-w-0 flex-1">
-                            {pair.order + 1}. {sectionTypeLabel(pair.type, t)}
+                            {sectionTypeLabel(pair.type, t)}
                           </span>
                         </button>
                         {expanded ? (
