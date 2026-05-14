@@ -45,21 +45,21 @@ type ParsedHeaderOption = {
   columnName: string; // Actual column name for backend
 };
 
-const BULK_MAPPING_LABELS: Record<keyof BulkImportColumnMapping, string> = {
-  section_name_col: 'Section Name Column',
-  question_id_col: 'Parent Question ID Column',
-  child_question_col: 'Child Question ID Column',
-  grandchild_question_col: 'Grandchild Question ID Column',
-  legal_requirement_col: 'Legal Requirement Column',
-  question_text_col: 'Question Text Column',
-  severity_col: 'Severity Column',
-  explanation_col: 'Explanation Column',
-  expected_implementation_col: 'Expected Implementation Column',
-  source_ref_col: 'Source Reference Column',
-  guidance_score_4_col: 'Guidance Score 4 Column',
-  guidance_score_3_col: 'Guidance Score 3 Column',
-  guidance_score_2_col: 'Guidance Score 2 Column',
-  guidance_score_1_col: 'Guidance Score 1 Column',
+const BULK_COLUMN_I18N_KEY: Record<keyof BulkImportColumnMapping, string> = {
+  section_name_col: 'bulkImport.columns.sectionName',
+  question_id_col: 'bulkImport.columns.parentQuestionId',
+  child_question_col: 'bulkImport.columns.childQuestionId',
+  grandchild_question_col: 'bulkImport.columns.grandchildQuestionId',
+  legal_requirement_col: 'bulkImport.columns.legalRequirement',
+  question_text_col: 'bulkImport.columns.questionText',
+  severity_col: 'bulkImport.columns.severity',
+  explanation_col: 'bulkImport.columns.explanation',
+  expected_implementation_col: 'bulkImport.columns.expectedImplementation',
+  source_ref_col: 'bulkImport.columns.sourceRef',
+  guidance_score_4_col: 'bulkImport.columns.guidanceScore4',
+  guidance_score_3_col: 'bulkImport.columns.guidanceScore3',
+  guidance_score_2_col: 'bulkImport.columns.guidanceScore2',
+  guidance_score_1_col: 'bulkImport.columns.guidanceScore1',
 };
 
 const DEFAULT_BULK_IMPORT_MAPPING: BulkImportColumnMapping = {
@@ -93,7 +93,7 @@ export default function ChecklistPanelListPage() {
   const router = useRouter();
   const { isReadOnly } = useAdminAccess();
   const { locale } = useLocale();
-  const t = (key: string) => translate(adminChecklistsMessages, locale, key);
+  const t = (key: string, values?: Record<string, string>) => translate(adminChecklistsMessages, locale, key, values);
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | ChecklistStatus>('all');
@@ -339,7 +339,7 @@ export default function ChecklistPanelListPage() {
         setBulkImportMapping(spec.column_mapping_template);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load bulk template mapping');
+      toast.error(err instanceof Error ? err.message : t('bulkImport.toast.loadTemplateFailed'));
     } finally {
       setBulkLoading('');
     }
@@ -365,7 +365,7 @@ export default function ChecklistPanelListPage() {
       anchor.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to download template');
+      toast.error(err instanceof Error ? err.message : t('bulkImport.toast.downloadFailed'));
     } finally {
       setBulkLoading('');
     }
@@ -393,7 +393,7 @@ export default function ChecklistPanelListPage() {
 
   async function handleVerifyBulkImport() {
     if (!bulkImportFile) {
-      toast.error('Select an import file first.');
+      toast.error(t('bulkImport.toast.selectFileFirst'));
       return;
     }
     setBulkLoading('verify');
@@ -408,11 +408,11 @@ export default function ChecklistPanelListPage() {
       });
       setBulkVerifyResult(result);
       setBulkVerifiedSignature(result.is_valid ? currentBulkSignature : '');
-      toast.success('File verified.');
+      toast.success(t('bulkImport.toast.verified'));
     } catch (err) {
       setBulkVerifyResult(null);
       setBulkVerifiedSignature('');
-      toast.error(err instanceof Error ? err.message : 'Failed to verify import file');
+      toast.error(err instanceof Error ? err.message : t('bulkImport.toast.verifyFailed'));
     } finally {
       setBulkLoading('');
     }
@@ -420,19 +420,19 @@ export default function ChecklistPanelListPage() {
 
   async function handleCreateBulkChecklist() {
     if (!bulkImportFile) {
-      toast.error('Select an import file first.');
+      toast.error(t('bulkImport.toast.selectFileFirst'));
       return;
     }
     if (!canCreateFromFile) {
-      toast.error('Verify mapping successfully before creating checklist.');
+      toast.error(t('bulkImport.toast.verifyFirst'));
       return;
     }
     if (!bulkImportTitle.trim()) {
-      toast.error('Checklist title is required.');
+      toast.error(t('bulkImport.toast.titleRequired'));
       return;
     }
     if (!bulkImportDescription.trim()) {
-      toast.error('Law decree is required.');
+      toast.error(t('bulkImport.toast.lawDecreeRequired'));
       return;
     }
     setBulkLoading('create');
@@ -460,9 +460,9 @@ export default function ChecklistPanelListPage() {
         return [pendingTask, ...previous.filter((task) => task.task_id !== created.task_id)];
       });
       setIsBulkImportModalOpen(false);
-      toast.success('Import started. Task is queued.');
+      toast.success(t('bulkImport.toast.importStarted'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to start bulk import');
+      toast.error(err instanceof Error ? err.message : t('bulkImport.toast.createFailed'));
     } finally {
       setBulkLoading('');
     }
@@ -760,25 +760,28 @@ export default function ChecklistPanelListPage() {
               <div key={task.task_id} className="rounded-2xl border border-[#13305c] bg-[linear-gradient(140deg,#071733_0%,#0c2144_50%,#13356d_100%)] p-4 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9db8e6]">Import progress</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9db8e6]">{t('bulkImport.progress.title')}</p>
                     <p className="mt-1 text-sm font-semibold text-white">
                       {task.checklist_title && task.checklist_title !== 'Unknown'
                         ? task.checklist_title
-                        : 'Bulk checklist creation'}
+                        : t('bulkImport.progress.fallbackTitle')}
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <span className="rounded-md bg-[#e6f1fb] px-2 py-1 text-[11px] font-semibold text-[#185fa5]">
-                        Status: {task.status}
+                        {t('bulkImport.progress.status')} {task.status}
                       </span>
                     </div>
                     {task.detail ? (
                       <p className="mt-2 text-xs text-[#d8e6ff]">{task.detail}</p>
                     ) : (
-                      <p className="mt-2 text-xs text-[#9db8e6]">Task is pending execution.</p>
+                      <p className="mt-2 text-xs text-[#9db8e6]">{t('bulkImport.progress.pendingDetail')}</p>
                     )}
                     {task.result?.status?.toLowerCase() === 'success' ? (
                       <p className="mt-2 text-xs font-medium text-[#9bf5be]">
-                        Checklist created: {task.result.checklist_title} ({task.result.total_rows_processed} rows)
+                        {t('bulkImport.progress.success', {
+                          title: task.result.checklist_title,
+                          rows: String(task.result.total_rows_processed),
+                        })}
                       </p>
                     ) : null}
                   </div>
@@ -925,8 +928,8 @@ export default function ChecklistPanelListPage() {
             <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-[#1f2d45]">Bulk checklist import</h2>
-                  <p className="mt-1 text-sm text-[#607594]">Upload CSV/Excel, verify mappings, then create checklist in background.</p>
+                  <h2 className="text-lg font-semibold text-[#1f2d45]">{t('bulkImport.title')}</h2>
+                  <p className="mt-1 text-sm text-[#607594]">{t('bulkImport.subtitle')}</p>
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
                   <button
@@ -935,32 +938,32 @@ export default function ChecklistPanelListPage() {
                     disabled={bulkLoading === 'verify' || bulkLoading === 'create'}
                     className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-sm font-semibold text-[#5f7395] hover:bg-[#f3f5fb] disabled:opacity-50"
                   >
-                    Clear Data
+                    {t('bulkImport.clearData')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsBulkImportModalOpen(false)}
                     className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-sm font-semibold text-[#3e69b0] hover:bg-[#edf4ff]"
                   >
-                    Close
+                    {t('bulkImport.close')}
                   </button>
                 </div>
               </div>
 
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <label className="block space-y-2 text-sm text-[#3b4d6c]">
-                  <span className="font-medium">Checklist title *</span>
+                  <span className="font-medium">{t('bulkImport.checklistTitle')}</span>
                   <input
                     value={bulkImportTitle}
                     onChange={(event) => setBulkImportTitle(event.target.value)}
                     className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2"
-                    placeholder="Imported checklist title"
+                    placeholder={t('bulkImport.titlePlaceholder')}
                   />
                 </label>
               </div>
 
               <label className="mt-3 block space-y-2 text-sm text-[#3b4d6c]">
-                <span className="font-medium">Law decree *</span>
+                <span className="font-medium">{t('bulkImport.lawDecree')}</span>
                 <textarea
                   value={bulkImportDescription}
                   onChange={(event) => setBulkImportDescription(event.target.value)}
@@ -975,7 +978,7 @@ export default function ChecklistPanelListPage() {
                   disabled={bulkLoading === 'download'}
                   className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#2a3d5f] hover:bg-[#edf4ff] disabled:opacity-60"
                 >
-                  Download CSV template
+                  {t('bulkImport.downloadCsv')}
                 </button>
                 <button
                   type="button"
@@ -983,10 +986,10 @@ export default function ChecklistPanelListPage() {
                   disabled={bulkLoading === 'download'}
                   className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#2a3d5f] hover:bg-[#edf4ff] disabled:opacity-60"
                 >
-                  Download Excel template
+                  {t('bulkImport.downloadExcel')}
                 </button>
                 <label className="flex cursor-pointer items-center justify-center rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white hover:bg-[#223657]">
-                  Select file
+                  {t('bulkImport.selectFile')}
                   <input
                     ref={bulkImportFileInputRef}
                     type="file"
@@ -1021,20 +1024,21 @@ export default function ChecklistPanelListPage() {
 
               {bulkImportFile ? (
                 <p className="mt-2 text-xs text-[#5f7395]">
-                  File: <span className="font-semibold text-[#25375a]">{bulkImportFile.name}</span>
+                  {t('bulkImport.filePrefix')}{' '}
+                  <span className="font-semibold text-[#25375a]">{bulkImportFile.name}</span>
                 </p>
               ) : null}
               {bulkHeaderPreviewRows.length ? (
                 <div className="mt-2 rounded-xl border border-[#dbe4f4] bg-[#f8fbff] p-3">
-                  <p className="text-xs font-semibold text-[#3b4d6c]">Detected header rows preview</p>
+                  <p className="text-xs font-semibold text-[#3b4d6c]">{t('bulkImport.headerPreviewTitle')}</p>
                   <div className="mt-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                     <table className="min-w-full border-collapse text-xs">
                       <thead>
                         <tr className="bg-[#eef3fb] text-left text-[#4a6187]">
-                          <th className="border border-[#dbe4f4] px-2 py-1">Row</th>
+                          <th className="border border-[#dbe4f4] px-2 py-1">{t('bulkImport.table.row')}</th>
                           {bulkHeaderPreviewRows[0].map((_, colIndex) => (
                             <th key={`col-${colIndex}`} className="border border-[#dbe4f4] px-2 py-1">
-                              Column {colIndex + 1}
+                              {t('bulkImport.table.columnN', { n: String(colIndex + 1) })}
                             </th>
                           ))}
                         </tr>
@@ -1042,7 +1046,9 @@ export default function ChecklistPanelListPage() {
                       <tbody>
                         {bulkHeaderPreviewRows.map((row, rowIndex) => (
                           <tr key={`header-row-${rowIndex}`} className="text-[#334866]">
-                            <td className="border border-[#dbe4f4] px-2 py-1">Header row {rowIndex + 1}</td>
+                            <td className="border border-[#dbe4f4] px-2 py-1">
+                              {t('bulkImport.table.headerRowN', { n: String(rowIndex + 1) })}
+                            </td>
                             {row.map((value, colIndex) => (
                               <td key={`header-cell-${rowIndex}-${colIndex}`} className="border border-[#dbe4f4] px-2 py-1">
                                 {value || '-'}
@@ -1057,21 +1063,21 @@ export default function ChecklistPanelListPage() {
               ) : null}
 
               <div className="mt-4 rounded-xl border border-[#dbe4f4] p-4">
-                <h3 className="text-sm font-semibold text-[#25375a]">Column mapping</h3>
-                {bulkTemplateSpec?.description ? <p className="mt-1 text-xs text-[#607594]">{bulkTemplateSpec.description}</p> : null}
+                <h3 className="text-sm font-semibold text-[#25375a]">{t('bulkImport.columnMapping')}</h3>
+                <p className="mt-1 text-xs text-[#607594]">{t('bulkImport.mappingDescription')}</p>
                 <div className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                   {(Object.entries(bulkImportMapping) as Array<[keyof BulkImportColumnMapping, string]>).map(([key, value]) => (
                     <label key={key} className="block space-y-1 text-xs text-[#566b8d]">
                       <span className="flex items-center gap-2">
-                        <span>{BULK_MAPPING_LABELS[key]}</span>
+                        <span>{t(BULK_COLUMN_I18N_KEY[key])}</span>
                         {getColumnBadge(key, bulkTemplateSpec) === 'required' ? (
                           <span className="rounded-full bg-[#ffe9ec] px-2 py-0.5 text-[10px] font-semibold text-[#a73a46]">
-                            Required
+                            {t('bulkImport.badge.required')}
                           </span>
                         ) : null}
                         {getColumnBadge(key, bulkTemplateSpec) === 'optional' ? (
                           <span className="rounded-full bg-[#eaf2ff] px-2 py-0.5 text-[10px] font-semibold text-[#355a96]">
-                            Optional
+                            {t('bulkImport.badge.optional')}
                           </span>
                         ) : null}
                       </span>
@@ -1102,7 +1108,7 @@ export default function ChecklistPanelListPage() {
                     disabled={bulkLoading === 'verify' || !bulkImportFile}
                     className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
                   >
-                    {bulkLoading === 'verify' ? 'Verifying...' : 'Verify mapping'}
+                    {bulkLoading === 'verify' ? t('bulkImport.verifying') : t('bulkImport.verifyMapping')}
                   </button>
                   <button
                     type="button"
@@ -1110,16 +1116,20 @@ export default function ChecklistPanelListPage() {
                     disabled={!canCreateFromFile}
                     className="rounded-lg border border-[#2d4f83] bg-[#10284f] px-3 py-2 text-xs font-semibold text-[#9bf5be] hover:bg-[#16345f] disabled:opacity-60"
                   >
-                    {bulkLoading === 'create' ? 'Creating...' : 'Create checklist from file'}
+                    {bulkLoading === 'create' ? t('bulkImport.creating') : t('bulkImport.createFromFile')}
                   </button>
                 </div>
               </div>
 
               {bulkVerifyResult ? (
                 <div className="mt-4 rounded-xl border border-[#dbe4f4] p-4">
-                  <h3 className="text-sm font-semibold text-[#25375a]">Verification result</h3>
+                  <h3 className="text-sm font-semibold text-[#25375a]">{t('bulkImport.verificationTitle')}</h3>
                   <p className="mt-1 text-xs text-[#607594]">
-                    Valid rows: {bulkVerifyResult.valid_rows}/{bulkVerifyResult.total_rows} | Invalid rows: {bulkVerifyResult.invalid_rows}
+                    {t('bulkImport.verificationSummary', {
+                      valid: String(bulkVerifyResult.valid_rows),
+                      total: String(bulkVerifyResult.total_rows),
+                      invalid: String(bulkVerifyResult.invalid_rows),
+                    })}
                   </p>
                   {bulkVerifyResult.warnings?.length ? (
                     <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-amber-700">
@@ -1133,12 +1143,12 @@ export default function ChecklistPanelListPage() {
                       <table className="min-w-full border-collapse text-xs">
                         <thead>
                           <tr className="bg-[#f7f9fe] text-left text-[#4a6187]">
-                            <th className="border border-[#e2e8f5] px-2 py-1">Row</th>
-                            <th className="border border-[#e2e8f5] px-2 py-1">Section</th>
-                            <th className="border border-[#e2e8f5] px-2 py-1">Question ID</th>
-                            <th className="border border-[#e2e8f5] px-2 py-1">Severity</th>
-                            <th className="border border-[#e2e8f5] px-2 py-1">Valid</th>
-                            <th className="border border-[#e2e8f5] px-2 py-1">Errors</th>
+                            <th className="border border-[#e2e8f5] px-2 py-1">{t('bulkImport.table.row')}</th>
+                            <th className="border border-[#e2e8f5] px-2 py-1">{t('bulkImport.tablePreview.section')}</th>
+                            <th className="border border-[#e2e8f5] px-2 py-1">{t('bulkImport.tablePreview.questionId')}</th>
+                            <th className="border border-[#e2e8f5] px-2 py-1">{t('bulkImport.tablePreview.severity')}</th>
+                            <th className="border border-[#e2e8f5] px-2 py-1">{t('bulkImport.tablePreview.valid')}</th>
+                            <th className="border border-[#e2e8f5] px-2 py-1">{t('bulkImport.tablePreview.errors')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1148,7 +1158,7 @@ export default function ChecklistPanelListPage() {
                               <td className="border border-[#e2e8f5] px-2 py-1">{row.section_name}</td>
                               <td className="border border-[#e2e8f5] px-2 py-1">{row.parent_question_id}</td>
                               <td className="border border-[#e2e8f5] px-2 py-1">{row.severity}</td>
-                              <td className="border border-[#e2e8f5] px-2 py-1">{row.is_valid ? 'Yes' : 'No'}</td>
+                              <td className="border border-[#e2e8f5] px-2 py-1">{row.is_valid ? t('bulkImport.tablePreview.yes') : t('bulkImport.tablePreview.no')}</td>
                               <td className="border border-[#e2e8f5] px-2 py-1">{row.errors?.join(', ') || '-'}</td>
                             </tr>
                           ))}
