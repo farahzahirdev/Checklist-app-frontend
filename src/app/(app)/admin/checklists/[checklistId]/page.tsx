@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAdminAccess } from '@/lib/admin-access';
@@ -20,6 +20,9 @@ import {
   updateSection as updateSectionApi,
 } from '@/lib/checklist-api';
 import { getMediaPreviewUrl } from '@/lib/assessment';
+import { translate, useLocale } from '@/lib/i18n';
+import { adminChecklistBuilderMessages } from '@/locales/admin-checklist-builder';
+import { AdminLanguageSwitcher } from '@/components/admin-language-switcher';
 import { ADMIN_BUILDER_HEADER_TITLE_CLASS } from '@/app/(app)/admin/admin-page-title';
 
 type RiskLevel = 'low' | 'medium' | 'high';
@@ -90,6 +93,7 @@ function RichTextEditor({
   placeholder,
   minHeight = 90,
   hasError = false,
+  richTextBadge = 'Rich text',
 }: {
   label: string;
   value: string;
@@ -97,6 +101,7 @@ function RichTextEditor({
   placeholder: string;
   minHeight?: number;
   hasError?: boolean;
+  richTextBadge?: string;
 }) {
   const editorRef = useRef<HTMLDivElement | null>(null);
 
@@ -132,7 +137,7 @@ function RichTextEditor({
     <div>
       <div className="mb-1 flex items-center justify-between">
         <label className={labelClass}>{label}</label>
-        <span className="rounded-full bg-[#e6f1fb] px-2 py-0.5 text-[10px] font-semibold text-[#185fa5]">Rich text</span>
+        <span className="rounded-full bg-[#e6f1fb] px-2 py-0.5 text-[10px] font-semibold text-[#185fa5]">{richTextBadge}</span>
       </div>
       <div
         className={`overflow-hidden rounded-xl border bg-white focus-within:border-[#3e69b0] ${
@@ -289,6 +294,11 @@ export default function ChecklistPanelBuilderPage() {
   const params = useParams<{ checklistId: string }>();
   const checklistId = String(params.checklistId);
   const { isReadOnly } = useAdminAccess();
+  const { locale } = useLocale();
+  const t = useCallback(
+    (key: string, values?: Record<string, string>) => translate(adminChecklistBuilderMessages, locale, key, values),
+    [locale],
+  );
 
   const [title, setTitle] = useState('Checklist Builder Draft');
   const [lawDecree, setLawDecree] = useState('');
@@ -397,7 +407,7 @@ export default function ChecklistPanelBuilderPage() {
         setStatus(data.status);
       } catch (err) {
         if (!cancelled) {
-          toast.error(err instanceof Error ? err.message : 'Failed to load checklist');
+          toast.error(err instanceof Error ? err.message : t('toast.loadChecklistFailed'));
         }
       } finally {
         if (!cancelled) {
@@ -409,7 +419,7 @@ export default function ChecklistPanelBuilderPage() {
     return () => {
       cancelled = true;
     };
-  }, [checklistId]);
+  }, [checklistId, t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -463,11 +473,11 @@ export default function ChecklistPanelBuilderPage() {
           return previous;
         });
         if (failedCount > 0 && failedCount < sortedSections.length) {
-          toast.message('Some sections have no question data yet.');
+          toast.message(t('toast.sectionsPartialData'));
         }
       } catch (err) {
         if (!cancelled) {
-          toast.error(err instanceof Error ? err.message : 'Failed to load sections');
+          toast.error(err instanceof Error ? err.message : t('toast.loadSectionsFailed'));
           setSections([]);
         }
       } finally {
@@ -480,7 +490,7 @@ export default function ChecklistPanelBuilderPage() {
     return () => {
       cancelled = true;
     };
-  }, [checklistId]);
+  }, [checklistId, t]);
 
   const selectedSection = useMemo(
     () =>
@@ -559,12 +569,12 @@ export default function ChecklistPanelBuilderPage() {
     const title = newSectionTitle.trim();
     const order = Number.parseInt(newSectionOrder, 10);
     if (!title || !order || order < 1) {
-      toast.error('Please provide valid section title and order.');
+      toast.error(t('toast.sectionTitleOrderRequired'));
       return;
     }
     const hasDuplicateOrder = sections.some((section) => section.order === order);
     if (hasDuplicateOrder) {
-      toast.error(`Display order ${order} already exists. Please choose a different order.`);
+      toast.error(t('toast.orderExists', { order: String(order) }));
       return;
     }
     setSectionActionLoading('create');
@@ -582,9 +592,9 @@ export default function ChecklistPanelBuilderPage() {
       setNewSectionTitle('');
       setNewSectionOrder('1');
       setNewSectionSourceRef('');
-      toast.success('Section created.');
+      toast.success(t('toast.sectionCreated'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create section');
+      toast.error(err instanceof Error ? err.message : t('toast.sectionCreateFailed'));
     } finally {
       setSectionActionLoading('');
     }
@@ -607,9 +617,9 @@ export default function ChecklistPanelBuilderPage() {
             : item,
         ),
       );
-      toast.success('Section saved.');
+      toast.success(t('toast.sectionSaved'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save section');
+      toast.error(err instanceof Error ? err.message : t('toast.sectionSaveFailed'));
     } finally {
       setSectionActionLoading('');
     }
@@ -622,9 +632,9 @@ export default function ChecklistPanelBuilderPage() {
       setSections((previous) => previous.filter((item) => item.id !== sectionId));
       setSelected({ type: 'checklist' });
       setConfirmDeleteSectionId(null);
-      toast.success('Section deleted.');
+      toast.success(t('toast.sectionDeleted'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete section');
+      toast.error(err instanceof Error ? err.message : t('toast.sectionDeleteFailed'));
     } finally {
       setSectionActionLoading('');
     }
@@ -677,7 +687,7 @@ export default function ChecklistPanelBuilderPage() {
     if (parentQuestionId) {
       const parentDepth = getQuestionDepthInSection(section, parentQuestionId);
       if (parentDepth >= 1) {
-        toast.error('Subquestions cannot have subquestions.');
+        toast.error(t('toast.noNestedSubquestions'));
         return;
       }
     }
@@ -729,7 +739,7 @@ export default function ChecklistPanelBuilderPage() {
   async function handleConfirmCreateQuestion() {
     if (!addQuestionSectionId) return;
     if (uploadingMediaKey === 'create-question-image') {
-      toast.error('Please wait until example image upload completes.');
+      toast.error(t('toast.waitImageUpload'));
       return;
     }
     const draftQuestion = newQuestionDraft;
@@ -756,19 +766,19 @@ export default function ChecklistPanelBuilderPage() {
     if (allMissing.length > 0) {
       setCreateQuestionMissingFields(allMissing);
       if (missingFields.includes('questionTitle')) {
-        toast.error('Please fill title');
+        toast.error(t('toast.fillTitle'));
         return;
       }
       if (missingAnswerLabels.length > 0) {
-        toast.error('Please fill answer');
+        toast.error(t('toast.fillAnswer'));
         return;
       }
       if (missingAnswerDescriptions.length > 0) {
-        toast.error('Please fill description');
+        toast.error(t('toast.fillDescription'));
         return;
       }
       // Fallback
-      toast.error('Please fill required question fields.');
+      toast.error(t('toast.fillRequiredFields'));
       return;
     }
     setCreateQuestionMissingFields([]);
@@ -808,9 +818,9 @@ export default function ChecklistPanelBuilderPage() {
       );
       setSelected({ type: 'question', sectionId: addQuestionSectionId, questionId: newQuestion.id });
       setAddQuestionSectionId('');
-      toast.success('Question created.');
+      toast.success(t('toast.questionCreated'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create question');
+      toast.error(err instanceof Error ? err.message : t('toast.questionCreateFailed'));
     } finally {
       setQuestionActionLoading('');
       setAddingQuestionSectionId('');
@@ -842,18 +852,18 @@ export default function ChecklistPanelBuilderPage() {
     if (allMissing.length > 0) {
       setEditQuestionMissingFields(allMissing);
       if (missingFields.includes('questionTitle')) {
-        toast.error('Please fill title');
+        toast.error(t('toast.fillTitle'));
         return;
       }
       if (missingAnswerLabels.length > 0) {
-        toast.error('Please fill answer');
+        toast.error(t('toast.fillAnswer'));
         return;
       }
       if (missingAnswerDescriptions.length > 0) {
-        toast.error('Please fill description');
+        toast.error(t('toast.fillDescription'));
         return;
       }
-      toast.error('Please fill required question fields.');
+      toast.error(t('toast.fillRequiredFields'));
       return;
     }
     setEditQuestionMissingFields([]);
@@ -885,9 +895,9 @@ export default function ChecklistPanelBuilderPage() {
         points: derivedPoints,
         answerOptions: buildAnswerOptionsPayload(question),
       });
-      toast.success('Question saved.');
+      toast.success(t('toast.questionSaved'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save question');
+      toast.error(err instanceof Error ? err.message : t('toast.questionSaveFailed'));
     } finally {
       setQuestionActionLoading('');
     }
@@ -906,9 +916,9 @@ export default function ChecklistPanelBuilderPage() {
       );
       setSelected({ type: 'section', sectionId });
       setConfirmDeleteQuestionTarget(null);
-      toast.success('Question deleted.');
+      toast.success(t('toast.questionDeleted'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete question');
+      toast.error(err instanceof Error ? err.message : t('toast.questionDeleteFailed'));
     } finally {
       setQuestionActionLoading('');
     }
@@ -957,7 +967,7 @@ export default function ChecklistPanelBuilderPage() {
           })
           .catch((err) => {
             if (cancelled) return;
-            const errorMessage = err instanceof Error ? err.message : 'Failed to load preview image.';
+            const errorMessage = err instanceof Error ? err.message : t('toast.previewImageFailed');
             setPreviewErrorsByMediaId(previous => ({ ...previous, [mediaId]: errorMessage }));
           });
         
@@ -966,7 +976,7 @@ export default function ChecklistPanelBuilderPage() {
         };
       }
     });
-  }, [sections, previewUrlsByMediaId]);
+  }, [sections, previewUrlsByMediaId, t]);
 
   async function handleSectionDrop(targetSectionId: string) {
     if (!draggedSectionId || draggedSectionId === targetSectionId || reorderingSections) {
@@ -996,10 +1006,10 @@ export default function ChecklistPanelBuilderPage() {
         checklistId,
         reordered.map((section) => ({ sectionId: section.id, order: section.order })),
       );
-      toast.success('Section order updated.');
+      toast.success(t('toast.sectionOrderUpdated'));
     } catch (err) {
       setSections(previousSections);
-      toast.error(err instanceof Error ? err.message : 'Failed to reorder sections');
+      toast.error(err instanceof Error ? err.message : t('toast.sectionReorderFailed'));
     } finally {
       setReorderingSections(false);
       setDraggedSectionId(null);
@@ -1019,7 +1029,7 @@ export default function ChecklistPanelBuilderPage() {
     if (!draggedEntry || !targetEntry) return;
 
     if (draggedEntry.depth !== 0 || targetEntry.depth !== 0) {
-      toast.error('Only top-level questions can be reordered.');
+      toast.error(t('toast.onlyTopLevelReorder'));
       setDraggedQuestionId(null);
       setDragOverQuestionId(null);
       return;
@@ -1069,10 +1079,10 @@ export default function ChecklistPanelBuilderPage() {
       setSections((previous) =>
         previous.map((item) => (item.id === sectionId ? { ...item, questions: mapped } : item)),
       );
-      toast.success('Question order updated.');
+      toast.success(t('toast.questionOrderUpdated'));
     } catch (err) {
       setSections(previousSections);
-      toast.error(err instanceof Error ? err.message : 'Failed to reorder questions');
+      toast.error(err instanceof Error ? err.message : t('toast.questionReorderFailed'));
     } finally {
       setReorderingQuestionsSectionId(null);
       setDraggedQuestionId(null);
@@ -1088,7 +1098,7 @@ export default function ChecklistPanelBuilderPage() {
             <Link
               href="/admin/checklists"
               className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#2d4f83] bg-[#10284f] text-sm font-semibold text-white hover:bg-[#16345f]"
-              aria-label="Back to checklist dashboard"
+              aria-label={t('header.backAria')}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -1105,7 +1115,7 @@ export default function ChecklistPanelBuilderPage() {
               className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#2d4f83] bg-[#10284f] text-white hover:bg-[#16345f] lg:hidden"
               aria-expanded={sidebarOpen}
               aria-controls="checklist-builder-nav"
-              title={sidebarOpen ? 'Hide structure panel' : 'Show structure panel'}
+              title={sidebarOpen ? t('header.sidebarHide') : t('header.sidebarShow')}
             >
               {sidebarOpen ? (
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
@@ -1131,8 +1141,11 @@ export default function ChecklistPanelBuilderPage() {
             </button>
           </div>
           <div className="ml-2 min-w-0 flex-1 basis-[min(100%,12rem)] py-0.5 sm:ml-3">
-            <h1 className={ADMIN_BUILDER_HEADER_TITLE_CLASS}>Checklist Content Builder</h1>
-            <p className="mt-0.5 truncate text-[11px] text-[#9db8e6] sm:text-xs">{title || 'Untitled checklist'}</p>
+            <h1 className={ADMIN_BUILDER_HEADER_TITLE_CLASS}>{t('header.title')}</h1>
+            <p className="mt-0.5 truncate text-[11px] text-[#9db8e6] sm:text-xs">{title || t('header.untitled')}</p>
+          </div>
+          <div className="ml-auto flex shrink-0 items-center sm:ml-2">
+            <AdminLanguageSwitcher align="right" />
           </div>
         </header>
 
@@ -1140,7 +1153,7 @@ export default function ChecklistPanelBuilderPage() {
           {sidebarOpen ? (
             <button
               type="button"
-              aria-label="Close structure panel"
+              aria-label={t('sidebar.closeOverlay')}
               className="absolute inset-0 z-30 bg-[#0b1220]/45 backdrop-blur-[1px] transition-opacity lg:hidden"
               onClick={() => setSidebarOpen(false)}
             />
@@ -1164,19 +1177,19 @@ export default function ChecklistPanelBuilderPage() {
                 disabled={loadingSections || sectionActionLoading === 'create'}
                 className="mb-4 w-full rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
               >
-                {sectionActionLoading === 'create' ? 'Adding...' : '+ Add section'}
+                {sectionActionLoading === 'create' ? t('sidebar.addingSection') : t('sidebar.addSection')}
               </button>
             ) : null}
 
             <div className="mb-3 rounded-lg border border-[#2d4f83] bg-[#10284f] px-3 py-2 text-left">
-              <p className="text-[10px] uppercase tracking-[0.08em] text-[#9db8e6]">Checklist</p>
-              <p className="mt-1 text-sm font-semibold text-white">{title || 'Untitled checklist'}</p>
+              <p className="text-[10px] uppercase tracking-[0.08em] text-[#9db8e6]">{t('sidebar.checklistLabel')}</p>
+              <p className="mt-1 text-sm font-semibold text-white">{title || t('header.untitled')}</p>
             </div>
 
             <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-              {loadingSections ? <p className="px-2 text-xs text-[#c4d6f7]">Loading sections...</p> : null}
+              {loadingSections ? <p className="px-2 text-xs text-[#c4d6f7]">{t('sidebar.loadingSections')}</p> : null}
               {!loadingSections && sections.length === 0 ? (
-                <p className="px-2 text-xs text-[#c4d6f7]">No sections found for this checklist.</p>
+                <p className="px-2 text-xs text-[#c4d6f7]">{t('sidebar.noSections')}</p>
               ) : null}
               {orderedSections.map((section) => (
                   <div
@@ -1206,7 +1219,7 @@ export default function ChecklistPanelBuilderPage() {
                   >
                     <div className="flex items-center gap-2">
                       {!isReadOnly ? (
-                        <span className="cursor-grab px-1 text-xs text-[#9db8e6]" title="Drag to reorder">
+                        <span className="cursor-grab px-1 text-xs text-[#9db8e6]" title={t('sidebar.dragReorder')}>
                           ⋮⋮
                         </span>
                       ) : null}
@@ -1220,8 +1233,8 @@ export default function ChecklistPanelBuilderPage() {
                           )
                         }
                         className="rounded-md p-1 text-[#c4d6f7] hover:bg-[#16345f]"
-                        aria-label={collapsedSectionIds.includes(section.id) ? 'Expand section' : 'Collapse section'}
-                        title={collapsedSectionIds.includes(section.id) ? 'Expand section' : 'Collapse section'}
+                        aria-label={collapsedSectionIds.includes(section.id) ? t('sidebar.expandSection') : t('sidebar.collapseSection')}
+                        title={collapsedSectionIds.includes(section.id) ? t('sidebar.expandSection') : t('sidebar.collapseSection')}
                       >
                         <svg
                           viewBox="0 0 20 20"
@@ -1242,7 +1255,7 @@ export default function ChecklistPanelBuilderPage() {
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span>{section.order}. {section.title || 'Untitled section'}</span>
+                          <span>{section.order}. {section.title || t('sidebar.untitledSection')}</span>
                           <span className="rounded bg-[#163a72] px-1.5 py-0.5 text-[10px] font-semibold text-[#c4d6f7]">
                             {section.questions.length}
                           </span>
@@ -1251,8 +1264,8 @@ export default function ChecklistPanelBuilderPage() {
                       {!isReadOnly ? (
                         <button
                           type="button"
-                          aria-label="Delete section"
-                          title="Delete section"
+                          aria-label={t('sidebar.deleteSectionAria')}
+                          title={t('sidebar.deleteSectionAria')}
                           onClick={() => setConfirmDeleteSectionId(section.id)}
                           disabled={sectionActionLoading === 'delete'}
                           className="p-1 text-[#bf2e2e] hover:text-[#a52828] disabled:opacity-60"
@@ -1320,7 +1333,7 @@ export default function ChecklistPanelBuilderPage() {
                                 className={`flex items-center gap-1 rounded-md ${!isSubQuestion && dragOverQuestionId === question.id ? 'ring-1 ring-[#5ea2ff]' : ''}`}
                               >
                                 {!isReadOnly && !isSubQuestion ? (
-                                  <span className="cursor-grab px-1 text-[10px] text-[#9db8e6]" title="Drag to reorder questions">
+                                  <span className="cursor-grab px-1 text-[10px] text-[#9db8e6]" title={t('sidebar.dragQuestions')}>
                                     ⋮⋮
                                   </span>
                                 ) : (
@@ -1335,7 +1348,7 @@ export default function ChecklistPanelBuilderPage() {
                                       : 'text-[#c4d6f7] hover:bg-[#16345f]'
                                   } ${isSubQuestion ? 'ml-3 border-l border-[#2d4f83] pl-3' : ''}`}
                                 >
-                                  {isSubQuestion ? '↳ ' : ''}Q{displayCode}: {question.questionTitle || question.questionId || 'Untitled question'}
+                                  {isSubQuestion ? '↳ ' : ''}Q{displayCode}: {question.questionTitle || question.questionId || t('sidebar.untitledQuestion')}
                                 </button>
                                 {!isReadOnly ? (
                                   <button
@@ -1347,16 +1360,16 @@ export default function ChecklistPanelBuilderPage() {
                                       reorderingSections
                                     }
                                     className="rounded-md border border-dashed border-[#5d84be] px-2 py-1 text-[10px] font-semibold text-[#d8e6ff] hover:bg-[#16345f] disabled:cursor-not-allowed disabled:opacity-40"
-                                    title={canAddSub ? 'Add subquestion' : 'Subquestions cannot have subquestions'}
+                                    title={canAddSub ? t('sidebar.addSubTooltip') : t('sidebar.addSubDisabled')}
                                   >
-                                    + Sub
+                                    {t('sidebar.subShort')}
                                   </button>
                                 ) : null}
                               </div>
                             );
                           })}
                           {section.questions.length === 0 ? (
-                            <p className="px-2 py-1 text-[11px] text-[#9db8e6]">No questions loaded</p>
+                            <p className="px-2 py-1 text-[11px] text-[#9db8e6]">{t('sidebar.noQuestionsLoaded')}</p>
                           ) : null}
                         </div>
 
@@ -1367,7 +1380,7 @@ export default function ChecklistPanelBuilderPage() {
                             disabled={(questionActionLoading === 'create' && addingQuestionSectionId === section.id) || reorderingSections}
                             className="mt-2 w-full rounded-md border border-dashed border-[#5d84be] px-2 py-1.5 text-xs font-semibold text-[#d8e6ff] hover:bg-[#16345f] disabled:opacity-60"
                           >
-                            {questionActionLoading === 'create' && addingQuestionSectionId === section.id ? 'Adding question...' : '+ Add question'}
+                            {questionActionLoading === 'create' && addingQuestionSectionId === section.id ? t('sidebar.addingQuestion') : t('sidebar.addQuestion')}
                           </button>
                         ) : null}
                       </>
@@ -1380,11 +1393,11 @@ export default function ChecklistPanelBuilderPage() {
           <main className="relative z-0 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-5 lg:p-6">
             {selected.type === 'section' && selectedSection ? (
               <div className={`${cardClass} space-y-4`}>
-                {isReadOnly ? <p className="rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2 text-xs text-[#5f7395]">Read-only mode: editing actions are disabled for auditor.</p> : null}
+                {isReadOnly ? <p className="rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2 text-xs text-[#5f7395]">{t('readOnly.banner')}</p> : null}
                 <fieldset disabled={isReadOnly} className="space-y-4">
-                <h2 className="text-lg font-semibold">Section</h2>
+                <h2 className="text-lg font-semibold">{t('section.panelTitle')}</h2>
                 <div>
-                  <label className={labelClass}>Section title *</label>
+                  <label className={labelClass}>{t('section.titleLabel')}</label>
                   <input
                     value={selectedSection.title}
                     onChange={(event) => updateSection(selectedSection.id, { title: event.target.value })}
@@ -1392,7 +1405,7 @@ export default function ChecklistPanelBuilderPage() {
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Display order *</label>
+                  <label className={labelClass}>{t('section.orderLabel')}</label>
                   <input
                     type="number"
                     min={1}
@@ -1402,12 +1415,12 @@ export default function ChecklistPanelBuilderPage() {
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Source</label>
+                  <label className={labelClass}>{t('section.sourceLabel')}</label>
                   <input
                     value={selectedSection.sourceRef}
                     onChange={(event) => updateSection(selectedSection.id, { sourceRef: event.target.value })}
                     className={inputClass}
-                    placeholder="Source reference"
+                    placeholder={t('section.sourcePlaceholder')}
                   />
                 </div>
                 {!isReadOnly ? (
@@ -1418,7 +1431,7 @@ export default function ChecklistPanelBuilderPage() {
                       disabled={sectionActionLoading === 'save'}
                       className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
                     >
-                      {sectionActionLoading === 'save' ? 'Saving...' : 'Save section'}
+                      {sectionActionLoading === 'save' ? t('section.saving') : t('section.save')}
                     </button>
                     <button
                       type="button"
@@ -1426,7 +1439,7 @@ export default function ChecklistPanelBuilderPage() {
                       disabled={sectionActionLoading === 'delete'}
                       className="rounded-lg border border-[#d45f6b] bg-[#fff1f3] px-3 py-2 text-xs font-semibold text-[#a73a46] disabled:opacity-60"
                     >
-                      {sectionActionLoading === 'delete' ? 'Deleting...' : 'Delete section'}
+                      {sectionActionLoading === 'delete' ? t('section.deleting') : t('section.delete')}
                     </button>
                   </div>
                 ) : null}
@@ -1436,33 +1449,33 @@ export default function ChecklistPanelBuilderPage() {
 
             {!isReadOnly && selected.type === 'createSection' ? (
               <div className={`${cardClass} space-y-4`}>
-                <h2 className="text-lg font-semibold">Add section</h2>
-                <p className="text-sm text-[#607594]">Enter section details before creating it.</p>
+                <h2 className="text-lg font-semibold">{t('createSection.title')}</h2>
+                <p className="text-sm text-[#607594]">{t('createSection.intro')}</p>
                 <div>
-                  <label className={labelClass}>Section title *</label>
+                  <label className={labelClass}>{t('section.titleLabel')}</label>
                   <input
                     value={newSectionTitle}
                     onChange={(event) => setNewSectionTitle(event.target.value)}
                     className={inputClass}
-                    placeholder="Section title"
+                    placeholder={t('createSection.titlePlaceholder')}
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Display order *</label>
+                  <label className={labelClass}>{t('section.orderLabel')}</label>
                   <input
                     value={newSectionOrder}
                     onChange={(event) => setNewSectionOrder(event.target.value.replace(/[^\d]/g, ''))}
                     className={inputClass}
-                    placeholder="1"
+                    placeholder={t('createSection.orderPlaceholder')}
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Source</label>
+                  <label className={labelClass}>{t('section.sourceLabel')}</label>
                   <input
                     value={newSectionSourceRef}
                     onChange={(event) => setNewSectionSourceRef(event.target.value)}
                     className={inputClass}
-                    placeholder="Source reference"
+                    placeholder={t('section.sourcePlaceholder')}
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -1472,7 +1485,7 @@ export default function ChecklistPanelBuilderPage() {
                     disabled={sectionActionLoading === 'create'}
                     className="rounded-lg border border-[#d4dced] px-3 py-2 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff] disabled:opacity-60"
                   >
-                    Cancel
+                    {t('createSection.cancel')}
                   </button>
                   <button
                     type="button"
@@ -1480,7 +1493,7 @@ export default function ChecklistPanelBuilderPage() {
                     disabled={sectionActionLoading === 'create'}
                     className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
                   >
-                    {sectionActionLoading === 'create' ? 'Creating...' : 'Create section'}
+                    {sectionActionLoading === 'create' ? t('createSection.creating') : t('createSection.submit')}
                   </button>
                 </div>
               </div>
@@ -1490,20 +1503,20 @@ export default function ChecklistPanelBuilderPage() {
               <div className={`${cardClass} space-y-4`}>
                 <div className="flex items-start justify-between gap-3 border-b border-[#e2e8f5] pb-3">
                   <div>
-                    <h2 className="text-lg font-semibold text-[#1f2d45]">Add question</h2>
-                    <p className="mt-1 text-sm text-[#607594]">Fill question details before creating.</p>
+                    <h2 className="text-lg font-semibold text-[#1f2d45]">{t('createQuestion.title')}</h2>
+                    <p className="mt-1 text-sm text-[#607594]">{t('createQuestion.intro')}</p>
                     {newQuestionDraft.parentQuestionId ? (
                       <p className="mt-1 text-xs text-[#3e69b0]">
-                        Creating subquestion for parent:{' '}
-                        {parentQuestionForDraft?.questionTitle || parentQuestionForDraft?.questionId || 'Unknown question'}
+                        {t('createQuestion.parentHint')}{' '}
+                        {parentQuestionForDraft?.questionTitle || parentQuestionForDraft?.questionId || t('createQuestion.unknownParent')}
                       </p>
                     ) : null}
                   </div>
                 </div>
-                <div className={sectionHeadingClass}>Basic information</div>
+                <div className={sectionHeadingClass}>{t('heading.basic')}</div>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className={labelClass}>Question ID *</label>
+                    <label className={labelClass}>{t('label.questionId')}</label>
                     <input
                       value={newQuestionDraft.questionId}
                       onChange={(event) => setNewQuestionDraft((previous) => ({ ...previous, questionId: event.target.value }))}
@@ -1511,7 +1524,7 @@ export default function ChecklistPanelBuilderPage() {
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>Severity level *</label>
+                    <label className={labelClass}>{t('label.severity')}</label>
                     <select
                       value={newQuestionDraft.securityLevel}
                       onChange={(event) =>
@@ -1519,13 +1532,13 @@ export default function ChecklistPanelBuilderPage() {
                       }
                       className={inputClass}
                     >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
+                      <option value="low">{t('severity.low')}</option>
+                      <option value="medium">{t('severity.medium')}</option>
+                      <option value="high">{t('severity.high')}</option>
                     </select>
                   </div>
                   <div>
-                    <label className={labelClass}>Audit type</label>
+                    <label className={labelClass}>{t('label.auditType')}</label>
                     <input
                       value={newQuestionDraft.auditType}
                       onChange={(event) =>
@@ -1534,9 +1547,9 @@ export default function ChecklistPanelBuilderPage() {
                       className={inputClass}
                     />
                   </div>
-                  <div className={sectionHeadingClass + ' md:col-span-2'}>Legal requirement</div>
+                  <div className={sectionHeadingClass + ' md:col-span-2'}>{t('heading.legal')}</div>
                   <div className="md:col-span-2">
-                    <label className={labelClass}>Legal requirement title</label>
+                    <label className={labelClass}>{t('label.legalTitle')}</label>
                     <input
                       value={newQuestionDraft.legalRequirementTitle}
                       onChange={(event) =>
@@ -1546,42 +1559,42 @@ export default function ChecklistPanelBuilderPage() {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <RichTextEditor
-                      label="Legal requirement description *"
+                    <RichTextEditor richTextBadge={t('richText.badge')}
+                      label={t('label.legalDescription')}
                       value={newQuestionDraft.legalRequirementDescription}
                       onChange={(next) =>
                         setNewQuestionDraft((previous) => ({ ...previous, legalRequirementDescription: next }))
                       }
-                      placeholder="Describe the legal or regulatory basis..."
+                      placeholder={t('placeholder.legalBasis')}
                       minHeight={80}
                       hasError={createQuestionMissingFields.includes('legalRequirementDescription')}
                     />
                   </div>
-                  <div className={sectionHeadingClass + ' md:col-span-2'}>Content & guidance</div>
+                  <div className={sectionHeadingClass + ' md:col-span-2'}>{t('heading.content')}</div>
                   <div>
-                    <RichTextEditor
-                      label="Explanation *"
+                    <RichTextEditor richTextBadge={t('richText.badge')}
+                      label={t('label.explanation')}
                       value={newQuestionDraft.explanation}
                       onChange={(next) => setNewQuestionDraft((previous) => ({ ...previous, explanation: next }))}
-                      placeholder="Why this control matters..."
+                      placeholder={t('placeholder.whyMatters')}
                       minHeight={90}
                       hasError={createQuestionMissingFields.includes('explanation')}
                     />
                   </div>
                   <div>
-                    <RichTextEditor
-                      label="Expected implementation *"
+                    <RichTextEditor richTextBadge={t('richText.badge')}
+                      label={t('label.expectedImplementation')}
                       value={newQuestionDraft.expectedImplementation}
                       onChange={(next) =>
                         setNewQuestionDraft((previous) => ({ ...previous, expectedImplementation: next }))
                       }
-                      placeholder="• Step 1"
+                      placeholder={t('placeholder.steps')}
                       minHeight={90}
                       hasError={createQuestionMissingFields.includes('expectedImplementation')}
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className={labelClass}>Why this matters</label>
+                    <label className={labelClass}>{t('label.whyMatters')}</label>
                     <textarea
                       value={newQuestionDraft.howItWorks}
                       onChange={(event) =>
@@ -1590,12 +1603,12 @@ export default function ChecklistPanelBuilderPage() {
                       className={textAreaClass}
                     />
                   </div>
-                  <div className={sectionHeadingClass + ' md:col-span-2'}>Options</div>
+                  <div className={sectionHeadingClass + ' md:col-span-2'}>{t('heading.options')}</div>
                   <div className="md:col-span-2 space-y-2">
                     <div className="flex items-center justify-between rounded-xl border border-[#e2e8f5] bg-[#f8fbff] px-3 py-2">
                       <div>
-                        <p className="text-sm font-medium text-[#1f2d45]">Upload evidence enabled</p>
-                        <p className="text-xs text-[#607594]">Allow customers to attach files as evidence</p>
+                        <p className="text-sm font-medium text-[#1f2d45]">{t('toggle.evidenceTitle')}</p>
+                        <p className="text-xs text-[#607594]">{t('toggle.evidenceHint')}</p>
                       </div>
                       <input
                         type="checkbox"
@@ -1608,8 +1621,8 @@ export default function ChecklistPanelBuilderPage() {
                     </div>
                     <div className="flex items-center justify-between rounded-xl border border-[#e2e8f5] bg-[#f8fbff] px-3 py-2">
                       <div>
-                        <p className="text-sm font-medium text-[#1f2d45]">User note enabled</p>
-                        <p className="text-xs text-[#607594]">Allow users to add a note for this question</p>
+                        <p className="text-sm font-medium text-[#1f2d45]">{t('toggle.noteTitle')}</p>
+                        <p className="text-xs text-[#607594]">{t('toggle.noteHint')}</p>
                       </div>
                       <input
                         type="checkbox"
@@ -1626,7 +1639,7 @@ export default function ChecklistPanelBuilderPage() {
                     </div>
                   </div>
                   <div className="md:col-span-2">
-                    <label className={labelClass}>Note from admin (optional)</label>
+                    <label className={labelClass}>{t('label.adminNote')}</label>
                     <textarea
                       value={newQuestionDraft.note}
                       onChange={(event) => setNewQuestionDraft((previous) => ({ ...previous, note: event.target.value }))}
@@ -1634,17 +1647,19 @@ export default function ChecklistPanelBuilderPage() {
                     />
                   </div>
                   <div className="md:col-span-2 space-y-2">
-                    <p className={sectionHeadingClass}>Answer options (4 required)</p>
+                    <p className={sectionHeadingClass}>{t('heading.answerOptions')}</p>
                     <div className="space-y-2">
                       {newQuestionDraft.answerOptions.map((option, index) => (
                         <div key={`new-answer-option-${index}`} className="rounded-xl border border-[#e2e8f5] bg-[#fbfcff] p-3">
                           <div className="mb-3 flex items-center gap-2">
                             <span className="rounded-full border border-[#d4dced] bg-white px-2 py-0.5 text-[11px] font-medium text-[#607594]">
-                              Answer {index + 1}
+                              {t('answer.optionBadge', { n: String(index + 1) })}
                             </span>
-                            <span className="text-sm font-medium text-[#1f2d45]">{option.label || `Answer ${index + 1}`}</span>
+                            <span className="text-sm font-medium text-[#1f2d45]">
+                              {option.label || t('answer.optionBadge', { n: String(index + 1) })}
+                            </span>
                             <span className="rounded-full bg-[#e6f1fb] px-2 py-0.5 text-[11px] font-medium text-[#185fa5]">
-                              score: {fixedScoreForAnswer(index)}
+                              {t('answer.scoreLabel')} {fixedScoreForAnswer(index)}
                             </span>
                           </div>
                           <div className="grid gap-3 md:grid-cols-2">
@@ -1659,7 +1674,7 @@ export default function ChecklistPanelBuilderPage() {
                               }))
                             }
                             className={`${inputClass} ${createQuestionMissingFields.includes(`answer_label_${index}`) ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
-                            placeholder={`Answer ${index + 1} label`}
+                            placeholder={t('answer.labelPlaceholder', { n: String(index + 1) })}
                           />
                           <input
                             type="number"
@@ -1668,11 +1683,11 @@ export default function ChecklistPanelBuilderPage() {
                             value={fixedScoreForAnswer(index)}
                             readOnly
                             className={`${inputClass} cursor-not-allowed bg-[#eef3fb] text-[#607594]`}
-                            placeholder="Score (1-4)"
+                            placeholder={t('answer.scorePlaceholder')}
                           />
                           </div>
                           <div className="mt-3">
-                            <label className={labelClass}>Description</label>
+                            <label className={labelClass}>{t('answer.descriptionLabel')}</label>
                             <textarea
                               value={option.description}
                               onChange={(event) =>
@@ -1684,7 +1699,7 @@ export default function ChecklistPanelBuilderPage() {
                                 }))
                               }
                               className={`${textAreaClass} ${createQuestionMissingFields.includes(`answer_description_${index}`) ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
-                              placeholder="Answer description"
+                              placeholder={t('answer.descriptionPlaceholder')}
                             />
                           </div>
                         </div>
@@ -1692,9 +1707,9 @@ export default function ChecklistPanelBuilderPage() {
                     </div>
                   </div>
                   <div className="md:col-span-2 space-y-2">
-                    <p className={sectionHeadingClass}>Question image (optional)</p>
+                    <p className={sectionHeadingClass}>{t('heading.questionImage')}</p>
                     <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-[#d4dced] bg-[#fbfdff] px-3 py-2 text-sm text-[#607594]">
-                      <span>Upload example image - resolves to UUID on upload</span>
+                      <span>{t('image.uploadHint')}</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -1712,10 +1727,10 @@ export default function ChecklistPanelBuilderPage() {
                                 return previewUrl;
                               });
                               setNewQuestionDraft((previous) => ({ ...previous, illustrativeImageId: mediaId }));
-                              toast.success('Question image uploaded.');
+                              toast.success(t('toast.imageUploaded'));
                             })
                             .catch((err) => {
-                              toast.error(err instanceof Error ? err.message : 'Failed to upload image');
+                              toast.error(err instanceof Error ? err.message : t('toast.imageUploadFailed'));
                             })
                             .finally(() => {
                               setUploadingMediaKey(null);
@@ -1725,7 +1740,7 @@ export default function ChecklistPanelBuilderPage() {
                       />
                     </label>
                     {uploadingMediaKey === 'create-question-image' ? (
-                      <p className="text-xs text-[#607594]">Uploading...</p>
+                      <p className="text-xs text-[#607594]">{t('image.uploading')}</p>
                     ) : null}
                     {newQuestionImagePreviewUrl ? (
                       <div className="relative mt-2 w-full max-w-[280px] overflow-hidden rounded-xl border border-[#d4dced] bg-white">
@@ -1739,11 +1754,11 @@ export default function ChecklistPanelBuilderPage() {
                             setNewQuestionDraft((previous) => ({ ...previous, illustrativeImageId: '' }));
                           }}
                           className="absolute right-2 top-2 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#0b1220]/70 text-sm font-semibold text-white hover:bg-[#0b1220]"
-                          aria-label="Remove example image"
+                          aria-label={t('image.removeAria')}
                         >
                           ×
                         </button>
-                        <img src={newQuestionImagePreviewUrl} alt="Example image preview" className="h-16 w-full object-cover" />
+                        <img src={newQuestionImagePreviewUrl} alt={t('image.previewAlt')} className="h-16 w-full object-cover" />
                       </div>
                     ) : null}
                   </div>
@@ -1755,7 +1770,7 @@ export default function ChecklistPanelBuilderPage() {
                     disabled={questionActionLoading === 'create'}
                     className="rounded-lg border border-[#d4dced] px-3 py-2 text-xs font-semibold text-[#3e69b0] hover:bg-[#edf4ff] disabled:opacity-60"
                   >
-                    Cancel
+                    {t('createQuestion.cancel')}
                   </button>
                   <button
                     type="button"
@@ -1763,7 +1778,7 @@ export default function ChecklistPanelBuilderPage() {
                     disabled={questionActionLoading === 'create' || uploadingMediaKey === 'create-question-image'}
                     className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
                   >
-                    {questionActionLoading === 'create' ? 'Creating...' : 'Create question'}
+                    {questionActionLoading === 'create' ? t('createQuestion.creating') : t('createQuestion.create')}
                   </button>
                 </div>
               </div>
@@ -1771,18 +1786,18 @@ export default function ChecklistPanelBuilderPage() {
 
             {selected.type === 'question' && selectedSection && selectedQuestion ? (
               <div className={`${cardClass} space-y-4`}>
-                {isReadOnly ? <p className="rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2 text-xs text-[#5f7395]">Read-only mode: editing actions are disabled for auditor.</p> : null}
+                {isReadOnly ? <p className="rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2 text-xs text-[#5f7395]">{t('readOnly.banner')}</p> : null}
                 <fieldset disabled={isReadOnly} className="space-y-4">
                 <div className="flex items-start justify-between gap-3 border-b border-[#e2e8f5] pb-3">
                   <div>
-                    <h2 className="text-lg font-semibold">Edit question</h2>
-                    <p className="text-sm text-[#607594]">Update question details.</p>
+                    <h2 className="text-lg font-semibold">{t('editQuestion.title')}</h2>
+                    <p className="text-sm text-[#607594]">{t('editQuestion.intro')}</p>
                   </div>
                 </div>
-                <div className={sectionHeadingClass}>Basic information</div>
+                <div className={sectionHeadingClass}>{t('heading.basic')}</div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className={labelClass}>Question ID *</label>
+                    <label className={labelClass}>{t('label.questionId')}</label>
                     <input
                       value={selectedQuestion.questionId}
                       onChange={(event) =>
@@ -1792,7 +1807,7 @@ export default function ChecklistPanelBuilderPage() {
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>Severity level *</label>
+                    <label className={labelClass}>{t('label.severity')}</label>
                     <select
                       value={selectedQuestion.securityLevel}
                       onChange={(event) =>
@@ -1802,13 +1817,13 @@ export default function ChecklistPanelBuilderPage() {
                       }
                       className={inputClass}
                     >
-                      <option value="low">low</option>
-                      <option value="medium">medium</option>
-                      <option value="high">high</option>
+                      <option value="low">{t('severity.low')}</option>
+                      <option value="medium">{t('severity.medium')}</option>
+                      <option value="high">{t('severity.high')}</option>
                     </select>
                   </div>
                   <div>
-                    <label className={labelClass}>Audit type</label>
+                    <label className={labelClass}>{t('label.auditType')}</label>
                     <input
                       value={selectedQuestion.auditType}
                       onChange={(event) =>
@@ -1819,9 +1834,9 @@ export default function ChecklistPanelBuilderPage() {
                   </div>
                 </div>
 
-                <div className={sectionHeadingClass}>Legal requirement</div>
+                <div className={sectionHeadingClass}>{t('heading.legal')}</div>
                 <div>
-                  <label className={labelClass}>Legal requirement title</label>
+                  <label className={labelClass}>{t('label.legalTitle')}</label>
                   <input
                     value={selectedQuestion.legalRequirementTitle}
                     onChange={(event) =>
@@ -1833,43 +1848,43 @@ export default function ChecklistPanelBuilderPage() {
                   />
                 </div>
                 <div>
-                  <RichTextEditor
-                    label="Legal requirement description *"
+                  <RichTextEditor richTextBadge={t('richText.badge')}
+                    label={t('label.legalDescription')}
                     value={selectedQuestion.legalRequirementDescription}
                     onChange={(next) =>
                       updateQuestion(selectedSection.id, selectedQuestion.id, {
                         legalRequirementDescription: next,
                       })
                     }
-                    placeholder="Describe the legal or regulatory basis..."
+                    placeholder={t('placeholder.legalBasis')}
                     minHeight={80}
                     hasError={editQuestionMissingFields.includes('legalRequirementDescription')}
                   />
                 </div>
-                <div className={sectionHeadingClass}>Content & guidance</div>
+                <div className={sectionHeadingClass}>{t('heading.content')}</div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <RichTextEditor
-                      label="Explanation *"
+                    <RichTextEditor richTextBadge={t('richText.badge')}
+                      label={t('label.explanation')}
                       value={selectedQuestion.explanation}
                       onChange={(next) =>
                         updateQuestion(selectedSection.id, selectedQuestion.id, { explanation: next })
                       }
-                      placeholder="Why this control matters..."
+                      placeholder={t('placeholder.whyMatters')}
                       minHeight={90}
                       hasError={editQuestionMissingFields.includes('explanation')}
                     />
                   </div>
                   <div>
-                    <RichTextEditor
-                      label="Expected implementation *"
+                    <RichTextEditor richTextBadge={t('richText.badge')}
+                      label={t('label.expectedImplementation')}
                       value={selectedQuestion.expectedImplementation}
                       onChange={(next) =>
                         updateQuestion(selectedSection.id, selectedQuestion.id, {
                           expectedImplementation: next,
                         })
                       }
-                      placeholder="• Step 1"
+                      placeholder={t('placeholder.steps')}
                       minHeight={90}
                       hasError={editQuestionMissingFields.includes('expectedImplementation')}
                     />
@@ -1877,7 +1892,7 @@ export default function ChecklistPanelBuilderPage() {
                 </div>
 
                 <div>
-                  <label className={labelClass}>Why this matters</label>
+                  <label className={labelClass}>{t('label.whyMatters')}</label>
                   <textarea
                     value={selectedQuestion.howItWorks}
                     onChange={(event) =>
@@ -1887,13 +1902,13 @@ export default function ChecklistPanelBuilderPage() {
                   />
                 </div>
 
-                <div className={sectionHeadingClass}>Options</div>
+                <div className={sectionHeadingClass}>{t('heading.options')}</div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="md:col-span-2 space-y-2">
                     <div className="flex items-center justify-between rounded-xl border border-[#e2e8f5] bg-[#f8fbff] px-3 py-2">
                       <div>
-                        <p className="text-sm font-medium text-[#1f2d45]">Upload evidence enabled</p>
-                        <p className="text-xs text-[#607594]">Allow customers to attach files as evidence</p>
+                        <p className="text-sm font-medium text-[#1f2d45]">{t('toggle.evidenceTitle')}</p>
+                        <p className="text-xs text-[#607594]">{t('toggle.evidenceHint')}</p>
                       </div>
                       <input
                         type="checkbox"
@@ -1908,8 +1923,8 @@ export default function ChecklistPanelBuilderPage() {
                     </div>
                     <div className="flex items-center justify-between rounded-xl border border-[#e2e8f5] bg-[#f8fbff] px-3 py-2">
                       <div>
-                        <p className="text-sm font-medium text-[#1f2d45]">User note enabled</p>
-                        <p className="text-xs text-[#607594]">Allow users to add a note for this question</p>
+                        <p className="text-sm font-medium text-[#1f2d45]">{t('toggle.noteTitle')}</p>
+                        <p className="text-xs text-[#607594]">{t('toggle.noteHint')}</p>
                       </div>
                       <input
                         type="checkbox"
@@ -1927,7 +1942,7 @@ export default function ChecklistPanelBuilderPage() {
                 </div>
 
                 <div>
-                  <label className={labelClass}>Note from admin (optional)</label>
+                  <label className={labelClass}>{t('label.adminNote')}</label>
                   <textarea
                     value={selectedQuestion.note}
                     onChange={(event) => updateQuestion(selectedSection.id, selectedQuestion.id, { note: event.target.value })}
@@ -1936,17 +1951,19 @@ export default function ChecklistPanelBuilderPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <p className={sectionHeadingClass}>Answer options (4 required)</p>
+                  <p className={sectionHeadingClass}>{t('heading.answerOptions')}</p>
                   <div className="space-y-2">
                     {selectedQuestion.answerOptions.map((option, index) => (
                       <div key={`answer-option-${index}`} className="rounded-xl border border-[#e2e8f5] bg-[#fbfcff] p-3">
                         <div className="mb-3 flex items-center gap-2">
                           <span className="rounded-full border border-[#d4dced] bg-white px-2 py-0.5 text-[11px] font-medium text-[#607594]">
-                            Answer {index + 1}
+                            {t('answer.optionBadge', { n: String(index + 1) })}
                           </span>
-                          <span className="text-sm font-medium text-[#1f2d45]">{option.label || `Answer ${index + 1}`}</span>
+                          <span className="text-sm font-medium text-[#1f2d45]">
+                            {option.label || t('answer.optionBadge', { n: String(index + 1) })}
+                          </span>
                           <span className="rounded-full bg-[#e6f1fb] px-2 py-0.5 text-[11px] font-medium text-[#185fa5]">
-                            score: {fixedScoreForAnswer(index)}
+                            {t('answer.scoreLabel')} {fixedScoreForAnswer(index)}
                           </span>
                         </div>
                         <div className="grid gap-3 md:grid-cols-2">
@@ -1960,7 +1977,7 @@ export default function ChecklistPanelBuilderPage() {
                             })
                           }
                           className={`${inputClass} ${editQuestionMissingFields.includes(`answer_label_${index}`) ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
-                          placeholder={`Answer ${index + 1} label`}
+                          placeholder={t('answer.labelPlaceholder', { n: String(index + 1) })}
                         />
                         <input
                           type="number"
@@ -1969,11 +1986,11 @@ export default function ChecklistPanelBuilderPage() {
                           value={fixedScoreForAnswer(index)}
                           readOnly
                           className={`${inputClass} cursor-not-allowed bg-[#eef3fb] text-[#607594]`}
-                          placeholder="Score (1-4)"
+                          placeholder={t('answer.scorePlaceholder')}
                         />
                         </div>
                         <div className="mt-3">
-                          <label className={labelClass}>Description</label>
+                          <label className={labelClass}>{t('answer.descriptionLabel')}</label>
                           <textarea
                             value={option.description}
                             onChange={(event) =>
@@ -1984,7 +2001,7 @@ export default function ChecklistPanelBuilderPage() {
                               })
                             }
                             className={`${textAreaClass} ${editQuestionMissingFields.includes(`answer_description_${index}`) ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
-                            placeholder="Answer description"
+                            placeholder={t('answer.descriptionPlaceholder')}
                           />
                         </div>
                       </div>
@@ -1992,9 +2009,9 @@ export default function ChecklistPanelBuilderPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <p className={sectionHeadingClass}>Question image (optional)</p>
+                  <p className={sectionHeadingClass}>{t('heading.questionImage')}</p>
                   <label className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-[#d4dced] bg-[#fbfdff] px-3 py-2 text-sm text-[#607594]">
-                    <span>Upload example image - resolves to UUID on upload</span>
+                    <span>{t('image.uploadHint')}</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -2012,10 +2029,10 @@ export default function ChecklistPanelBuilderPage() {
                               return { questionId: selectedQuestion.id, url: previewUrl };
                             });
                             updateQuestion(selectedSection.id, selectedQuestion.id, { illustrativeImageId: mediaId });
-                            toast.success('Question image uploaded.');
+                            toast.success(t('toast.imageUploaded'));
                           })
                           .catch((err) => {
-                            toast.error(err instanceof Error ? err.message : 'Failed to upload image');
+                            toast.error(err instanceof Error ? err.message : t('toast.imageUploadFailed'));
                           })
                           .finally(() => {
                             setUploadingMediaKey(null);
@@ -2025,7 +2042,7 @@ export default function ChecklistPanelBuilderPage() {
                     />
                   </label>
                   {uploadingMediaKey === `edit-question-${selectedQuestion.id}` ? (
-                    <p className="text-xs text-[#607594]">Uploading...</p>
+                    <p className="text-xs text-[#607594]">{t('image.uploading')}</p>
                   ) : null}
                   {editQuestionImagePreview?.questionId === selectedQuestion.id ? (
                     <div className="relative mt-2 w-full max-w-[280px] overflow-hidden rounded-xl border border-[#dced] bg-white">
@@ -2039,11 +2056,11 @@ export default function ChecklistPanelBuilderPage() {
                           updateQuestion(selectedSection.id, selectedQuestion.id, { illustrativeImageId: '' });
                         }}
                         className="absolute right-2 top-2 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#0b1220]/70 text-sm font-semibold text-white hover:bg-[#0b1220]"
-                        aria-label="Remove example image"
+                        aria-label={t('image.removeAria')}
                       >
                         ×
                       </button>
-                      <img src={editQuestionImagePreview.url} alt="Example image preview" className="h-20 w-full object-cover" />
+                      <img src={editQuestionImagePreview.url} alt={t('image.previewAlt')} className="h-20 w-full object-cover" />
                     </div>
                   ) : selectedQuestion.illustrativeImageId && (isHttpUrl(selectedQuestion.illustrativeImageId) || previewUrlsByMediaId[selectedQuestion.illustrativeImageId]) ? (
                     <div className="relative mt-2 w-full max-w-[280px] overflow-hidden rounded-xl border border-[#dced] bg-white">
@@ -2053,7 +2070,7 @@ export default function ChecklistPanelBuilderPage() {
                           updateQuestion(selectedSection.id, selectedQuestion.id, { illustrativeImageId: '' });
                         }}
                         className="absolute right-2 top-2 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#0b1220]/70 text-sm font-semibold text-white hover:bg-[#0b1220]"
-                        aria-label="Remove example image"
+                        aria-label={t('image.removeAria')}
                       >
                         ×
                       </button>
@@ -2063,13 +2080,13 @@ export default function ChecklistPanelBuilderPage() {
                             ? selectedQuestion.illustrativeImageId
                             : previewUrlsByMediaId[selectedQuestion.illustrativeImageId]
                         } 
-                        alt="Example image preview" 
+                        alt={t('image.previewAlt')} 
                         className="h-20 w-full object-cover" 
                       />
                     </div>
                   ) : previewErrorsByMediaId[selectedQuestion.illustrativeImageId || ''] ? (
                     <div className="mt-2 text-xs text-[#d45f6b]">
-                      Failed to load image: {previewErrorsByMediaId[selectedQuestion.illustrativeImageId || '']}
+                      {t('preview.loadFailedPrefix')} {previewErrorsByMediaId[selectedQuestion.illustrativeImageId || '']}
                     </div>
                   ) : null}
                 </div>
@@ -2081,7 +2098,7 @@ export default function ChecklistPanelBuilderPage() {
                       disabled={questionActionLoading === 'save'}
                       className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
                     >
-                      {questionActionLoading === 'save' ? 'Saving...' : 'Save question'}
+                      {questionActionLoading === 'save' ? t('editQuestion.saving') : t('editQuestion.save')}
                     </button>
                     <button
                       type="button"
@@ -2096,10 +2113,10 @@ export default function ChecklistPanelBuilderPage() {
                       className="rounded-lg border border-[#d45f6b] bg-[#fff1f3] px-3 py-2 text-xs font-semibold text-[#a73a46] disabled:opacity-60"
                     >
                       {questionActionLoading === 'delete'
-                        ? 'Deleting...'
+                        ? t('editQuestion.deleting')
                         : selectedQuestion.parentQuestionId
-                          ? 'Delete subquestion'
-                          : 'Delete question'}
+                          ? t('editQuestion.deleteSub')
+                          : t('editQuestion.delete')}
                     </button>
                   </div>
                 ) : null}
@@ -2111,10 +2128,8 @@ export default function ChecklistPanelBuilderPage() {
         {!isReadOnly && confirmDeleteSectionId ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4">
             <div className="w-full max-w-md rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl">
-              <h2 className="text-lg font-semibold text-[#1f2d45]">Delete section?</h2>
-              <p className="mt-1 text-sm text-[#607594]">
-                This action will permanently remove this section and all of its questions.
-              </p>
+              <h2 className="text-lg font-semibold text-[#1f2d45]">{t('modal.deleteSection.title')}</h2>
+              <p className="mt-1 text-sm text-[#607594]">{t('modal.deleteSection.body')}</p>
               <div className="mt-5 flex items-center justify-end gap-2">
                 <button
                   type="button"
@@ -2122,7 +2137,7 @@ export default function ChecklistPanelBuilderPage() {
                   disabled={sectionActionLoading === 'delete'}
                   className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-sm font-semibold text-[#3e69b0] hover:bg-[#edf4ff] disabled:opacity-60"
                 >
-                  Cancel
+                  {t('modal.cancel')}
                 </button>
                 <button
                   type="button"
@@ -2130,7 +2145,7 @@ export default function ChecklistPanelBuilderPage() {
                   disabled={sectionActionLoading === 'delete'}
                   className="rounded-lg border border-[#d45f6b] bg-[#fff1f3] px-3 py-1.5 text-sm font-semibold text-[#a73a46] hover:bg-[#ffe6ea] disabled:opacity-60"
                 >
-                  {sectionActionLoading === 'delete' ? 'Deleting...' : 'Delete section'}
+                  {sectionActionLoading === 'delete' ? t('section.deleting') : t('section.delete')}
                 </button>
               </div>
             </div>
@@ -2140,10 +2155,10 @@ export default function ChecklistPanelBuilderPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4">
             <div className="w-full max-w-md rounded-2xl border border-[#dbe4f4] bg-white p-6 shadow-xl">
               <h2 className="text-lg font-semibold text-[#1f2d45]">
-                {confirmDeleteQuestionTarget.isSubQuestion ? 'Delete subquestion?' : 'Delete question?'}
+                {confirmDeleteQuestionTarget.isSubQuestion ? t('modal.deleteSubquestion.title') : t('modal.deleteQuestion.title')}
               </h2>
               <p className="mt-1 text-sm text-[#607594]">
-                This action will permanently remove this {confirmDeleteQuestionTarget.isSubQuestion ? 'subquestion' : 'question'}.
+                {confirmDeleteQuestionTarget.isSubQuestion ? t('modal.deleteSubquestion.body') : t('modal.deleteQuestion.body')}
               </p>
               <div className="mt-5 flex items-center justify-end gap-2">
                 <button
@@ -2152,7 +2167,7 @@ export default function ChecklistPanelBuilderPage() {
                   disabled={questionActionLoading === 'delete'}
                   className="rounded-lg border border-[#d4dced] px-3 py-1.5 text-sm font-semibold text-[#3e69b0] hover:bg-[#edf4ff] disabled:opacity-60"
                 >
-                  Cancel
+                  {t('modal.cancel')}
                 </button>
                 <button
                   type="button"
@@ -2163,10 +2178,10 @@ export default function ChecklistPanelBuilderPage() {
                   className="rounded-lg border border-[#d45f6b] bg-[#fff1f3] px-3 py-1.5 text-sm font-semibold text-[#a73a46] hover:bg-[#ffe6ea] disabled:opacity-60"
                 >
                   {questionActionLoading === 'delete'
-                    ? 'Deleting...'
+                    ? t('editQuestion.deleting')
                     : confirmDeleteQuestionTarget.isSubQuestion
-                      ? 'Delete subquestion'
-                      : 'Delete question'}
+                      ? t('editQuestion.deleteSub')
+                      : t('editQuestion.delete')}
                 </button>
               </div>
             </div>
@@ -2177,7 +2192,7 @@ export default function ChecklistPanelBuilderPage() {
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/65 backdrop-blur-[1px]">
           <div className="flex items-center gap-3 rounded-xl border border-[#dbe4f4] bg-white px-4 py-3 shadow-sm">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#2d4f83] border-t-transparent" />
-            <span className="text-sm font-medium text-[#1f2d45]">Loading checklist data...</span>
+            <span className="text-sm font-medium text-[#1f2d45]">{t('loading.overlay')}</span>
           </div>
         </div>
       ) : null}

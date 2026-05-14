@@ -1,11 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   CustomerReportDataResponse,
   customerReportOverallPercentage,
   sectionScoreDisplayName,
 } from '@/lib/reports';
+import { translate, useLocale, type Locale } from '@/lib/i18n';
+import { customerReportMessages } from '@/locales/customer-report';
 
 interface ReportDashboardProps {
   data: CustomerReportDataResponse;
@@ -37,16 +39,33 @@ export function getSeverityColor(percentage: number): { bg: string; text: string
   };
 }
 
-export function getSeverityLabel(percentage: number): string {
-  if (percentage >= 80) return 'Low Risk';
-  if (percentage >= 60) return 'Medium Risk';
-  return 'High Risk';
+export function riskBandLabel(
+  percentage: number,
+  t: (key: string, values?: Record<string, string>) => string
+): string {
+  if (percentage >= 80) return t('dashboard.riskBand.low');
+  if (percentage >= 60) return t('dashboard.riskBand.medium');
+  return t('dashboard.riskBand.high');
+}
+
+function dateLocaleTag(locale: Locale) {
+  return locale === 'cs' ? 'cs-CZ' : 'en-GB';
 }
 
 /**
  * Score gauge component for visual representation
  */
-function ScoreGauge({ score, maxScore, percentage }: { score: number; maxScore: number; percentage: number }) {
+function ScoreGauge({
+  score,
+  maxScore,
+  percentage,
+  t,
+}: {
+  score: number;
+  maxScore: number;
+  percentage: number;
+  t: (key: string, values?: Record<string, string>) => string;
+}) {
   const severity = getSeverityColor(percentage);
   const circumference = 2 * Math.PI * 45;
   const offset = circumference - (percentage / 100) * circumference;
@@ -79,7 +98,7 @@ function ScoreGauge({ score, maxScore, percentage }: { score: number; maxScore: 
         </div>
       </div>
       <div className={`rounded-full ${severity.badge} px-3 py-1 text-xs font-semibold`}>
-        {getSeverityLabel(percentage)}
+        {riskBandLabel(percentage, t)}
       </div>
     </div>
   );
@@ -88,7 +107,15 @@ function ScoreGauge({ score, maxScore, percentage }: { score: number; maxScore: 
 /**
  * Risk assessment summary
  */
-function RiskAssessmentSummary({ sections, findings }: { sections: any[]; findings: any[] }) {
+function RiskAssessmentSummary({
+  sections,
+  findings,
+  t,
+}: {
+  sections: any[];
+  findings: any[];
+  t: (key: string, values?: Record<string, string>) => string;
+}) {
   const highRiskSections = useMemo(
     () => sections.filter((s) => (s.score / s.max_score) * 100 < 60),
     [sections]
@@ -104,21 +131,25 @@ function RiskAssessmentSummary({ sections, findings }: { sections: any[]; findin
   return (
     <div className="grid gap-3 rounded-2xl border border-[#e2e8f5] bg-white p-4 md:grid-cols-3 shadow-sm">
       <article className="rounded-lg border border-[#fee2e2] bg-[#fef2f2] p-3">
-        <p className="text-xs font-semibold uppercase text-[#7f1d1d]">High Risk Areas</p>
+        <p className="text-xs font-semibold uppercase text-[#7f1d1d]">{t('dashboard.risk.highAreas')}</p>
         <p className="mt-2 text-2xl font-bold text-[#dc2626]">{highRiskSections.length}</p>
-        <p className="mt-1 text-xs text-[#991b1b]">{highRiskSections.map((s) => sectionScoreDisplayName(s)).join(', ') || 'None'}</p>
+        <p className="mt-1 text-xs text-[#991b1b]">
+          {highRiskSections.map((s) => sectionScoreDisplayName(s)).join(', ') || t('dashboard.risk.none')}
+        </p>
       </article>
 
       <article className="rounded-lg border border-[#fef3c7] bg-[#fffbeb] p-3">
-        <p className="text-xs font-semibold uppercase text-[#78350f]">Medium Risk Areas</p>
+        <p className="text-xs font-semibold uppercase text-[#78350f]">{t('dashboard.risk.mediumAreas')}</p>
         <p className="mt-2 text-2xl font-bold text-[#d97706]">{mediumRiskSections.length}</p>
-        <p className="mt-1 text-xs text-[#92400e]">{mediumRiskSections.map((s) => sectionScoreDisplayName(s)).slice(0, 2).join(', ') || 'None'}</p>
+        <p className="mt-1 text-xs text-[#92400e]">
+          {mediumRiskSections.map((s) => sectionScoreDisplayName(s)).slice(0, 2).join(', ') || t('dashboard.risk.none')}
+        </p>
       </article>
 
       <article className="rounded-lg border border-[#fecaca] bg-[#fee2e2] p-3">
-        <p className="text-xs font-semibold uppercase text-[#7f1d1d]">Critical Findings</p>
+        <p className="text-xs font-semibold uppercase text-[#7f1d1d]">{t('dashboard.risk.criticalFindings')}</p>
         <p className="mt-2 text-2xl font-bold text-[#dc2626]">{criticalFindings.length}</p>
-        <p className="mt-1 text-xs text-[#991b1b]">Require immediate attention</p>
+        <p className="mt-1 text-xs text-[#991b1b]">{t('dashboard.risk.attention')}</p>
       </article>
     </div>
   );
@@ -127,12 +158,20 @@ function RiskAssessmentSummary({ sections, findings }: { sections: any[]; findin
 /**
  * Score breakdown with visual bars
  */
-function ScoreBreakdown({ sections, chapters }: { sections: any[]; chapters: any[] }) {
+function ScoreBreakdown({
+  sections,
+  chapters,
+  t,
+}: {
+  sections: any[];
+  chapters: any[];
+  t: (key: string, values?: Record<string, string>) => string;
+}) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Section Scores */}
       <section className="space-y-3">
-        <h3 className="text-lg font-semibold text-[#243555]">Section Scores</h3>
+        <h3 className="text-lg font-semibold text-[#243555]">{t('dashboard.sections.title')}</h3>
         <div className="space-y-3">
           {sections.map((section) => {
             const severity = getSeverityColor(section.percentage);
@@ -149,7 +188,10 @@ function ScoreBreakdown({ sections, chapters }: { sections: any[]; chapters: any
                   />
                 </div>
                 <p className="mt-2 text-xs text-[#6a7d9a]">
-                  Score: {section.score}/{section.max_score}
+                  {t('dashboard.sections.scoreLine', {
+                    score: String(section.score),
+                    max: String(section.max_score),
+                  })}
                 </p>
               </div>
             );
@@ -159,7 +201,7 @@ function ScoreBreakdown({ sections, chapters }: { sections: any[]; chapters: any
 
       {/* Chapter Breakdown */}
       <section className="space-y-3">
-        <h3 className="text-lg font-semibold text-[#243555]">Chapter Breakdown</h3>
+        <h3 className="text-lg font-semibold text-[#243555]">{t('dashboard.chapters.title')}</h3>
         <div className="space-y-3">
           {chapters.map((chapter) => {
             const severity = getSeverityColor(chapter.percentage);
@@ -176,7 +218,11 @@ function ScoreBreakdown({ sections, chapters }: { sections: any[]; chapters: any
                   />
                 </div>
                 <p className="mt-2 text-xs text-[#6a7d9a]">
-                  Score: {chapter.score}/{chapter.max_score} · Findings: {chapter.findings_count}
+                  {t('dashboard.chapters.scoreLine', {
+                    score: String(chapter.score),
+                    max: String(chapter.max_score),
+                    findings: String(chapter.findings_count),
+                  })}
                 </p>
               </div>
             );
@@ -190,7 +236,15 @@ function ScoreBreakdown({ sections, chapters }: { sections: any[]; chapters: any
 /**
  * Findings priority filter and display
  */
-function FindingsSection({ findings, id }: { findings: any[]; id?: string }) {
+function FindingsSection({
+  findings,
+  id,
+  t,
+}: {
+  findings: any[];
+  id?: string;
+  t: (key: string, values?: Record<string, string>) => string;
+}) {
   const findingsByPriority = useMemo(() => {
     return {
       high: findings.filter((f) => f.priority === 'high'),
@@ -199,20 +253,33 @@ function FindingsSection({ findings, id }: { findings: any[]; id?: string }) {
     };
   }, [findings]);
 
-  const priorityConfig = {
-    high: { bg: 'bg-[#fee2e2]', text: 'text-[#dc2626]', badge: 'bg-red-100 text-red-800', label: 'Critical' },
-    medium: {
-      bg: 'bg-[#fff9ea]',
-      text: 'text-[#d97706]',
-      badge: 'bg-amber-100 text-amber-800',
-      label: 'Warning',
-    },
-    low: { bg: 'bg-[#eff6ff]', text: 'text-[#0284c7]', badge: 'bg-blue-100 text-blue-800', label: 'Info' },
-  };
+  const priorityConfig = useMemo(
+    () => ({
+      high: {
+        bg: 'bg-[#fee2e2]',
+        text: 'text-[#dc2626]',
+        badge: 'bg-red-100 text-red-800',
+        label: t('dashboard.findings.priority.critical'),
+      },
+      medium: {
+        bg: 'bg-[#fff9ea]',
+        text: 'text-[#d97706]',
+        badge: 'bg-amber-100 text-amber-800',
+        label: t('dashboard.findings.priority.warning'),
+      },
+      low: {
+        bg: 'bg-[#eff6ff]',
+        text: 'text-[#0284c7]',
+        badge: 'bg-blue-100 text-blue-800',
+        label: t('dashboard.findings.priority.info'),
+      },
+    }),
+    [t]
+  );
 
   return (
     <section id={id} className="space-y-4 scroll-mt-24">
-      <h2 className="text-xl font-semibold text-[#243555]">Findings & Recommendations</h2>
+      <h2 className="text-xl font-semibold text-[#243555]">{t('dashboard.findings.title')}</h2>
 
       {/* Priority Summary */}
       <div className="grid gap-3 md:grid-cols-3">
@@ -230,7 +297,7 @@ function FindingsSection({ findings, id }: { findings: any[]; id?: string }) {
       <div className="space-y-3">
         {findings.length === 0 ? (
           <p className="rounded-lg border border-[#e2e8f5] bg-white p-4 text-center text-sm text-[#6a7d9a]">
-            No findings reported. Excellent assessment results!
+            {t('dashboard.findings.empty')}
           </p>
         ) : (
           findings.map((finding, idx) => {
@@ -244,10 +311,11 @@ function FindingsSection({ findings, id }: { findings: any[]; id?: string }) {
                     </div>
                     <p className="text-sm font-semibold text-[#243555] mt-1">{finding.question_text}</p>
                     <p className="mt-2 text-sm text-[#6a7d9a]">
-                      <span className="font-semibold">Answer:</span> {finding.answer?.trim() ? finding.answer : '—'}
+                      <span className="font-semibold">{t('dashboard.findings.answer')}</span>{' '}
+                      {finding.answer?.trim() ? finding.answer : '—'}
                     </p>
                     <p className="mt-2 text-sm text-[#2b3e60]">
-                      <span className="font-semibold">Recommendation:</span>{' '}
+                      <span className="font-semibold">{t('dashboard.findings.recommendation')}</span>{' '}
                       {finding.recommendation?.trim() ? finding.recommendation : '—'}
                     </p>
                   </div>
@@ -264,38 +332,49 @@ function FindingsSection({ findings, id }: { findings: any[]; id?: string }) {
 /**
  * Main Report Dashboard Component
  */
-export function ReportDashboard({ data, reportId }: ReportDashboardProps) {
+export function ReportDashboard({ data, reportId: _reportId }: ReportDashboardProps) {
+  const { locale } = useLocale();
   const overallPercentage = customerReportOverallPercentage(data);
+  const t = useCallback(
+    (key: string, values?: Record<string, string>) => translate(customerReportMessages, locale, key, values),
+    [locale]
+  );
+  const dateTag = dateLocaleTag(locale);
 
   return (
     <div className="space-y-6">
       {/* Overall Score Summary */}
       <div className="rounded-2xl border border-[#e2e8f5] bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-[#243555] mb-4">Assessment Summary</h2>
+        <h2 className="text-lg font-semibold text-[#243555] mb-4">{t('dashboard.summary.title')}</h2>
         <div className="grid gap-4 md:grid-cols-4 items-center">
           <div>
-            <ScoreGauge score={data.overall_score} maxScore={data.max_possible_score} percentage={overallPercentage} />
+            <ScoreGauge
+              score={data.overall_score}
+              maxScore={data.max_possible_score}
+              percentage={overallPercentage}
+              t={t}
+            />
           </div>
           <div className="md:col-span-3">
             <dl className="space-y-3">
               <div className="flex items-center justify-between">
-                <dt className="text-sm font-medium text-[#6a7d9a]">Overall Score</dt>
+                <dt className="text-sm font-medium text-[#6a7d9a]">{t('dashboard.summary.overallScore')}</dt>
                 <dd className="text-2xl font-bold text-[#1f2d45]">
                   {Math.round(data.overall_score)} / {data.max_possible_score}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="text-sm font-medium text-[#6a7d9a]">Completion Rate</dt>
+                <dt className="text-sm font-medium text-[#6a7d9a]">{t('dashboard.summary.completionRate')}</dt>
                 <dd className="text-2xl font-bold text-[#1f2d45]">{Math.round(data.completion_percentage)}%</dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="text-sm font-medium text-[#6a7d9a]">Total Findings</dt>
+                <dt className="text-sm font-medium text-[#6a7d9a]">{t('dashboard.summary.totalFindings')}</dt>
                 <dd className="text-2xl font-bold text-[#1f2d45]">{data.findings.length}</dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="text-sm font-medium text-[#6a7d9a]">Risk Level</dt>
+                <dt className="text-sm font-medium text-[#6a7d9a]">{t('dashboard.summary.riskLevel')}</dt>
                 <dd className={`text-lg font-bold ${getSeverityColor(overallPercentage).text}`}>
-                  {getSeverityLabel(overallPercentage)}
+                  {riskBandLabel(overallPercentage, t)}
                 </dd>
               </div>
             </dl>
@@ -304,18 +383,18 @@ export function ReportDashboard({ data, reportId }: ReportDashboardProps) {
       </div>
 
       {/* Risk Assessment */}
-      <RiskAssessmentSummary sections={data.section_scores} findings={data.findings} />
+      <RiskAssessmentSummary sections={data.section_scores} findings={data.findings} t={t} />
 
       {/* Score Breakdown */}
-      <ScoreBreakdown sections={data.section_scores} chapters={data.chapter_data} />
+      <ScoreBreakdown sections={data.section_scores} chapters={data.chapter_data} t={t} />
 
       {/* Findings */}
-      <FindingsSection findings={data.findings} id="report-findings-dashboard" />
+      <FindingsSection findings={data.findings} id="report-findings-dashboard" t={t} />
 
       {/* Admin Summaries */}
       {data.section_summaries.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-[#243555]">Admin Comments</h2>
+          <h2 className="text-xl font-semibold text-[#243555]">{t('dashboard.adminComments')}</h2>
           <div className="space-y-3">
             {data.section_summaries.map((summary, index) => (
               <article key={`${summary.section_id}-${index}`} className="rounded-lg border border-[#e2e8f5] bg-white p-4 shadow-sm">
@@ -330,13 +409,15 @@ export function ReportDashboard({ data, reportId }: ReportDashboardProps) {
       {/* Public Suggestions */}
       {data.public_suggestions.length > 0 && (
         <section id="report-suggestions" className="space-y-3 scroll-mt-24">
-          <h2 className="text-xl font-semibold text-[#243555]">Suggestions for Improvement</h2>
+          <h2 className="text-xl font-semibold text-[#243555]">{t('dashboard.suggestions.title')}</h2>
           <div className="space-y-3">
             {data.public_suggestions.map((suggestion, index) => (
               <article key={`${suggestion.created_at}-${index}`} className="rounded-lg border border-[#e9f5ff] bg-[#f0f9ff] p-4 shadow-sm">
                 <p className="text-sm text-[#0c4a6e]">{suggestion.suggestion_text}</p>
                 <p className="mt-2 text-xs text-[#0369a1]">
-                  Shared {new Date(suggestion.created_at).toLocaleDateString()}
+                  {t('dashboard.suggestions.shared', {
+                    date: new Date(suggestion.created_at).toLocaleDateString(dateTag),
+                  })}
                 </p>
               </article>
             ))}

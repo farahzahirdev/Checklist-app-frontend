@@ -1,9 +1,28 @@
 'use client';
 
+import { useCallback, useMemo } from 'react';
+import { translate, useLocale } from '@/lib/i18n';
+import { customerReportMessages } from '@/locales/customer-report';
+
 /**
  * Support strip + brand footer for the customer report page (rendered at page bottom).
  */
 export function CustomerReportPageFooter() {
+  const { locale } = useLocale();
+  const t = useCallback(
+    (key: string, values?: Record<string, string>) => translate(customerReportMessages, locale, key, values),
+    [locale]
+  );
+
+  const pillars = useMemo(
+    () => [
+      { title: t('footer.pillar.secure.title'), body: t('footer.pillar.secure.body') },
+      { title: t('footer.pillar.private.title'), body: t('footer.pillar.private.body') },
+      { title: t('footer.pillar.reliable.title'), body: t('footer.pillar.reliable.body') },
+    ],
+    [t]
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-2xl border border-[#bfdbfe] bg-[#e8f2ff] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
@@ -15,8 +34,8 @@ export function CustomerReportPageFooter() {
             </svg>
           </div>
           <div>
-            <p className="text-base font-bold text-[#0066ff] sm:text-lg">Questions?</p>
-            <p className="mt-0.5 text-sm text-[#475569]">We&apos;re here to help you turn insights into progress.</p>
+            <p className="text-base font-bold text-[#0066ff] sm:text-lg">{t('footer.support.title')}</p>
+            <p className="mt-0.5 text-sm text-[#475569]">{t('footer.support.body')}</p>
           </div>
         </div>
         <a
@@ -43,15 +62,11 @@ export function CustomerReportPageFooter() {
               </div>
               <span className="text-lg font-semibold">Checklist KB</span>
             </div>
-            <p className="mt-3 text-sm leading-relaxed text-[#94a3b8]">Cybersecurity assessments made simple.</p>
+            <p className="mt-3 text-sm leading-relaxed text-[#94a3b8]">{t('footer.brand.tagline')}</p>
           </div>
 
           <div className="grid flex-1 gap-6 sm:grid-cols-3 lg:max-w-2xl">
-            {[
-              { title: 'Secure', body: 'Your data is encrypted and protected.' },
-              { title: 'Private', body: 'We never share your information.' },
-              { title: 'Reliable', body: 'Built by security and compliance experts.' },
-            ].map((item) => (
+            {pillars.map((item) => (
               <div key={item.title} className="flex gap-3">
                 <span className="mt-0.5 text-[#3b82f6]" aria-hidden>
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">

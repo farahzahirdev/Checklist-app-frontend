@@ -23,6 +23,7 @@ export const adminUsersAccessMessages: TranslationMessages = {
     'roleswitch.durationLabel': 'Switch duration (minutes)',
     'roleswitch.durationHint':
       'How long your session stays in the selected role. You can return sooner with End switch.',
+    'roleswitch.readOnlyAdmin': 'Read-only admin',
     'users.sectionTitle': 'Admin & auditor users',
     'users.sectionHint': 'Click a row to inspect and manage',
     'users.searchPlaceholder': 'Search email…',
@@ -67,6 +68,7 @@ export const adminUsersAccessMessages: TranslationMessages = {
     'roleswitch.durationLabel': 'Délka přepnutí (minuty)',
     'roleswitch.durationHint':
       'Jak dlouho zůstane relace ve zvolené roli. Dříve se vrátíte pomocí Ukončit přepnutí.',
+    'roleswitch.readOnlyAdmin': 'Admin jen pro čtení',
     'users.sectionTitle': 'Admin & auditor uživatelé',
     'users.sectionHint': 'Klikněte na řádek pro zobrazení detailu a správu',
     'users.searchPlaceholder': 'Hledat e-mail…',
