@@ -19,14 +19,14 @@ export function LogoutButton() {
     // in the background (best-effort).
     try {
       persistAccessToken(null);
-      router.push('/login');
+      // Replace history to avoid back-navigation returning to protected pages
+      void router.replace('/login');
       // fire-and-forget server logout
       void logoutAccount().catch(() => {
         /* swallow errors - token already cleared locally */
       });
     } finally {
       setLoading(false);
-      router.refresh();
     }
   }
 

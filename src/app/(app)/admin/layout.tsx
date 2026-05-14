@@ -92,14 +92,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     try {
       persistAccessToken(null);
       setMobileNavOpen(false);
-      router.push('/login');
+      // Use replace to prevent going back to protected routes
+      void router.replace('/login');
       // best-effort server logout without blocking navigation
       void logoutAccount().catch(() => {
         // ignore server logout errors
       });
     } finally {
       setLogoutLoading(false);
-      router.refresh();
     }
   }
 
