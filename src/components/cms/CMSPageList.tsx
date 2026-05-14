@@ -152,7 +152,7 @@ export function CMSPageList() {
   const [draftCsTitle, setDraftCsTitle] = useState("");
   const [draftEnTitle, setDraftEnTitle] = useState("");
   const [savingTitles, setSavingTitles] = useState(false);
-  const sectionAccordionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const sectionRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const loadPages = useCallback(async () => {
     try {
@@ -253,7 +253,7 @@ export function CMSPageList() {
 
   useLayoutEffect(() => {
     if (!expandedSectionKey) return;
-    const el = sectionAccordionRefs.current.get(expandedSectionKey);
+    const el = sectionRowRefs.current.get(expandedSectionKey);
     if (!el) return;
     const reduceMotion =
       typeof window !== "undefined" &&
@@ -572,8 +572,8 @@ export function CMSPageList() {
                       <div
                         key={key}
                         ref={(el) => {
-                          if (el) sectionAccordionRefs.current.set(key, el);
-                          else sectionAccordionRefs.current.delete(key);
+                          if (el) sectionRowRefs.current.set(key, el);
+                          else sectionRowRefs.current.delete(key);
                         }}
                         className="flex scroll-mt-36 flex-col gap-2"
                       >
