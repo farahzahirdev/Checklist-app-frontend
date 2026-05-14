@@ -311,6 +311,10 @@ export function CMSPageList() {
     }
   };
 
+  const cancelTranslationEdit = useCallback(() => {
+    setSectionKey('');
+  }, []);
+
   const openTitleEdit = (g: PageGroup) => {
     setEditingSlug(g.slug);
     setDraftCsTitle(g.cs?.title ?? '');
@@ -526,14 +530,24 @@ export function CMSPageList() {
                       ({sectionTypeLabel(activeSection.type, t)})
                     </span>
                   </h3>
-                  <button
-                    type="button"
-                    disabled={savingTranslations || translationPaths.length === 0}
-                    onClick={() => void handleSaveTranslations()}
-                    className="rounded-lg bg-[#1f2d45] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {savingTranslations ? t('translationList.savingTranslations') : t('translationList.saveTranslations')}
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={savingTranslations}
+                      onClick={cancelTranslationEdit}
+                      className="rounded-lg border border-[#d4dced] bg-white px-4 py-2 text-sm font-medium text-[#3e69b0] transition-colors hover:bg-[#edf4ff] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {t('editor.actions.cancel')}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={savingTranslations || translationPaths.length === 0}
+                      onClick={() => void handleSaveTranslations()}
+                      className="rounded-lg bg-[#1f2d45] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {savingTranslations ? t('translationList.savingTranslations') : t('translationList.saveTranslations')}
+                    </button>
+                  </div>
                 </div>
                 {translationPaths.length === 0 ? (
                   <p className="text-sm text-[#607594]">{t('translationList.noStringFields')}</p>
