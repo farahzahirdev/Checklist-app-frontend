@@ -6,6 +6,7 @@ import type { Route } from 'next';
 import { SiteHeader } from '@/components/site-header';
 import type { ReactNode } from 'react';
 import { ACCESS_TOKEN_STORAGE_KEY, getCurrentUser, getRoleHomePath } from '@/lib/auth';
+import { hasCookieConsent } from '@/lib/cookie-consent';
 
 export default function PublicLayout({
   children,
@@ -22,6 +23,16 @@ export default function PublicLayout({
       if (typeof window === 'undefined') return;
       const token = window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
       if (!token) return;
+
+      if (pathname === '/cookies' || pathname === '/privacy-policy') {
+        return;
+      }
+
+      if (!hasCookieConsent()) {
+        router.replace(`/cookies?postLogin=1&returnTo=${encodeURIComponent(pathname)}`);
+        return;
+      }
+
       try {
         const me = await getCurrentUser();
         if (cancelled) return;

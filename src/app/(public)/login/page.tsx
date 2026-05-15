@@ -19,8 +19,8 @@ import {
   verifyMfaChallenge,
   verifyMfaCode,
 } from '@/lib/auth';
-import { getCurrentAssessment } from '@/lib/assessment';
-import { getUserPaymentStatus } from '@/lib/payments';
+import { hasCookieConsent } from '@/lib/cookie-consent';
+import { getCustomerPostLoginDestination } from '@/lib/customer-post-login';
 import authBackground from '@/assets/cybersecurity-background.jpg';
 import { authPagesMessages } from '@/locales/auth-pages';
 
@@ -62,30 +62,8 @@ function LoginPageContent() {
   }, [router]);
 
   async function redirectCustomerAfterAuth(userId: string) {
-    try {
-      const paymentState = await getUserPaymentStatus(userId);
-      if (paymentState.payment_status === 'succeeded') {
-        if (paymentState.checklist) {
-          try {
-            const active = await getCurrentAssessment(paymentState.checklist.id);
-            if (active.status !== 'not_started') {
-              router.push('/dashboard');
-            } else {
-              router.push(`/access?checklist_id=${encodeURIComponent(paymentState.checklist.id)}`);
-            }
-          } catch {
-            router.push(`/access?checklist_id=${encodeURIComponent(paymentState.checklist.id)}`);
-          }
-        } else {
-          router.push('/payment/success');
-        }
-        router.refresh();
-        return;
-      }
-    } catch {
-      // Fallback to payment selection page.
-    }
-    router.push('/payment');
+    const destination = await getCustomerPostLoginDestination(userId);
+    router.push(destination as Route);
     router.refresh();
   }
 
@@ -155,6 +133,11 @@ function LoginPageContent() {
       persistAccessToken(data.access_token);
       toast.success(t('success.signedIn'));
       if (role === 'customer') {
+        if (!hasCookieConsent()) {
+          router.push('/cookies?postLogin=1' as Route);
+          router.refresh();
+          return;
+        }
         await redirectCustomerAfterAuth(data.user.id);
       } else {
         router.push(destination as Route);
@@ -199,6 +182,11 @@ function LoginPageContent() {
       }
       persistAccessToken(data.access_token);
       toast.success(t('success.mfaVerified'));
+      if (!hasCookieConsent()) {
+        router.push('/cookies?postLogin=1' as Route);
+        router.refresh();
+        return;
+      }
       router.push('/dashboard');
       router.refresh();
     } catch (err) {
@@ -223,6 +211,11 @@ function LoginPageContent() {
         persistAccessToken(data.access_token);
       }
       toast.success(t('success.mfaSetupCompleted'));
+      if (!hasCookieConsent()) {
+        router.push('/cookies?postLogin=1' as Route);
+        router.refresh();
+        return;
+      }
       router.push('/dashboard');
       router.refresh();
     } catch (err) {

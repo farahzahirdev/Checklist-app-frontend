@@ -1,9 +1,16 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import type { Route } from 'next';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import { useLocale } from '@/lib/i18n';
 import { PublicFooter } from '@/components/public-footer';
 import { useCMSPage } from '@/hooks/useCMSPage';
 import { PageRenderer } from '@/components/cms/PageRenderer';
+import { ACCESS_TOKEN_STORAGE_KEY, getCurrentUser, getRoleHomePath } from '@/lib/auth';
+import { acceptCookieConsent, hasCookieConsent } from '@/lib/cookie-consent';
+import { getCustomerPostLoginDestination } from '@/lib/customer-post-login';
 import {
   cookiesContent,
   type CookiesBlock,
@@ -137,6 +144,91 @@ function CookiesPageContent() {
   );
 }
 
+function CookieConsentAction() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [submitting, setSubmitting] = useState(false);
+  const [consentReady, setConsentReady] = useState(false);
+  const returnTo = searchParams.get('returnTo') ?? '';
+  const postLogin = searchParams.get('postLogin') === '1';
+
+  useEffect(() => {
+    setConsentReady(hasCookieConsent());
+  }, []);
+
+  async function continueAfterConsent() {
+    const token = typeof window !== 'undefined' ? window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) : null;
+    if (!token) {
+      if (returnTo && returnTo.startsWith('/')) {
+        router.replace(returnTo as Route);
+      }
+      router.refresh();
+      return;
+    }
+
+    try {
+      const me = await getCurrentUser();
+      if (postLogin) {
+        const destination = await getCustomerPostLoginDestination(me.user.id);
+        router.replace(destination as Route);
+        router.refresh();
+        return;
+      }
+
+      if (returnTo && returnTo.startsWith('/')) {
+        router.replace(returnTo as Route);
+        router.refresh();
+        return;
+      }
+
+      router.replace(getRoleHomePath(me.user.role) as Route);
+      router.refresh();
+    } catch {
+      if (returnTo && returnTo.startsWith('/')) {
+        router.replace(returnTo as Route);
+        router.refresh();
+      } else {
+        router.refresh();
+      }
+    }
+  }
+
+  async function handleAccept() {
+    setSubmitting(true);
+    try {
+      acceptCookieConsent();
+      setConsentReady(true);
+      toast.success('Cookie consent saved.');
+      await continueAfterConsent();
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <section className="mx-auto mt-8 max-w-4xl rounded-2xl border border-black/10 bg-[#0d1d3a] px-5 py-4 text-white shadow-lg">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold">Cookie consent</p>
+          <p className="text-sm text-white/75">
+            {consentReady
+              ? 'Consent is already saved for this browser/device.'
+              : 'Please read the policy and accept to continue.'}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void handleAccept()}
+          disabled={submitting}
+          className="inline-flex items-center justify-center rounded-lg border border-white/15 bg-white px-4 py-2 text-sm font-semibold text-[#0d1d3a] transition-colors hover:bg-[#edf4ff] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {submitting ? 'Saving...' : consentReady ? 'Continue' : 'Accept and continue'}
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function CookiesPageWithCMS() {
   const { page, loading } = useCMSPage('cookies');
 
@@ -148,7 +240,14 @@ function CookiesPageWithCMS() {
     );
   }
 
-  return <PageRenderer page={page} fallback={<CookiesPageContent />} />;
+  return (
+    <>
+      <PageRenderer page={page} fallback={<CookiesPageContent />} />
+      <div className="px-4 pb-10 sm:px-6 lg:px-8">
+        <CookieConsentAction />
+      </div>
+    </>
+  );
 }
 
 export default CookiesPageWithCMS;
