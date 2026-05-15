@@ -10,14 +10,14 @@ import {
   assignPermissionsToUser,
   changeAdminUserRole,
   deactivateCustomer,
-  endAdminRoleSwitch,
   getAdminUser,
   getCustomer,
+  impersonateAdminUser,
+  impersonateCustomer,
   listAdminUsers,
   listCustomers,
   resetAdminUserPassword,
   resetUserPermissions,
-  switchAdminRole,
   viewCustomerDashboardAsAdmin,
   type AdminCustomer,
   type AdminCustomerDetail,
@@ -72,7 +72,7 @@ const btnPri =
 const btnDanger =
   'rounded-[10px] border border-red-300 bg-red-50 px-3 py-1.5 text-[12px] font-semibold text-red-800 hover:bg-red-100';
 
-type MainTab = 'users' | 'customers' | 'rbac' | 'check' | 'roleswitch';
+type MainTab = 'users' | 'customers' | 'rbac' | 'check';
 
 const statCardClass =
   'relative overflow-hidden rounded-2xl border border-[#13305c] bg-[linear-gradient(140deg,#071733_0%,#0c2144_50%,#13356d_100%)] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#1f4a8a] hover:shadow-md';
@@ -327,9 +327,7 @@ export default function UsersAccessMerged() {
   const [inspectorPermSelected, setInspectorPermSelected] = useState<Set<string>>(() => new Set());
   const [resetPasswordValue, setResetPasswordValue] = useState('');
   const [resetPasswordReason, setResetPasswordReason] = useState('Admin requested password reset');
-  const [switchRole, setSwitchRole] = useState<'customer' | 'auditor'>('customer');
-  const [switchReason, setSwitchReason] = useState('Testing flow');
-  const [switchDuration, setSwitchDuration] = useState(30);
+  const [impersonationReason, setImpersonationReason] = useState('Impersonation requested by admin');
   const [customerReason, setCustomerReason] = useState('Support action');
   const [isPermanentDeactivation, setIsPermanentDeactivation] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState('');
@@ -562,10 +560,9 @@ export default function UsersAccessMerged() {
 
   useEffect(() => {
     const t = searchParams.get('tab');
-    const valid: MainTab[] = ['users', 'customers', 'rbac', 'check', 'roleswitch'];
+    const valid: MainTab[] = ['users', 'customers', 'rbac', 'check'];
     if (t && valid.includes(t as MainTab)) {
-      if (t === 'roleswitch' && isReadOnly) setMainTab('rbac');
-      else setMainTab(t as MainTab);
+      setMainTab(t as MainTab);
     }
   }, [searchParams, isReadOnly]);
 
@@ -690,10 +687,6 @@ export default function UsersAccessMerged() {
   };
 
   const setTab = (t: MainTab) => {
-    if (t === 'roleswitch' && isReadOnly) {
-      toast.error('Role switch is only available to admins.');
-      return;
-    }
     setMainTab(t);
     router.replace(`/admin/users?tab=${t}`, { scroll: false });
   };
@@ -872,35 +865,18 @@ export default function UsersAccessMerged() {
     }
   }
 
-  async function onSwitchRole(e: FormEvent) {
-    e.preventDefault();
-    if (!switchReason.trim() || switchDuration < 1) return toast.error('Invalid switch.');
-    setActionLoading('sw');
+  async function onImpersonateAdminUser() {
+    if (!selectedAdminId || !impersonationReason.trim()) return toast.error('Reason required.');
+    setActionLoading('impersonate-admin');
     setLoading(true);
     try {
-      const response = await switchAdminRole({
-        switch_to_role: switchRole,
-        reason: switchReason,
-        duration_minutes: switchDuration,
+      const response = await impersonateAdminUser(selectedAdminId, {
+        reason: impersonationReason,
+        duration_minutes: 30,
       });
-      console.log('[onSwitchRole] API response:', response);
-      if (response.temporary_token) {
-        console.log('[onSwitchRole] Calling beginRoleSwitchSession with token:', response.temporary_token);
-        beginRoleSwitchSession(response.temporary_token);
-        // Store flag before navigation to ensure it persists
-        if (typeof window !== 'undefined') {
-          console.log('[onSwitchRole] Verifying localStorage after beginRoleSwitchSession:', {
-            switchActiveFlag: window.localStorage.getItem('checklist_role_switch_active'),
-            currentToken: window.localStorage.getItem('checklist_access_token')?.substring(0, 20) + '...',
-          });
-        }
-      }
-      toast.success('Switched.');
-      const sr = response.switched_to_role.toLowerCase();
-      const targetPath = sr === 'customer' ? '/dashboard' : '/admin';
-      console.log('[onSwitchRole] Navigating to:', targetPath);
-      router.push(targetPath);
-      // Don't refresh - let the layout's auth event listener handle the state update
+      beginRoleSwitchSession(response.temporary_token);
+      toast.success('Impersonation started.');
+      router.push('/admin');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed');
     } finally {
@@ -909,15 +885,18 @@ export default function UsersAccessMerged() {
     }
   }
 
-  async function onEndSwitch() {
-    setActionLoading('end');
+  async function onImpersonateCustomer() {
+    if (!selectedCustomerId || !customerReason.trim()) return toast.error('Reason required.');
+    setActionLoading('impersonate-customer');
     setLoading(true);
     try {
-      await endAdminRoleSwitch();
-      clearRoleSwitchSession();
-      toast.success('Returned.');
-      router.push('/admin');
-      router.refresh();
+      const response = await impersonateCustomer(selectedCustomerId, {
+        reason: customerReason,
+        duration_minutes: 30,
+      });
+      beginRoleSwitchSession(response.temporary_token);
+      toast.success('Impersonation started.');
+      router.push('/dashboard');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed');
     } finally {
@@ -1079,7 +1058,6 @@ export default function UsersAccessMerged() {
             ['customers', t('tabs.customers')],
             ['rbac', t('tabs.rbac')],
             ['check', t('tabs.check')],
-            ...(!isReadOnly ? ([['roleswitch', t('tabs.roleswitch')]] as const) : []),
           ] as const
         ).map(([id, label]) => (
           <button
@@ -1315,6 +1293,27 @@ export default function UsersAccessMerged() {
                     ) : null}
                     {inspTab === 'actions' && !isReadOnly ? (
                       <div className="space-y-3">
+                        {adminDetail.role === 'auditor' ? (
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                            <p className="mb-3 text-[11px] text-slate-700">Impersonate this auditor session to verify their view and access.</p>
+                            <div className="space-y-2">
+                              <input
+                                className={inp}
+                                value={impersonationReason}
+                                onChange={(e) => setImpersonationReason(e.target.value)}
+                                placeholder="Reason for impersonation *"
+                              />
+                              <button
+                                type="button"
+                                className={btnPri}
+                                onClick={() => void onImpersonateAdminUser()}
+                                disabled={loading}
+                              >
+                                {actionLoading === 'impersonate-admin' ? 'Loading…' : 'Impersonate auditor'}
+                              </button>
+                            </div>
+                          </div>
+                        ) : null}
                         <form onSubmit={onChangeRole} className="space-y-2">
                           <label className="block text-[10px] font-bold uppercase tracking-[0.09em] text-slate-600">New role</label>
                           <select className={inp} value={newRoleCode} onChange={(e) => setNewRoleCode(e.target.value as 'admin' | 'auditor')}>
@@ -1594,9 +1593,19 @@ export default function UsersAccessMerged() {
                         <p className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] text-blue-900">
                           Preview loads live dashboard data for this customer.
                         </p>
-                        <button type="button" className={btnPri} onClick={() => void onCustomerDash()} disabled={loading || isReadOnly}>
-                          {actionLoading === 'dash' ? 'Loading…' : 'Load dashboard preview'}
-                        </button>
+                        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                          <button type="button" className={btnPri} onClick={() => void onCustomerDash()} disabled={loading || isReadOnly}>
+                            {actionLoading === 'dash' ? 'Loading…' : 'Load dashboard preview'}
+                          </button>
+                          <button
+                            type="button"
+                            className={btn}
+                            onClick={() => void onImpersonateCustomer()}
+                            disabled={loading || isReadOnly}
+                          >
+                            {actionLoading === 'impersonate-customer' ? 'Loading…' : 'Impersonate customer'}
+                          </button>
+                        </div>
                         {customerDash ? (
                           <div className="mt-2 grid grid-cols-2 gap-2 text-[12px]">
                             <div className={`min-w-0 rounded-xl border ${line} p-2`}>
@@ -1626,6 +1635,14 @@ export default function UsersAccessMerged() {
                       <div className="space-y-2">
                         <label className={`text-[10px] font-bold uppercase text-slate-600`}>Reason *</label>
                         <input className={inp} value={customerReason} onChange={(e) => setCustomerReason(e.target.value)} />
+                        <button
+                          type="button"
+                          className={btnPri}
+                          onClick={() => void onImpersonateCustomer()}
+                          disabled={loading}
+                        >
+                          {actionLoading === 'impersonate-customer' ? 'Loading…' : 'Impersonate customer'}
+                        </button>
                         <label className="flex items-center gap-2 text-[12px] text-slate-500">
                           <input type="checkbox" checked={isPermanentDeactivation} onChange={(e) => setIsPermanentDeactivation(e.target.checked)} />
                           Permanent deactivation
@@ -2542,53 +2559,6 @@ export default function UsersAccessMerged() {
           </div>
         ) : null}
 
-        {mainTab === 'roleswitch' && !isReadOnly ? (
-          <div className="w-full min-w-0 max-w-[680px] space-y-4">
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-900 sm:p-4 sm:text-[12px]">
-              QA and testing only. Temporarily switches your session. Use End switch to return. Actions are logged.
-            </div>
-            <div className={`${card} min-w-0`}>
-              <div className={`border-b ${line} px-3 py-3 sm:px-[18px]`}>
-                <h2 className="text-[14px] font-bold sm:text-[15px]">Switch role</h2>
-              </div>
-              <form className="space-y-3 p-3 sm:p-[18px]" onSubmit={onSwitchRole}>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => setSwitchRole('customer')}
-                    className={`rounded-[14px] border p-3 text-center text-slate-800 ${switchRole === 'customer' ? 'border-[#10284F] bg-[#eef4ff]' : `${line} border bg-white hover:bg-slate-50`}`}
-                  >
-                    <p className="font-bold">Customer</p>
-                    <p className={`text-[10px] ${muted}`}>Customer dashboard</p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSwitchRole('auditor')}
-                    className={`rounded-[14px] border p-3 text-center text-slate-800 ${switchRole === 'auditor' ? 'border-[#10284F] bg-[#eef4ff]' : `${line} border bg-white hover:bg-slate-50`}`}
-                  >
-                    <p className="font-bold">Auditor</p>
-                    <p className={`text-[10px] ${muted}`}>{t('roleswitch.readOnlyAdmin')}</p>
-                  </button>
-                </div>
-                <input className={inp} value={switchReason} onChange={(e) => setSwitchReason(e.target.value)} placeholder="Reason *" />
-                <input className={inp} type="number" min={1} value={switchDuration} onChange={(e) => setSwitchDuration(Number(e.target.value))} />
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <button type="submit" className={`${btnPri} inline-flex w-full items-center justify-center sm:w-auto`} disabled={loading}>
-                    Switch role
-                  </button>
-                  <button
-                    type="button"
-                    className={`${btn} inline-flex w-full items-center justify-center sm:w-auto`}
-                    onClick={() => void onEndSwitch()}
-                    disabled={loading}
-                  >
-                    End switch
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        ) : null}
       </div>
     </div>
   );

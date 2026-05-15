@@ -156,6 +156,20 @@ export function endAdminRoleSwitch() {
   return apiPost<Record<string, unknown>, { confirm: boolean }>('/admin/role-switch/end', { confirm: true });
 }
 
+export function impersonateAdminUser(userId: string, payload: { reason: string; duration_minutes?: number }) {
+  return apiPost<
+    { user_id: string; user_role: string; target_email: string; temporary_token: string; expires_at: string; original_role: string },
+    typeof payload
+  >(`/admin/users/${userId}/impersonate`, payload);
+}
+
+export function impersonateCustomer(customerId: string, payload: { reason: string; duration_minutes?: number }) {
+  return apiPost<
+    { user_id: string; user_role: string; target_email: string; temporary_token: string; expires_at: string; original_role: string },
+    typeof payload
+  >(`/admin/customers/${customerId}/impersonate`, payload);
+}
+
 export function viewCustomerDashboardAsAdmin(customerId: string, reason: string) {
   return apiPost<Record<string, unknown>, { customer_id: string; reason: string }>(
     `/admin/customers/${customerId}/dashboard`,
