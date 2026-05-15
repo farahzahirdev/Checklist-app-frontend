@@ -4,7 +4,15 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { AUTH_STATE_CHANGED_EVENT, getCurrentUser, getRoleKey, getUserDisplayName, logoutAccount, persistAccessToken, type UserRoleKey } from '@/lib/auth';
+import {
+  AUTH_STATE_CHANGED_EVENT,
+  getCurrentUser,
+  getRoleKey,
+  logoutAccount,
+  persistAccessToken,
+  resolveAdminNavbarDisplayName,
+  type UserRoleKey,
+} from '@/lib/auth';
 import { AdminAccessProvider } from '@/lib/admin-access';
 import { AdminLanguageSwitcher } from '@/components/admin-language-switcher';
 import { translate, useLocale } from '@/lib/i18n';
@@ -55,13 +63,17 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    async function loadRole() {
+    async function loadRole(event?: Event) {
+      const patch = (event as CustomEvent<{ full_name?: string | null }> | undefined)?.detail;
       try {
         const response = await getCurrentUser();
         if (!cancelled) {
           setRole(getRoleKey(response.user.role));
-          setDisplayName(getUserDisplayName(response.user));
-          setRoleLoaded(true);
+          const name = await resolveAdminNavbarDisplayName(response.user, patch?.full_name);
+          if (!cancelled) {
+            setDisplayName(name);
+            setRoleLoaded(true);
+          }
         }
       } catch {
         if (!cancelled) {
@@ -69,11 +81,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         }
       }
     }
+    const onAuthStateChanged = (event: Event) => {
+      void loadRole(event);
+    };
     void loadRole();
-    window.addEventListener(AUTH_STATE_CHANGED_EVENT, loadRole);
+    window.addEventListener(AUTH_STATE_CHANGED_EVENT, onAuthStateChanged);
     return () => {
       cancelled = true;
-      window.removeEventListener(AUTH_STATE_CHANGED_EVENT, loadRole);
+      window.removeEventListener(AUTH_STATE_CHANGED_EVENT, onAuthStateChanged);
     };
   }, []);
 

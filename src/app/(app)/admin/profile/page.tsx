@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
+import { notifyAuthStateChanged } from '@/lib/auth';
 import {
   changeAdminPassword,
   getAdminProfile,
@@ -73,9 +74,6 @@ export default function AdminProfilePage() {
 
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
-  const [username, setUsername] = useState('');
-  const [jobTitle, setJobTitle] = useState('');
-  const [department, setDepartment] = useState('');
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -92,9 +90,6 @@ export default function AdminProfilePage() {
       setProfile(data);
       setEmail(data.email ?? '');
       setFullName(data.full_name ?? '');
-      setUsername(data.username ?? '');
-      setJobTitle(data.job_title ?? '');
-      setDepartment(data.department ?? '');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.loadProfile'));
     } finally {
@@ -114,16 +109,11 @@ export default function AdminProfilePage() {
       const updated = await updateAdminProfile({
         email: normalizeOptional(email),
         full_name: normalizeOptional(fullName),
-        username: normalizeOptional(username),
-        job_title: normalizeOptional(jobTitle),
-        department: normalizeOptional(department),
       });
       setProfile(updated);
       setEmail(updated.email ?? '');
       setFullName(updated.full_name ?? '');
-      setUsername(updated.username ?? '');
-      setJobTitle(updated.job_title ?? '');
-      setDepartment(updated.department ?? '');
+      notifyAuthStateChanged({ full_name: updated.full_name });
       toast.success(t('toasts.profileUpdated'));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.updateProfile'));
@@ -224,37 +214,6 @@ export default function AdminProfilePage() {
                 className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
               />
             </label>
-
-            <label className="block space-y-1.5 text-sm">
-              <span className="text-[#4f6281]">{t('fields.username')}</span>
-              <input
-                type="text"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
-              />
-            </label>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block space-y-1.5 text-sm">
-                <span className="text-[#4f6281]">{t('fields.jobTitle')}</span>
-                <input
-                  type="text"
-                  value={jobTitle}
-                  onChange={(event) => setJobTitle(event.target.value)}
-                  className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
-                />
-              </label>
-              <label className="block space-y-1.5 text-sm">
-                <span className="text-[#4f6281]">{t('fields.department')}</span>
-                <input
-                  type="text"
-                  value={department}
-                  onChange={(event) => setDepartment(event.target.value)}
-                  className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
-                />
-              </label>
-            </div>
 
             <div className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#506282]">
               <span className="font-medium text-[#4f6281]">{t('fields.status')}: </span>

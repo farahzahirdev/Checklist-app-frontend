@@ -91,7 +91,7 @@ export default function DashboardPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <article className="rounded-2xl border border-[#345793] bg-[#0d1d3a] p-5">
           <p className="text-sm text-[#97a5bb]">{t('kpi.paidChecklists')}</p>
           <p className="mt-2 text-3xl font-semibold text-white">{summary?.paid_checklists_count ?? (loading ? '...' : 0)}</p>
@@ -107,10 +107,6 @@ export default function DashboardPage() {
           <p className="mt-2 text-3xl font-semibold text-white">
             {summary?.submitted_assessments_count ?? (loading ? '...' : 0)}
           </p>
-        </article>
-        <article className="rounded-2xl border border-[#345793] bg-[#0d1d3a] p-5">
-          <p className="text-sm text-[#97a5bb]">{t('kpi.latestReportStatus')}</p>
-          <p className="mt-2 text-xl font-semibold text-white">{summary?.latest_report_status ?? (loading ? '...' : t('labels.na'))}</p>
         </article>
       </div>
 

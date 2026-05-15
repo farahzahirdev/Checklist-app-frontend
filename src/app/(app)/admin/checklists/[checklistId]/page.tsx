@@ -15,10 +15,22 @@ import {
   getSectionsByChecklist,
   reorderSections,
   reorderQuestions,
+  updateChecklist,
   uploadChecklistQuestionMedia,
   updateQuestion as updateQuestionApi,
   updateSection as updateSectionApi,
 } from '@/lib/checklist-api';
+import {
+  applyQuestionTranslationToPanel,
+  buildQuestionTranslationPayload,
+  CHECKLIST_SECONDARY_LANGUAGE,
+  getChecklistTranslation,
+  getQuestionTranslation,
+  getSectionTranslation,
+  upsertChecklistTranslation,
+  upsertQuestionTranslation,
+  upsertSectionTranslation,
+} from '@/lib/checklist-translation-api';
 import { getMediaPreviewUrl } from '@/lib/assessment';
 import { translate, useLocale } from '@/lib/i18n';
 import { adminChecklistBuilderMessages } from '@/locales/admin-checklist-builder';
@@ -344,6 +356,14 @@ export default function ChecklistPanelBuilderPage() {
   const [createQuestionMissingFields, setCreateQuestionMissingFields] = useState<string[]>([]);
   const [editQuestionMissingFields, setEditQuestionMissingFields] = useState<string[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [enChecklistTitle, setEnChecklistTitle] = useState('');
+  const [enChecklistLawDecree, setEnChecklistLawDecree] = useState('');
+  const [enSectionTitles, setEnSectionTitles] = useState<Record<string, string>>({});
+  const [enQuestionFields, setEnQuestionFields] = useState<Record<string, Partial<PanelQuestion>>>({});
+  const [loadingTranslations, setLoadingTranslations] = useState(false);
+  const [checklistActionLoading, setChecklistActionLoading] = useState(false);
+
+  const isSecondaryContentLanguage = locale === CHECKLIST_SECONDARY_LANGUAGE;
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches) {
@@ -492,6 +512,107 @@ export default function ChecklistPanelBuilderPage() {
     };
   }, [checklistId, t]);
 
+  const loadSecondaryTranslations = useCallback(async () => {
+    setLoadingTranslations(true);
+    try {
+      const checklistTranslation = await getChecklistTranslation(checklistId, CHECKLIST_SECONDARY_LANGUAGE);
+      setEnChecklistTitle(checklistTranslation?.title ?? '');
+      setEnChecklistLawDecree(checklistTranslation?.description ?? '');
+
+      const sectionTitleEntries = await Promise.all(
+        sections.map(async (section) => {
+          const translation = await getSectionTranslation(checklistId, section.id, CHECKLIST_SECONDARY_LANGUAGE);
+          return [section.id, translation?.title ?? ''] as const;
+        }),
+      );
+      setEnSectionTitles(Object.fromEntries(sectionTitleEntries));
+
+      const questionFieldEntries = await Promise.all(
+        sections.flatMap((section) =>
+          section.questions.map(async (question) => {
+            const translation = await getQuestionTranslation(
+              checklistId,
+              section.id,
+              question.id,
+              CHECKLIST_SECONDARY_LANGUAGE,
+            );
+            if (!translation) return [question.id, {}] as const;
+            return [
+              question.id,
+              applyQuestionTranslationToPanel(question, translation),
+            ] as const;
+          }),
+        ),
+      );
+      setEnQuestionFields(Object.fromEntries(questionFieldEntries));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('translation.loadFailed'));
+    } finally {
+      setLoadingTranslations(false);
+    }
+  }, [checklistId, sections, t]);
+
+  useEffect(() => {
+    if (!isSecondaryContentLanguage || loadingSections) return;
+    void loadSecondaryTranslations();
+  }, [isSecondaryContentLanguage, loadingSections, loadSecondaryTranslations]);
+
+  function getSectionTitleForDisplay(section: PanelSection): string {
+    if (!isSecondaryContentLanguage) return section.title;
+    return enSectionTitles[section.id] ?? '';
+  }
+
+  function getQuestionForDisplay(sectionId: string, question: PanelQuestion): PanelQuestion {
+    if (!isSecondaryContentLanguage) return question;
+    const enFields = enQuestionFields[question.id];
+    return enFields ? { ...question, ...enFields } : question;
+  }
+
+  function updateQuestionFields(
+    sectionId: string,
+    questionId: string,
+    patch: Partial<PanelQuestion>,
+  ) {
+    if (isSecondaryContentLanguage) {
+      setEnQuestionFields((previous) => ({
+        ...previous,
+        [questionId]: { ...(previous[questionId] ?? {}), ...patch },
+      }));
+      return;
+    }
+    updateQuestion(sectionId, questionId, patch);
+  }
+
+  async function handleSaveChecklist() {
+    setChecklistActionLoading(true);
+    try {
+      if (isSecondaryContentLanguage) {
+        await upsertChecklistTranslation(checklistId, CHECKLIST_SECONDARY_LANGUAGE, {
+          title: enChecklistTitle.trim() || title,
+          description: enChecklistLawDecree.trim() || null,
+        });
+      } else {
+        const saved = await updateChecklist(checklistId, {
+          title: title.trim(),
+          lawDecree: lawDecree.trim(),
+        });
+        setTitle(saved.title);
+        setLawDecree(saved.lawDecree);
+      }
+      toast.success(isSecondaryContentLanguage ? t('translation.saved') : t('checklist.saved'));
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : isSecondaryContentLanguage
+            ? t('translation.saveFailed')
+            : t('checklist.saveFailed'),
+      );
+    } finally {
+      setChecklistActionLoading(false);
+    }
+  }
+
   const selectedSection = useMemo(
     () =>
       selected.type === 'section' || selected.type === 'question'
@@ -507,6 +628,11 @@ export default function ChecklistPanelBuilderPage() {
         : null,
     [selected, selectedSection],
   );
+
+  const selectedQuestionDisplay = useMemo(() => {
+    if (!selectedQuestion || !selectedSection) return null;
+    return getQuestionForDisplay(selectedSection.id, selectedQuestion);
+  }, [selectedQuestion, selectedSection, isSecondaryContentLanguage, enQuestionFields]);
 
   const parentQuestionForDraft = useMemo(() => {
     if (!newQuestionDraft.parentQuestionId) return null;
@@ -580,9 +706,13 @@ export default function ChecklistPanelBuilderPage() {
     setSectionActionLoading('create');
     try {
       const created = await createSection(checklistId, { title, order, sourceRef: newSectionSourceRef.trim() });
+      if (isSecondaryContentLanguage) {
+        await upsertSectionTranslation(checklistId, created.id, CHECKLIST_SECONDARY_LANGUAGE, { title });
+        setEnSectionTitles((previous) => ({ ...previous, [created.id]: title }));
+      }
       const newSection: PanelSection = {
         id: created.id,
-        title: created.title,
+        title: isSecondaryContentLanguage ? title : created.title,
         order: created.order,
         sourceRef: created.sourceRef ?? '',
         questions: [],
@@ -605,21 +735,40 @@ export default function ChecklistPanelBuilderPage() {
     if (!section) return;
     setSectionActionLoading('save');
     try {
-      const saved = await updateSectionApi(checklistId, sectionId, {
-        title: section.title,
-        order: section.order,
-        sourceRef: section.sourceRef,
-      });
-      setSections((previous) =>
-        previous.map((item) =>
-          item.id === sectionId
-            ? { ...item, title: saved.title, order: saved.order, sourceRef: saved.sourceRef ?? '' }
-            : item,
-        ),
-      );
-      toast.success(t('toast.sectionSaved'));
+      if (isSecondaryContentLanguage) {
+        const enTitle = (enSectionTitles[sectionId] ?? '').trim();
+        if (!enTitle) {
+          toast.error(t('toast.sectionTitleOrderRequired'));
+          return;
+        }
+        await upsertSectionTranslation(checklistId, sectionId, CHECKLIST_SECONDARY_LANGUAGE, { title: enTitle });
+        await updateSectionApi(checklistId, sectionId, {
+          order: section.order,
+          sourceRef: section.sourceRef,
+        });
+      } else {
+        const saved = await updateSectionApi(checklistId, sectionId, {
+          title: section.title,
+          order: section.order,
+          sourceRef: section.sourceRef,
+        });
+        setSections((previous) =>
+          previous.map((item) =>
+            item.id === sectionId
+              ? { ...item, title: saved.title, order: saved.order, sourceRef: saved.sourceRef ?? '' }
+              : item,
+          ),
+        );
+      }
+      toast.success(isSecondaryContentLanguage ? t('translation.saved') : t('toast.sectionSaved'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('toast.sectionSaveFailed'));
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : isSecondaryContentLanguage
+            ? t('translation.saveFailed')
+            : t('toast.sectionSaveFailed'),
+      );
     } finally {
       setSectionActionLoading('');
     }
@@ -811,6 +960,39 @@ export default function ChecklistPanelBuilderPage() {
         answerOptions: buildAnswerOptionsPayload(draftQuestion),
       });
       const newQuestion = mapApiQuestionToPanelQuestion(created);
+      if (isSecondaryContentLanguage) {
+        await upsertQuestionTranslation(
+          checklistId,
+          addQuestionSectionId,
+          newQuestion.id,
+          CHECKLIST_SECONDARY_LANGUAGE,
+          buildQuestionTranslationPayload({
+            ...draftQuestion,
+            questionTitle: draftQuestion.questionTitle || draftQuestion.questionId,
+          }),
+        );
+        setEnQuestionFields((previous) => ({
+          ...previous,
+          [newQuestion.id]: applyQuestionTranslationToPanel(
+            newQuestion,
+            {
+              questionId: newQuestion.id,
+              languageCode: CHECKLIST_SECONDARY_LANGUAGE,
+              questionText: draftQuestion.legalRequirementTitle,
+              explanation: draftQuestion.explanation,
+              expectedImplementation: draftQuestion.expectedImplementation,
+              howItWorks: draftQuestion.howItWorks,
+              legalRequirementTitle: draftQuestion.legalRequirementTitle,
+              legalRequirementDescription: draftQuestion.legalRequirementDescription,
+              guidanceScore4: draftQuestion.guidanceScore4,
+              guidanceScore3: draftQuestion.guidanceScore3,
+              guidanceScore2: draftQuestion.guidanceScore2,
+              guidanceScore1: draftQuestion.guidanceScore1,
+              recommendationTemplate: draftQuestion.recommendationTemplate,
+            },
+          ),
+        }));
+      }
       setSections((previous) =>
         previous.map((item) =>
           item.id === addQuestionSectionId ? { ...item, questions: [...item.questions, newQuestion] } : item,
@@ -831,11 +1013,12 @@ export default function ChecklistPanelBuilderPage() {
     const section = sections.find((item) => item.id === sectionId);
     const question = section?.questions.find((item) => item.id === questionId);
     if (!question) return;
+    const questionForValidation = getQuestionForDisplay(sectionId, question);
     const missingFields = [] as string[];
-    if (!question.questionId.trim() && !question.questionTitle.trim()) missingFields.push('questionTitle');
-    if (!question.legalRequirementDescription.trim()) missingFields.push('legalRequirementDescription');
-    if (!question.explanation.trim()) missingFields.push('explanation');
-    if (!question.expectedImplementation.trim()) missingFields.push('expectedImplementation');
+    if (!question.questionId.trim() && !questionForValidation.questionTitle.trim()) missingFields.push('questionTitle');
+    if (!questionForValidation.legalRequirementDescription.trim()) missingFields.push('legalRequirementDescription');
+    if (!questionForValidation.explanation.trim()) missingFields.push('explanation');
+    if (!questionForValidation.expectedImplementation.trim()) missingFields.push('expectedImplementation');
 
     // Validate answer labels and descriptions
     const missingAnswerLabels: number[] = [];
@@ -870,6 +1053,19 @@ export default function ChecklistPanelBuilderPage() {
     const derivedPoints = question.securityLevel === 'low' ? 1 : question.securityLevel === 'medium' ? 3 : 4;
     setQuestionActionLoading('save');
     try {
+      if (isSecondaryContentLanguage) {
+        const displayQuestion = questionForValidation;
+        await upsertQuestionTranslation(
+          checklistId,
+          sectionId,
+          questionId,
+          CHECKLIST_SECONDARY_LANGUAGE,
+          buildQuestionTranslationPayload({
+            ...displayQuestion,
+            questionTitle: displayQuestion.questionTitle || displayQuestion.questionId,
+          }),
+        );
+      }
       await updateQuestionApi(checklistId, sectionId, questionId, {
         questionId: question.questionId,
         questionTitle: question.questionTitle || question.questionId,
@@ -895,9 +1091,15 @@ export default function ChecklistPanelBuilderPage() {
         points: derivedPoints,
         answerOptions: buildAnswerOptionsPayload(question),
       });
-      toast.success(t('toast.questionSaved'));
+      toast.success(isSecondaryContentLanguage ? t('translation.saved') : t('toast.questionSaved'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('toast.questionSaveFailed'));
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : isSecondaryContentLanguage
+            ? t('translation.saveFailed')
+            : t('toast.questionSaveFailed'),
+      );
     } finally {
       setQuestionActionLoading('');
     }
@@ -1142,7 +1344,9 @@ export default function ChecklistPanelBuilderPage() {
           </div>
           <div className="ml-2 min-w-0 flex-1 basis-[min(100%,12rem)] py-0.5 sm:ml-3">
             <h1 className={ADMIN_BUILDER_HEADER_TITLE_CLASS}>{t('header.title')}</h1>
-            <p className="mt-0.5 truncate text-[11px] text-[#9db8e6] sm:text-xs">{title || t('header.untitled')}</p>
+            <p className="mt-0.5 truncate text-[11px] text-[#9db8e6] sm:text-xs">
+              {(isSecondaryContentLanguage ? enChecklistTitle : title) || t('header.untitled')}
+            </p>
           </div>
           <div className="ml-auto flex shrink-0 items-center sm:ml-2">
             <AdminLanguageSwitcher align="right" />
@@ -1181,10 +1385,20 @@ export default function ChecklistPanelBuilderPage() {
               </button>
             ) : null}
 
-            <div className="mb-3 rounded-lg border border-[#2d4f83] bg-[#10284f] px-3 py-2 text-left">
+            <button
+              type="button"
+              onClick={() => setSelected({ type: 'checklist' })}
+              className={`mb-3 w-full rounded-lg border px-3 py-2 text-left transition-colors ${
+                selected.type === 'checklist'
+                  ? 'border-[#5ea2ff] bg-[#163a72]'
+                  : 'border-[#2d4f83] bg-[#10284f] hover:bg-[#16345f]'
+              }`}
+            >
               <p className="text-[10px] uppercase tracking-[0.08em] text-[#9db8e6]">{t('sidebar.checklistLabel')}</p>
-              <p className="mt-1 text-sm font-semibold text-white">{title || t('header.untitled')}</p>
-            </div>
+              <p className="mt-1 text-sm font-semibold text-white">
+                {(isSecondaryContentLanguage ? enChecklistTitle : title) || t('header.untitled')}
+              </p>
+            </button>
 
             <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {loadingSections ? <p className="px-2 text-xs text-[#c4d6f7]">{t('sidebar.loadingSections')}</p> : null}
@@ -1255,7 +1469,9 @@ export default function ChecklistPanelBuilderPage() {
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span>{section.order}. {section.title || t('sidebar.untitledSection')}</span>
+                          <span>
+                            {section.order}. {getSectionTitleForDisplay(section) || t('sidebar.untitledSection')}
+                          </span>
                           <span className="rounded bg-[#163a72] px-1.5 py-0.5 text-[10px] font-semibold text-[#c4d6f7]">
                             {section.questions.length}
                           </span>
@@ -1391,6 +1607,55 @@ export default function ChecklistPanelBuilderPage() {
           </aside>
 
           <main className="relative z-0 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-5 lg:p-6">
+            {isSecondaryContentLanguage ? (
+              <p className="mb-4 rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2 text-xs text-[#5f7395]">
+                {t('contentLang.editingHint', { lang: locale.toUpperCase() })}
+              </p>
+            ) : null}
+
+            {selected.type === 'checklist' ? (
+              <div className={`${cardClass} space-y-4`}>
+                {isReadOnly ? <p className="rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2 text-xs text-[#5f7395]">{t('readOnly.banner')}</p> : null}
+                <fieldset disabled={isReadOnly} className="space-y-4">
+                  <h2 className="text-lg font-semibold">{t('checklist.panelTitle')}</h2>
+                  <div>
+                    <label className={labelClass}>{t('checklist.titleLabel')}</label>
+                    <input
+                      value={isSecondaryContentLanguage ? enChecklistTitle : title}
+                      onChange={(event) =>
+                        isSecondaryContentLanguage
+                          ? setEnChecklistTitle(event.target.value)
+                          : setTitle(event.target.value)
+                      }
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>{t('checklist.lawDecreeLabel')}</label>
+                    <textarea
+                      value={isSecondaryContentLanguage ? enChecklistLawDecree : lawDecree}
+                      onChange={(event) =>
+                        isSecondaryContentLanguage
+                          ? setEnChecklistLawDecree(event.target.value)
+                          : setLawDecree(event.target.value)
+                      }
+                      className={textAreaClass}
+                    />
+                  </div>
+                  {!isReadOnly ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveChecklist()}
+                      disabled={checklistActionLoading}
+                      className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
+                    >
+                      {checklistActionLoading ? t('checklist.saving') : t('checklist.save')}
+                    </button>
+                  ) : null}
+                </fieldset>
+              </div>
+            ) : null}
+
             {selected.type === 'section' && selectedSection ? (
               <div className={`${cardClass} space-y-4`}>
                 {isReadOnly ? <p className="rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2 text-xs text-[#5f7395]">{t('readOnly.banner')}</p> : null}
@@ -1399,8 +1664,17 @@ export default function ChecklistPanelBuilderPage() {
                 <div>
                   <label className={labelClass}>{t('section.titleLabel')}</label>
                   <input
-                    value={selectedSection.title}
-                    onChange={(event) => updateSection(selectedSection.id, { title: event.target.value })}
+                    value={getSectionTitleForDisplay(selectedSection)}
+                    onChange={(event) => {
+                      if (isSecondaryContentLanguage) {
+                        setEnSectionTitles((previous) => ({
+                          ...previous,
+                          [selectedSection.id]: event.target.value,
+                        }));
+                        return;
+                      }
+                      updateSection(selectedSection.id, { title: event.target.value });
+                    }}
                     className={inputClass}
                   />
                 </div>
@@ -1784,7 +2058,7 @@ export default function ChecklistPanelBuilderPage() {
               </div>
             ) : null}
 
-            {selected.type === 'question' && selectedSection && selectedQuestion ? (
+            {selected.type === 'question' && selectedSection && selectedQuestion && selectedQuestionDisplay ? (
               <div className={`${cardClass} space-y-4`}>
                 {isReadOnly ? <p className="rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2 text-xs text-[#5f7395]">{t('readOnly.banner')}</p> : null}
                 <fieldset disabled={isReadOnly} className="space-y-4">
@@ -1838,9 +2112,9 @@ export default function ChecklistPanelBuilderPage() {
                 <div>
                   <label className={labelClass}>{t('label.legalTitle')}</label>
                   <input
-                    value={selectedQuestion.legalRequirementTitle}
+                    value={selectedQuestionDisplay.legalRequirementTitle}
                     onChange={(event) =>
-                      updateQuestion(selectedSection.id, selectedQuestion.id, {
+                      updateQuestionFields(selectedSection.id, selectedQuestion.id, {
                         legalRequirementTitle: event.target.value,
                       })
                     }
@@ -1850,9 +2124,9 @@ export default function ChecklistPanelBuilderPage() {
                 <div>
                   <RichTextEditor richTextBadge={t('richText.badge')}
                     label={t('label.legalDescription')}
-                    value={selectedQuestion.legalRequirementDescription}
+                    value={selectedQuestionDisplay.legalRequirementDescription}
                     onChange={(next) =>
-                      updateQuestion(selectedSection.id, selectedQuestion.id, {
+                      updateQuestionFields(selectedSection.id, selectedQuestion.id, {
                         legalRequirementDescription: next,
                       })
                     }
@@ -1866,9 +2140,9 @@ export default function ChecklistPanelBuilderPage() {
                   <div>
                     <RichTextEditor richTextBadge={t('richText.badge')}
                       label={t('label.explanation')}
-                      value={selectedQuestion.explanation}
+                      value={selectedQuestionDisplay.explanation}
                       onChange={(next) =>
-                        updateQuestion(selectedSection.id, selectedQuestion.id, { explanation: next })
+                        updateQuestionFields(selectedSection.id, selectedQuestion.id, { explanation: next })
                       }
                       placeholder={t('placeholder.whyMatters')}
                       minHeight={90}
@@ -1878,9 +2152,9 @@ export default function ChecklistPanelBuilderPage() {
                   <div>
                     <RichTextEditor richTextBadge={t('richText.badge')}
                       label={t('label.expectedImplementation')}
-                      value={selectedQuestion.expectedImplementation}
+                      value={selectedQuestionDisplay.expectedImplementation}
                       onChange={(next) =>
-                        updateQuestion(selectedSection.id, selectedQuestion.id, {
+                        updateQuestionFields(selectedSection.id, selectedQuestion.id, {
                           expectedImplementation: next,
                         })
                       }
@@ -1894,9 +2168,9 @@ export default function ChecklistPanelBuilderPage() {
                 <div>
                   <label className={labelClass}>{t('label.whyMatters')}</label>
                   <textarea
-                    value={selectedQuestion.howItWorks}
+                    value={selectedQuestionDisplay.howItWorks}
                     onChange={(event) =>
-                      updateQuestion(selectedSection.id, selectedQuestion.id, { howItWorks: event.target.value })
+                      updateQuestionFields(selectedSection.id, selectedQuestion.id, { howItWorks: event.target.value })
                     }
                     className={textAreaClass}
                   />

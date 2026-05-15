@@ -1,4 +1,5 @@
 import { apiGetWithAuth, apiPatch, apiPost, apiPostEmptyWithAuth } from '@/lib/api';
+import { getAdminProfile } from '@/lib/admin-profile';
 
 export type UserRole = 0 | 1 | 2;
 export type UserRoleKey = 'admin' | 'auditor' | 'customer';
@@ -32,11 +33,15 @@ export const ORIGINAL_ACCESS_TOKEN_STORAGE_KEY = 'checklist_original_access_toke
 export const ROLE_SWITCH_ACTIVE_STORAGE_KEY = 'checklist_role_switch_active';
 export const AUTH_STATE_CHANGED_EVENT = 'checklist-auth-state-changed';
 
-function notifyAuthStateChanged() {
+export type AuthStateChangedDetail = {
+  full_name?: string | null;
+};
+
+export function notifyAuthStateChanged(detail?: AuthStateChangedDetail) {
   if (typeof window === 'undefined') {
     return;
   }
-  window.dispatchEvent(new Event(AUTH_STATE_CHANGED_EVENT));
+  window.dispatchEvent(new CustomEvent(AUTH_STATE_CHANGED_EVENT, { detail }));
 }
 
 export function persistAccessToken(token: string | null) {
@@ -192,4 +197,34 @@ export function getUserDisplayName(user: AuthUser) {
   }
 
   return user.email.split('@')[0] ?? user.email;
+}
+
+/** Navbar display name for admin layout when /auth/me may omit full_name. */
+export async function resolveAdminNavbarDisplayName(
+  user: AuthUser,
+  eventPatch?: string | null,
+): Promise<string> {
+  const fromPatch = eventPatch?.trim();
+  if (fromPatch) {
+    return fromPatch;
+  }
+
+  const fromMe = user.full_name?.trim();
+  if (fromMe) {
+    return fromMe;
+  }
+
+  if (getRoleKey(user.role) === 'admin') {
+    try {
+      const profile = await getAdminProfile();
+      const fromProfile = profile.full_name?.trim();
+      if (fromProfile) {
+        return fromProfile;
+      }
+    } catch {
+      // fall through to email-based display name
+    }
+  }
+
+  return getUserDisplayName(user);
 }

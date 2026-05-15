@@ -221,6 +221,9 @@ export default function AssessmentPage() {
   const [previewErrorsByMediaId, setPreviewErrorsByMediaId] = useState<Record<string, string>>({});
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [isSubmittedChecklist, setIsSubmittedChecklist] = useState(false);
+  const activeQuestionIdRef = useRef(activeQuestionId);
+  const selectedSectionIdRef = useRef(selectedSectionId);
+  const skipLocaleRefetchRef = useRef(true);
 
   const allQuestions = useMemo(
     () =>
@@ -654,8 +657,28 @@ export default function AssessmentPage() {
   }
 
   useEffect(() => {
+    activeQuestionIdRef.current = activeQuestionId;
+  }, [activeQuestionId]);
+
+  useEffect(() => {
+    selectedSectionIdRef.current = selectedSectionId;
+  }, [selectedSectionId]);
+
+  useEffect(() => {
     void loadAssessmentDetail();
   }, [checklistIdFromQuery]);
+
+  useEffect(() => {
+    if (skipLocaleRefetchRef.current) {
+      skipLocaleRefetchRef.current = false;
+      return;
+    }
+    if (!assessmentDetail) return;
+    void loadAssessmentDetail({
+      preferredQuestionId: activeQuestionIdRef.current || undefined,
+      preferredSectionId: selectedSectionIdRef.current || undefined,
+    });
+  }, [locale]);
 
   useEffect(() => {
     setSelectedEvidenceFiles({});
