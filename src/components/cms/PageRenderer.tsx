@@ -8,7 +8,8 @@ import { PublicFooter } from '@/components/public-footer';
 
 interface PageRendererProps {
   page: PageDetail | null;
-  fallback: React.ReactNode;
+  fallback: React.ReactNode | ((footerSlot?: React.ReactNode) => React.ReactNode);
+  footerSlot?: React.ReactNode;
 }
 
 /** Same button list shape as CTASectionRenderer (avoids duplicate blocks when CMS has two near-identical CTAs). */
@@ -543,12 +544,15 @@ function ResourcesPublicPageRenderer({ page }: { page: PageDetail }) {
  * Renders a CMS page or fallback content
  * Maps section types to their corresponding display components
  */
-export function PageRenderer({ page, fallback }: PageRendererProps) {
+export function PageRenderer({ page, fallback, footerSlot }: PageRendererProps) {
   // If no CMS page, or the CMS page has no sections, defer entirely to the
   // fallback. The fallback is responsible for rendering its own footer (if any),
   // so we must not also append one here — that would render two footers when
   // the CMS row exists but is empty.
   if (!page || !page.sections || page.sections.length === 0) {
+    if (typeof fallback === 'function') {
+      return <>{fallback(footerSlot)}</>;
+    }
     return <>{fallback}</>;
   }
 
@@ -563,6 +567,7 @@ export function PageRenderer({ page, fallback }: PageRendererProps) {
       {sections.map((section) => (
         <SectionRenderer key={section.id} section={section} />
       ))}
+      {footerSlot}
       <PublicFooter />
     </main>
   );
@@ -850,32 +855,56 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
                         overallReadiness: 'Overall Readiness',
                         completed: 'Completed',
                         openFindings: 'Open Findings',
-                      }) as Array<[string, string]>).map(([key, label]) => (
-                        <div key={key} className="flex h-full min-h-[94px] flex-col rounded-lg border border-[#e2e8f5] bg-[#f8fbff] p-2">
-                          <p className="min-h-[24px] text-[11px] leading-[1.1] text-[#6f7f98]">{label}</p>
-                          <p className="min-h-[34px] text-xl font-bold leading-tight text-[#173a73] sm:text-2xl lg:text-[22px] xl:text-2xl 2xl:text-3xl">72%</p>
-                          <div className="mt-auto h-1.5 rounded-full bg-[#d6e2f7]">
-                            <div className="h-full w-[72%] rounded-full bg-[#2e82ff]" />
+                      }) as Array<[string, any]>).map(([key, item]) => {
+                        const metric = typeof item === 'string'
+                          ? { label: item, value: '72%', progress: '72%' }
+                          : {
+                              label: item.label || key,
+                              value: item.value || '72%',
+                              progress: item.progress || '72%',
+                            };
+
+                        return (
+                          <div key={key} className="flex h-full min-h-[94px] flex-col rounded-lg border border-[#e2e8f5] bg-[#f8fbff] p-2">
+                            <p className="min-h-[24px] text-[11px] leading-[1.1] text-[#6f7f98]">{metric.label}</p>
+                            <p className="min-h-[34px] text-xl font-bold leading-tight text-[#173a73] sm:text-2xl lg:text-[22px] xl:text-2xl 2xl:text-3xl">{metric.value}</p>
+                            <div className="mt-auto h-1.5 rounded-full bg-[#d6e2f7]">
+                              <div className="h-full rounded-full bg-[#2e82ff]" style={{ width: metric.progress }} />
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                   <div className="grid gap-1.5 sm:grid-cols-2">
                     <div className="rounded-xl bg-white p-2.5">
-                      <p className="text-xs font-semibold text-[#263d62]">Recent Activity</p>
+                      <p className="text-xs font-semibold text-[#263d62]">{data.mockup.dashboard?.activity?.title || 'Recent Activity'}</p>
                       <ul className="mt-1.5 space-y-1.5 text-[11px] text-[#4f668a]">
-                        <li>Audit Readiness Checklist</li>
-                        <li>Documentation Package</li>
-                        <li>NIS2 Gap Analysis</li>
+                        {(data.mockup.dashboard?.activity?.items || [
+                          'Audit Readiness Checklist',
+                          'Documentation Package',
+                          'NIS2 Gap Analysis',
+                        ]).map((item: any, index: number) => (
+                          <li key={index}>{item}</li>
+                        ))}
                       </ul>
                     </div>
                     <div className="rounded-xl bg-white p-2.5">
-                      <p className="text-xs font-semibold text-[#263d62]">Top Domains</p>
+                      <p className="text-xs font-semibold text-[#263d62]">{data.mockup.dashboard?.domains?.title || 'Top Domains'}</p>
                       <div className="mt-1.5 space-y-2 text-[11px] text-[#4f668a]">
-                        <div>Governance</div>
-                        <div>Risk Management</div>
-                        <div>Access Control</div>
+                        {(data.mockup.dashboard?.domains?.items || ['Governance', 'Risk Management', 'Access Control']).map((item: any, index: number) => (
+                          <div key={index}>{item}</div>
+                        ))}
+                      </div>
+                      <div className="mt-2 flex items-center justify-center gap-4 text-[10px] font-medium text-[#6f7f98]">
+                        <span className="inline-flex items-center gap-1">
+                          <span className="h-2 w-2 rounded-[2px] bg-[#2f7dff]" />
+                          {data.mockup.dashboard?.domains?.current || 'Current'}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <span className="h-2 w-2 rounded-[2px] bg-[#98dbc0]" />
+                          {data.mockup.dashboard?.domains?.target || 'Target'}
+                        </span>
                       </div>
                     </div>
                   </div>

@@ -97,18 +97,61 @@ function PreviewSection({ section, viewport }: any) {
                     <div className="rounded-xl bg-white p-2.5">
                       <p className="text-xs font-semibold text-[#1a2c4f]">{section.data.mockup.dashboard?.title || 'Dashboard'}</p>
                       <div className="mt-2 grid grid-cols-3 gap-2">
-                        {Object.values(section.data.mockup.dashboard?.metrics || {
+                        {(Object.entries(section.data.mockup.dashboard?.metrics || {
                           overallReadiness: 'Overall Readiness',
                           completed: 'Completed',
                           openFindings: 'Open Findings',
-                        }).map((label: any, index: number) => (
-                          <div key={index} className="flex min-h-[72px] flex-col rounded-lg border border-[#e2e8f5] bg-[#f8fbff] p-2">
-                            <p className="text-[10px] leading-[1.1] text-[#6f7f98]">{label}</p>
-                            <div className="mt-auto h-1.5 rounded-full bg-[#d6e2f7]">
-                              <div className="h-full w-[72%] rounded-full bg-[#2e82ff]" />
+                        }) as Array<[string, any]>).map(([key, item]) => {
+                          const metric = typeof item === 'string'
+                            ? { label: item, value: '72%', progress: '72%' }
+                            : {
+                                label: item.label || key,
+                                value: item.value || '72%',
+                                progress: item.progress || '72%',
+                              };
+
+                          return (
+                            <div key={key} className="flex min-h-[72px] flex-col rounded-lg border border-[#e2e8f5] bg-[#f8fbff] p-2">
+                              <p className="text-[10px] leading-[1.1] text-[#6f7f98]">{metric.label}</p>
+                              <p className="mt-1 text-lg font-semibold text-[#173a73]">{metric.value}</p>
+                              <div className="mt-auto h-1.5 rounded-full bg-[#d6e2f7]">
+                                <div className="h-full rounded-full bg-[#2e82ff]" style={{ width: metric.progress }} />
+                              </div>
                             </div>
+                          );
+                        })}
+                      </div>
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                        <div>
+                          <p className="text-[10px] font-semibold text-[#263d62]">{section.data.mockup.dashboard?.activity?.title || 'Recent Activity'}</p>
+                          <ul className="mt-2 space-y-1.5 text-[10px] text-[#4f668a]">
+                            {(section.data.mockup.dashboard?.activity?.items || [
+                              'Audit Readiness Checklist',
+                              'Documentation Package',
+                              'NIS2 Gap Analysis',
+                            ]).map((item: any, index: number) => (
+                              <li key={index}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold text-[#263d62]">{section.data.mockup.dashboard?.domains?.title || 'Top Domains'}</p>
+                          <div className="mt-2 space-y-1.5 text-[10px] text-[#4f668a]">
+                            {(section.data.mockup.dashboard?.domains?.items || ['Governance', 'Risk Management', 'Access Control']).map((item: any, index: number) => (
+                              <div key={index}>{item}</div>
+                            ))}
                           </div>
-                        ))}
+                          <div className="mt-3 flex items-center gap-4 text-[10px] font-medium text-[#6f7f98]">
+                            <span className="inline-flex items-center gap-1">
+                              <span className="h-2 w-2 rounded-[2px] bg-[#2f7dff]" />
+                              {section.data.mockup.dashboard?.domains?.current || 'Current'}
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="h-2 w-2 rounded-[2px] bg-[#98dbc0]" />
+                              {section.data.mockup.dashboard?.domains?.target || 'Target'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

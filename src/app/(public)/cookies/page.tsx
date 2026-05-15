@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { Route } from 'next';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
@@ -105,7 +106,7 @@ function renderSection(section: CookiesSection) {
   );
 }
 
-function CookiesPageContent() {
+function CookiesPageContent({ footerSlot }: { footerSlot?: React.ReactNode }) {
   const { locale } = useLocale();
   const content = cookiesContent[locale] ?? cookiesContent.en;
 
@@ -138,6 +139,8 @@ function CookiesPageContent() {
             </div>
           </aside>
         ) : null}
+
+        {footerSlot}
       </main>
       <PublicFooter />
     </div>
@@ -240,13 +243,18 @@ function CookiesPageWithCMS() {
     );
   }
 
+  const footerSlot = (
+    <div className="px-4 pb-10 sm:px-6 lg:px-8">
+      <CookieConsentAction />
+    </div>
+  );
+
   return (
-    <>
-      <PageRenderer page={page} fallback={<CookiesPageContent />} />
-      <div className="px-4 pb-10 sm:px-6 lg:px-8">
-        <CookieConsentAction />
-      </div>
-    </>
+    <PageRenderer
+      page={page}
+      fallback={(slot) => <CookiesPageContent footerSlot={slot} />}
+      footerSlot={footerSlot}
+    />
   );
 }
 
