@@ -1,12 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
+  adminReportDetailPath,
+  formatReportCode,
   getReport,
   getReportFindings,
   getReportSummaries,
+  isReportUuid,
+  resolveReportUuidFromRoute,
   startReportReview,
   approveReport,
   publishReport,
@@ -24,10 +28,12 @@ import { AdminReportFindingsDomainsSection } from '@/components/report/AdminRepo
 
 export default function AdminReportDetailPage() {
   const params = useParams();
-  const reportId = params.reportId as string;
+  const router = useRouter();
+  const routeSlug = decodeURIComponent((params.reportId as string) ?? '');
   const { locale } = useLocale();
   const t = (key: string, values?: Record<string, string>) => translate(adminReportDetailMessages, locale, key, values);
-  
+
+  const [apiReportId, setApiReportId] = useState<string | null>(null);
   const [report, setReport] = useState<ReportResponse | null>(null);
   const [findings, setFindings] = useState<ReportFindingItem[]>([]);
   const [summaries, setSummaries] = useState<ReportSummaryItem[]>([]);
@@ -37,14 +43,14 @@ export default function AdminReportDetailPage() {
   const [requestChangesOpen, setRequestChangesOpen] = useState(false);
   const [requestChangesNote, setRequestChangesNote] = useState('');
 
-  async function loadReportData() {
+  async function loadReportData(reportUuid: string) {
     setLoading(true);
     setError('');
     try {
       const [reportData, findingsData, summariesData] = await Promise.all([
-        getReport(reportId),
-        getReportFindings(reportId),
-        getReportSummaries(reportId),
+        getReport(reportUuid),
+        getReportFindings(reportUuid),
+        getReportSummaries(reportUuid),
       ]);
       setReport(reportData);
       setFindings(findingsData);
@@ -59,10 +65,11 @@ export default function AdminReportDetailPage() {
   }
 
   async function handleStartReview() {
+    if (!apiReportId) return;
     setActionLoading(true);
     try {
-      await startReportReview(reportId, t('api.startReviewNote'));
-      await loadReportData();
+      await startReportReview(apiReportId, t('api.startReviewNote'));
+      await loadReportData(apiReportId);
       toast.success(t('toast.reviewStarted'));
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('toast.reviewStartFailed');
@@ -73,10 +80,11 @@ export default function AdminReportDetailPage() {
   }
 
   async function handleApprove() {
+    if (!apiReportId) return;
     setActionLoading(true);
     try {
-      await approveReport(reportId, t('api.approveNote'));
-      await loadReportData();
+      await approveReport(apiReportId, t('api.approveNote'));
+      await loadReportData(apiReportId);
       toast.success(t('toast.approved'));
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('toast.approveFailed');
@@ -87,13 +95,14 @@ export default function AdminReportDetailPage() {
   }
 
   async function handlePublish() {
+    if (!apiReportId) return;
     const storageKey = window.prompt(t('prompt.pdfKey'), report?.final_pdf_storage_key ?? '');
     if (!storageKey?.trim()) return;
 
     setActionLoading(true);
     try {
-      await publishReport(reportId, storageKey.trim());
-      await loadReportData();
+      await publishReport(apiReportId, storageKey.trim());
+      await loadReportData(apiReportId);
       toast.success(t('toast.published'));
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('toast.publishFailed');
@@ -104,6 +113,7 @@ export default function AdminReportDetailPage() {
   }
 
   async function submitRequestChanges() {
+    if (!apiReportId) return;
     const note = requestChangesNote.trim();
     if (!note) {
       toast.error(t('toast.changesNoteRequired'));
@@ -112,10 +122,10 @@ export default function AdminReportDetailPage() {
 
     setActionLoading(true);
     try {
-      await requestReportChanges(reportId, note);
+      await requestReportChanges(apiReportId, note);
       setRequestChangesOpen(false);
       setRequestChangesNote('');
-      await loadReportData();
+      await loadReportData(apiReportId);
       toast.success(t('toast.changesRequested'));
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('toast.changesRequestFailed');
@@ -126,8 +136,39 @@ export default function AdminReportDetailPage() {
   }
 
   useEffect(() => {
-    void loadReportData();
-  }, [reportId]);
+    let cancelled = false;
+    setApiReportId(null);
+    setReport(null);
+    setLoading(true);
+    setError('');
+    void resolveReportUuidFromRoute(routeSlug)
+      .then((id) => {
+        if (!cancelled) setApiReportId(id);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        const msg = err instanceof Error ? err.message : t('load.failed');
+        setError(msg);
+        toast.error(msg);
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [routeSlug, locale]);
+
+  useEffect(() => {
+    if (!apiReportId) return;
+    void loadReportData(apiReportId);
+  }, [apiReportId]);
+
+  useEffect(() => {
+    if (!report) return;
+    const canonicalCode = formatReportCode(report);
+    if (routeSlug !== canonicalCode && isReportUuid(routeSlug)) {
+      router.replace(adminReportDetailPath(report) as any);
+    }
+  }, [report, routeSlug, router]);
 
   useEffect(() => {
     if (!requestChangesOpen) return;

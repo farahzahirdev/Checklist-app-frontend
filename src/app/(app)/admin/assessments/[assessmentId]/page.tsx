@@ -20,7 +20,7 @@ import {
   type AssessmentReviewHistoryEntry,
   type AnswerReviewPayload,
 } from '@/lib/assessment-review';
-import { getReportByAssessment, generateDraftReport } from '@/lib/reports';
+import { adminReportDetailPath, generateDraftReport, getReportByAssessment } from '@/lib/reports';
 import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
 import {
   ADMIN_KPI_DARK_CARD_CLASS,
@@ -330,13 +330,13 @@ export default function AdminAssessmentReviewDetailPage() {
       // Try to open the report for this assessment. If it doesn't exist, create a draft then open it.
       try {
         const report = await getReportByAssessment(detail.assessment_id);
-        router.push(`/admin/reports/${report.id}`);
+        router.push(adminReportDetailPath(report) as any);
         return;
       } catch (err) {
         // If not found, generate draft and redirect
         try {
           const created = await generateDraftReport(detail.assessment_id);
-          router.push(`/admin/reports/${created.id}`);
+          router.push(adminReportDetailPath(created) as any);
           return;
         } catch (err2) {
           // fall through and show success toast already displayed

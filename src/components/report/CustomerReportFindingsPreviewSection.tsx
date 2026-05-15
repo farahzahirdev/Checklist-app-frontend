@@ -26,20 +26,32 @@ function priorityRowToneClass(tone: 'high' | 'medium' | 'low') {
   return 'font-semibold text-emerald-600';
 }
 
-function ReportCoverMock({ title, kicker, line1, line2 }: { title: string; kicker: string; line1: string; line2: string }) {
+function ReportCoverMock({
+  subtitle,
+  kicker,
+  line1,
+  line2,
+}: {
+  subtitle?: string | null;
+  kicker: string;
+  line1: string;
+  line2: string;
+}) {
   return (
     <div
-      className="relative mx-auto aspect-[3/4] w-full max-w-[140px] overflow-hidden rounded-lg shadow-lg ring-1 ring-black/10"
+      className="relative aspect-[3/4] w-[112px] shrink-0 overflow-hidden rounded-lg shadow-lg ring-1 ring-black/10 sm:w-[124px] lg:w-[136px]"
       aria-hidden
     >
       <div className="absolute inset-0 bg-[linear-gradient(145deg,#0a1628_0%,#132a52_45%,#1e3a8a_100%)]" />
       <div className="absolute -right-6 top-0 h-3/4 w-2/3 rounded-full bg-[#3b82f6]/25 blur-2xl" />
       <div className="relative flex h-full flex-col justify-between p-3 text-white">
-        <div className="text-[0.5rem] font-semibold uppercase tracking-wider text-[#93c5fd]">{kicker}</div>
+        <p className="text-[0.5rem] font-semibold uppercase tracking-wider text-[#93c5fd]">{kicker}</p>
         <div>
           <p className="text-[0.55rem] font-bold uppercase leading-tight text-white/90">{line1}</p>
           <p className="text-[0.55rem] font-bold uppercase leading-tight text-white/90">{line2}</p>
-          <p className="mt-1 text-[0.5rem] font-semibold leading-tight text-[#bfdbfe] line-clamp-3">{title}</p>
+          {subtitle?.trim() ? (
+            <p className="mt-1 text-[0.5rem] font-semibold leading-tight text-[#bfdbfe] line-clamp-2">{subtitle}</p>
+          ) : null}
         </div>
       </div>
     </div>
@@ -121,13 +133,13 @@ export function CustomerReportFindingsPreviewSection({
   return (
     <div id="detailed-findings" className="scroll-mt-24">
       <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
-        <div className="lg:col-span-8">
+        <div className="min-w-0 lg:col-span-8">
           <h2 className="text-xl font-bold text-[#0f172a] sm:text-2xl">{t('preview.title')}</h2>
           <p className="mt-1 text-sm text-[#64748b] sm:text-base">{t('preview.subtitle')}</p>
 
           <div className="mt-4 overflow-hidden rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left text-sm">
+              <table className="w-full min-w-[640px] text-left text-sm sm:min-w-[720px]">
                 <thead>
                   <tr className="border-b border-[#e8edf5] bg-[#f8fafc] text-[0.65rem] font-semibold uppercase tracking-wide text-[#64748b]">
                     <th className="whitespace-nowrap px-3 py-3 pl-4">{t('preview.col.id')}</th>
@@ -163,29 +175,29 @@ export function CustomerReportFindingsPreviewSection({
           </div>
         </div>
 
-        <aside className="lg:col-span-4">
-          <div className="rounded-2xl border border-[#bfdbfe] bg-[#eff6ff] p-5 shadow-sm sm:p-6">
-            <h3 className="text-lg font-bold text-[#0f172a]">{t('preview.pdf.title')}</h3>
-            <div className="mt-5 flex justify-center">
+        <aside className="min-w-0 lg:col-span-4">
+          <div className="rounded-2xl border border-[#bfdbfe] bg-[#eff6ff] p-4 shadow-sm sm:p-5 lg:p-6">
+            <h3 className="text-base font-bold text-[#0f172a] sm:text-lg">{t('preview.pdf.title')}</h3>
+            <div className="mt-4 flex flex-col items-center gap-4 sm:mt-5 sm:flex-row sm:items-start sm:justify-center sm:gap-5 lg:flex-col lg:items-center lg:gap-5 xl:flex-row xl:items-start xl:justify-start xl:gap-6">
               <ReportCoverMock
-                title={data.checklist_title}
+                subtitle={data.company_name?.trim() || data.checklist_title}
                 kicker={t('preview.cover.kicker')}
                 line1={t('preview.cover.line1')}
                 line2={t('preview.cover.line2')}
               />
+              <ul className="w-full space-y-2.5 text-sm text-[#334155] sm:min-w-0 sm:flex-1 sm:pt-1 lg:w-full lg:flex-none lg:pt-0 xl:flex-1 xl:pt-1">
+                {pdfBullets.map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <span className="mt-0.5 shrink-0 text-[#0066ff]" aria-hidden>
+                      <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
+                        <path d="M3 8.5 6.5 12 13 5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="mt-5 space-y-2.5 text-sm text-[#334155]">
-              {pdfBullets.map((item) => (
-                <li key={item} className="flex items-start gap-2">
-                  <span className="mt-0.5 text-[#0066ff]" aria-hidden>
-                    <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
-                      <path d="M3 8.5 6.5 12 13 5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
             <button
               type="button"
               disabled={!canDownloadPdf || downloading}

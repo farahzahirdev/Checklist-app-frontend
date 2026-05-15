@@ -93,6 +93,7 @@ export type CustomerReportSummary = ReportResponse & {
 export type ReportListItem = {
   id: string;
   assessment_id: string;
+  report_code?: string | null;
   customer_email: string;
   customer_name: string;
   checklist_title: string;
@@ -105,6 +106,66 @@ export type ReportListItem = {
   summaries_count: number;
   reviewer_name: string | null;
 };
+
+const REPORT_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function isReportUuid(value: string): boolean {
+  return REPORT_UUID_RE.test(value.trim());
+}
+
+/** Expand strftime-style placeholders (e.g. %m%d) using draft_generated_at. */
+export function expandReportCodePlaceholders(
+  code: string,
+  referenceIso: string | null | undefined,
+): string {
+  if (!/%[a-zA-Z%]/.test(code)) return code;
+  const ref = referenceIso ? new Date(referenceIso) : new Date();
+  if (Number.isNaN(ref.getTime())) return code;
+  const y = ref.getUTCFullYear();
+  const m = String(ref.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(ref.getUTCDate()).padStart(2, '0');
+  const h = String(ref.getUTCHours()).padStart(2, '0');
+  const min = String(ref.getUTCMinutes()).padStart(2, '0');
+  const s = String(ref.getUTCSeconds()).padStart(2, '0');
+  return code
+    .replace(/%m%d/g, `${m}${d}`)
+    .replace(/%Y/g, String(y))
+    .replace(/%H%M%S/g, `${h}${min}${s}`)
+    .replace(/%H/g, h)
+    .replace(/%M/g, min)
+    .replace(/%S/g, s);
+}
+
+export function formatReportCode(row: {
+  id: string;
+  report_code?: string | null;
+  draft_generated_at?: string | null;
+}): string {
+  const raw = row.report_code?.trim();
+  if (raw) return expandReportCodePlaceholders(raw, row.draft_generated_at);
+  return row.id;
+}
+
+export function adminReportDetailPath(row: {
+  id: string;
+  report_code?: string | null;
+  draft_generated_at?: string | null;
+}): string {
+  return `/admin/reports/${encodeURIComponent(formatReportCode(row))}`;
+}
+
+/** Map admin route slug (report code or legacy UUID) to API report UUID. */
+export async function resolveReportUuidFromRoute(slug: string): Promise<string> {
+  const decoded = decodeURIComponent(slug.trim());
+  if (isReportUuid(decoded)) return decoded;
+
+  const { reports } = await getReportsList({ limit: 500 });
+  const match = reports.find((r) => formatReportCode(r) === decoded);
+  if (match) return match.id;
+
+  throw new Error('Report not found');
+}
 
 export type ReportSummaryItem = {
   id: string | null;
@@ -288,10 +349,15 @@ export function getReport(reportId: string) {
     .then(normalizeAdminReportSectionOverviews);
 }
 
-export function sanitizeReportCodeRow<T extends { id: string; report_code?: string | null }>(row: T): T {
+export function sanitizeReportCodeRow<
+  T extends { id: string; report_code?: string | null; draft_generated_at?: string | null },
+>(row: T): T {
   const code = row.report_code?.trim() ?? '';
   if (code && /%[a-zA-Z%]/.test(code)) {
-    return { ...row, report_code: `RPT-${row.id.replace(/-/g, '').slice(0, 8).toUpperCase()}` };
+    return {
+      ...row,
+      report_code: expandReportCodePlaceholders(code, row.draft_generated_at),
+    };
   }
   return row;
 }
@@ -435,11 +501,19 @@ function normalizeDomainRow(raw: unknown): CustomerReportDomainDatum {
   return o as CustomerReportDomainDatum;
 }
 
-function sanitizeReportCode(code: string, reportUuid: string | undefined): string {
+function sanitizeReportCode(
+  code: string,
+  reportUuid: string | undefined,
+  referenceIso?: string | null,
+): string {
   const c = code.trim();
   if (!c) return reportUuid ? `RPT-${reportUuid.replace(/-/g, '').slice(0, 8).toUpperCase()}` : c;
   if (/%[a-zA-Z%]/.test(c)) {
-    return reportUuid ? `RPT-${reportUuid.replace(/-/g, '').slice(0, 8).toUpperCase()}` : c.replace(/%[a-zA-Z]+/g, '—');
+    const expanded = expandReportCodePlaceholders(c, referenceIso);
+    if (/%[a-zA-Z%]/.test(expanded)) {
+      return reportUuid ? `RPT-${reportUuid.replace(/-/g, '').slice(0, 8).toUpperCase()}` : expanded.replace(/%[a-zA-Z]+/g, '—');
+    }
+    return expanded;
   }
   return c;
 }
@@ -455,7 +529,8 @@ export function normalizeCustomerReportData(raw: unknown): CustomerReportDataRes
   const r = raw as Record<string, unknown>;
   const reportUuid = r.report_uuid != null ? String(r.report_uuid) : undefined;
   const reportIdRaw = r.report_id != null ? String(r.report_id) : '';
-  const report_id = sanitizeReportCode(reportIdRaw, reportUuid);
+  const generatedAt = r.generated_at != null ? String(r.generated_at) : null;
+  const report_id = sanitizeReportCode(reportIdRaw, reportUuid, generatedAt);
 
   const section_scores = Array.isArray(r.section_scores)
     ? (r.section_scores as unknown[]).map(normalizeSectionScore)

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import {
+  adminReportDetailPath,
   getReportsList,
   type ReportListItem,
   type ReportStatus,
@@ -190,8 +191,8 @@ export default function AdminReportsPage({ searchParams }: ReportsPageProps) {
                     </span>
                   </td>
                   <td className="py-3">
-                    <Link 
-                      href={`/admin/reports/${report.id}` as any}
+                    <Link
+                      href={adminReportDetailPath(report) as any}
                       className="text-sm font-semibold text-[#3e69b0] hover:underline"
                     >
                       {t('actions.viewReport')}

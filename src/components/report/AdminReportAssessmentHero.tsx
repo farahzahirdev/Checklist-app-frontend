@@ -7,7 +7,7 @@ import { formatReportCalendarDate } from '@/lib/format-report';
 import { translate, useLocale, type Locale } from '@/lib/i18n';
 import { adminReportDetailMessages } from '@/locales/admin-report-detail';
 import type { ReportFindingItem, ReportResponse, ReportSectionOverview, ReportStatus, ReportSummaryItem } from '@/lib/reports';
-import { aggregateReportSectionOverviews } from '@/lib/reports';
+import { aggregateReportSectionOverviews, formatReportCode } from '@/lib/reports';
 
 const STATUS_UI_CLASS: Record<ReportStatus, string> = {
   draft_generated: 'bg-[#fff4df] text-[#b6862f]',
@@ -16,11 +16,6 @@ const STATUS_UI_CLASS: Record<ReportStatus, string> = {
   approved: 'bg-[#e9f8ef] text-[#2f9960]',
   published: 'bg-[#e9f8ef] text-[#2f9960]',
 };
-
-function reportDisplayCode(report: ReportResponse): string {
-  const c = report.report_code?.trim();
-  return c || report.id;
-}
 
 function summarySectionLabel(
   summary: ReportSummaryItem,
@@ -201,7 +196,7 @@ export function AdminReportAssessmentHero({
   };
   const client = report.company_name?.trim() || t('hero.emDash');
   const assessDate = formatReportCalendarDate(report.draft_generated_at);
-  const reportCode = reportDisplayCode(report);
+  const reportCode = formatReportCode(report);
   const high = findings.filter((f) => f.priority === 'high').length;
   const medium = findings.filter((f) => f.priority === 'medium').length;
   const low = findings.filter((f) => f.priority === 'low').length;

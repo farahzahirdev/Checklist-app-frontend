@@ -20,7 +20,7 @@ import {
 } from '@/lib/dashboard';
 import { ACCESS_TOKEN_STORAGE_KEY } from '@/lib/auth';
 import { useAdminAccess } from '@/lib/admin-access';
-import { getReportsList, type ReportListItem } from '@/lib/reports';
+import { adminReportDetailPath, getReportsList, type ReportListItem } from '@/lib/reports';
 import { ADMIN_PAGE_TITLE_CLASS } from '@/app/(app)/admin/admin-page-title';
 import { translate, useLocale } from '@/lib/i18n';
 import { adminDashboardMessages } from '@/locales/admin-dashboard';
@@ -302,7 +302,7 @@ export default function AdminDashboardPage() {
                     </p>
                   </div>
                   <Link
-                    href={`/admin/reports/${report.id}` as any}
+                    href={adminReportDetailPath(report) as any}
                     className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
                   >
                     {t('actions.viewReport')}

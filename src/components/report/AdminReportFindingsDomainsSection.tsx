@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReportFindingItem, ReportResponse, ReportSectionOverview, ReportSummaryItem } from '@/lib/reports';
+import { formatReportCode } from '@/lib/reports';
 import { translate, useLocale } from '@/lib/i18n';
 import { adminReportDetailMessages } from '@/locales/admin-report-detail';
 
@@ -183,11 +184,6 @@ function topFindingLines(findings: ReportFindingItem[], priority: ReportFindingI
   return findings.filter((f) => f.priority === priority).map((f) => clipFindingText(f.finding_text)).slice(0, 3);
 }
 
-function reportDisplayCode(report: ReportResponse): string {
-  const c = report.report_code?.trim();
-  return c || report.id;
-}
-
 function mergeSectionNarrative(section: ReportSectionOverview, summaries: ReportSummaryItem[]): string | null {
   const a = section.summary_text?.trim();
   if (a) return a;
@@ -260,7 +256,7 @@ export function AdminReportFindingsDomainsSection({
       .join('\n\n') ||
     '';
   const hasExcerpt = Boolean(excerpt);
-  const reportCode = reportDisplayCode(report);
+  const reportCode = formatReportCode(report);
 
   const assessmentHref = `/admin/assessments/${report.assessment_id}`;
 

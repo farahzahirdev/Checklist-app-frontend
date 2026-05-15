@@ -31,7 +31,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   ] as const;
   const isReadOnly = role !== 'admin';
   const visibleNavItems = isReadOnly
-    ? navItems.filter((item) => item.href === '/admin' || item.href === '/admin/checklists' || item.href === '/admin/users')
+    ? navItems.filter(
+        (item) =>
+          item.href === '/admin' ||
+          item.href === '/admin/checklists' ||
+          item.href === '/admin/users',
+      )
     : navItems;
   const isChecklistPanelRoute = /^\/admin\/checklists\/[^/]+\/?$/.test(pathname);
 
@@ -39,7 +44,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     if (!roleLoaded) return;
     if (!isReadOnly) return;
     const isAllowedAuditorRoute =
-    pathname === '/admin' || pathname.startsWith('/admin/checklists') || pathname.startsWith('/admin/users');
+      pathname === '/admin' ||
+      pathname.startsWith('/admin/checklists') ||
+      pathname.startsWith('/admin/users') ||
+      pathname.startsWith('/admin/profile');
     if (!isAllowedAuditorRoute) {
       router.replace('/admin/checklists');
     }
@@ -204,15 +212,19 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               <div className="hidden lg:block">
                 <AdminLanguageSwitcher align="right" />
               </div>
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-medium text-[#dce8ff] hover:bg-[#223657]"
+              <Link
+                href="/admin/profile"
+                className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                  pathname.startsWith('/admin/profile')
+                    ? 'border-[#5ea2ff] bg-[#223657] text-white'
+                    : 'border-[#2d4f83] bg-[#182843] text-[#dce8ff] hover:bg-[#223657]'
+                }`}
               >
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#d6e4ff] text-[#274b84]">
                   {displayName.charAt(0).toUpperCase() || 'U'}
                 </span>
                 {displayName}
-              </button>
+              </Link>
             </div>
           </header>
           <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 md:p-5">
