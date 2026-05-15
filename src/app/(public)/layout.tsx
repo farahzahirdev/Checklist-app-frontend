@@ -24,7 +24,11 @@ export default function PublicLayout({
       const token = window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
       if (!token) return;
 
-      if (pathname === '/cookies' || pathname === '/privacy-policy') {
+      if (
+        pathname === '/cookies' ||
+        pathname === '/privacy-policy' ||
+        pathname === '/terms-of-service'
+      ) {
         return;
       }
 
