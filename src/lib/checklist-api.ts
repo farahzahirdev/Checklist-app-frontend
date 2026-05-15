@@ -1,4 +1,5 @@
 import { apiDelete, apiGetWithAuth, apiPatch, apiPost, apiPostFormData } from '@/lib/api';
+import { getPrimaryDefaultAnswerOptions } from '@/lib/checklist-default-answers';
 import { mockReportSummary } from '@/lib/checklist-mocks';
 import type { Checklist, ChecklistAnswerOption, ChecklistQuestion, ChecklistSection, ReportSummary } from '@/lib/checklist-types';
 
@@ -221,40 +222,14 @@ export type BulkImportTaskListResponse = {
 };
 
 function buildDefaultAnswerOptions(illustrativeImageId?: string): QuestionAnswerOptionPayload[] {
-  return [
-    {
-      position: 1,
-      label: 'Yes',
-      score: 1,
-      choice_code: 'YES',
-      description: 'Control is fully implemented.',
-      illustrative_image_id: illustrativeImageId,
-    },
-    {
-      position: 2,
-      label: 'Maybe',
-      score: 1,
-      choice_code: 'MAYBE',
-      description: 'Control is partially implemented or uncertain.',
-      illustrative_image_id: illustrativeImageId,
-    },
-    {
-      position: 3,
-      label: 'Sure',
-      score: 1,
-      choice_code: 'SURE',
-      description: 'Control is confidently implemented.',
-      illustrative_image_id: illustrativeImageId,
-    },
-    {
-      position: 4,
-      label: 'No',
-      score: 1,
-      choice_code: 'NO',
-      description: 'Control is not implemented.',
-      illustrative_image_id: illustrativeImageId,
-    },
-  ];
+  return getPrimaryDefaultAnswerOptions().map((option, index) => ({
+    position: index + 1,
+    label: option.label,
+    score: Number.parseInt(option.score, 10),
+    choice_code: option.choiceCode,
+    description: option.description,
+    illustrative_image_id: illustrativeImageId,
+  }));
 }
 
 function mapAnswerOption(option: ChecklistAnswerOption): QuestionAnswerOptionPayload {

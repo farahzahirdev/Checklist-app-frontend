@@ -31,6 +31,7 @@ import {
   upsertQuestionTranslation,
   upsertSectionTranslation,
 } from '@/lib/checklist-translation-api';
+import { getDefaultAnswerOptions, getPrimaryDefaultAnswerOptions } from '@/lib/checklist-default-answers';
 import { getMediaPreviewUrl } from '@/lib/assessment';
 import { translate, useLocale } from '@/lib/i18n';
 import { adminChecklistBuilderMessages } from '@/locales/admin-checklist-builder';
@@ -192,7 +193,7 @@ function RichTextEditor({
   );
 }
 
-function makeQuestion(index: number): PanelQuestion {
+function makeQuestion(index: number, locale: string): PanelQuestion {
   return {
     id: `q-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     questionId: '',
@@ -216,12 +217,10 @@ function makeQuestion(index: number): PanelQuestion {
     noteEnabled: false,
     note: '',
     illustrativeImageId: '',
-    answerOptions: [
-      { label: 'Yes', score: '4', choiceCode: 'YES', description: 'Control is fully implemented.', illustrativeImageId: '' },
-      { label: 'Maybe', score: '3', choiceCode: 'MAYBE', description: 'Control is partially implemented or uncertain.', illustrativeImageId: '' },
-      { label: 'Sure', score: '2', choiceCode: 'SURE', description: 'Control is confidently implemented.', illustrativeImageId: '' },
-      { label: 'No', score: '1', choiceCode: 'NO', description: 'Control is not implemented.', illustrativeImageId: '' },
-    ],
+    answerOptions: getDefaultAnswerOptions(locale).map((option) => ({
+      ...option,
+      illustrativeImageId: '',
+    })),
   };
 }
 
@@ -261,7 +260,10 @@ function mapApiQuestionToPanelQuestion(question: {
   }>;
   points?: number;
 }): PanelQuestion {
-  const fallbackAnswers = makeQuestion(1).answerOptions;
+  const fallbackAnswers = getPrimaryDefaultAnswerOptions().map((option) => ({
+    ...option,
+    illustrativeImageId: '',
+  }));
   const safeQuestionId = String(question.questionId ?? '').trim() || `question_${Math.random().toString(36).slice(2, 7)}`;
   const safeQuestionTitle = String(question.questionTitle ?? '').trim();
   const safeLegalTitle = String(question.legalRequirementTitle ?? question.legalRequirement ?? '');
@@ -321,7 +323,7 @@ export default function ChecklistPanelBuilderPage() {
       title: 'Section 1',
       order: 1,
       sourceRef: '',
-      questions: [makeQuestion(1)],
+      questions: [makeQuestion(1, locale)],
     },
   ]);
   const [selected, setSelected] = useState<SelectedNode>({ type: 'checklist' });
@@ -335,7 +337,7 @@ export default function ChecklistPanelBuilderPage() {
   const [newSectionOrder, setNewSectionOrder] = useState('1');
   const [newSectionSourceRef, setNewSectionSourceRef] = useState('');
   const [addQuestionSectionId, setAddQuestionSectionId] = useState('');
-  const [newQuestionDraft, setNewQuestionDraft] = useState<PanelQuestion>(makeQuestion(1));
+  const [newQuestionDraft, setNewQuestionDraft] = useState<PanelQuestion>(() => makeQuestion(1, locale));
   const [confirmDeleteSectionId, setConfirmDeleteSectionId] = useState<string | null>(null);
   const [confirmDeleteQuestionTarget, setConfirmDeleteQuestionTarget] = useState<{
     sectionId: string;
@@ -872,7 +874,7 @@ export default function ChecklistPanelBuilderPage() {
     }
     const nextIndex = (section?.questions.length ?? 0) + 1;
     setAddQuestionSectionId(sectionId);
-    const nextDraft = makeQuestion(nextIndex);
+    const nextDraft = makeQuestion(nextIndex, locale);
     if (parentQuestionId) {
       nextDraft.parentQuestionId = parentQuestionId;
     }
@@ -991,7 +993,7 @@ export default function ChecklistPanelBuilderPage() {
       });
       const newQuestion = mapApiQuestionToPanelQuestion(created);
       if (isSecondaryContentLanguage) {
-        await upsertQuestionTranslation(
+        const savedTranslation = await upsertQuestionTranslation(
           checklistId,
           addQuestionSectionId,
           newQuestion.id,
@@ -999,28 +1001,12 @@ export default function ChecklistPanelBuilderPage() {
           buildQuestionTranslationPayload({
             ...draftQuestion,
             questionTitle: draftQuestion.questionTitle || draftQuestion.questionId,
+            answerOptions: draftQuestion.answerOptions,
           }),
         );
         setEnQuestionFields((previous) => ({
           ...previous,
-          [newQuestion.id]: applyQuestionTranslationToPanel(
-            newQuestion,
-            {
-              questionId: newQuestion.id,
-              languageCode: CHECKLIST_SECONDARY_LANGUAGE,
-              questionText: draftQuestion.legalRequirementTitle,
-              explanation: draftQuestion.explanation,
-              expectedImplementation: draftQuestion.expectedImplementation,
-              howItWorks: draftQuestion.howItWorks,
-              legalRequirementTitle: draftQuestion.legalRequirementTitle,
-              legalRequirementDescription: draftQuestion.legalRequirementDescription,
-              guidanceScore4: draftQuestion.guidanceScore4,
-              guidanceScore3: draftQuestion.guidanceScore3,
-              guidanceScore2: draftQuestion.guidanceScore2,
-              guidanceScore1: draftQuestion.guidanceScore1,
-              recommendationTemplate: draftQuestion.recommendationTemplate,
-            },
-          ),
+          [newQuestion.id]: applyQuestionTranslationToPanel(newQuestion, savedTranslation),
         }));
       }
       setSections((previous) =>
@@ -1053,7 +1039,7 @@ export default function ChecklistPanelBuilderPage() {
     // Validate answer labels and descriptions
     const missingAnswerLabels: number[] = [];
     const missingAnswerDescriptions: number[] = [];
-    question.answerOptions.forEach((opt, idx) => {
+    questionForValidation.answerOptions.forEach((opt, idx) => {
       if (!String(opt.label ?? '').trim()) missingAnswerLabels.push(idx);
       if (!String(opt.description ?? '').trim()) missingAnswerDescriptions.push(idx);
     });
@@ -1083,6 +1069,19 @@ export default function ChecklistPanelBuilderPage() {
     const derivedPoints = question.securityLevel === 'low' ? 1 : question.securityLevel === 'medium' ? 3 : 4;
     setQuestionActionLoading('save');
     try {
+      const primaryUpdatePayload = {
+        questionId: question.questionId,
+        questionTitle: question.questionTitle || question.questionId,
+        parentQuestionId: question.parentQuestionId || undefined,
+        securityLevel: question.securityLevel,
+        auditType: question.auditType,
+        answerLogic: question.answerLogic,
+        evidenceEnabled: question.evidenceEnabled,
+        noteEnabled: question.noteEnabled,
+        note: question.note || null,
+        illustrativeImageId: question.illustrativeImageId || undefined,
+        points: derivedPoints,
+      };
       if (isSecondaryContentLanguage) {
         const displayQuestion = questionForValidation;
         await upsertQuestionTranslation(
@@ -1093,34 +1092,27 @@ export default function ChecklistPanelBuilderPage() {
           buildQuestionTranslationPayload({
             ...displayQuestion,
             questionTitle: displayQuestion.questionTitle || displayQuestion.questionId,
+            answerOptions: displayQuestion.answerOptions,
           }),
         );
+        await updateQuestionApi(checklistId, sectionId, questionId, primaryUpdatePayload);
+      } else {
+        await updateQuestionApi(checklistId, sectionId, questionId, {
+          ...primaryUpdatePayload,
+          legalRequirementTitle: question.legalRequirementTitle,
+          legalRequirementDescription: question.legalRequirementDescription,
+          legalRequirement: question.legalRequirementDescription || question.legalRequirementTitle,
+          explanation: question.explanation,
+          expectedImplementation: question.expectedImplementation,
+          howItWorks: question.howItWorks,
+          guidanceScore4: question.guidanceScore4,
+          guidanceScore3: question.guidanceScore3,
+          guidanceScore2: question.guidanceScore2,
+          guidanceScore1: question.guidanceScore1,
+          recommendationTemplate: question.recommendationTemplate,
+          answerOptions: buildAnswerOptionsPayload(question),
+        });
       }
-      await updateQuestionApi(checklistId, sectionId, questionId, {
-        questionId: question.questionId,
-        questionTitle: question.questionTitle || question.questionId,
-        parentQuestionId: question.parentQuestionId || undefined,
-        securityLevel: question.securityLevel,
-        auditType: question.auditType,
-        legalRequirementTitle: question.legalRequirementTitle,
-        legalRequirementDescription: question.legalRequirementDescription,
-        legalRequirement: question.legalRequirementDescription || question.legalRequirementTitle,
-        explanation: question.explanation,
-        expectedImplementation: question.expectedImplementation,
-        howItWorks: question.howItWorks,
-        guidanceScore4: question.guidanceScore4,
-        guidanceScore3: question.guidanceScore3,
-        guidanceScore2: question.guidanceScore2,
-        guidanceScore1: question.guidanceScore1,
-        recommendationTemplate: question.recommendationTemplate,
-        answerLogic: question.answerLogic,
-        evidenceEnabled: question.evidenceEnabled,
-        noteEnabled: question.noteEnabled,
-        note: question.note || null,
-        illustrativeImageId: question.illustrativeImageId || undefined,
-        points: derivedPoints,
-        answerOptions: buildAnswerOptionsPayload(question),
-      });
       toast.success(isSecondaryContentLanguage ? t('translation.saved') : t('toast.questionSaved'));
     } catch (err) {
       toast.error(
@@ -2271,7 +2263,7 @@ export default function ChecklistPanelBuilderPage() {
                 <div className="space-y-2">
                   <p className={sectionHeadingClass}>{t('heading.answerOptions')}</p>
                   <div className="space-y-2">
-                    {selectedQuestion.answerOptions.map((option, index) => (
+                    {selectedQuestionDisplay.answerOptions.map((option, index) => (
                       <div key={`answer-option-${index}`} className="rounded-xl border border-[#e2e8f5] bg-[#fbfcff] p-3">
                         <div className="mb-3 flex items-center gap-2">
                           <span className="rounded-full border border-[#d4dced] bg-white px-2 py-0.5 text-[11px] font-medium text-[#607594]">
@@ -2288,8 +2280,8 @@ export default function ChecklistPanelBuilderPage() {
                         <input
                           value={option.label}
                           onChange={(event) =>
-                            updateQuestion(selectedSection.id, selectedQuestion.id, {
-                              answerOptions: selectedQuestion.answerOptions.map((item, itemIndex) =>
+                            updateQuestionFields(selectedSection.id, selectedQuestion.id, {
+                              answerOptions: selectedQuestionDisplay.answerOptions.map((item, itemIndex) =>
                                 itemIndex === index ? { ...item, label: event.target.value } : item,
                               ),
                             })
@@ -2312,8 +2304,8 @@ export default function ChecklistPanelBuilderPage() {
                           <textarea
                             value={option.description}
                             onChange={(event) =>
-                              updateQuestion(selectedSection.id, selectedQuestion.id, {
-                                answerOptions: selectedQuestion.answerOptions.map((item, itemIndex) =>
+                              updateQuestionFields(selectedSection.id, selectedQuestion.id, {
+                                answerOptions: selectedQuestionDisplay.answerOptions.map((item, itemIndex) =>
                                   itemIndex === index ? { ...item, description: event.target.value } : item,
                                 ),
                               })

@@ -18,6 +18,12 @@ export type SectionTranslation = {
   title: string;
 };
 
+export type QuestionAnswerOptionTranslation = {
+  position: number;
+  label: string | null;
+  description: string | null;
+};
+
 export type QuestionTranslation = {
   questionId: string;
   languageCode: string;
@@ -32,6 +38,7 @@ export type QuestionTranslation = {
   guidanceScore2: string | null;
   guidanceScore1: string | null;
   recommendationTemplate: string | null;
+  answerOptions: QuestionAnswerOptionTranslation[] | null;
 };
 
 export type QuestionTranslationPayload = {
@@ -46,6 +53,7 @@ export type QuestionTranslationPayload = {
   guidance_score_2?: string | null;
   guidance_score_1?: string | null;
   recommendation_template?: string | null;
+  answer_options?: QuestionAnswerOptionTranslation[] | null;
 };
 
 type ChecklistTranslationApi = {
@@ -75,6 +83,7 @@ type QuestionTranslationApi = {
   guidance_score_2: string | null;
   guidance_score_1: string | null;
   recommendation_template: string | null;
+  answer_options: QuestionAnswerOptionTranslation[] | null;
 };
 
 function isNotFoundError(err: unknown): boolean {
@@ -113,6 +122,7 @@ function mapQuestionTranslation(data: QuestionTranslationApi): QuestionTranslati
     guidanceScore2: data.guidance_score_2,
     guidanceScore1: data.guidance_score_1,
     recommendationTemplate: data.recommendation_template,
+    answerOptions: data.answer_options ?? null,
   };
 }
 
@@ -281,6 +291,16 @@ export async function upsertQuestionTranslation(
   }
 }
 
+export function buildAnswerOptionsTranslationPayload(
+  answerOptions: Array<{ label: string; description: string }>,
+): QuestionAnswerOptionTranslation[] {
+  return answerOptions.map((option, index) => ({
+    position: index + 1,
+    label: option.label.trim() || null,
+    description: option.description.trim() || null,
+  }));
+}
+
 export function buildQuestionTranslationPayload(fields: {
   legalRequirementTitle: string;
   legalRequirementDescription: string;
@@ -293,6 +313,7 @@ export function buildQuestionTranslationPayload(fields: {
   guidanceScore1: string;
   recommendationTemplate: string;
   questionTitle?: string;
+  answerOptions?: Array<{ label: string; description: string }>;
 }): QuestionTranslationPayload {
   return {
     question_text: fields.legalRequirementTitle || fields.questionTitle || '',
@@ -306,21 +327,48 @@ export function buildQuestionTranslationPayload(fields: {
     guidance_score_2: fields.guidanceScore2,
     guidance_score_1: fields.guidanceScore1,
     recommendation_template: fields.recommendationTemplate,
+    answer_options: fields.answerOptions
+      ? buildAnswerOptionsTranslationPayload(fields.answerOptions)
+      : null,
   };
 }
 
-export function applyQuestionTranslationToPanel<T extends {
-  legalRequirementTitle: string;
-  legalRequirementDescription: string;
-  explanation: string;
-  expectedImplementation: string;
-  howItWorks: string;
-  guidanceScore4: string;
-  guidanceScore3: string;
-  guidanceScore2: string;
-  guidanceScore1: string;
-  recommendationTemplate: string;
-}>(base: T, translation: QuestionTranslation): T {
+function mergeAnswerOptionTranslations<T extends { label: string; description: string }>(
+  baseOptions: T[],
+  translated: QuestionAnswerOptionTranslation[] | null | undefined,
+): T[] {
+  if (!translated?.length) {
+    return baseOptions;
+  }
+  const byPosition = new Map(translated.map((item) => [item.position, item]));
+  return baseOptions.map((option, index) => {
+    const translation = byPosition.get(index + 1);
+    if (!translation) {
+      return option;
+    }
+    return {
+      ...option,
+      label: translation.label?.trim() ? translation.label : option.label,
+      description: translation.description?.trim() ? translation.description : option.description,
+    };
+  });
+}
+
+export function applyQuestionTranslationToPanel<
+  T extends {
+    legalRequirementTitle: string;
+    legalRequirementDescription: string;
+    explanation: string;
+    expectedImplementation: string;
+    howItWorks: string;
+    guidanceScore4: string;
+    guidanceScore3: string;
+    guidanceScore2: string;
+    guidanceScore1: string;
+    recommendationTemplate: string;
+    answerOptions: Array<{ label: string; description: string }>;
+  },
+>(base: T, translation: QuestionTranslation): T {
   return {
     ...base,
     legalRequirementTitle: translation.legalRequirementTitle ?? base.legalRequirementTitle,
@@ -333,5 +381,6 @@ export function applyQuestionTranslationToPanel<T extends {
     guidanceScore2: translation.guidanceScore2 ?? base.guidanceScore2,
     guidanceScore1: translation.guidanceScore1 ?? base.guidanceScore1,
     recommendationTemplate: translation.recommendationTemplate ?? base.recommendationTemplate,
+    answerOptions: mergeAnswerOptionTranslations(base.answerOptions, translation.answerOptions),
   };
 }
