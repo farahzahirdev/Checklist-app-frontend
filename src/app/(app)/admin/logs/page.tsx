@@ -123,19 +123,26 @@ export default function AdminAuditLogsPage() {
       toast.error(t('errors.noRowsExport'));
       return;
     }
-    const header = ['id', 'actor', 'action', 'target', 'success', 'timestamp'];
+    const header = [
+      t('table.id'),
+      t('table.actor'),
+      t('table.action'),
+      t('table.target'),
+      t('table.result'),
+      t('table.timestamp'),
+    ];
     const rows = logs.map((log) => [
       log.id,
       log.actor_name || log.actor_email || log.actor_role || 'Unknown',
       log.action || '-',
       log.target_user_email || log.target_user_name || log.target_entity || log.target_id || '-',
-      String(log.success ?? ''),
+      t(`result.${outcomeKeyFromLog(log)}`),
       log.created_at,
     ]);
     const csv = [header, ...rows]
       .map((cols) => cols.map((col) => `"${String(col).replace(/"/g, '""')}"`).join(','))
       .join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
