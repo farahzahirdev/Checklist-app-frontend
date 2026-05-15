@@ -327,6 +327,7 @@ export default function ChecklistPanelBuilderPage() {
   const [selected, setSelected] = useState<SelectedNode>({ type: 'checklist' });
   const [loadingChecklist, setLoadingChecklist] = useState(true);
   const [loadingSections, setLoadingSections] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [sectionActionLoading, setSectionActionLoading] = useState<'create' | 'save' | 'delete' | ''>('');
   const [questionActionLoading, setQuestionActionLoading] = useState<'create' | 'save' | 'delete' | ''>('');
   const [addingQuestionSectionId, setAddingQuestionSectionId] = useState('');
@@ -415,35 +416,23 @@ export default function ChecklistPanelBuilderPage() {
     }
   }, [selected]);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function loadChecklist() {
-      setLoadingChecklist(true);
-      try {
-        const data = await getChecklistById(checklistId);
-        if (cancelled) return;
-        setTitle(data.title);
-        setLawDecree(data.lawDecree);
-        setStatus(data.status);
-      } catch (err) {
-        if (!cancelled) {
-          toast.error(err instanceof Error ? err.message : t('toast.loadChecklistFailed'));
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingChecklist(false);
-        }
-      }
+  const loadChecklistData = useCallback(async () => {
+    setLoadingChecklist(true);
+    try {
+      const data = await getChecklistById(checklistId);
+      setTitle(data.title);
+      setLawDecree(data.lawDecree);
+      setStatus(data.status);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('toast.loadChecklistFailed'));
+      throw err;
+    } finally {
+      setLoadingChecklist(false);
     }
-    void loadChecklist();
-    return () => {
-      cancelled = true;
-    };
   }, [checklistId, t]);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function loadSections() {
+  const loadSectionsData = useCallback(
+    async (options?: { preserveSelection?: boolean }): Promise<PanelSection[]> => {
       setLoadingSections(true);
       try {
         const data = await getSectionsByChecklist(checklistId);
@@ -470,13 +459,12 @@ export default function ChecklistPanelBuilderPage() {
           }),
         );
 
-        const questionMap: Record<string, ReturnType<typeof mapApiQuestionToPanelQuestion>[]> = {};
+        const questionMap: Record<string, PanelQuestion[]> = {};
         const failedCount = questionResults.filter((result) => result.failed).length;
         questionResults.forEach((result) => {
           questionMap[result.sectionId] = result.questions;
         });
 
-        if (cancelled) return;
         const nextSections = sortedSections.map((section) => ({
           id: section.id,
           title: section.title,
@@ -486,6 +474,26 @@ export default function ChecklistPanelBuilderPage() {
         }));
         setSections(nextSections);
         setSelected((previous) => {
+          if (options?.preserveSelection) {
+            if (previous.type === 'question') {
+              const section = nextSections.find((item) => item.id === previous.sectionId);
+              if (section?.questions.some((question) => question.id === previous.questionId)) {
+                return previous;
+              }
+            }
+            if (
+              previous.type === 'createQuestion' &&
+              nextSections.some((item) => item.id === previous.sectionId)
+            ) {
+              return previous;
+            }
+            if (previous.type === 'section' && nextSections.some((item) => item.id === previous.sectionId)) {
+              return previous;
+            }
+            if (previous.type === 'checklist' || previous.type === 'createSection') {
+              return previous;
+            }
+          }
           if (!nextSections.length) return { type: 'checklist' };
           if (previous.type === 'checklist') {
             return { type: 'section', sectionId: nextSections[0].id };
@@ -495,62 +503,67 @@ export default function ChecklistPanelBuilderPage() {
         if (failedCount > 0 && failedCount < sortedSections.length) {
           toast.message(t('toast.sectionsPartialData'));
         }
+        return nextSections;
       } catch (err) {
-        if (!cancelled) {
-          toast.error(err instanceof Error ? err.message : t('toast.loadSectionsFailed'));
-          setSections([]);
-        }
+        toast.error(err instanceof Error ? err.message : t('toast.loadSectionsFailed'));
+        setSections([]);
+        throw err;
       } finally {
-        if (!cancelled) {
-          setLoadingSections(false);
-        }
+        setLoadingSections(false);
       }
-    }
-    void loadSections();
-    return () => {
-      cancelled = true;
-    };
-  }, [checklistId, t]);
+    },
+    [checklistId, t],
+  );
 
-  const loadSecondaryTranslations = useCallback(async () => {
-    setLoadingTranslations(true);
-    try {
-      const checklistTranslation = await getChecklistTranslation(checklistId, CHECKLIST_SECONDARY_LANGUAGE);
-      setEnChecklistTitle(checklistTranslation?.title ?? '');
-      setEnChecklistLawDecree(checklistTranslation?.description ?? '');
+  useEffect(() => {
+    void loadChecklistData();
+  }, [loadChecklistData]);
 
-      const sectionTitleEntries = await Promise.all(
-        sections.map(async (section) => {
-          const translation = await getSectionTranslation(checklistId, section.id, CHECKLIST_SECONDARY_LANGUAGE);
-          return [section.id, translation?.title ?? ''] as const;
-        }),
-      );
-      setEnSectionTitles(Object.fromEntries(sectionTitleEntries));
+  useEffect(() => {
+    void loadSectionsData();
+  }, [loadSectionsData]);
 
-      const questionFieldEntries = await Promise.all(
-        sections.flatMap((section) =>
-          section.questions.map(async (question) => {
-            const translation = await getQuestionTranslation(
-              checklistId,
-              section.id,
-              question.id,
-              CHECKLIST_SECONDARY_LANGUAGE,
-            );
-            if (!translation) return [question.id, {}] as const;
-            return [
-              question.id,
-              applyQuestionTranslationToPanel(question, translation),
-            ] as const;
+  const loadSecondaryTranslations = useCallback(
+    async (sectionsSnapshot?: PanelSection[]) => {
+      const snapshot = sectionsSnapshot ?? sections;
+      setLoadingTranslations(true);
+      try {
+        const checklistTranslation = await getChecklistTranslation(checklistId, CHECKLIST_SECONDARY_LANGUAGE);
+        setEnChecklistTitle(checklistTranslation?.title ?? '');
+        setEnChecklistLawDecree(checklistTranslation?.description ?? '');
+
+        const sectionTitleEntries = await Promise.all(
+          snapshot.map(async (section) => {
+            const translation = await getSectionTranslation(checklistId, section.id, CHECKLIST_SECONDARY_LANGUAGE);
+            return [section.id, translation?.title ?? ''] as const;
           }),
-        ),
-      );
-      setEnQuestionFields(Object.fromEntries(questionFieldEntries));
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('translation.loadFailed'));
-    } finally {
-      setLoadingTranslations(false);
-    }
-  }, [checklistId, sections, t]);
+        );
+        setEnSectionTitles(Object.fromEntries(sectionTitleEntries));
+
+        const questionFieldEntries = await Promise.all(
+          snapshot.flatMap((section) =>
+            section.questions.map(async (question) => {
+              const translation = await getQuestionTranslation(
+                checklistId,
+                section.id,
+                question.id,
+                CHECKLIST_SECONDARY_LANGUAGE,
+              );
+              if (!translation) return [question.id, {}] as const;
+              return [question.id, applyQuestionTranslationToPanel(question, translation)] as const;
+            }),
+          ),
+        );
+        setEnQuestionFields(Object.fromEntries(questionFieldEntries));
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : t('translation.loadFailed'));
+        throw err;
+      } finally {
+        setLoadingTranslations(false);
+      }
+    },
+    [checklistId, sections, t],
+  );
 
   useEffect(() => {
     if (!isSecondaryContentLanguage || loadingSections) return;
@@ -648,6 +661,23 @@ export default function ChecklistPanelBuilderPage() {
     [sections],
   );
   const isBuilderLoading = loadingChecklist || loadingSections;
+
+  async function handleRefreshChecklist() {
+    if (refreshing || isBuilderLoading) return;
+    setRefreshing(true);
+    try {
+      await loadChecklistData();
+      const nextSections = await loadSectionsData({ preserveSelection: true });
+      if (isSecondaryContentLanguage) {
+        await loadSecondaryTranslations(nextSections);
+      }
+      toast.success(t('toast.refreshed'));
+    } catch {
+      toast.error(t('toast.refreshFailed'));
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   function updateSection(sectionId: string, patch: Partial<PanelSection>) {
     setSections((previous) =>
@@ -1607,11 +1637,25 @@ export default function ChecklistPanelBuilderPage() {
           </aside>
 
           <main className="relative z-0 min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-5 lg:p-6">
-            {isSecondaryContentLanguage ? (
-              <p className="mb-4 rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2 text-xs text-[#5f7395]">
-                {t('contentLang.editingHint', { lang: locale.toUpperCase() })}
-              </p>
-            ) : null}
+            <div
+              className={`mb-4 flex flex-wrap items-center gap-2 ${
+                isSecondaryContentLanguage ? 'justify-between' : 'justify-end'
+              }`}
+            >
+              {isSecondaryContentLanguage ? (
+                <p className="min-w-0 flex-1 rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2 text-xs text-[#5f7395]">
+                  {t('contentLang.editingHint', { lang: locale.toUpperCase() })}
+                </p>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => void handleRefreshChecklist()}
+                disabled={refreshing || isBuilderLoading}
+                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[#2d4f83] bg-white px-3 py-1.5 text-sm font-medium text-[#25375a] shadow-sm hover:bg-[#f7f9fe] disabled:opacity-60"
+              >
+                {refreshing ? t('actions.refreshing') : t('actions.refresh')}
+              </button>
+            </div>
 
             {selected.type === 'checklist' ? (
               <div className={`${cardClass} space-y-4`}>
