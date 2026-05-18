@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import type { CustomerReportDataResponse } from '@/lib/reports';
-import { downloadCustomerReportPdf } from '@/lib/reports';
+import { downloadCustomerReportPdf, getCustomerReportPdfPassword } from '@/lib/reports';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerReportMessages } from '@/locales/customer-report';
 
@@ -109,6 +109,35 @@ export function CustomerReportFindingsPreviewSection({
   );
 
   const [downloading, setDownloading] = useState(false);
+  const [pdfPasswordLoading, setPdfPasswordLoading] = useState(false);
+  const [pdfPassword, setPdfPassword] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!canDownloadPdf) {
+      setPdfPassword(null);
+      return;
+    }
+
+    let active = true;
+    setPdfPasswordLoading(true);
+    void getCustomerReportPdfPassword(reportId)
+      .then((res) => {
+        if (!active) return;
+        setPdfPassword(res.has_pdf_password ? res.pdf_password ?? null : null);
+      })
+      .catch(() => {
+        if (!active) return;
+        setPdfPassword(null);
+      })
+      .finally(() => {
+        if (!active) return;
+        setPdfPasswordLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [canDownloadPdf, reportId]);
 
   const handleExportPdf = useCallback(async () => {
     if (!canDownloadPdf) return;
@@ -210,6 +239,14 @@ export function CustomerReportFindingsPreviewSection({
               </svg>
               {downloading ? t('preview.pdf.preparing') : canDownloadPdf ? t('preview.pdf.exportOptions') : t('preview.pdf.exportWhenPublished')}
             </button>
+            {canDownloadPdf ? (
+              <div className="mt-3 rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#334155]">
+                <p className="font-semibold text-[#0f172a]">{t('preview.pdf.passwordLabel')}</p>
+                <p className="mt-1 break-all font-mono text-xs text-[#1e293b]">
+                  {pdfPasswordLoading ? t('preview.pdf.passwordLoading') : pdfPassword || t('preview.pdf.passwordNotSet')}
+                </p>
+              </div>
+            ) : null}
           </div>
         </aside>
       </div>

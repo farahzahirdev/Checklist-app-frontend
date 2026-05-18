@@ -100,10 +100,16 @@ export default function AdminReportDetailPage() {
     if (!apiReportId) return;
     const storageKey = window.prompt(t('prompt.pdfKey'), report?.final_pdf_storage_key ?? '');
     if (!storageKey?.trim()) return;
+    const pdfPassword = window.prompt(t('prompt.pdfPassword'), '');
+    if (pdfPassword === null) return;
+    if (!pdfPassword.trim()) {
+      toast.error(t('toast.passwordRequired'));
+      return;
+    }
 
     setActionLoading(true);
     try {
-      await publishReport(apiReportId, storageKey.trim());
+      await publishReport(apiReportId, storageKey.trim(), pdfPassword.trim());
       await loadReportData(apiReportId);
       toast.success(t('toast.published'));
     } catch (err) {
@@ -275,6 +281,9 @@ export default function AdminReportDetailPage() {
             <p>
               {t('publication.publishedAt')}{' '}
               {report.final_pdf_published_at ? formatReportDateTime(report.final_pdf_published_at) : t('publication.notYet')}
+            </p>
+            <p>
+              {t('publication.password')} {report.has_pdf_password ? t('publication.passwordSet') : t('publication.passwordNotSet')}
             </p>
           </div>
         </article>

@@ -21,6 +21,7 @@ export type ReportResponse = {
   approved_by: string | null;
   approved_at: string | null;
   final_pdf_storage_key: string | null;
+  has_pdf_password: boolean;
   final_pdf_published_at: string | null;
   findings_count: number;
   summaries_count: number;
@@ -326,6 +327,15 @@ export function downloadCustomerReportPdf(reportId: string) {
   return apiGetBlobWithAuth(`/customer/reports/${reportId}/download`);
 }
 
+export type ReportPdfPasswordResponse = {
+  has_pdf_password: boolean;
+  pdf_password: string | null;
+};
+
+export function getCustomerReportPdfPassword(reportId: string) {
+  return apiGetWithAuth<ReportPdfPasswordResponse>(`/customer/reports/${reportId}/pdf-password`);
+}
+
 export type ReviewActionRequest = {
   note: string;
 };
@@ -406,8 +416,15 @@ export function approveReport(reportId: string, note: string) {
   return apiPost<ReportResponse, ReviewActionRequest>(`/reports/${reportId}/approve`, { note });
 }
 
-export function publishReport(reportId: string, finalPdfStorageKey: string) {
-  return apiPost<ReportResponse, { final_pdf_storage_key: string }>(`/reports/${reportId}/publish`, { final_pdf_storage_key: finalPdfStorageKey });
+export function publishReport(reportId: string, finalPdfStorageKey: string, pdfPassword?: string) {
+  const payload: { final_pdf_storage_key: string; pdf_password?: string } = {
+    final_pdf_storage_key: finalPdfStorageKey,
+  };
+  if (pdfPassword && pdfPassword.trim()) payload.pdf_password = pdfPassword.trim();
+  return apiPost<ReportResponse, { final_pdf_storage_key: string; pdf_password?: string }>(
+    `/reports/${reportId}/publish`,
+    payload,
+  );
 }
 
 export function getReportFindings(reportId: string) {
