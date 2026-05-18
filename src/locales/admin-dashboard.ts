@@ -35,7 +35,7 @@ export const adminDashboardMessages: TranslationMessages = {
     'labels.recentlyGenerated': 'Recently generated',
     'actions.viewReport': 'View Report',
     'auditor.readOnlyNotice':
-      'View-only mode. Browse assessments, reports, checklists, and users from the sidebar — editing is reserved for admins.',
+      'View-only mode. Open assessments and reports from the dashboard; use the sidebar for checklists and users. Editing is reserved for admins.',
     'distribution.ready': 'Ready to start',
     'distribution.progress': 'In progress',
     'distribution.review': 'Waiting for review',
@@ -147,7 +147,7 @@ export const adminDashboardMessages: TranslationMessages = {
     'labels.recentlyGenerated': 'Nedávno vygenerováno',
     'actions.viewReport': 'Zobrazit report',
     'auditor.readOnlyNotice':
-      'Režim jen pro čtení. V postranním panelu můžete prohlížet hodnocení, reporty, checklisty a uživatele — úpravy jsou vyhrazeny pro administrátory.',
+      'Režim jen pro čtení. Hodnocení a reporty otevírejte z přehledu; v postranním panelu jsou checklisty a uživatelé. Úpravy jsou vyhrazeny pro administrátory.',
     'distribution.ready': 'Připraveno ke startu',
     'distribution.progress': 'Probíhá',
     'distribution.review': 'Čeká na kontrolu',
