@@ -22,6 +22,7 @@ export type ReportResponse = {
   approved_at: string | null;
   final_pdf_storage_key: string | null;
   has_pdf_password: boolean;
+  auditor_note?: string | null;
   final_pdf_published_at: string | null;
   findings_count: number;
   summaries_count: number;
@@ -303,6 +304,7 @@ export type CustomerReportDataResponse = {
   findings: CustomerReportFinding[];
   section_summaries: CustomerReportSectionSummary[];
   public_suggestions: CustomerReportSuggestion[];
+  auditor_note?: string | null;
   generated_at: string;
   approved_at: string | null;
   published_at: string | null;

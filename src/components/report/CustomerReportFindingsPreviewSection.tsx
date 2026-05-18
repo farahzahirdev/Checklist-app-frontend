@@ -26,6 +26,47 @@ function priorityRowToneClass(tone: 'high' | 'medium' | 'low') {
   return 'font-semibold text-emerald-600';
 }
 
+function sanitizeRichHtml(input?: string | null) {
+  const raw = String(input ?? '').trim();
+  if (!raw) return '';
+  if (typeof window === 'undefined') return raw;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(raw, 'text/html');
+  const allowedTags = new Set(['p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'b', 'i', 'u', 'a']);
+  const walk = (node: Element) => {
+    const children = Array.from(node.children);
+    children.forEach((child) => {
+      const tag = child.tagName.toLowerCase();
+      if (!allowedTags.has(tag)) {
+        const textNode = doc.createTextNode(child.textContent ?? '');
+        child.replaceWith(textNode);
+        return;
+      }
+      const attrs = Array.from(child.attributes);
+      attrs.forEach((attr) => {
+        const name = attr.name.toLowerCase();
+        if (tag === 'a') {
+          if (name !== 'href' && name !== 'target' && name !== 'rel') child.removeAttribute(attr.name);
+          return;
+        }
+        child.removeAttribute(attr.name);
+      });
+      if (tag === 'a') {
+        const href = child.getAttribute('href') ?? '';
+        if (!/^https?:\/\//i.test(href)) {
+          child.removeAttribute('href');
+        } else {
+          child.setAttribute('target', '_blank');
+          child.setAttribute('rel', 'noreferrer noopener');
+        }
+      }
+      walk(child);
+    });
+  };
+  walk(doc.body);
+  return doc.body.innerHTML.trim();
+}
+
 function ReportCoverMock({
   subtitle,
   kicker,
@@ -111,6 +152,7 @@ export function CustomerReportFindingsPreviewSection({
   const [downloading, setDownloading] = useState(false);
   const [pdfPasswordLoading, setPdfPasswordLoading] = useState(false);
   const [pdfPassword, setPdfPassword] = useState<string | null>(null);
+  const sanitizedAuditorNote = useMemo(() => sanitizeRichHtml(data.auditor_note), [data.auditor_note]);
 
   useEffect(() => {
     if (!canDownloadPdf) {
@@ -245,6 +287,15 @@ export function CustomerReportFindingsPreviewSection({
                 <p className="mt-1 break-all font-mono text-xs text-[#1e293b]">
                   {pdfPasswordLoading ? t('preview.pdf.passwordLoading') : pdfPassword || t('preview.pdf.passwordNotSet')}
                 </p>
+              </div>
+            ) : null}
+            {sanitizedAuditorNote ? (
+              <div className="mt-3 rounded-lg border border-[#dbe4f4] bg-[#f8fbff] px-3 py-2 text-sm text-[#334155]">
+                <p className="font-semibold text-[#0f172a]">{t('preview.auditorNote.title')}</p>
+                <div
+                  className="mt-1 text-xs leading-relaxed text-[#1e293b] [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5"
+                  dangerouslySetInnerHTML={{ __html: sanitizedAuditorNote }}
+                />
               </div>
             ) : null}
           </div>

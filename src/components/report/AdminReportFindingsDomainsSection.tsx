@@ -228,6 +228,49 @@ function needsForSection(
   return out;
 }
 
+function sanitizeRichHtml(input?: string | null) {
+  const raw = String(input ?? '').trim();
+  if (!raw) return '';
+  if (typeof window === 'undefined') return raw;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(raw, 'text/html');
+  const allowedTags = new Set(['p', 'br', 'ul', 'ol', 'li', 'strong', 'em', 'b', 'i', 'u', 'a']);
+  const walk = (node: Element) => {
+    const children = Array.from(node.children);
+    children.forEach((child) => {
+      const tag = child.tagName.toLowerCase();
+      if (!allowedTags.has(tag)) {
+        const textNode = doc.createTextNode(child.textContent ?? '');
+        child.replaceWith(textNode);
+        return;
+      }
+      const attrs = Array.from(child.attributes);
+      attrs.forEach((attr) => {
+        const name = attr.name.toLowerCase();
+        if (tag === 'a') {
+          if (name !== 'href' && name !== 'target' && name !== 'rel') {
+            child.removeAttribute(attr.name);
+          }
+          return;
+        }
+        child.removeAttribute(attr.name);
+      });
+      if (tag === 'a') {
+        const href = child.getAttribute('href') ?? '';
+        if (!/^https?:\/\//i.test(href)) {
+          child.removeAttribute('href');
+        } else {
+          child.setAttribute('target', '_blank');
+          child.setAttribute('rel', 'noreferrer noopener');
+        }
+      }
+      walk(child);
+    });
+  };
+  walk(doc.body);
+  return doc.body.innerHTML.trim();
+}
+
 export function AdminReportFindingsDomainsSection({
   report,
   findings,
@@ -247,14 +290,7 @@ export function AdminReportFindingsDomainsSection({
   const medium = findings.filter((f) => f.priority === 'medium');
   const low = findings.filter((f) => f.priority === 'low');
 
-  const excerpt =
-    summaries[0]?.summary_text?.trim() ||
-    findings
-      .map((f) => f.recommendation_text?.trim())
-      .filter(Boolean)
-      .slice(0, 3)
-      .join('\n\n') ||
-    '';
+  const excerpt = sanitizeRichHtml(report.auditor_note);
   const hasExcerpt = Boolean(excerpt);
   const reportCode = formatReportCode(report);
 
@@ -307,7 +343,10 @@ export function AdminReportFindingsDomainsSection({
                       <path d="M5 21v-1a7 7 0 0 1 14 0v1" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#334155]">{excerpt}</p>
+                  <div
+                    className="text-sm leading-relaxed text-[#334155] [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5"
+                    dangerouslySetInnerHTML={{ __html: excerpt }}
+                  />
                 </div>
                 <p className="mt-4 text-right text-sm font-semibold text-[#475569]">{t('findings.leadAuditor')}</p>
               </div>

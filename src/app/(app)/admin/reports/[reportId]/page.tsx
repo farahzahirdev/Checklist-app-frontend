@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
@@ -27,6 +27,86 @@ import { AdminReportMaturityDomainSection } from '@/components/report/AdminRepor
 import { AdminReportFindingsDomainsSection } from '@/components/report/AdminReportFindingsDomainsSection';
 import { useAdminAccess } from '@/lib/admin-access';
 
+function RichTextEditor({
+  label,
+  value,
+  onChange,
+  placeholder,
+  richTextBadge,
+}: {
+  label: string;
+  value: string;
+  onChange: (next: string) => void;
+  placeholder: string;
+  richTextBadge: string;
+}) {
+  const editorRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!editorRef.current) return;
+    if (editorRef.current.innerHTML !== value) {
+      editorRef.current.innerHTML = value || '';
+    }
+  }, [value]);
+
+  function runCommand(command: 'bold' | 'italic' | 'underline' | 'insertUnorderedList' | 'insertOrderedList' | 'removeFormat') {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    document.execCommand(command);
+    onChange(editorRef.current.innerHTML);
+  }
+
+  return (
+    <label className="mt-4 block">
+      <div className="mb-1 flex items-center justify-between">
+        <span className="block text-xs font-medium text-[#5f7395]">{label}</span>
+        <span className="rounded-full bg-[#e6f1fb] px-2 py-0.5 text-[10px] font-semibold text-[#185fa5]">{richTextBadge}</span>
+      </div>
+      <div className="overflow-hidden rounded-xl border border-[#d4dced] bg-white focus-within:border-[#3e69b0]">
+        <div className="flex items-center gap-1 border-b border-[#e2e8f5] bg-[#f7f9fe] px-2 py-1">
+          <button type="button" className="h-6 w-6 rounded text-xs hover:bg-white" onClick={() => runCommand('bold')}>
+            <span className="font-bold">B</span>
+          </button>
+          <button type="button" className="h-6 w-6 rounded text-xs italic hover:bg-white" onClick={() => runCommand('italic')}>
+            I
+          </button>
+          <button type="button" className="h-6 w-6 rounded text-xs underline hover:bg-white" onClick={() => runCommand('underline')}>
+            U
+          </button>
+          <div className="mx-1 h-4 w-px bg-[#d4dced]" />
+          <button type="button" className="h-6 w-6 rounded text-xs hover:bg-white" onClick={() => runCommand('insertUnorderedList')}>
+            •
+          </button>
+          <button type="button" className="h-6 w-6 rounded text-xs hover:bg-white" onClick={() => runCommand('insertOrderedList')}>
+            1.
+          </button>
+          <div className="mx-1 h-4 w-px bg-[#d4dced]" />
+          <button type="button" className="h-6 w-6 rounded text-xs hover:bg-white" onClick={() => runCommand('removeFormat')}>
+            x
+          </button>
+        </div>
+        <div
+          ref={editorRef}
+          contentEditable
+          onInput={(event) => onChange((event.currentTarget as HTMLDivElement).innerHTML)}
+          className="min-h-[12rem] px-4 py-3 text-[0.9375rem] text-[#25375a] outline-none [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5"
+          data-placeholder={placeholder}
+          suppressContentEditableWarning
+        />
+      </div>
+    </label>
+  );
+}
+
+function hasMeaningfulRichText(html: string) {
+  const plain = html
+    .replace(/<br\s*\/?>(?=\s*<\/p>)/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .trim();
+  return plain.length > 0;
+}
+
 export default function AdminReportDetailPage() {
   const { isReadOnly } = useAdminAccess();
   const params = useParams();
@@ -44,6 +124,8 @@ export default function AdminReportDetailPage() {
   const [error, setError] = useState('');
   const [requestChangesOpen, setRequestChangesOpen] = useState(false);
   const [requestChangesNote, setRequestChangesNote] = useState('');
+  const [approvalOpen, setApprovalOpen] = useState(false);
+  const [approvalNote, setApprovalNote] = useState('');
 
   async function loadReportData(reportUuid: string) {
     setLoading(true);
@@ -83,9 +165,16 @@ export default function AdminReportDetailPage() {
 
   async function handleApprove() {
     if (!apiReportId) return;
+    if (!hasMeaningfulRichText(approvalNote)) {
+      toast.error(t('toast.approvalNoteRequired'));
+      return;
+    }
+
     setActionLoading(true);
     try {
-      await approveReport(apiReportId, t('api.approveNote'));
+      await approveReport(apiReportId, approvalNote.trim());
+      setApprovalOpen(false);
+      setApprovalNote('');
       await loadReportData(apiReportId);
       toast.success(t('toast.approved'));
     } catch (err) {
@@ -123,7 +212,7 @@ export default function AdminReportDetailPage() {
   async function submitRequestChanges() {
     if (!apiReportId) return;
     const note = requestChangesNote.trim();
-    if (!note) {
+    if (!hasMeaningfulRichText(note)) {
       toast.error(t('toast.changesNoteRequired'));
       return;
     }
@@ -179,16 +268,22 @@ export default function AdminReportDetailPage() {
   }, [report, routeSlug, router]);
 
   useEffect(() => {
-    if (!requestChangesOpen) return;
+    if (!requestChangesOpen && !approvalOpen) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape' && !actionLoading) {
-        setRequestChangesOpen(false);
-        setRequestChangesNote('');
+        if (requestChangesOpen) {
+          setRequestChangesOpen(false);
+          setRequestChangesNote('');
+        }
+        if (approvalOpen) {
+          setApprovalOpen(false);
+          setApprovalNote('');
+        }
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [requestChangesOpen, actionLoading]);
+  }, [requestChangesOpen, approvalOpen, actionLoading]);
 
   if (loading) {
     return (
@@ -239,7 +334,10 @@ export default function AdminReportDetailPage() {
           <>
             <button
               type="button"
-              onClick={handleApprove}
+              onClick={() => {
+                setApprovalNote(report.auditor_note?.trim() ?? '');
+                setApprovalOpen(true);
+              }}
               disabled={actionLoading}
               className="rounded-xl border border-[#2f9960] bg-[#2f9960] px-4 py-2 text-sm font-semibold text-white hover:bg-[#268a53] disabled:opacity-60"
             >
@@ -370,17 +468,13 @@ export default function AdminReportDetailPage() {
               {t('modal.requestChanges.title')}
             </h2>
             <p className="mt-1 text-sm text-[#607594] md:text-[0.9375rem]">{t('modal.requestChanges.body')}</p>
-            <label className="mt-4 block">
-              <span className="mb-1 block text-xs font-medium text-[#5f7395]">{t('modal.requestChanges.label')}</span>
-              <textarea
-                value={requestChangesNote}
-                onChange={(e) => setRequestChangesNote(e.target.value)}
-                rows={6}
-                className="min-h-[9.5rem] w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0] md:min-h-[14rem] md:px-4 md:py-3 md:text-[0.9375rem]"
-                placeholder={t('modal.requestChanges.placeholder')}
-                autoFocus
-              />
-            </label>
+            <RichTextEditor
+              label={t('modal.requestChanges.label')}
+              value={requestChangesNote}
+              onChange={setRequestChangesNote}
+              placeholder={t('modal.requestChanges.placeholder')}
+              richTextBadge={t('richText.badge')}
+            />
             <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
               <button
                 type="button"
@@ -395,11 +489,64 @@ export default function AdminReportDetailPage() {
               </button>
               <button
                 type="button"
-                disabled={actionLoading || !requestChangesNote.trim()}
+                disabled={actionLoading || !hasMeaningfulRichText(requestChangesNote)}
                 onClick={() => void submitRequestChanges()}
                 className="rounded-lg border border-[#b6862f] bg-[#b6862f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#a0772a] disabled:opacity-60"
               >
                 {actionLoading ? t('modal.sending') : t('modal.send')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {approvalOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4 py-8"
+          onClick={() => {
+            if (!actionLoading) {
+              setApprovalOpen(false);
+              setApprovalNote('');
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="approval-note-title"
+            className="w-full max-w-lg md:max-w-xl lg:max-w-2xl rounded-2xl border border-[#dbe4f4] bg-white p-6 md:p-8 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="approval-note-title" className="text-lg font-semibold text-[#1f2d45] md:text-xl">
+              {t('modal.approval.title')}
+            </h2>
+            <p className="mt-1 text-sm text-[#607594] md:text-[0.9375rem]">{t('modal.approval.body')}</p>
+            <RichTextEditor
+              label={t('modal.approval.label')}
+              value={approvalNote}
+              onChange={setApprovalNote}
+              placeholder={t('modal.approval.placeholder')}
+              richTextBadge={t('richText.badge')}
+            />
+            <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => {
+                  setApprovalOpen(false);
+                  setApprovalNote('');
+                }}
+                className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm font-semibold text-[#3e69b0] hover:bg-[#edf4ff] disabled:opacity-60"
+              >
+                {t('modal.cancel')}
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading || !hasMeaningfulRichText(approvalNote)}
+                onClick={() => void handleApprove()}
+                className="rounded-lg border border-[#2f9960] bg-[#2f9960] px-3 py-2 text-sm font-semibold text-white hover:bg-[#268a53] disabled:opacity-60"
+              >
+                {actionLoading ? t('modal.sending') : t('modal.approval.send')}
               </button>
             </div>
           </div>
