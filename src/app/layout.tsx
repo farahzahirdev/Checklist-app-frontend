@@ -3,7 +3,7 @@ import './globals.css';
 import { AppToaster } from '@/components/app-toaster';
 
 export const metadata: Metadata = {
-  title: 'Checklist App',
+  title: 'AuditReady',
   description: 'Secure checklist platform boilerplate for milestone 1.',
 };
 

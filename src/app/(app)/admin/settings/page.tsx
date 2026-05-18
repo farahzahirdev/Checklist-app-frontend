@@ -26,7 +26,7 @@ export default function AdminSettingsPage() {
               <span className="text-sm font-medium text-[#566b8d]">{t('field.orgName')}</span>
               <input
                 type="text"
-                defaultValue="Checklist KB"
+                defaultValue="AuditReady"
                 className="mt-1 w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#2a3d5f] outline-none focus:border-[#7ea6e7]"
               />
             </label>

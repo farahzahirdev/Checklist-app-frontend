@@ -1,12 +1,18 @@
 'use client';
 
 import Link from 'next/link';
+import { useCookieConsentGate } from '@/hooks/useCookieConsentGate';
 import { translate, useLocale } from '@/lib/i18n';
 import { publicFooterMessages } from '@/locales/public-footer';
 
 export function PublicFooter() {
+  const isConsentGate = useCookieConsentGate();
   const { locale } = useLocale();
   const t = (key: string) => translate(publicFooterMessages, locale, key);
+
+  if (isConsentGate) {
+    return null;
+  }
 
   return (
     <footer className="border-t border-[#0f274f] bg-[#040d21]">

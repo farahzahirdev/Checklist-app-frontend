@@ -96,7 +96,7 @@ function ContactPageContent() {
                     <path d="m3.5 8 8.5 6 8.5-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>
-                info@checklistkb.com
+                info@auditready.cz
               </p>
               <p className="mt-5 text-lg text-[#4c5f80] sm:text-xl">{t('direct.response')}</p>
             </div>

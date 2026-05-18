@@ -1,10 +1,10 @@
-# Checklist App Web
+# Audit Ready App Web
 
-Next.js frontend for the Checklist App platform.
+Next.js frontend for the Audit Ready platform.
 
 ## What this app is about
 
-This app is the user-facing interface for the Checklist platform. It contains the public website experience and the authenticated application shell, and it communicates with the backend API for data, auth, and workflow actions.
+This app is the user-facing interface for the Audit Ready platform. It contains the public website experience and the authenticated application shell, and it communicates with the backend API for data, auth, and workflow actions.
 
 ## How it works
 

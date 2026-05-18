@@ -7,6 +7,7 @@ import { SiteHeader } from '@/components/site-header';
 import type { ReactNode } from 'react';
 import { ACCESS_TOKEN_STORAGE_KEY, getCurrentUser, getRoleHomePath } from '@/lib/auth';
 import { hasCookieConsent } from '@/lib/cookie-consent';
+import { useCookieConsentGate } from '@/hooks/useCookieConsentGate';
 
 export default function PublicLayout({
   children,
@@ -15,6 +16,7 @@ export default function PublicLayout({
 }>) {
   const router = useRouter();
   const pathname = usePathname();
+  const isConsentGate = useCookieConsentGate();
 
   useEffect(() => {
     let cancelled = false;
@@ -58,8 +60,8 @@ export default function PublicLayout({
   }, [pathname, router]);
 
   return (
-    <div className="public-shell min-h-screen bg-slate-950 text-slate-100">
-      <SiteHeader />
+    <div className={isConsentGate ? 'min-h-screen bg-white' : 'public-shell min-h-screen bg-slate-950 text-slate-100'}>
+      {!isConsentGate ? <SiteHeader /> : null}
       {children}
     </div>
   );

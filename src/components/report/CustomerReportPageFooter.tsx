@@ -39,14 +39,14 @@ export function CustomerReportPageFooter() {
           </div>
         </div>
         <a
-          href="mailto:hello@checklistkb.com"
+          href="mailto:info@auditready.cz"
           className="inline-flex items-center gap-2 self-start rounded-xl border border-white/80 bg-white px-4 py-2.5 text-sm font-semibold text-[#0066ff] shadow-sm sm:self-center"
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
             <path d="M4 6h16v12H4z" strokeLinejoin="round" />
             <path d="m4 7 8 6 8-6" strokeLinecap="round" />
           </svg>
-          hello@checklistkb.com
+          info@auditready.cz
         </a>
       </div>
 
@@ -60,7 +60,7 @@ export function CustomerReportPageFooter() {
                   <path d="M9 12l2 2 4-4" strokeLinecap="round" />
                 </svg>
               </div>
-              <span className="text-lg font-semibold">Checklist KB</span>
+              <span className="text-lg font-semibold">AuditReady</span>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-[#94a3b8]">{t('footer.brand.tagline')}</p>
           </div>
@@ -79,12 +79,6 @@ export function CustomerReportPageFooter() {
                 </div>
               </div>
             ))}
-          </div>
-
-          <div className="lg:text-right">
-            <a href="https://checklistkb.com" className="text-sm font-semibold text-white hover:text-[#93c5fd] sm:text-base">
-              checklistkb.com
-            </a>
           </div>
         </div>
       </footer>
