@@ -47,6 +47,16 @@ function toIsoFromDate(value: string, endOfDay = false): string | undefined {
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
+function isUuidLike(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.trim());
+}
+
+function sanitizeCsvCell(value: unknown): string {
+  const text = String(value ?? '').trim();
+  if (!text) return '-';
+  return isUuidLike(text) ? '-' : text;
+}
+
 export default function AdminAuditLogsPage() {
   const { locale } = useLocale();
   const t = (key: string) => translate(adminLogsMessages, locale, key);
@@ -132,12 +142,12 @@ export default function AdminAuditLogsPage() {
       t('table.timestamp'),
     ];
     const rows = logs.map((log) => [
-      log.id,
-      log.actor_name || log.actor_email || log.actor_role || 'Unknown',
-      log.action || '-',
-      log.target_user_email || log.target_user_name || log.target_entity || log.target_id || '-',
-      t(`result.${outcomeKeyFromLog(log)}`),
-      log.created_at,
+      sanitizeCsvCell(log.id),
+      sanitizeCsvCell(log.actor_name || log.actor_email || log.actor_role || 'Unknown'),
+      sanitizeCsvCell(log.action || '-'),
+      sanitizeCsvCell(log.target_user_email || log.target_user_name || log.target_entity || '-'),
+      sanitizeCsvCell(t(`result.${outcomeKeyFromLog(log)}`)),
+      sanitizeCsvCell(log.created_at),
     ]);
     const csv = [header, ...rows]
       .map((cols) => cols.map((col) => `"${String(col).replace(/"/g, '""')}"`).join(','))
