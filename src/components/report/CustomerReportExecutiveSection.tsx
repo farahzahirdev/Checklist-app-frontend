@@ -1,7 +1,5 @@
 'use client';
 
-import Link from 'next/link';
-import type { Route } from 'next';
 import type { ReactNode } from 'react';
 import { useCallback, useMemo } from 'react';
 import type { CustomerReportDataResponse, CustomerReportDomainDatum, CustomerReportSummary } from '@/lib/reports';
@@ -488,10 +486,7 @@ export function CustomerReportExecutiveSection({
         </aside>
 
         <div className="min-w-0 flex-1 bg-[#f4f7fc] p-3 sm:p-4 md:p-5">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <Link href={'/reports' as Route} className="text-sm font-semibold text-[#0066ff] hover:underline">
-              {t('exec.backToReports')}
-            </Link>
+          <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${workflowUi.className}`}>{workflowUi.label}</span>
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${severity.badge}`}>
@@ -800,9 +795,8 @@ export function CustomerReportExecutiveSection({
             </div>
           </section>
 
-          <footer className="mt-8 flex flex-col gap-2 border-t border-[#dce5f2] pt-4 text-xs text-[#64748b] sm:flex-row sm:justify-between sm:text-sm">
+          <footer className="mt-8 border-t border-[#dce5f2] pt-4 text-xs text-[#64748b] sm:text-sm">
             <p>{t('exec.footer.confidential')}</p>
-            <p className="tabular-nums">{t('exec.footer.ref', { id: report.id.slice(0, 8) })}</p>
           </footer>
         </div>
       </div>

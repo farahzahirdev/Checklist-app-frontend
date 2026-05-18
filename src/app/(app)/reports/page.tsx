@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
 import { getCustomerReports, type CustomerReportSummary } from '@/lib/reports';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerReportMessages } from '@/locales/customer-report';
@@ -52,6 +53,12 @@ export default function ReportsPage() {
 
   return (
     <section className="space-y-6">
+      <AdminBreadcrumbs
+        items={[
+          { label: t('breadcrumb.dashboard'), href: '/dashboard' },
+          { label: t('list.title') },
+        ]}
+      />
       <header className="space-y-2">
         <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">{t('list.kicker')}</p>
         <h1 className="text-3xl font-semibold text-[#1f2d45]">{t('list.title')}</h1>

@@ -21,6 +21,7 @@ export const customerReportMessages: TranslationMessages = {
     'list.status.approved': 'Approved',
     'list.status.published': 'Published',
     'list.errors.load': 'Failed to load reports',
+    'breadcrumb.dashboard': 'Dashboard',
 
     'detail.errors.load': 'Failed to load report',
     'detail.notFound': 'Report not found',
@@ -211,6 +212,7 @@ export const customerReportMessages: TranslationMessages = {
     'list.status.approved': 'Schváleno',
     'list.status.published': 'Publikováno',
     'list.errors.load': 'Nepodařilo se načíst reporty',
+    'breadcrumb.dashboard': 'Přehled',
 
     'detail.errors.load': 'Nepodařilo se načíst report',
     'detail.notFound': 'Report nenalezen',

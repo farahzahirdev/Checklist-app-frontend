@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
+import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
 import { CustomerReportExecutiveSection } from '@/components/report/CustomerReportExecutiveSection';
 import { CustomerReportFindingsPreviewSection } from '@/components/report/CustomerReportFindingsPreviewSection';
 import { CustomerReportPageFooter } from '@/components/report/CustomerReportPageFooter';
@@ -78,15 +78,25 @@ export default function CustomerReportPage() {
     );
   }
 
+  const reportBreadcrumbLabel =
+    report?.company_name?.trim() ||
+    report?.report_code?.trim() ||
+    data?.report_id ||
+    t('list.report.fallback');
+
   if (error || !report || !data) {
     return (
       <section className="space-y-4">
+        <AdminBreadcrumbs
+          items={[
+            { label: t('breadcrumb.dashboard'), href: '/dashboard' },
+            { label: t('list.title'), href: '/reports' },
+            { label: reportBreadcrumbLabel },
+          ]}
+        />
         <div className="rounded-lg border border-[#f0c7cf] bg-[#fff2f4] px-3 py-2 text-sm text-[#b63d51]">
           {error || t('detail.notFound')}
         </div>
-        <Link href="/dashboard" className="text-sm font-semibold text-[#3e69b0] hover:underline">
-          {t('detail.backDashboard')}
-        </Link>
       </section>
     );
   }
@@ -95,6 +105,13 @@ export default function CustomerReportPage() {
 
   return (
     <section className="space-y-6" suppressHydrationWarning>
+      <AdminBreadcrumbs
+        items={[
+          { label: t('breadcrumb.dashboard'), href: '/dashboard' },
+          { label: t('list.title'), href: '/reports' },
+          { label: reportBreadcrumbLabel },
+        ]}
+      />
       <CustomerReportExecutiveSection data={data} report={report} />
 
       <CustomerReportFindingsPreviewSection data={data} reportId={reportId} canDownloadPdf={isPublished} />

@@ -171,8 +171,10 @@ function ScoreBreakdown({
   chapters: any[];
   t: (key: string, values?: Record<string, string>) => string;
 }) {
+  const hasChapters = chapters.length > 0;
+
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className={`grid gap-6 ${hasChapters ? 'lg:grid-cols-2' : ''}`}>
       {/* Section Scores */}
       <section className="space-y-3">
         <h3 className="text-lg font-semibold text-[#243555]">{t('dashboard.sections.title')}</h3>
@@ -203,11 +205,11 @@ function ScoreBreakdown({
         </div>
       </section>
 
-      {/* Chapter Breakdown */}
-      <section className="space-y-3">
-        <h3 className="text-lg font-semibold text-[#243555]">{t('dashboard.chapters.title')}</h3>
-        <div className="space-y-3">
-          {chapters.map((chapter) => {
+      {hasChapters ? (
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold text-[#243555]">{t('dashboard.chapters.title')}</h3>
+          <div className="space-y-3">
+            {chapters.map((chapter) => {
             const severity = getSeverityColor(chapter.percentage);
             return (
               <div key={chapter.chapter_code} className="rounded-lg border border-[#e2e8f5] bg-white p-3 shadow-sm">
@@ -230,9 +232,10 @@ function ScoreBreakdown({
                 </p>
               </div>
             );
-          })}
-        </div>
-      </section>
+            })}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -350,42 +353,37 @@ export function ReportDashboard({ data, reportId: _reportId, checklistId }: Repo
       {/* Overall Score Summary */}
       <div className="rounded-2xl border border-[#e2e8f5] bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-[#243555] mb-4">{t('dashboard.summary.title')}</h2>
-        <div className="grid gap-4 md:grid-cols-4 items-center">
-          <div>
-            <ScoreGauge
-              score={data.overall_score}
-              maxScore={data.max_possible_score}
-              percentage={overallPercentage}
-              t={t}
-            />
-          </div>
-          <div className="md:col-span-3">
-            <dl className="space-y-3">
-              <div className="flex items-center justify-between">
-                <dt className="text-sm font-medium text-[#6a7d9a]">{t('dashboard.summary.overallScore')}</dt>
-                <dd className="text-2xl font-bold text-[#1f2d45]">
-                  {Math.round(data.overall_score)} / {data.max_possible_score}
-                </dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-sm font-medium text-[#6a7d9a]">{t('dashboard.summary.completionRate')}</dt>
-                <dd className="text-2xl font-bold text-[#1f2d45]">{Math.round(data.completion_percentage)}%</dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-sm font-medium text-[#6a7d9a]">{t('dashboard.summary.totalFindings')}</dt>
-                <dd className="text-2xl font-bold text-[#1f2d45]">{data.findings.length}</dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-sm font-medium text-[#6a7d9a]">{t('dashboard.summary.riskLevel')}</dt>
-                <dd className={`text-lg font-bold ${getSeverityColor(overallPercentage).text}`}>
-                  {riskBandLabel(overallPercentage, t)}
-                </dd>
-              </div>
-            </dl>
-          </div>
+        <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:gap-8">
+          <ScoreGauge
+            score={data.overall_score}
+            maxScore={data.max_possible_score}
+            percentage={overallPercentage}
+            t={t}
+          />
+          <dl className="grid w-full grid-cols-2 gap-x-6 gap-y-4 sm:flex-1 lg:grid-cols-4 lg:gap-4">
+            <div>
+              <dt className="text-sm font-medium text-[#6a7d9a]">{t('dashboard.summary.overallScore')}</dt>
+              <dd className="mt-1 text-2xl font-bold text-[#1f2d45]">
+                {Math.round(data.overall_score)} / {data.max_possible_score}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-[#6a7d9a]">{t('dashboard.summary.completionRate')}</dt>
+              <dd className="mt-1 text-2xl font-bold text-[#1f2d45]">{Math.round(data.completion_percentage)}%</dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-[#6a7d9a]">{t('dashboard.summary.totalFindings')}</dt>
+              <dd className="mt-1 text-2xl font-bold text-[#1f2d45]">{data.findings.length}</dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-[#6a7d9a]">{t('dashboard.summary.riskLevel')}</dt>
+              <dd className={`mt-1 text-lg font-bold ${getSeverityColor(overallPercentage).text}`}>
+                {riskBandLabel(overallPercentage, t)}
+              </dd>
+            </div>
+          </dl>
         </div>
       </div>
-
       {/* Risk Assessment */}
       <RiskAssessmentSummary sections={data.section_scores} findings={data.findings} t={t} />
 
