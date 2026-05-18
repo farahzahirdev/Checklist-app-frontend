@@ -37,6 +37,7 @@ export default function AppLayout({
   const [role, setRole] = useState<UserRoleKey | ''>('');
   const [displayName, setDisplayName] = useState('User');
   const [roleSwitchActive, setRoleSwitchActive] = useState(false);
+  const [returningToAdmin, setReturningToAdmin] = useState(false);
   const [mfaRequired, setMfaRequired] = useState(false);
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -144,6 +145,8 @@ export default function AppLayout({
   }, [router]);
 
   async function onReturnToAdmin() {
+    // mark that we're actively returning to admin so route-guards don't redirect
+    setReturningToAdmin(true);
     try {
       await endAdminRoleSwitch();
     } catch {
@@ -154,12 +157,15 @@ export default function AppLayout({
         clearRoleSwitchSession();
       }
       setRoleSwitchActive(false);
+      // navigate to admin and refresh; keep returningToAdmin briefly until auth state stabilises
       router.push('/admin');
       router.refresh();
+      setTimeout(() => setReturningToAdmin(false), 300);
     }
   }
 
   useEffect(() => {
+    if (returningToAdmin) return; // suppress redirects while restoring admin session
     if (!authReady) return;
     if (!pathname) return;
     if (!role) return;
@@ -170,7 +176,7 @@ export default function AppLayout({
     if (!canAccessPath(role, pathname)) {
       router.push(defaultPathForRole(role) as Route);
     }
-  }, [authReady, pathname, role, router]);
+  }, [authReady, pathname, role, router, returningToAdmin]);
 
   useEffect(() => {
     if (!authReady) return;
