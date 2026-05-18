@@ -2,13 +2,13 @@ import type { TranslationMessages } from '@/lib/i18n';
 
 export const adminProfileMessages: TranslationMessages = {
   en: {
-    'hero.kicker': 'Admin profile',
+    'hero.kicker': 'Account profile',
     'hero.title': 'Profile & security',
-    'hero.subtitle': 'Manage your account details and password.',
+    'hero.subtitle': 'Manage your personal account details and password.',
     'actions.refresh': 'Refresh',
     'actions.refreshing': 'Refreshing...',
     'section.profileDetails': 'Profile details',
-    'section.profileDetailsSubtitle': 'Update your admin profile used across the admin workspace.',
+    'section.profileDetailsSubtitle': 'Update your profile used across the admin workspace.',
     'fields.email': 'Email',
     'fields.fullName': 'Full name',
     'fields.username': 'Username',
@@ -48,13 +48,13 @@ export const adminProfileMessages: TranslationMessages = {
     'actions.hideConfirmPassword': 'Hide confirm password',
   },
   cs: {
-    'hero.kicker': 'Profil administrátora',
+    'hero.kicker': 'Profil účtu',
     'hero.title': 'Profil & zabezpečení',
-    'hero.subtitle': 'Spravujte údaje účtu a heslo.',
+    'hero.subtitle': 'Spravujte osobní údaje účtu a heslo.',
     'actions.refresh': 'Obnovit',
     'actions.refreshing': 'Obnovuji...',
     'section.profileDetails': 'Profilové údaje',
-    'section.profileDetailsSubtitle': 'Upravte profil administrátora používaný v admin prostředí.',
+    'section.profileDetailsSubtitle': 'Upravte profil používaný v admin prostředí.',
     'fields.email': 'E-mail',
     'fields.fullName': 'Celé jméno',
     'fields.username': 'Uživatelské jméno',
