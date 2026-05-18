@@ -22,7 +22,7 @@ import { ACCESS_TOKEN_STORAGE_KEY } from '@/lib/auth';
 import { useAdminAccess } from '@/lib/admin-access';
 import { adminReportDetailPath, getReportsList, type ReportListItem } from '@/lib/reports';
 import { ADMIN_PAGE_TITLE_CLASS } from '@/app/(app)/admin/admin-page-title';
-import { translate, useLocale } from '@/lib/i18n';
+import { translate, translateOr, useLocale } from '@/lib/i18n';
 import { adminDashboardMessages } from '@/locales/admin-dashboard';
 
 type AdminDashboardState = {
@@ -63,11 +63,35 @@ export default function AdminDashboardPage() {
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(' ');
   const activityActionLabel = (action: string) =>
-    translate(adminDashboardMessages, locale, `activity.action.${action}`) || humanizeToken(action);
+    translateOr(adminDashboardMessages, locale, `activity.action.${action}`, humanizeToken(action));
   const activitySourceLabel = (source: string) =>
-    translate(adminDashboardMessages, locale, `activity.source.${source}`) || humanizeToken(source);
+    translateOr(adminDashboardMessages, locale, `activity.source.${source}`, humanizeToken(source));
   const activityEntityLabel = (entityType: string) =>
-    translate(adminDashboardMessages, locale, `activity.entity.${entityType}`) || humanizeToken(entityType);
+    translateOr(adminDashboardMessages, locale, `activity.entity.${entityType}`, humanizeToken(entityType));
+  const formatActivityNote = (note: string | null) => {
+    if (!note) return null;
+    const match = note.match(/^(\d+)\s+([A-Za-z]{3})$/);
+    if (!match) return note;
+    const amountCents = Number(match[1]);
+    const currency = match[2].toUpperCase();
+    if (!Number.isFinite(amountCents)) return note;
+    try {
+      return new Intl.NumberFormat(locale === 'cs' ? 'cs-CZ' : 'en-US', {
+        style: 'currency',
+        currency,
+      }).format(amountCents / 100);
+    } catch {
+      return note;
+    }
+  };
+  const activityDetail = (item: AdminActivityItem) => {
+    const formattedNote = formatActivityNote(item.note);
+    if (formattedNote) return formattedNote;
+    return translate(adminDashboardMessages, locale, 'activity.detail', {
+      source: activitySourceLabel(item.source),
+      entity: activityEntityLabel(item.entity_type),
+    });
+  };
   const [data, setData] = useState<AdminDashboardState>(INITIAL_STATE);
   const [auditorSummary, setAuditorSummary] = useState<AuditorDashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -114,13 +138,13 @@ export default function AdminDashboardPage() {
 
   const summaryCards: SummaryCard[] = isReadOnly
     ? [
-        { label: t('kpi.reportsUnderReview'), value: auditorSummary?.reports_under_review },
-        { label: t('kpi.changesRequested'), value: auditorSummary?.reports_changes_requested },
-        { label: t('kpi.draftReportsWaiting'), value: auditorSummary?.draft_reports_waiting },
+        { label: t('kpi.reportsUnderReview'), value: auditorSummary?.reports_under_review, href: '/admin/reports?status=under_review' },
+        { label: t('kpi.changesRequested'), value: auditorSummary?.reports_changes_requested, href: '/admin/reports?status=changes_requested' },
+        { label: t('kpi.draftReportsWaiting'), value: auditorSummary?.draft_reports_waiting, href: '/admin/reports?status=draft_generated' },
         { label: t('kpi.findingsTotal'), value: auditorSummary?.findings_total },
-        { label: t('kpi.usersTotal'), value: (auditorSummary as any)?.users_total },
-        { label: t('kpi.checklistsPublished'), value: (auditorSummary as any)?.checklists_published },
-        { label: t('kpi.assessmentsSubmitted'), value: (auditorSummary as any)?.assessments_submitted },
+        { label: t('kpi.usersTotal'), value: (auditorSummary as any)?.users_total, href: '/admin/users' },
+        { label: t('kpi.checklistsPublished'), value: (auditorSummary as any)?.checklists_published, href: '/admin/checklists' },
+        { label: t('kpi.assessmentsSubmitted'), value: (auditorSummary as any)?.assessments_submitted, href: '/admin/assessments' },
       ]
     : [
         { label: t('kpi.usersTotal'), value: data.summary?.users_total },
@@ -261,9 +285,7 @@ export default function AdminDashboardPage() {
               data.activity.slice(0, 3).map((item, idx) => (
                 <div key={`${item.entity_id}-${idx}`} className="py-3 text-sm text-[#2f4264]">
                   <p className="font-semibold text-[#25375a]">{activityActionLabel(item.action)}</p>
-                  <p className="text-[#5f7395]">
-                    {item.note || `${activitySourceLabel(item.source)} - ${activityEntityLabel(item.entity_type)}`}
-                  </p>
+                  <p className="text-[#5f7395]">{activityDetail(item)}</p>
                   <p className="text-xs text-[#7a8ca8]">{new Date(item.occurred_at).toLocaleString()}</p>
                 </div>
               ))

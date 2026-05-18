@@ -94,6 +94,7 @@ export const customerReportMessages: TranslationMessages = {
     'dashboard.adminComments': 'Admin comments',
     'dashboard.suggestions.title': 'Suggestions for improvement',
     'dashboard.suggestions.shared': 'Shared {date}',
+    'dashboard.suggestions.viewQuestion': 'View question',
 
     'exec.workflow.draft_generated': 'Draft',
     'exec.workflow.under_review': 'Under review',
@@ -149,8 +150,7 @@ export const customerReportMessages: TranslationMessages = {
     'exec.card.no': 'No',
     'exec.jump.seeMapping': 'See mapping →',
     'exec.maturity.title': 'Maturity overview',
-    'exec.maturity.subtitle':
-      'Current performance across assessment areas. “vs last” is shown only when a prior assessment exists in your data (otherwise —).',
+    'exec.maturity.subtitle': 'Current performance across assessment areas.',
     'exec.maturity.radarEmpty': 'Add at least two scored areas (sections, chapters, or domains) to show a radar chart.',
     'exec.maturity.col.domain': 'Domain',
     'exec.maturity.col.score': 'Score',
@@ -281,6 +281,7 @@ export const customerReportMessages: TranslationMessages = {
     'dashboard.adminComments': 'Komentáře administrátora',
     'dashboard.suggestions.title': 'Návrhy na zlepšení',
     'dashboard.suggestions.shared': 'Sdíleno {date}',
+    'dashboard.suggestions.viewQuestion': 'Zobrazit otázku',
 
     'exec.workflow.draft_generated': 'Koncept',
     'exec.workflow.under_review': 'V revizi',
@@ -336,8 +337,7 @@ export const customerReportMessages: TranslationMessages = {
     'exec.card.no': 'Ne',
     'exec.jump.seeMapping': 'Zobrazit mapování →',
     'exec.maturity.title': 'Přehled vyspělosti',
-    'exec.maturity.subtitle':
-      'Současný výkon napříč oblastmi hodnocení. „Oproti minule“ se zobrazí jen pokud existují data z předchozího hodnocení (jinak —).',
+    'exec.maturity.subtitle': 'Současný výkon napříč oblastmi hodnocení.',
     'exec.maturity.radarEmpty': 'Pro zobrazení radarového grafu přidejte alespoň dvě hodnocené oblasti (sekce, kapitoly nebo domény).',
     'exec.maturity.col.domain': 'Doména',
     'exec.maturity.col.score': 'Skóre',

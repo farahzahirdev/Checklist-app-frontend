@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
@@ -548,23 +549,42 @@ export default function UsersAccessMerged() {
   const loadRbacMeta = useCallback(async () => {
     setRbacMetaLoading(true);
     try {
-      const [permRes, roleRes] = await Promise.all([listPermissions(), listRoles()]);
+      const [permRes, roleRes] = await Promise.all([
+        listPermissions().catch(() => [] as RbacPermission[]),
+        listRoles().catch(() => [] as RbacRole[]),
+      ]);
       setPermissions(permRes);
       setRoles(roleRes);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load RBAC metadata');
+      if (!isReadOnly) {
+        toast.error(err instanceof Error ? err.message : 'Failed to load RBAC metadata');
+      }
     } finally {
       setRbacMetaLoading(false);
     }
-  }, []);
+  }, [isReadOnly]);
 
   useEffect(() => {
     const t = searchParams.get('tab');
-    const valid: MainTab[] = ['users', 'customers', 'rbac', 'check'];
+    const valid: MainTab[] = isReadOnly ? ['users', 'customers'] : ['users', 'customers', 'rbac', 'check'];
     if (t && valid.includes(t as MainTab)) {
       setMainTab(t as MainTab);
+    } else if (isReadOnly && (mainTab === 'rbac' || mainTab === 'check')) {
+      setMainTab('users');
     }
-  }, [searchParams, isReadOnly]);
+  }, [searchParams, isReadOnly, mainTab]);
+
+  useEffect(() => {
+    if (isReadOnly && (inspTab === 'actions' || inspTab === 'security')) {
+      setInspTab('details');
+    }
+  }, [isReadOnly, inspTab]);
+
+  useEffect(() => {
+    if (isReadOnly && (custInspTab === 'dashboard' || custInspTab === 'actions')) {
+      setCustInspTab('details');
+    }
+  }, [isReadOnly, custInspTab]);
 
   useEffect(() => {
     void loadRbacMeta();
@@ -579,19 +599,38 @@ export default function UsersAccessMerged() {
       setAdminDetail(null);
       return;
     }
+    const listUser = adminUsers.find((u) => u.id === selectedAdminId);
     let c = false;
     void (async () => {
       try {
+        if (isReadOnly) {
+          if (!listUser) {
+            if (!c) setAdminDetail(null);
+            return;
+          }
+          const permsData = await getUserPermissions(selectedAdminId);
+          if (!c) {
+            setAdminDetail({
+              ...listUser,
+              permissions: permsData.permissions.map((p) => ({
+                resource: p.resource,
+                action: p.action,
+              })),
+              roles_assigned: permsData.roles.map((r) => r.code),
+            });
+          }
+          return;
+        }
         const d = await getAdminUser(selectedAdminId);
         if (!c) setAdminDetail(d);
       } catch {
-        if (!c) setAdminDetail(null);
+        if (!c) setAdminDetail(listUser ? { ...listUser, permissions: [], roles_assigned: [] } : null);
       }
     })();
     return () => {
       c = true;
     };
-  }, [selectedAdminId]);
+  }, [selectedAdminId, isReadOnly, adminUsers]);
 
   useEffect(() => {
     if (!selectedCustomerId) {
@@ -1040,7 +1079,7 @@ export default function UsersAccessMerged() {
               {s.k}
             </p>
             <p className="mt-1 text-[26px] font-extrabold leading-none tracking-[-0.05em] text-white sm:text-[32px]">
-              {rbacMetaLoading ? '…' : s.v}
+              {(s.icon === 'admin-users' || s.icon === 'customers' ? listsLoading : rbacMetaLoading) ? '…' : s.v}
             </p>
             <p className="mt-1 text-[11px] text-[#b8cae7]">{s.sub}</p>
           </div>
@@ -1053,12 +1092,14 @@ export default function UsersAccessMerged() {
         aria-label={t('title')}
       >
         {(
-          [
-            ['users', t('tabs.users')],
-            ['customers', t('tabs.customers')],
-            ['rbac', t('tabs.rbac')],
-            ['check', t('tabs.check')],
-          ] as const
+          (
+            [
+              ['users', t('tabs.users')],
+              ['customers', t('tabs.customers')],
+              ['rbac', t('tabs.rbac')],
+              ['check', t('tabs.check')],
+            ] as const
+          ).filter(([id]) => !isReadOnly || id === 'users' || id === 'customers')
         ).map(([id, label]) => (
           <button
             key={id}
@@ -1214,14 +1255,6 @@ export default function UsersAccessMerged() {
                   </div>
                 </div>
               </div>
-              <div className={`${card} min-w-0`}>
-                <div className={`border-b ${line} px-3 py-3 sm:px-[18px]`}>
-                  <h2 className="text-[14px] font-bold sm:text-[15px]">{t('activity.title')}</h2>
-                </div>
-                <div className="px-3 py-3 sm:px-[18px]">
-                  <p className={`text-center text-sm ${muted}`}>{t('activity.hint')}</p>
-                </div>
-              </div>
             </div>
             <aside className={`${card} min-w-0 lg:sticky lg:top-2 lg:self-start`}>
               <div className={`flex min-w-0 items-center justify-between gap-2 border-b ${line} px-3 py-3 sm:px-[18px]`}>
@@ -1240,16 +1273,18 @@ export default function UsersAccessMerged() {
               ) : (
                 <div>
                   <div className={`flex min-w-0 border-b ${line}`}>
-                    {(['details', 'actions', 'security'] as const).map((t) => (
+                    {(['details', 'actions', 'security'] as const)
+                      .filter((tab) => !isReadOnly || tab === 'details')
+                      .map((tab) => (
                       <button
-                        key={t}
+                        key={tab}
                         type="button"
                         className={`min-w-0 flex-1 border-b-2 px-1 py-2 text-[10px] font-semibold capitalize sm:px-2 sm:text-[11px] ${
-                          inspTab === t ? 'border-[#10284F] text-slate-900' : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          inspTab === tab ? 'border-[#10284F] text-slate-900' : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                         }`}
-                        onClick={() => setInspTab(t)}
+                        onClick={() => setInspTab(tab)}
                       >
-                        {translate(adminUsersAccessMessages, locale, `inspector.tabs.${t}`)}
+                        {translate(adminUsersAccessMessages, locale, `inspector.tabs.${tab}`)}
                       </button>
                     ))}
                   </div>
@@ -1478,16 +1513,18 @@ export default function UsersAccessMerged() {
               ) : (
                 <div>
                   <div className={`flex min-w-0 border-b ${line}`}>
-                    {(['details', 'dashboard', 'actions'] as const).map((t) => (
+                    {(['details', 'dashboard', 'actions'] as const)
+                      .filter((tab) => !isReadOnly || tab === 'details')
+                      .map((tab) => (
                       <button
-                        key={t}
+                        key={tab}
                         type="button"
                         className={`min-w-0 flex-1 border-b-2 px-1 py-2 text-[10px] font-semibold capitalize sm:px-2 sm:text-[11px] ${
-                          custInspTab === t ? 'border-[#10284F] text-slate-900' : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          custInspTab === tab ? 'border-[#10284F] text-slate-900' : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                         }`}
-                        onClick={() => setCustInspTab(t)}
+                        onClick={() => setCustInspTab(tab)}
                       >
-                        {t}
+                        {translate(adminUsersAccessMessages, locale, `inspector.tabs.${tab}`) || tab}
                       </button>
                     ))}
                   </div>
@@ -1588,20 +1625,20 @@ export default function UsersAccessMerged() {
                         </div>
                       </div>
                     ) : null}
-                    {custInspTab === 'dashboard' ? (
+                    {custInspTab === 'dashboard' && !isReadOnly ? (
                       <div className="space-y-2">
                         <p className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] text-blue-900">
                           Preview loads live dashboard data for this customer.
                         </p>
                         <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-                          <button type="button" className={btnPri} onClick={() => void onCustomerDash()} disabled={loading || isReadOnly}>
+                          <button type="button" className={btnPri} onClick={() => void onCustomerDash()} disabled={loading}>
                             {actionLoading === 'dash' ? 'Loading…' : 'Load dashboard preview'}
                           </button>
                           <button
                             type="button"
                             className={btn}
                             onClick={() => void onImpersonateCustomer()}
-                            disabled={loading || isReadOnly}
+                            disabled={loading}
                           >
                             {actionLoading === 'impersonate-customer' ? 'Loading…' : 'Impersonate customer'}
                           </button>

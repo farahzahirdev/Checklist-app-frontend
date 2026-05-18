@@ -31,6 +31,7 @@ import {
   ADMIN_PAGE_HERO_TITLE_TEXT_CLASS,
 } from '@/app/(app)/admin/admin-page-title';
 import { adminAssessmentReviewDetailMessages } from '@/locales/admin-assessment-review-detail';
+import { useAdminAccess } from '@/lib/admin-access';
 
 type ReviewDraft = {
   suggestion_type: string;
@@ -78,6 +79,29 @@ function formatDateTime(value: string | null | undefined) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString();
+}
+
+function KpiLabel({ label, tooltip }: { label: string; tooltip: string }) {
+  return (
+    <p className={`${ADMIN_KPI_DARK_LABEL_CLASS} flex items-center gap-1.5`}>
+      <span>{label}</span>
+      <span
+        className="inline-flex shrink-0 cursor-help text-white/90"
+        title={tooltip}
+        aria-label={tooltip}
+        tabIndex={0}
+      >
+        <svg
+          viewBox="0 0 416.979 416.979"
+          className="size-3.5"
+          fill="currentColor"
+          aria-hidden
+        >
+          <path d="M356.004,61.156c-81.37-81.47-213.377-81.551-294.848-0.182c-81.47,81.371-81.552,213.379-0.181,294.85 c81.369,81.47,213.378,81.551,294.849,0.181C437.293,274.636,437.375,142.626,356.004,61.156z M237.6,340.786 c0,3.217-2.607,5.822-5.822,5.822h-46.576c-3.215,0-5.822-2.605-5.822-5.822V167.885c0-3.217,2.607-5.822,5.822-5.822h46.576 c3.215,0,5.822,2.604,5.822,5.822V340.786z M208.49,137.901c-18.618,0-33.766-15.146-33.766-33.765 c0-18.617,15.147-33.766,33.766-33.766c18.619,0,33.766,15.148,33.766,33.766C242.256,122.755,227.107,137.901,208.49,137.901z" />
+        </svg>
+      </span>
+    </p>
+  );
 }
 
 function sectionKey(answer: AssessmentAnswerForReview) {
@@ -143,6 +167,7 @@ function getAttachmentDisplay(answer: AssessmentAnswerForReview): { text: string
 }
 
 export default function AdminAssessmentReviewDetailPage() {
+  const { isReadOnly } = useAdminAccess();
   const params = useParams<{ assessmentId: string }>();
   const assessmentId = params.assessmentId;
   const router = useRouter();
@@ -463,36 +488,42 @@ export default function AdminAssessmentReviewDetailPage() {
               {formatDateTime(detail?.submitted_at)}
             </p>
           </div>
-          <button
-            type="button"
-            disabled={finalizing || loading}
-            onClick={() => void finalizeReview()}
-            className="shrink-0 rounded-xl border border-[#5ea2ff] bg-[#2f7dff] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#256ceb] disabled:opacity-60"
-          >
-            {finalizing ? t('actions.saving') : t('actions.finalize')}
-          </button>
+          {!isReadOnly ? (
+            <button
+              type="button"
+              disabled={finalizing || loading}
+              onClick={() => void finalizeReview()}
+              className="shrink-0 rounded-xl border border-[#5ea2ff] bg-[#2f7dff] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#256ceb] disabled:opacity-60"
+            >
+              {finalizing ? t('actions.saving') : t('actions.finalize')}
+            </button>
+          ) : null}
         </div>
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <article className={ADMIN_KPI_DARK_CARD_CLASS}>
-          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>{t('kpi.total')}</p>
+          <KpiLabel label={t('kpi.total')} tooltip={t('kpi.total.tooltip')} />
           <p className="mt-2 text-2xl font-semibold tabular-nums text-white">{detail?.total_answers ?? (loading ? '...' : 0)}</p>
         </article>
         <article className={ADMIN_KPI_DARK_CARD_CLASS}>
-          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>{t('kpi.answered')}</p>
+          <KpiLabel label={t('kpi.answered')} tooltip={t('kpi.answered.tooltip')} />
           <p className="mt-2 text-2xl font-semibold tabular-nums text-[#7cf0aa]">
             {detail?.total_answers ?? (loading ? '...' : 0)} ({Math.round(detail?.completion_percentage ?? 0)}%)
           </p>
         </article>
         <article className={ADMIN_KPI_DARK_CARD_CLASS}>
-          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>{t('labels.clientAnswer')}</p>
+          <KpiLabel label={t('kpi.avgScore')} tooltip={t('kpi.avgScore.tooltip')} />
           <p className="mt-2 text-2xl font-semibold tabular-nums text-[#ffd89c]">
-            {Math.round(detail?.average_score ?? 0)}/100
+            {loading
+              ? '...'
+              : detail?.average_score != null
+                ? `${Number(detail.average_score).toFixed(1)}/4`
+                : '—'}
           </p>
         </article>
         <article className={ADMIN_KPI_DARK_CARD_CLASS}>
-          <p className={ADMIN_KPI_DARK_LABEL_CLASS}>{t('kpi.followUp')}</p>
+          <KpiLabel label={t('kpi.followUp')} tooltip={t('kpi.followUp.tooltip')} />
           <p className="mt-2 text-2xl font-semibold tabular-nums text-[#ffb3c9]">
             {detail?.action_required_answers ?? (loading ? '...' : 0)}
           </p>
@@ -518,13 +549,20 @@ export default function AdminAssessmentReviewDetailPage() {
 
       <article className="rounded-2xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
         <h2 className="text-lg font-semibold text-[#243555]">{t('notes.title')}</h2>
+        {isReadOnly ? (
+          <p className="mt-2 rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2 text-xs text-[#5f7395]">{t('readOnly.banner')}</p>
+        ) : null}
+        <fieldset disabled={isReadOnly} className="mt-2 space-y-2">
         <textarea value={summaryNotes} onChange={(event) => setSummaryNotes(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm" placeholder={t('notes.summaryPlaceholder')} />
         <textarea value={recommendations} onChange={(event) => setRecommendations(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm" placeholder={t('notes.recommendationsPlaceholder')} />
-        <div className="mt-2 flex gap-2">
-          <button type="button" disabled={finalizing || loading} onClick={() => void requestChanges()} className="rounded-xl border border-[#d4dced] bg-white px-4 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">{t('actions.requestChanges')}</button>
-          <button type="button" disabled={finalizing || loading} onClick={() => void quickApprove()} className="rounded-xl border border-[#d4dced] bg-[#f8faff] px-4 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">{t('actions.quickApprove')}</button>
-          <button type="button" disabled={finalizing || loading} onClick={() => void saveBulkReviews()} className="rounded-xl border border-[#d4dced] bg-[#f8faff] px-4 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">{t('actions.saveBulk')}</button>
-        </div>
+        {!isReadOnly ? (
+          <div className="flex gap-2">
+            <button type="button" disabled={finalizing || loading} onClick={() => void requestChanges()} className="rounded-xl border border-[#d4dced] bg-white px-4 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">{t('actions.requestChanges')}</button>
+            <button type="button" disabled={finalizing || loading} onClick={() => void quickApprove()} className="rounded-xl border border-[#d4dced] bg-[#f8faff] px-4 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">{t('actions.quickApprove')}</button>
+            <button type="button" disabled={finalizing || loading} onClick={() => void saveBulkReviews()} className="rounded-xl border border-[#d4dced] bg-[#f8faff] px-4 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">{t('actions.saveBulk')}</button>
+          </div>
+        ) : null}
+        </fieldset>
       </article>
 
       {loading ? <p className="rounded-xl border border-[#e2e8f5] bg-white px-4 py-3 text-sm text-[#607594]">{t('loading.answers')}</p> : null}
@@ -676,7 +714,8 @@ export default function AdminAssessmentReviewDetailPage() {
                   </div>
                   <div className="mt-3 rounded-lg border border-[#e3e9f6] bg-[#f8fbff] p-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7a8ca8]">{t('reviewerActions.title')}</p>
-                    <div className="mt-2 grid gap-2 md:grid-cols-3">
+                    <fieldset disabled={isReadOnly} className="mt-2">
+                    <div className="grid gap-2 md:grid-cols-3">
                       <select
                         value={normalizeSuggestionType(draft.suggestion_type)}
                         onChange={(event) => setDraft(answer.answer_id, { suggestion_type: event.target.value })}
@@ -704,10 +743,15 @@ export default function AdminAssessmentReviewDetailPage() {
                       <p className="text-xs font-medium text-[#c43e53]">{suggestionErrors[answer.answer_id]}</p>
                     ) : null}
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <button type="button" disabled={isSaving} onClick={() => void saveAnswerReview(answer)} className="rounded-xl border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">{isSaving ? t('actions.saving') : answer.review?.id ? t('actions.updateReview') : t('actions.saveReview')}</button>
-                      {answer.review?.id ? <button type="button" disabled={isSaving} onClick={() => void removeAnswerReview(answer)} className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">{t('actions.deleteReview')}</button> : null}
+                      {!isReadOnly ? (
+                        <>
+                          <button type="button" disabled={isSaving} onClick={() => void saveAnswerReview(answer)} className="rounded-xl border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">{isSaving ? t('actions.saving') : answer.review?.id ? t('actions.updateReview') : t('actions.saveReview')}</button>
+                          {answer.review?.id ? <button type="button" disabled={isSaving} onClick={() => void removeAnswerReview(answer)} className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">{t('actions.deleteReview')}</button> : null}
+                        </>
+                      ) : null}
                       {answer.review?.id ? <button type="button" disabled={loadingHistoryId === answer.review.id} onClick={() => void loadReviewHistory(answer.review!.id)} className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f] disabled:opacity-60">{loadingHistoryId === answer.review.id ? t('history.loading') : t('actions.viewHistory')}</button> : null}
                     </div>
+                    </fieldset>
                     {answer.review?.id && historyByReviewId[answer.review.id] ? (
                       <div className="mt-2 space-y-2 rounded-lg border border-[#d4ced] bg-white p-2">
                         <div className="flex items-center justify-between">

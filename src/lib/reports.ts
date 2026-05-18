@@ -249,7 +249,25 @@ export type CustomerReportSuggestion = {
   suggestion_text: string;
   created_at: string;
   question_id: string | null;
+  assessment_question_review_id: string | null;
 };
+
+/** Deep-link to a specific assessment question (read-only when submitted). */
+export function buildCustomerAssessmentQuestionHref(params: {
+  assessmentId: string;
+  checklistId?: string | null;
+  questionId?: string | null;
+}): string | null {
+  const questionId = params.questionId?.trim();
+  const assessmentId = params.assessmentId?.trim();
+  if (!questionId || !assessmentId) return null;
+  const qs = new URLSearchParams();
+  qs.set('assessment_id', assessmentId);
+  qs.set('question_id', questionId);
+  const checklistId = params.checklistId?.trim();
+  if (checklistId) qs.set('checklist_id', checklistId);
+  return `/assessment?${qs.toString()}`;
+}
 
 export type CustomerReportDomainDatum = Record<string, unknown>;
 
@@ -572,6 +590,8 @@ export function normalizeCustomerReportData(raw: unknown): CustomerReportDataRes
         suggestion_text: String(s.suggestion_text ?? ''),
         created_at: String(s.created_at ?? ''),
         question_id: s.question_id != null ? String(s.question_id) : null,
+        assessment_question_review_id:
+          s.assessment_question_review_id != null ? String(s.assessment_question_review_id) : null,
       }))
     : [];
 

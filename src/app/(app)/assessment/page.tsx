@@ -10,6 +10,7 @@ import { listCustomerAssessments } from '@/lib/customer-assessments';
 import {
   getCurrentAssessment,
   getAssessmentAnswers,
+  getAssessmentDetailById,
   getCurrentAssessmentDetail,
   getMediaPreviewUrl,
   saveAssessmentAnswer,
@@ -186,6 +187,8 @@ export default function AssessmentPage() {
   const questionPanelTopRef = useRef<HTMLDivElement | null>(null);
   const evidenceInputRef = useRef<HTMLInputElement | null>(null);
   const checklistIdFromQuery = searchParams.get('checklist_id') ?? '';
+  const assessmentIdFromQuery = searchParams.get('assessment_id') ?? '';
+  const questionIdFromQuery = searchParams.get('question_id') ?? '';
   const [availableChecklists, setAvailableChecklists] = useState<CustomerChecklist[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [purchasedChecklistIds, setPurchasedChecklistIds] = useState<string[]>([]);
@@ -221,6 +224,7 @@ export default function AssessmentPage() {
   const [previewErrorsByMediaId, setPreviewErrorsByMediaId] = useState<Record<string, string>>({});
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [isSubmittedChecklist, setIsSubmittedChecklist] = useState(false);
+  const isViewOnlyFromReport = isSubmittedChecklist && Boolean(questionIdFromQuery);
   const activeQuestionIdRef = useRef(activeQuestionId);
   const selectedSectionIdRef = useRef(selectedSectionId);
   const skipLocaleRefetchRef = useRef(true);
@@ -541,8 +545,12 @@ export default function AssessmentPage() {
     preferredSectionId?: string;
   }) {
     setInitialLoading(true);
+    const preferredQuestionId = options?.preferredQuestionId ?? (questionIdFromQuery || undefined);
     try {
       let detail: AssessmentCurrentDetailResponse;
+      if (assessmentIdFromQuery) {
+        detail = await getAssessmentDetailById(assessmentIdFromQuery);
+      } else {
       try {
         detail = await getCurrentAssessmentDetail(checklistIdFromQuery || undefined);
       } catch (initialErr) {
@@ -555,16 +563,24 @@ export default function AssessmentPage() {
             (item) => item.checklist_id === checklistIdFromQuery && item.status === 'submitted',
           );
           if (submittedForChecklist) {
-            setIsSubmittedChecklist(true);
-            throw new Error('This assessment is already submitted and cannot be started again.');
+            if (questionIdFromQuery) {
+              detail = await getAssessmentDetailById(submittedForChecklist.id);
+            } else {
+              setIsSubmittedChecklist(true);
+              throw new Error('This assessment is already submitted and cannot be started again.');
+            }
+          } else {
+            await startAssessment({ checklist_id: checklistIdFromQuery });
+            detail = await getCurrentAssessmentDetail(checklistIdFromQuery);
           }
         } catch (lookupErr) {
           if (lookupErr instanceof Error && lookupErr.message.includes('already submitted')) {
             throw lookupErr;
           }
+          await startAssessment({ checklist_id: checklistIdFromQuery });
+          detail = await getCurrentAssessmentDetail(checklistIdFromQuery);
         }
-        await startAssessment({ checklist_id: checklistIdFromQuery });
-        detail = await getCurrentAssessmentDetail(checklistIdFromQuery);
+      }
       }
       setIsSubmittedChecklist(detail.status === 'submitted');
       setAssessmentDetail(detail);
@@ -623,8 +639,8 @@ export default function AssessmentPage() {
       setAnswers(initialAnswers);
       setPersistedAnswerByQuestionId(persistedAnswers);
       const flattened = detail.sections.flatMap((section) => flattenSectionQuestions(section.id, section.title, section.questions));
-      const preferred = options?.preferredQuestionId
-        ? flattened.find((question) => question.id === options.preferredQuestionId)
+      const preferred = preferredQuestionId
+        ? flattened.find((question) => question.id === preferredQuestionId)
         : undefined;
       if (preferred) {
         setSelectedSectionId(preferred.sectionId);
@@ -666,7 +682,7 @@ export default function AssessmentPage() {
 
   useEffect(() => {
     void loadAssessmentDetail();
-  }, [checklistIdFromQuery]);
+  }, [checklistIdFromQuery, assessmentIdFromQuery, questionIdFromQuery]);
 
   useEffect(() => {
     if (skipLocaleRefetchRef.current) {
@@ -851,16 +867,20 @@ export default function AssessmentPage() {
     }
   }
 
-  async function onUploadEvidence() {
+  async function onUploadEvidence(file?: File) {
     if (!activeQuestion) {
       setError('No active question found.');
       return;
     }
-    const selectedFile = selectedEvidenceFiles[activeQuestion.id];
+    if (showUploadProgress === activeQuestion.id) {
+      return;
+    }
+    const selectedFile = file ?? selectedEvidenceFiles[activeQuestion.id];
     if (!selectedFile) {
       setError('Choose an evidence file before uploading.');
       return;
     }
+    setSelectedEvidenceFiles((prev) => ({ ...prev, [activeQuestion.id]: selectedFile }));
     if (!isAllowedEvidenceMimeType(selectedFile.type)) {
       setError('Unsupported evidence file type.');
       return;
@@ -975,8 +995,8 @@ export default function AssessmentPage() {
 
       {initialLoading ? <p className="text-sm text-[#607594]">Loading assessment details...</p> : null}
 
-      <section className={isSubmittedChecklist ? 'grid gap-4' : 'grid gap-4 lg:grid-cols-[280px_1fr]'}>
-        {!isSubmittedChecklist ? (
+      <section className={isSubmittedChecklist && !isViewOnlyFromReport ? 'grid gap-4' : 'grid gap-4 lg:grid-cols-[280px_1fr]'}>
+        {!isSubmittedChecklist || isViewOnlyFromReport ? (
         <aside className="w-full min-w-0 max-w-[calc(100vw-2rem)] rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_1px_3px_rgba(18,32,61,0.08)] sm:max-w-none">
           <h3 className="text-[22px] font-semibold text-[#1f2d45]">{t('sections.title')}</h3>
           <ul className="mt-3 space-y-2 text-sm">
@@ -1100,7 +1120,7 @@ export default function AssessmentPage() {
               <div className="mt-3 rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] px-3 py-3 text-sm text-[#607594]">
                 No questions for this section yet. Select another section from the left panel.
               </div>
-            ) : isSubmittedChecklist ? (
+            ) : isSubmittedChecklist && !isViewOnlyFromReport ? (
               <div className="mt-3 rounded-lg border border-[#d8e7d8] bg-[#f1f8f1] px-3 py-3 text-sm text-[#2f5c38]">
                 <p>This assessment is submitted and cannot be submitted again.</p>
                 <div className="mt-3">
@@ -1259,7 +1279,25 @@ export default function AssessmentPage() {
               <p className="mt-3 text-sm text-[#607594]">{t('empty.noQuestions')}</p>
             )}
 
-            {activeQuestion && !isSubmittedChecklist ? (
+            {activeQuestion && isViewOnlyFromReport ? (
+              <div className="mt-4 rounded-lg border border-[#d8e7d8] bg-[#f7fbf7] p-4">
+                <p className="text-sm font-semibold text-[#1f2d45]">Your submitted answer</p>
+                <p className="mt-2 text-sm text-[#2a3d5f]">
+                  {normalizeAnswerOptionLabel(
+                    activeAnswer?.answer || activeQuestion.customer_answer || '—',
+                  )}
+                </p>
+                {(activeAnswer?.note_text || activeQuestion.user_note) ? (
+                  <p className="mt-3 text-sm text-[#607594]">
+                    <span className="font-semibold text-[#1f2d45]">Note: </span>
+                    {activeAnswer?.note_text || activeQuestion.user_note}
+                  </p>
+                ) : null}
+                <p className="mt-3 text-xs text-[#607594]">This assessment is submitted. Answers cannot be changed.</p>
+              </div>
+            ) : null}
+
+            {activeQuestion && !isSubmittedChecklist && !isViewOnlyFromReport ? (
               <>
                 <div className="mt-4 space-y-3">
                   <p className="text-sm font-semibold text-[#1f2d45]">Your answer</p>
@@ -1324,24 +1362,21 @@ export default function AssessmentPage() {
                 {isEvidenceEnabledForActiveQuestion ? (
                   <div className="mt-4 rounded-lg border border-[#dbe4f4] bg-[#f9fbff] p-3">
                     <p className="text-sm font-semibold text-[#1f2d45]">Upload evidence <span className="font-normal text-[#7b88a3]">(optional)</span></p>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <div className="mt-2 space-y-1">
                       <input
                         type="file"
                         ref={evidenceInputRef}
-                        onChange={(event) => setSelectedEvidenceFiles(prev => ({ 
-                          ...prev, 
-                          [activeQuestion.id]: event.target.files?.[0] ?? null 
-                        }))}
-                        className="max-w-full rounded-lg border border-[#d4dced] bg-white px-2 py-1 text-xs text-[#3f5677]"
+                        disabled={showUploadProgress === activeQuestion.id}
+                        onChange={(event) => {
+                          const picked = event.target.files?.[0];
+                          if (!picked) return;
+                          void onUploadEvidence(picked);
+                        }}
+                        className="max-w-full rounded-lg border border-[#d4dced] bg-white px-2 py-1 text-xs text-[#3f5677] disabled:cursor-not-allowed disabled:opacity-60"
                       />
-                      <button
-                        type="button"
-                        onClick={() => void onUploadEvidence()}
-                        disabled={!!showUploadProgress || !selectedEvidenceFiles[activeQuestion.id]}
-                        className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
-                      >
-                        {showUploadProgress === activeQuestion.id ? 'Uploading…' : 'Upload evidence'}
-                      </button>
+                      {showUploadProgress === activeQuestion.id ? (
+                        <p className="text-xs text-[#607594]">Uploading…</p>
+                      ) : null}
                     </div>
                     {/* Display existing evidence files from backend */}
                     {existingEvidenceFiles[activeQuestion.id]?.map((evidenceFile) => (

@@ -91,7 +91,6 @@ export function AdminReportMaturityDomainSection({ report }: { report: ReportRes
                 <tr>
                   <th className="px-3 py-2.5">{t('maturity.th.domain')}</th>
                   <th className="px-3 py-2.5">{t('maturity.th.score')}</th>
-                  <th className="hidden px-3 py-2.5 sm:table-cell">{t('maturity.th.vsLast')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#eef2f9]">
@@ -118,7 +117,6 @@ export function AdminReportMaturityDomainSection({ report }: { report: ReportRes
                           <span className="shrink-0 tabular-nums font-semibold text-[#0f172a]">{pct}%</span>
                         </div>
                       </td>
-                      <td className="hidden px-3 py-3 text-[#94a3b8] sm:table-cell">{t('maturity.dash')}</td>
                     </tr>
                   );
                 })}

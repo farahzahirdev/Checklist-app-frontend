@@ -8,6 +8,7 @@ import { CustomerReportExecutiveSection } from '@/components/report/CustomerRepo
 import { CustomerReportFindingsPreviewSection } from '@/components/report/CustomerReportFindingsPreviewSection';
 import { CustomerReportPageFooter } from '@/components/report/CustomerReportPageFooter';
 import { ReportDashboard } from '@/components/report/report-dashboard';
+import { getCustomerAssessmentDetail } from '@/lib/customer-assessments';
 import {
   getCustomerReport,
   getCustomerReportData,
@@ -28,6 +29,7 @@ export default function CustomerReportPage() {
 
   const [report, setReport] = useState<CustomerReportSummary | null>(null);
   const [data, setData] = useState<CustomerReportDataResponse | null>(null);
+  const [checklistId, setChecklistId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -41,6 +43,12 @@ export default function CustomerReportPage() {
       ]);
       setReport(reportResponse);
       setData(reportData);
+      try {
+        const assessmentDetail = await getCustomerAssessmentDetail(reportData.assessment_id);
+        setChecklistId(assessmentDetail.checklist_id);
+      } catch {
+        setChecklistId(null);
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('detail.errors.load');
       setError(msg);
@@ -97,7 +105,7 @@ export default function CustomerReportPage() {
         </p>
       ) : null}
 
-      <ReportDashboard data={data} reportId={reportId} />
+      <ReportDashboard data={data} reportId={reportId} checklistId={checklistId} />
 
       <CustomerReportPageFooter />
     </section>

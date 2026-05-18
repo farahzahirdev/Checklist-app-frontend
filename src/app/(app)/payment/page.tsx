@@ -166,20 +166,9 @@ export default function PaymentPage() {
 
                           <p className="mt-3 min-h-[3rem] line-clamp-2 text-xs leading-relaxed text-[#d5e4ff]">{description}</p>
 
-                          <div className="mt-4 flex items-end justify-between gap-2">
-                            <div>
-                              <p className="text-[10px] uppercase tracking-[0.2em] text-[#b8cff6]">{t('labels.price')}</p>
-                              <p className="text-xl font-semibold tracking-tight text-white">{priceLabel}</p>
-                            </div>
-                            <span
-                              className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
-                                isSelected
-                                  ? 'bg-[#d7e7ff] text-[#12305d]'
-                                  : 'border border-white/20 bg-white/10 text-[#d8e6ff] group-hover:bg-white/20'
-                              }`}
-                            >
-                              {isSelected ? t('actions.ready') : t('actions.choosePlan')}
-                            </span>
+                          <div className="mt-4">
+                            <p className="text-[10px] uppercase tracking-[0.2em] text-[#b8cff6]">{t('labels.price')}</p>
+                            <p className="text-xl font-semibold tracking-tight text-white">{priceLabel}</p>
                           </div>
 
                           {isSelected ? (

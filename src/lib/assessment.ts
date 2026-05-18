@@ -102,6 +102,13 @@ export async function getCurrentAssessmentDetail(checklistId?: string) {
   return apiGetWithAuth<AssessmentCurrentDetailResponse>(`/assessment/current/detail${suffix}`);
 }
 
+/** Load assessment sections/questions by id (includes submitted assessments for read-only view). */
+export async function getAssessmentDetailById(assessmentId: string) {
+  return apiGetWithAuth<AssessmentCurrentDetailResponse>(
+    `/assessment/${encodeURIComponent(assessmentId)}/detail`,
+  );
+}
+
 export async function getMediaPreviewUrl(mediaId: string) {
   const response = await apiGetWithAuth<{preview_url: string}>(`/media/${encodeURIComponent(mediaId)}/preview`);
   return response.preview_url;

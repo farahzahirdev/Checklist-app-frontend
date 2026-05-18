@@ -25,8 +25,10 @@ import { adminReportDetailMessages } from '@/locales/admin-report-detail';
 import { AdminReportAssessmentHero } from '@/components/report/AdminReportAssessmentHero';
 import { AdminReportMaturityDomainSection } from '@/components/report/AdminReportMaturityDomainSection';
 import { AdminReportFindingsDomainsSection } from '@/components/report/AdminReportFindingsDomainsSection';
+import { useAdminAccess } from '@/lib/admin-access';
 
 export default function AdminReportDetailPage() {
+  const { isReadOnly } = useAdminAccess();
   const params = useParams();
   const router = useRouter();
   const routeSlug = decodeURIComponent((params.reportId as string) ?? '');
@@ -212,7 +214,8 @@ export default function AdminReportDetailPage() {
 
       <AdminReportFindingsDomainsSection report={report} findings={findings} summaries={summaries} />
 
-      {(report.status === 'draft_generated' ||
+      {!isReadOnly &&
+      (report.status === 'draft_generated' ||
         report.status === 'under_review' ||
         report.status === 'approved') && (
       <div className="flex flex-wrap gap-3">
@@ -249,7 +252,7 @@ export default function AdminReportDetailPage() {
             </button>
           </>
         )}
-        {report.status === 'approved' && (
+        {!isReadOnly && report.status === 'approved' ? (
           <button
             type="button"
             onClick={handlePublish}
@@ -258,7 +261,7 @@ export default function AdminReportDetailPage() {
           >
             {actionLoading ? t('actions.processing') : t('actions.publish')}
           </button>
-        )}
+        ) : null}
       </div>
       )}
 

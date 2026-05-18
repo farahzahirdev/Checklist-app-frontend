@@ -271,13 +271,11 @@ export function CustomerReportExecutiveSection({
   }, [sortedMaturitySpiderRows, t]);
 
   const domainRows = useMemo(() => {
-    const vs = '—' as const;
     const dd = data.domain_data;
     if (Array.isArray(dd) && dd.length) {
       return dd.slice(0, 12).map((d, i) => ({
         title: domainDatumLabel(d, i, (n) => t('exec.domainFallback', { n: String(n) })),
         pct: domainDatumPct(d),
-        vsLast: vs,
       }));
     }
     const chapters = data.chapter_data;
@@ -285,13 +283,11 @@ export function CustomerReportExecutiveSection({
       return chapters.map((ch) => ({
         title: ch.title,
         pct: Math.round(ch.percentage),
-        vsLast: vs,
       }));
     }
     return data.section_scores.map((s) => ({
       title: sectionScoreDisplayName(s),
       pct: Math.round(s.percentage),
-      vsLast: vs,
     }));
   }, [data.domain_data, data.chapter_data, data.section_scores, t]);
 
@@ -639,8 +635,7 @@ export function CustomerReportExecutiveSection({
                   <thead>
                     <tr className="border-b border-[#e8edf5] text-[0.65rem] font-semibold uppercase tracking-wide text-[#64748b]">
                       <th className="pb-2 pr-2">{t('exec.maturity.col.domain')}</th>
-                      <th className="pb-2 pr-2">{t('exec.maturity.col.score')}</th>
-                      <th className="pb-2">{t('exec.maturity.col.vsLast')}</th>
+                      <th className="pb-2">{t('exec.maturity.col.score')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -659,15 +654,12 @@ export function CustomerReportExecutiveSection({
                                 <span className="tabular-nums font-semibold text-[#0f172a]">{row.pct}%</span>
                               </div>
                             </td>
-                            <td className="py-2.5 text-xs font-semibold text-[#64748b]" title={t('exec.maturity.vsLastTitle')}>
-                              {row.vsLast}
-                            </td>
                           </tr>
                         );
                       })
                     ) : (
                       <tr>
-                        <td colSpan={3} className="py-4 text-sm text-[#64748b]">
+                        <td colSpan={2} className="py-4 text-sm text-[#64748b]">
                           {t('exec.maturity.noBreakdown')}
                         </td>
                       </tr>

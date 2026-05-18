@@ -1,7 +1,10 @@
 'use client';
 
+import Link from 'next/link';
+import type { Route } from 'next';
 import { useCallback, useMemo } from 'react';
 import {
+  buildCustomerAssessmentQuestionHref,
   CustomerReportDataResponse,
   customerReportOverallPercentage,
   sectionScoreDisplayName,
@@ -12,6 +15,7 @@ import { customerReportMessages } from '@/locales/customer-report';
 interface ReportDashboardProps {
   data: CustomerReportDataResponse;
   reportId: string;
+  checklistId?: string | null;
 }
 
 /**
@@ -332,7 +336,7 @@ function FindingsSection({
 /**
  * Main Report Dashboard Component
  */
-export function ReportDashboard({ data, reportId: _reportId }: ReportDashboardProps) {
+export function ReportDashboard({ data, reportId: _reportId, checklistId }: ReportDashboardProps) {
   const { locale } = useLocale();
   const overallPercentage = customerReportOverallPercentage(data);
   const t = useCallback(
@@ -410,17 +414,41 @@ export function ReportDashboard({ data, reportId: _reportId }: ReportDashboardPr
       {data.public_suggestions.length > 0 && (
         <section id="report-suggestions" className="space-y-3 scroll-mt-24">
           <h2 className="text-xl font-semibold text-[#243555]">{t('dashboard.suggestions.title')}</h2>
-          <div className="space-y-3">
-            {data.public_suggestions.map((suggestion, index) => (
-              <article key={`${suggestion.created_at}-${index}`} className="rounded-lg border border-[#e9f5ff] bg-[#f0f9ff] p-4 shadow-sm">
-                <p className="text-sm text-[#0c4a6e]">{suggestion.suggestion_text}</p>
-                <p className="mt-2 text-xs text-[#0369a1]">
-                  {t('dashboard.suggestions.shared', {
-                    date: new Date(suggestion.created_at).toLocaleDateString(dateTag),
-                  })}
-                </p>
-              </article>
-            ))}
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {data.public_suggestions.map((suggestion, index) => {
+              const questionHref = buildCustomerAssessmentQuestionHref({
+                assessmentId: data.assessment_id,
+                checklistId,
+                questionId: suggestion.question_id,
+              });
+              const sharedLabel = t('dashboard.suggestions.shared', {
+                date: new Date(suggestion.created_at).toLocaleDateString(dateTag),
+              });
+              const cardClassName =
+                'h-full rounded-lg border border-[#e9f5ff] bg-[#f0f9ff] p-4 shadow-sm transition-colors';
+              if (!questionHref) {
+                return (
+                  <article key={`${suggestion.created_at}-${index}`} className={cardClassName}>
+                    <p className="text-sm text-[#0c4a6e]">{suggestion.suggestion_text}</p>
+                    <p className="mt-2 text-xs text-[#0369a1]">{sharedLabel}</p>
+                  </article>
+                );
+              }
+              return (
+                <Link
+                  key={`${suggestion.created_at}-${index}`}
+                  href={questionHref as Route}
+                  className={`${cardClassName} block hover:border-[#7dd3fc] hover:bg-[#e0f2fe] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0284c7]`}
+                  aria-label={t('dashboard.suggestions.viewQuestion')}
+                >
+                  <p className="text-sm text-[#0c4a6e]">{suggestion.suggestion_text}</p>
+                  <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#0369a1]">
+                    <span>{sharedLabel}</span>
+                    <span className="font-semibold text-[#0284c7]">{t('dashboard.suggestions.viewQuestion')}</span>
+                  </p>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}

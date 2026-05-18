@@ -86,3 +86,19 @@ export function translate(
 
   return template.replace(/\{(\w+)\}/g, (_, token: string) => values[token] ?? `{${token}}`);
 }
+
+/** Like `translate`, but returns `fallback` when no message exists for `key`. */
+export function translateOr(
+  messages: TranslationMessages,
+  locale: Locale,
+  key: string,
+  fallback: string,
+  values?: Record<string, string>,
+) {
+  const hasLocale = Boolean(messages[locale]?.[key]);
+  const hasDefault = Boolean(messages[DEFAULT_LOCALE]?.[key]);
+  if (!hasLocale && !hasDefault) {
+    return fallback;
+  }
+  return translate(messages, locale, key, values);
+}
