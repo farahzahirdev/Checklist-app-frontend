@@ -200,6 +200,16 @@ export default function AdminAssessmentReviewDetailPage() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const answerOptions = ['4 (Yes)', '3 (Mostly Yes)', '2 (Partially)', '1 (No)'];
+  const [collapsedParents, setCollapsedParents] = useState<Set<string>>(new Set());
+
+  function toggleParentCollapse(parentUuid: string) {
+    setCollapsedParents((prev) => {
+      const next = new Set(prev);
+      if (next.has(parentUuid)) next.delete(parentUuid);
+      else next.add(parentUuid);
+      return next;
+    });
+  }
 
   async function loadDetail() {
     setLoading(true);
@@ -226,23 +236,78 @@ export default function AdminAssessmentReviewDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assessmentId]);
 
-  const sectionOptions = useMemo(() => {
-    const set = new Set<string>();
-    for (const answer of detail?.answers || []) set.add(sectionKey(answer));
-    return Array.from(set);
+  // Order answers so that any sub-questions immediately follow their parent question, and
+  // adopt the parent's section so they stay grouped under the same section header.
+  const orderedAnswers = useMemo(() => {
+    const all = detail?.answers || [];
+    if (!all.length) return [] as AssessmentAnswerForReview[];
+
+    const uuidSet = new Set<string>();
+    for (const a of all) {
+      if (a.question_uuid) uuidSet.add(a.question_uuid);
+    }
+
+    const childrenByParent = new Map<string, AssessmentAnswerForReview[]>();
+    const topLevel: AssessmentAnswerForReview[] = [];
+    for (const a of all) {
+      if (a.parent_question_id && uuidSet.has(a.parent_question_id)) {
+        const list = childrenByParent.get(a.parent_question_id) || [];
+        list.push(a);
+        childrenByParent.set(a.parent_question_id, list);
+      } else {
+        topLevel.push(a);
+      }
+    }
+
+    const ordered: AssessmentAnswerForReview[] = [];
+    for (const parent of topLevel) {
+      ordered.push(parent);
+      if (!parent.question_uuid) continue;
+      const children = childrenByParent.get(parent.question_uuid) || [];
+      for (const child of children) {
+        ordered.push({
+          ...child,
+          section_code: parent.section_code,
+          section_name: parent.section_name,
+        });
+      }
+    }
+    return ordered;
   }, [detail?.answers]);
 
+  const sectionOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const answer of orderedAnswers) set.add(sectionKey(answer));
+    return Array.from(set);
+  }, [orderedAnswers]);
+
   const filteredAnswers = useMemo(() => {
-    let items = detail?.answers || [];
+    let items = orderedAnswers;
     if (sectionFilter !== 'all') items = items.filter((answer) => sectionKey(answer) === sectionFilter);
     // NOTE: Changed follow-up filter to NOT hide sections, but rather we'll highlight marked answers in the UI
     // if (followUpFilter === 'marked') items = items.filter((answer) => answer.is_action_required || Boolean(answer.review?.is_action_required));
     if (answerStateFilter === 'not_answered') items = items.filter((answer) => !answer.customer_answer || answer.customer_answer.trim().length === 0);
     return items;
-  }, [answerStateFilter, detail?.answers, sectionFilter]);
+  }, [answerStateFilter, orderedAnswers, sectionFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredAnswers.length / pageSize));
-  const paginatedAnswers = useMemo(() => filteredAnswers.slice((page - 1) * pageSize, page * pageSize), [filteredAnswers, page]);
+  const childCountByParent = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const a of orderedAnswers) {
+      if (a.parent_question_id) {
+        map.set(a.parent_question_id, (map.get(a.parent_question_id) || 0) + 1);
+      }
+    }
+    return map;
+  }, [orderedAnswers]);
+
+  // Apply parent-collapse state on top of filters so collapsed children disappear from the list (and from pagination counts).
+  const visibleAnswers = useMemo(() => {
+    if (!collapsedParents.size) return filteredAnswers;
+    return filteredAnswers.filter((answer) => !answer.parent_question_id || !collapsedParents.has(answer.parent_question_id));
+  }, [filteredAnswers, collapsedParents]);
+
+  const totalPages = Math.max(1, Math.ceil(visibleAnswers.length / pageSize));
+  const paginatedAnswers = useMemo(() => visibleAnswers.slice((page - 1) * pageSize, page * pageSize), [visibleAnswers, page]);
 
   const sectionGroups = useMemo(() => {
     const grouped = new Map<string, AssessmentAnswerForReview[]>();
@@ -257,6 +322,11 @@ export default function AdminAssessmentReviewDetailPage() {
   useEffect(() => {
     setPage(1);
   }, [sectionFilter, followUpFilter, answerStateFilter]);
+
+  // Clamp current page when collapsing children shrinks the total page count.
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   function getDraft(answer: AssessmentAnswerForReview): ReviewDraft {
     if (drafts[answer.answer_id]) return drafts[answer.answer_id];
@@ -575,6 +645,7 @@ export default function AdminAssessmentReviewDetailPage() {
             const isSaving = savingAnswerId === answer.answer_id;
             const answerEmpty = !answer.customer_answer || answer.customer_answer.trim().length === 0;
             const selectedOption = selectedAnswerLabel(answer.customer_answer);
+            const isSubQuestion = Boolean(answer.parent_question_id);
             const badgeClass = answerEmpty
               ? 'bg-[#fff4df] text-[#b6862f]'
               : answer.is_action_required || answer.review?.is_action_required
@@ -590,12 +661,17 @@ export default function AdminAssessmentReviewDetailPage() {
             const shouldDim = followUpFilter === 'marked' && !isMarkedForFollowUp;
             return (
               <article key={answer.answer_id} className={`rounded-xl border p-4 transition-all ${
-                shouldHighlight 
-                  ? 'border-[#f2d49f] bg-[#fff3de] shadow-md scale-[1.02]' 
+                shouldHighlight
+                  ? 'border-[#f2d49f] bg-[#fff3de] shadow-md scale-[1.02]'
                   : shouldDim
                   ? 'border-[#e2e8f5] bg-[#fbfcff] opacity-50'
                   : 'border-[#e2e8f5] bg-[#fbfcff]'
               }`}>
+                {isSubQuestion ? (
+                  <p className="mb-2 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-[#2f7dff]">
+                    {t('labels.subQuestion')}
+                  </p>
+                ) : null}
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-semibold text-[#25375a]">{t('labels.questionId')}: {answer.question_id}</p>
                   <span className={`rounded-md px-2 py-1 text-xs font-semibold ${badgeClass}`}>{badgeText}</span>
@@ -847,6 +923,37 @@ export default function AdminAssessmentReviewDetailPage() {
                     ) : null}
                   </div>
                 </div>
+                {!isSubQuestion && answer.question_uuid && (childCountByParent.get(answer.question_uuid) || 0) > 0 ? (
+                  (() => {
+                    const parentUuid = answer.question_uuid;
+                    const childCount = childCountByParent.get(parentUuid) || 0;
+                    const isCollapsed = collapsedParents.has(parentUuid);
+                    const label = (isCollapsed ? t('subQuestions.show') : t('subQuestions.hide'))
+                      .replace('{count}', String(childCount));
+                    return (
+                      <div className="mt-3 flex justify-end border-t border-[#e9eef9] pt-3">
+                        <button
+                          type="button"
+                          onClick={() => toggleParentCollapse(parentUuid)}
+                          aria-expanded={!isCollapsed}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-[#d4dced] bg-white px-3 py-1.5 text-xs font-semibold text-[#2f7dff] hover:bg-[#f1f5fb]"
+                        >
+                          <svg
+                            viewBox="0 0 16 16"
+                            className={`h-3 w-3 transition-transform ${isCollapsed ? '' : 'rotate-180'}`}
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            aria-hidden
+                          >
+                            <path d="M4 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          {label}
+                        </button>
+                      </div>
+                    );
+                  })()
+                ) : null}
               </article>
             );
           })}
@@ -857,9 +964,9 @@ export default function AdminAssessmentReviewDetailPage() {
         <footer className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm">
           <p className="text-sm text-[#607594]">
             {t('footer.showing')
-              .replace('{from}', String((page - 1) * pageSize + 1))
-              .replace('{to}', String(Math.min(page * pageSize, filteredAnswers.length)))
-              .replace('{total}', String(filteredAnswers.length))}
+              .replace('{from}', String(visibleAnswers.length ? (page - 1) * pageSize + 1 : 0))
+              .replace('{to}', String(Math.min(page * pageSize, visibleAnswers.length)))
+              .replace('{total}', String(visibleAnswers.length))}
           </p>
           <div className="flex items-center gap-1">
             <button type="button" disabled={page === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))} className="rounded-lg border border-[#d4dced] px-2.5 py-1.5 text-sm text-[#425f8f] disabled:opacity-50">‹</button>

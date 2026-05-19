@@ -68,6 +68,8 @@ export type AssessmentAnswerReview = {
 export type AssessmentAnswerForReview = {
   answer_id: string;
   question_id: string;
+  question_uuid: string | null;
+  parent_question_id: string | null;
   question_code: string | null;
   question_text: string | null;
   section_code: string | null;
