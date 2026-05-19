@@ -229,6 +229,11 @@ export default function AssessmentPage() {
   const selectedSectionIdRef = useRef(selectedSectionId);
   const skipLocaleRefetchRef = useRef(true);
 
+  function isSubmittedWithCurrentPaymentError(message: string): boolean {
+    const lower = message.toLowerCase();
+    return lower.includes('already submitted') && lower.includes('payment');
+  }
+
   const allQuestions = useMemo(
     () =>
       (assessmentDetail?.sections ?? []).flatMap((section) =>
@@ -558,7 +563,12 @@ export default function AssessmentPage() {
           throw initialErr;
         }
         try {
-          const list = await listCustomerAssessments({ limit: 200, sort_by: 'updated_at', sort_order: 'desc' });
+          const list = await listCustomerAssessments({
+            status: ['submitted', 'closed', 'expired'],
+            limit: 200,
+            sort_by: 'updated_at',
+            sort_order: 'desc',
+          });
           const submittedForChecklist = (list.assessments ?? []).find(
             (item) => item.checklist_id === checklistIdFromQuery && item.status === 'submitted',
           );
@@ -574,7 +584,7 @@ export default function AssessmentPage() {
             detail = await getCurrentAssessmentDetail(checklistIdFromQuery);
           }
         } catch (lookupErr) {
-          if (lookupErr instanceof Error && lookupErr.message.includes('already submitted')) {
+          if (lookupErr instanceof Error && isSubmittedWithCurrentPaymentError(lookupErr.message)) {
             throw lookupErr;
           }
           await startAssessment({ checklist_id: checklistIdFromQuery });
@@ -659,7 +669,17 @@ export default function AssessmentPage() {
       setError('');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load assessment details.';
+      if (isSubmittedWithCurrentPaymentError(errorMessage)) {
+        setIsSubmittedChecklist(true);
+        setAssessmentDetail(null);
+        setMessage('');
+        setError('This checklist was already submitted with your current payment. Open Access to start a new cycle after purchase.');
+        return;
+      }
       if (errorMessage.includes('already submitted')) {
+        setIsSubmittedChecklist(true);
+        setAssessmentDetail(null);
+        setMessage('');
         setError('');
         return;
       }
@@ -1124,7 +1144,19 @@ export default function AssessmentPage() {
             ) : isSubmittedChecklist && !isViewOnlyFromReport ? (
               <div className="mt-3 rounded-lg border border-[#d8e7d8] bg-[#f1f8f1] px-3 py-3 text-sm text-[#2f5c38]">
                 <p>This assessment is submitted and cannot be submitted again.</p>
-                <div className="mt-3">
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    href="/access"
+                    className="inline-flex items-center rounded-lg border border-[#d4dced] bg-white px-3 py-1.5 text-xs font-semibold text-[#243555] hover:bg-[#f6f9ff]"
+                  >
+                    Open access
+                  </Link>
+                  <Link
+                    href="/reports"
+                    className="inline-flex items-center rounded-lg border border-[#d4dced] bg-white px-3 py-1.5 text-xs font-semibold text-[#243555] hover:bg-[#f6f9ff]"
+                  >
+                    View reports
+                  </Link>
                   <Link
                     href="/payment"
                     className="inline-flex items-center rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
