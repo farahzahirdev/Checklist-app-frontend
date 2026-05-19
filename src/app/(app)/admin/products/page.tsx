@@ -79,7 +79,12 @@ export default function AdminProductsPage() {
   });
 
   const queryParams = useMemo(
-    () => ({
+    (): {
+      limit: number;
+      search?: string;
+      category_code?: string;
+      status?: ProductStatus | '';
+    } => ({
       limit: 200,
       search: search.trim() || undefined,
       category_code: categoryFilter !== 'all' ? categoryFilter : undefined,
