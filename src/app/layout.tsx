@@ -4,7 +4,7 @@ import { AppToaster } from '@/components/app-toaster';
 
 export const metadata: Metadata = {
   title: 'AuditReady',
-  description: 'Secure checklist platform boilerplate for milestone 1.',
+  description: 'Audit readiness platform for checklist workflows and compliance tracking.',
 };
 
 export default function RootLayout({
