@@ -611,12 +611,28 @@ export default function AdminAssessmentReviewDetailPage() {
                   </div>
                   <div className="mt-3 grid gap-3 md:grid-cols-3">
                     <div className="space-y-2 rounded-lg border border-[#dfe7f6] bg-white p-3">
-                      {answerOptions.map((option) => (
-                        <label key={option} className="flex items-center gap-2 text-sm text-[#2f4264]">
-                          <input type="radio" checked={selectedOption === option} readOnly className="accent-[#2f7dff]" />
-                          {option}
-                        </label>
-                      ))}
+                      {answerOptions.map((option) => {
+                        const isSelected = selectedOption === option;
+                        return (
+                          <label
+                            key={option}
+                            className={`flex items-center gap-2 text-sm ${
+                              isSelected ? 'text-[#2f4264]' : 'text-[#9ba8bf]'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              checked={isSelected}
+                              disabled={!isSelected}
+                              readOnly
+                              className={`accent-[#2f7dff] ${
+                                isSelected ? '' : 'opacity-60 cursor-not-allowed'
+                              }`}
+                            />
+                            {option}
+                          </label>
+                        );
+                      })}
                       <p className="pt-1 text-xs text-[#97a5bb]">{t('labels.answerLocked')}</p>
                     </div>
                     <div className="rounded-lg border border-[#dfe7f6] bg-white p-3 text-sm text-[#2f4264]">
@@ -728,7 +744,29 @@ export default function AdminAssessmentReviewDetailPage() {
                         ))}
                       </select>
                       <input value={draft.reference_materials} onChange={(event) => setDraft(answer.answer_id, { reference_materials: event.target.value })} className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm" placeholder={t('reviewerActions.referenceMaterials')} />
-                      <label className="inline-flex items-center gap-2 rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#425f8f]"><input type="checkbox" checked={draft.is_action_required} onChange={(event) => setDraft(answer.answer_id, { is_action_required: event.target.checked })} />{t('reviewerActions.actionRequired')}</label>
+                      <label className="inline-flex items-center gap-2 rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#425f8f]">
+                        <span className="relative inline-flex h-4 w-4 shrink-0 items-center justify-center">
+                          <input
+                            type="checkbox"
+                            checked={draft.is_action_required}
+                            onChange={(event) => setDraft(answer.answer_id, { is_action_required: event.target.checked })}
+                            className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-[#d4dced] bg-white transition-colors checked:border-[#2f7dff] hover:border-[#2f7dff] focus:outline-none focus:ring-2 focus:ring-[#2f7dff]/30 disabled:cursor-not-allowed disabled:opacity-60"
+                          />
+                          <svg
+                            aria-hidden
+                            viewBox="0 0 16 16"
+                            className="pointer-events-none absolute hidden h-3 w-3 text-[#2f7dff] peer-checked:block"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={3}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M3 8.5 6.5 12 13 4.5" />
+                          </svg>
+                        </span>
+                        {t('reviewerActions.actionRequired')}
+                      </label>
                     </div>
                     <textarea
                       value={draft.suggestion_text}

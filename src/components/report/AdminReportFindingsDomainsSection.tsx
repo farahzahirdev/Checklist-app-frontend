@@ -152,15 +152,17 @@ function RiskColumn({
           </div>
         </div>
       </div>
-      {items.length ? (
-        <ul className="mt-4 space-y-2.5 text-sm text-[#334155]">
-          {items.map((line, idx) => (
-            <li key={`${variant}-${idx}-${line.slice(0, 24)}`} className="leading-snug">
-              {line}
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      <div className="mt-4 flex-1">
+        {items.length ? (
+          <ul className="space-y-2.5 text-sm text-[#334155]">
+            {items.map((line, idx) => (
+              <li key={`${variant}-${idx}-${line.slice(0, 24)}`} className="leading-snug">
+                {line}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
       <div className="mt-4 border-t border-[#f1f5f9] pt-3">
         {count > 0 ? (
           <a href="#admin-report-findings" className="text-sm font-semibold text-[#2563eb] transition hover:text-[#1d4ed8]">
@@ -371,7 +373,7 @@ export function AdminReportFindingsDomainsSection({
               return (
                 <article
                   key={s.section_id}
-                  className="flex min-w-0 flex-col rounded-2xl border border-[#e8edf5] bg-[#fafbfd] p-4 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.05)] sm:p-5"
+                  className="flex h-full min-w-0 flex-col rounded-2xl border border-[#e8edf5] bg-[#fafbfd] p-4 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.05)] sm:p-5"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
@@ -383,31 +385,33 @@ export function AdminReportFindingsDomainsSection({
                       <p className="text-xs font-semibold text-[#64748b]">{t('findings.scoreLabel')}</p>
                     </div>
                   </div>
-                  <p className="mt-3 flex-1 text-sm leading-relaxed text-[#475569]">{sectionCardBody(s, summaries, t)}</p>
-                  <div className="mt-4 space-y-3 text-sm">
-                    <div>
-                      <p className="font-bold text-[#0f172a]">{t('findings.keyStrengths')}</p>
-                      {strengths.length ? (
-                        <ul className="mt-1 list-inside list-disc text-[#475569]">
-                          {strengths.map((x) => (
-                            <li key={x}>{x}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="mt-1 text-[#94a3b8]">{t('maturity.dash')}</p>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-bold text-[#0f172a]">{t('findings.needsAttention')}</p>
-                      {needs.length ? (
-                        <ul className="mt-1 list-inside list-disc text-[#475569]">
-                          {needs.map((x) => (
-                            <li key={x}>{x}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="mt-1 text-[#94a3b8]">{t('maturity.dash')}</p>
-                      )}
+                  <div className="mt-3 flex-1 space-y-4">
+                    <p className="text-sm leading-relaxed text-[#475569]">{sectionCardBody(s, summaries, t)}</p>
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <p className="font-bold text-[#0f172a]">{t('findings.keyStrengths')}</p>
+                        {strengths.length ? (
+                          <ul className="mt-1 list-inside list-disc text-[#475569]">
+                            {strengths.map((x) => (
+                              <li key={x}>{x}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-1 text-[#94a3b8]">{t('maturity.dash')}</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-bold text-[#0f172a]">{t('findings.needsAttention')}</p>
+                        {needs.length ? (
+                          <ul className="mt-1 list-inside list-disc text-[#475569]">
+                            {needs.map((x) => (
+                              <li key={x}>{x}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-1 text-[#94a3b8]">{t('maturity.dash')}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="mt-4 border-t border-[#e8edf5] pt-3">

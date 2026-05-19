@@ -80,7 +80,7 @@ function companyWebsiteHref(raw: string | null | undefined): string | null {
 
 function JumpLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <a href={href} className="mt-4 inline-flex text-sm font-semibold text-[#0066ff] hover:underline scroll-mt-24">
+    <a href={href} className="mt-auto inline-flex pt-4 text-sm font-semibold text-[#0066ff] hover:underline scroll-mt-24">
       {children}
     </a>
   );
@@ -509,7 +509,7 @@ export function CustomerReportExecutiveSection({
           </div>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
+            <article className="flex h-full flex-col rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
               <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#64748b]">{t('exec.card.maturityScore')}</p>
               <MaturityRing percent={overallPct} label={maturityLabel} />
               <p className="mt-2 text-center text-xs text-[#64748b]">{t('exec.card.maturityNote')}</p>
@@ -517,7 +517,7 @@ export function CustomerReportExecutiveSection({
                 {t('exec.card.completionLine', { pct: String(Math.round(data.completion_percentage)) })}
               </p>
             </article>
-            <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
+            <article className="flex h-full flex-col rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
               <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#64748b]">{t('exec.card.topPriorities')}</p>
               <ul className="mt-3 space-y-2 text-sm">
                 <li className="flex justify-between font-semibold text-[#b91c1c]">
@@ -532,7 +532,7 @@ export function CustomerReportExecutiveSection({
               </ul>
               <JumpLink href="#detailed-findings">{t('exec.jump.seeDetails')}</JumpLink>
             </article>
-            <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
+            <article className="flex h-full flex-col rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
               <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#64748b]">{t('exec.card.totalQuestions')}</p>
               {questionBreakdown.mode === 'distribution' ? (
                 <>
@@ -577,7 +577,7 @@ export function CustomerReportExecutiveSection({
               )}
               <JumpLink href="#detailed-findings">{t('exec.jump.seeDetails')}</JumpLink>
             </article>
-            <article id="framework-areas" className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5 scroll-mt-24">
+            <article id="framework-areas" className="flex h-full flex-col rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5 scroll-mt-24">
               <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#64748b]">{t('exec.card.standardsCovered')}</p>
               <ul className="mt-3 space-y-2">
                 {frameworkBullets.map((title, idx) => (
@@ -666,7 +666,7 @@ export function CustomerReportExecutiveSection({
           </article>
 
           <div className="grid gap-4 md:grid-cols-3">
-            <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
+            <article className="flex h-full flex-col rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
                 <h3 className="text-base font-semibold text-[#0f172a]">{t('exec.highlights.title')}</h3>
                 <ul className="mt-3 space-y-3 text-sm text-[#475569]">
                   {highlights.map((h, i) => (
@@ -684,7 +684,7 @@ export function CustomerReportExecutiveSection({
                 <JumpLink href="#detailed-findings">{t('exec.jump.allFindings')}</JumpLink>
             </article>
 
-            <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
+            <article className="flex h-full flex-col rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
                 <h3 className="text-base font-semibold text-[#0f172a]">{t('exec.topPriorities.title')}</h3>
                 <ul className="mt-3 space-y-3">
                   {data.findings
@@ -708,7 +708,7 @@ export function CustomerReportExecutiveSection({
                 ) : null}
             </article>
 
-            <article className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
+            <article className="flex h-full flex-col rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5">
                 <h3 className="text-base font-semibold text-[#0f172a]">{t('exec.whatsNext.title')}</h3>
                 <ol className="mt-4 space-y-4">
                   {whatsNext.map((step, i) => (
@@ -720,12 +720,14 @@ export function CustomerReportExecutiveSection({
                     </li>
                   ))}
                 </ol>
-                <a
-                  href={recommendationsHref}
-                  className="mt-5 block w-full rounded-xl bg-[#0066ff] py-2.5 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-[#0052cc] scroll-mt-24"
-                >
-                  {t('exec.whatsNext.cta')}
-                </a>
+                <div className="mt-auto pt-5">
+                  <a
+                    href={recommendationsHref}
+                    className="block w-full rounded-xl bg-[#0066ff] py-2.5 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-[#0052cc] scroll-mt-24"
+                  >
+                    {t('exec.whatsNext.cta')}
+                  </a>
+                </div>
             </article>
           </div>
 
@@ -735,7 +737,7 @@ export function CustomerReportExecutiveSection({
             </h3>
             <p className="mt-1 text-sm text-[#64748b]">{t('exec.topFindings.subtitle')}</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <article className="rounded-2xl border border-red-200 bg-white p-4 shadow-sm">
+              <article className="flex h-full flex-col rounded-2xl border border-red-200 bg-white p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-2">
                   <RiskShield variant="high" />
                   <span className="text-2xl font-bold text-red-600">{priorityCounts.high}</span>
@@ -754,7 +756,7 @@ export function CustomerReportExecutiveSection({
                 </ul>
                 <JumpLink href="#detailed-findings">{t('exec.jump.viewAllHigh')}</JumpLink>
               </article>
-              <article className="rounded-2xl border border-orange-200 bg-white p-4 shadow-sm">
+              <article className="flex h-full flex-col rounded-2xl border border-orange-200 bg-white p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-2">
                   <RiskShield variant="medium" />
                   <span className="text-2xl font-bold text-orange-600">{priorityCounts.medium}</span>
@@ -773,7 +775,7 @@ export function CustomerReportExecutiveSection({
                 </ul>
                 <JumpLink href="#detailed-findings">{t('exec.jump.viewAllMedium')}</JumpLink>
               </article>
-              <article className="rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm">
+              <article className="flex h-full flex-col rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-2">
                   <RiskShield variant="low" />
                   <span className="text-2xl font-bold text-emerald-600">{priorityCounts.low}</span>
