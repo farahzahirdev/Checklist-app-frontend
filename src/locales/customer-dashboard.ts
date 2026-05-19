@@ -59,8 +59,12 @@ export const customerDashboardMessages: TranslationMessages = {
     'actions.view': 'View',
     'empty.expiringSoon': 'Nothing expiring in the next week.',
     'sections.pastAssessments': 'Past Assessments',
+    'past.retentionNotice': 'Performance view remains available until 48 hours after report publication. After that, notes and evidence are deleted for privacy and this record is no longer viewable.',
     'loading.pastAssessments': 'Loading past assessments…',
     'empty.pastAssessments': 'No past assessments yet.',
+    'actions.viewPerformance': 'View Performance',
+    'assessment.privacyDeleted': 'Privacy Retention Applied',
+    'assessment.privacyDeletedHint': 'Assessment details deleted after 48h post-publication.',
   },
   cs: {
     'title.kicker': 'Zákaznický přehled',
@@ -120,8 +124,12 @@ export const customerDashboardMessages: TranslationMessages = {
     'actions.view': 'Zobrazit',
     'empty.expiringSoon': 'Nic neexpiruje v následujícím týdnu.',
     'sections.pastAssessments': 'Minulá hodnocení',
+    'past.retentionNotice': 'Zobrazení výkonu je dostupné do 48 hodin po publikaci reportu. Poté se kvůli ochraně soukromí smažou poznámky a důkazy a tento záznam už nelze otevřít.',
     'loading.pastAssessments': 'Načítám minulá hodnocení…',
     'empty.pastAssessments': 'Zatím žádná minulá hodnocení.',
+    'actions.viewPerformance': 'Zobrazit výkon',
+    'assessment.privacyDeleted': 'Použita pravidla ochrany soukromí',
+    'assessment.privacyDeletedHint': 'Detail hodnocení byl po 48h od publikace odstraněn.',
   },
 };
 

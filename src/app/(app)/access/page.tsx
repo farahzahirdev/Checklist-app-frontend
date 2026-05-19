@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getCurrentAssessment, startAssessment } from '@/lib/assessment';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
+import { listCustomerAssessments } from '@/lib/customer-assessments';
 import { listPurchasedChecklistIds } from '@/lib/customer-payments';
 import { formatStatusLabel } from '@/lib/status-format';
 import { translate, useLocale } from '@/lib/i18n';
@@ -36,6 +37,7 @@ export default function AccessPage() {
   const [checklistId, setChecklistId] = useState('');
   const [checklists, setChecklists] = useState<CustomerChecklist[]>([]);
   const [purchasedChecklistIds, setPurchasedChecklistIds] = useState<string[]>([]);
+  const [blockedChecklistIds, setBlockedChecklistIds] = useState<string[]>([]);
   const [checklistsLoading, setChecklistsLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -75,16 +77,25 @@ export default function AccessPage() {
     return checklists.filter((item) => ids.has(item.id));
   }, [checklists, purchasedChecklistIds]);
 
+  const blockedChecklistIdSet = useMemo(() => new Set(blockedChecklistIds), [blockedChecklistIds]);
+
+  const startableChecklists = useMemo(
+    () => purchasedOnlyChecklists.filter((item) => !blockedChecklistIdSet.has(item.id)),
+    [blockedChecklistIdSet, purchasedOnlyChecklists],
+  );
+
   const orderedChecklists = useMemo(() => {
     if (!checklistId) {
-      return purchasedOnlyChecklists;
+      return startableChecklists;
     }
-    const selected = purchasedOnlyChecklists.find((checklist) => checklist.id === checklistId);
+    const selected = startableChecklists.find((checklist) => checklist.id === checklistId);
     if (!selected) {
-      return purchasedOnlyChecklists;
+      return startableChecklists;
     }
-    return [selected, ...purchasedOnlyChecklists.filter((checklist) => checklist.id !== checklistId)];
-  }, [checklistId, purchasedOnlyChecklists]);
+    return [selected, ...startableChecklists.filter((checklist) => checklist.id !== checklistId)];
+  }, [checklistId, startableChecklists]);
+
+  const selectedChecklistBlocked = Boolean(checklistId && blockedChecklistIdSet.has(checklistId));
 
   useEffect(() => {
     if (checklistIdFromQuery) {
@@ -94,6 +105,22 @@ export default function AccessPage() {
 
   useEffect(() => {
     let mounted = true;
+
+    async function loadBlockedChecklistIds() {
+      try {
+        const response = await listCustomerAssessments({
+          status: ['in_progress', 'submitted'],
+          limit: 200,
+          sort_by: 'updated_at',
+          sort_order: 'desc',
+        });
+        if (!mounted) return;
+        const ids = Array.from(new Set((response.assessments ?? []).map((item) => item.checklist_id)));
+        setBlockedChecklistIds(ids);
+      } catch {
+        // Keep access flow usable when history lookup fails.
+      }
+    }
 
     async function preloadSelectedAssessment() {
       if (!checklistIdFromQuery) return;
@@ -107,11 +134,18 @@ export default function AccessPage() {
       }
     }
 
+    void loadBlockedChecklistIds();
     void preloadSelectedAssessment();
     return () => {
       mounted = false;
     };
   }, [checklistIdFromQuery]);
+
+  useEffect(() => {
+    if (!checklistLocked && checklistId && blockedChecklistIdSet.has(checklistId)) {
+      setChecklistId('');
+    }
+  }, [blockedChecklistIdSet, checklistId, checklistLocked]);
 
   useEffect(() => {
     let mounted = true;
@@ -230,6 +264,10 @@ export default function AccessPage() {
       setError(t('errors.checklistRequired'));
       return;
     }
+    if (blockedChecklistIdSet.has(checklistId.trim())) {
+      setError(t('errors.checklistNotStartable'));
+      return;
+    }
     setLoading(true);
     try {
       const response = await startAssessment({ checklist_id: checklistId.trim() });
@@ -315,7 +353,7 @@ export default function AccessPage() {
                     disabled={!orderedChecklists.length}
                   >
                     {!checklistId ? (
-                      <option value="">{orderedChecklists.length ? t('checklist.selectPurchased') : t('checklist.nonePurchased')}</option>
+                      <option value="">{orderedChecklists.length ? t('checklist.selectPurchased') : purchasedOnlyChecklists.length ? t('checklist.noneStartable') : t('checklist.nonePurchased')}</option>
                     ) : null}
                     {orderedChecklists.map((checklist) => (
                       <option key={checklist.id} value={checklist.id}>
@@ -327,13 +365,16 @@ export default function AccessPage() {
                 <p className="text-xs text-[#607594]">
                   {t('checklist.helper').replace('{cta}', t('actions.buyAnother'))}
                 </p>
+                {selectedChecklistBlocked ? (
+                  <p className="text-xs text-[#b63d51]">{t('errors.checklistNotStartable')}</p>
+                ) : null}
               </label>
             )}
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={start}
-                disabled={loading || isSubmittedAssessment}
+                disabled={loading || isSubmittedAssessment || selectedChecklistBlocked || !checklistId.trim()}
                 className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? t('actions.processing') : t('actions.start')}

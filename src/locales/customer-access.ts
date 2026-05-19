@@ -18,6 +18,7 @@ export const customerAccessMessages: TranslationMessages = {
     'checklist.loadingPurchased': 'Loading purchased checklists...',
     'checklist.selectPurchased': 'Select purchased checklist',
     'checklist.nonePurchased': 'No purchased checklists found',
+    'checklist.noneStartable': 'No startable checklists available. Buy another checklist to begin a new assessment.',
     'checklist.helper':
       'Showing your purchased checklists only. To add more, click {cta}.',
     'actions.start': 'Start Assessment',
@@ -30,6 +31,8 @@ export const customerAccessMessages: TranslationMessages = {
     'messages.started':
       'Assessment started. The 7-day completion window is now active.',
     'errors.startAssessment': 'Unable to start assessment.',
+    'errors.checklistNotStartable':
+      'This checklist already has an in-progress or submitted assessment. Buy another checklist to start a new one.',
     'errors.paymentPending':
       'Payment unlock is not confirmed yet. Complete payment and retry after webhook processing.',
     'submitted.notice':
@@ -56,6 +59,7 @@ export const customerAccessMessages: TranslationMessages = {
     'checklist.loadingPurchased': 'Načítám zakoupené checklisty...',
     'checklist.selectPurchased': 'Vybrat zakoupený checklist',
     'checklist.nonePurchased': 'Nenalezeny žádné zakoupené checklisty',
+    'checklist.noneStartable': 'Není k dispozici žádný checklist ke spuštění. Pro nové hodnocení kupte další checklist.',
     'checklist.helper':
       'Zobrazují se pouze vaše zakoupené checklisty. Pro přidání dalších klikněte na {cta}.',
     'actions.start': 'Spustit hodnocení',
@@ -67,6 +71,8 @@ export const customerAccessMessages: TranslationMessages = {
     'errors.loadAssessment': 'Nepodařilo se načíst hodnocení.',
     'messages.started': 'Hodnocení spuštěno. 7denní okno pro dokončení je nyní aktivní.',
     'errors.startAssessment': 'Nepodařilo se spustit hodnocení.',
+    'errors.checklistNotStartable':
+      'Tento checklist už má rozpracované nebo odeslané hodnocení. Pro nové hodnocení kupte další checklist.',
     'errors.paymentPending':
       'Odemknutí platby zatím není potvrzené. Dokončete platbu a zkuste to znovu po zpracování webhooku.',
     'submitted.notice':

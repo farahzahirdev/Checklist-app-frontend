@@ -189,6 +189,7 @@ export default function AssessmentPage() {
   const checklistIdFromQuery = searchParams.get('checklist_id') ?? '';
   const assessmentIdFromQuery = searchParams.get('assessment_id') ?? '';
   const questionIdFromQuery = searchParams.get('question_id') ?? '';
+  const performanceViewFromQuery = searchParams.get('view') === 'performance';
   const [availableChecklists, setAvailableChecklists] = useState<CustomerChecklist[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [purchasedChecklistIds, setPurchasedChecklistIds] = useState<string[]>([]);
@@ -224,7 +225,7 @@ export default function AssessmentPage() {
   const [previewErrorsByMediaId, setPreviewErrorsByMediaId] = useState<Record<string, string>>({});
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [isSubmittedChecklist, setIsSubmittedChecklist] = useState(false);
-  const isViewOnlyFromReport = isSubmittedChecklist && Boolean(questionIdFromQuery);
+  const isViewOnlyFromReport = isSubmittedChecklist && (Boolean(questionIdFromQuery) || performanceViewFromQuery);
   const activeQuestionIdRef = useRef(activeQuestionId);
   const selectedSectionIdRef = useRef(selectedSectionId);
   const skipLocaleRefetchRef = useRef(true);

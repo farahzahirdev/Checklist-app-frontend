@@ -26,6 +26,8 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [permissionBlocked, setPermissionBlocked] = useState(false);
 
+  const reportByAssessmentId = new Map(reports.map((report) => [report.assessment_id, report]));
+
   async function loadDashboard() {
     setLoading(true);
     setError('');
@@ -263,6 +265,7 @@ export default function DashboardPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-[#1f2d45]">{t('sections.pastAssessments')}</h2>
         </div>
+        <p className="text-xs text-[#835f12]">{t('past.retentionNotice')}</p>
         {!pastAssessments.length ? (
           <p className="rounded-xl border border-[#dbe4f4] bg-white p-4 text-sm text-[#607594] shadow-sm">
             {loading ? t('loading.pastAssessments') : t('empty.pastAssessments')}
@@ -274,32 +277,50 @@ export default function DashboardPage() {
               <span className="text-right">{t('table.status')}</span>
             </div>
             <ul className="divide-y divide-[#eef2fa]">
-              {pastAssessments.slice(0, 20).map((item) => (
-                <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-[#1f2d45]">{item.checklist_title}</p>
-                    <p className="mt-0.5 truncate text-xs text-[#607594]">
-                      {item.submitted_at
-                        ? t('labels.submittedOn').replace('{date}', new Date(item.submitted_at).toLocaleDateString())
-                        : item.last_activity
-                        ? t('labels.lastActivity') + ' ' + new Date(item.last_activity).toLocaleDateString()
-                        : t('labels.na')}
-                    </p>
-                  </div>
-                  {item.status === 'submitted' && item.has_report ? (
-                    <Link
-                      href="/reports"
-                      className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
-                    >
-                      {t('actions.viewReport')}
-                    </Link>
-                  ) : (
-                    <span className="shrink-0 rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-1.5 text-xs font-semibold text-[#607594]">
-                      {formatStatusLabel(item.status)}
-                    </span>
-                  )}
-                </li>
-              ))}
+              {pastAssessments.slice(0, 20).map((item) => {
+                const report = reportByAssessmentId.get(item.id);
+                const publishedAtRaw = report?.final_pdf_published_at ?? null;
+                const publishedAtMs = publishedAtRaw ? Date.parse(publishedAtRaw) : NaN;
+                const retentionEndsAtMs = Number.isFinite(publishedAtMs)
+                  ? publishedAtMs + 48 * 60 * 60 * 1000
+                  : NaN;
+                const isPrivacyExpired = Number.isFinite(retentionEndsAtMs)
+                  ? Date.now() >= retentionEndsAtMs
+                  : false;
+                const canViewPerformance = !isPrivacyExpired && item.status === 'submitted';
+
+                return (
+                  <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-[#1f2d45]">{item.checklist_title}</p>
+                      <p className="mt-0.5 truncate text-xs text-[#607594]">
+                        {item.submitted_at
+                          ? t('labels.submittedOn').replace('{date}', new Date(item.submitted_at).toLocaleDateString())
+                          : item.last_activity
+                          ? t('labels.lastActivity') + ' ' + new Date(item.last_activity).toLocaleDateString()
+                          : t('labels.na')}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      {canViewPerformance ? (
+                        <Link
+                          href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&view=performance`}
+                          className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
+                        >
+                          {t('actions.viewPerformance')}
+                        </Link>
+                      ) : (
+                        <span className="shrink-0 rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-1.5 text-xs font-semibold text-[#607594]">
+                          {isPrivacyExpired ? t('assessment.privacyDeleted') : formatStatusLabel(item.report_status ?? item.status)}
+                        </span>
+                      )}
+                      {isPrivacyExpired ? (
+                        <span className="text-[11px] text-[#835f12]">{t('assessment.privacyDeletedHint')}</span>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
