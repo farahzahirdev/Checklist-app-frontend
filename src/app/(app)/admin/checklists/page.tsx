@@ -25,6 +25,7 @@ import { useAdminAccess } from '@/lib/admin-access';
 import { ADMIN_PAGE_TITLE_CLASS } from '@/app/(app)/admin/admin-page-title';
 import { translate, useLocale } from '@/lib/i18n';
 import { adminChecklistsMessages } from '@/locales/admin-checklists';
+import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
 
 type ChecklistStatus = 'draft' | 'published';
 
@@ -567,6 +568,13 @@ export default function ChecklistPanelListPage() {
       <div className="w-full px-6 py-6">
         <header className="mb-5 flex items-center justify-between">
           <div>
+            <AdminBreadcrumbs
+              items={[
+                { label: t('crumbs.dashboard'), href: '/admin' },
+                { label: t('crumbs.products'), href: '/admin/products' },
+                { label: t('crumbs.checklists') },
+              ]}
+            />
             <h1 className={ADMIN_PAGE_TITLE_CLASS}>{t('title')}</h1>
           </div>
           {!isReadOnly ? (

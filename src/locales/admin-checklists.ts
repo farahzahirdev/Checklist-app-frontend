@@ -2,6 +2,9 @@ import type { TranslationMessages } from '@/lib/i18n';
 
 export const adminChecklistsMessages: TranslationMessages = {
   en: {
+    'crumbs.dashboard': 'Dashboard',
+    'crumbs.products': 'Products',
+    'crumbs.checklists': 'Checklists',
     'title': 'Checklists',
     'actions.import': 'Import CSV/Excel',
     'actions.new': '+ New checklist',
@@ -121,6 +124,9 @@ export const adminChecklistsMessages: TranslationMessages = {
       'Checklist created: {title} ({rows} rows)',
   },
   cs: {
+    'crumbs.dashboard': 'Dashboard',
+    'crumbs.products': 'Produkty',
+    'crumbs.checklists': 'Checklisty',
     'title': 'Checklisty',
     'actions.import': 'Import CSV/Excelu',
     'actions.new': '+ Nový checklist',
