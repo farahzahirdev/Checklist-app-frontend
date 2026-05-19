@@ -20,7 +20,7 @@ import {
   type AssessmentCurrentDetailResponse,
   type AssessmentDetailQuestion,
 } from '@/lib/assessment';
-import { isAllowedEvidenceFileSize, isAllowedEvidenceMimeType } from '@/lib/upload-rules';
+import { isAllowedEvidenceFileSize, isAllowedEvidenceMimeType, getEvidenceFileSizeErrorMessage, EVIDENCE_MAX_FILE_SIZE_MB } from '@/lib/upload-rules';
 import SecureUploadProgress from '@/components/secure-upload-progress';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerAssessmentMessages } from '@/locales/customer-assessment';
@@ -882,11 +882,12 @@ export default function AssessmentPage() {
     }
     setSelectedEvidenceFiles((prev) => ({ ...prev, [activeQuestion.id]: selectedFile }));
     if (!isAllowedEvidenceMimeType(selectedFile.type)) {
-      setError('Unsupported evidence file type.');
+      setError('Unsupported file type. Only PDF, PNG, and JPEG files are supported.');
       return;
     }
     if (!isAllowedEvidenceFileSize(selectedFile.size)) {
-      setError('Evidence file is too large.');
+      const detailedError = getEvidenceFileSizeErrorMessage(selectedFile.size);
+      setError(detailedError || 'Evidence file is too large.');
       return;
     }
     if (!isUuid(activeQuestion.id)) {

@@ -33,6 +33,34 @@ function messageFromApiDetail(detail: unknown): string | null {
     if (detail === 'missing_lowercase') {
       return 'Password should include at least one lowercase letter.';
     }
+    // File upload error messages
+    if (detail === 'file_too_large') {
+      return 'Request payload is too large. Maximum size is 10MB.';
+    }
+    if (detail === 'invalid_file_type') {
+      return 'File type not allowed. Only PDF, PNG, and JPEG files are supported.';
+    }
+    if (detail === 'malware_detected') {
+      return 'File was flagged as potentially unsafe and rejected.';
+    }
+    if (detail === 'upload_failed') {
+      return 'File upload failed. Please try again.';
+    }
+    if (detail === 'invalid_request') {
+      return 'Invalid request. Please check your input and try again.';
+    }
+    if (detail === 'request_too_large') {
+      return 'Request payload is too large. Maximum size is 10MB.';
+    }
+    if (detail === 'internal_server_error') {
+      return 'An internal server error occurred. Please try again later.';
+    }
+    if (detail === 'service_unavailable') {
+      return 'Service is temporarily unavailable. Please try again later.';
+    }
+    if (detail === 'bad_gateway') {
+      return 'Service temporarily unavailable. Please try again later.';
+    }
     if (/^[a-z0-9_]+$/.test(detail)) {
       const sentence = detail.replace(/_/g, ' ');
       return sentence.charAt(0).toUpperCase() + sentence.slice(1) + '.';

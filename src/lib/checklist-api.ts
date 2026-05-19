@@ -401,10 +401,18 @@ function withListQuery<TSortBy extends string>(path: string, options?: ListQuery
 }
 
 export async function uploadChecklistQuestionMedia(file: File): Promise<UploadedMedia> {
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  
   const hasImageMimeType = file.type.startsWith('image/');
   const hasImageExtension = IMAGE_FILE_EXTENSION_REGEX.test(file.name);
   if (!hasImageMimeType && !hasImageExtension) {
     throw new Error('Only image files are allowed (for example: JPG, PNG, WEBP, or SVG).');
+  }
+  
+  // Validate file size before sending
+  if (file.size > MAX_FILE_SIZE) {
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+    throw new Error(`File size (${sizeMB}MB) exceeds maximum allowed size of 10MB.`);
   }
 
   const formData = new FormData();

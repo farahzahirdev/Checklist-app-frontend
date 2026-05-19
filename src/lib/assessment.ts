@@ -181,6 +181,14 @@ export async function submitAssessment(assessmentId: string, companyId?: string)
 }
 
 export async function uploadAssessmentEvidence(assessmentId: string, questionId: string, file: File): Promise<any> {
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  
+  // Validate file size before sending
+  if (file.size > MAX_FILE_SIZE) {
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+    throw new Error(`File size (${sizeMB}MB) exceeds maximum allowed size of 10MB.`);
+  }
+  
   const formData = new FormData();
   formData.append('file', file);
   const token = typeof window !== 'undefined' ? window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) : null;
