@@ -59,7 +59,7 @@ export const customerDashboardMessages: TranslationMessages = {
     'actions.view': 'View',
     'empty.expiringSoon': 'Nothing expiring in the next week.',
     'sections.pastAssessments': 'Past Assessments',
-    'past.retentionNotice': 'Performance view remains available until 48 hours after report publication. After that, notes and evidence are deleted for privacy and this record is no longer viewable.',
+    'past.retentionNotice': 'Performance view remains available until 48 hours after report publication. After that records are deleted for privacy and this record is no longer viewable.',
     'loading.pastAssessments': 'Loading past assessments…',
     'empty.pastAssessments': 'No past assessments yet.',
     'actions.viewPerformance': 'View Performance',
