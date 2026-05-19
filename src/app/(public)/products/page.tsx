@@ -1,79 +1,33 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import type { Route } from 'next';
+import { useEffect, useMemo, useState } from 'react';
 import { PublicFooter } from '@/components/public-footer';
 import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { translate, useLocale } from '@/lib/i18n';
 import { productsMessages } from '@/locales/products';
 import { useCMSPage } from '@/hooks/useCMSPage';
 import { PageRenderer } from '@/components/cms/PageRenderer';
+import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
+import {
+  AuditIcon,
+  AUDIT_ICON_THEMES,
+  pickAuditIconKind,
+  type AuditIconKind,
+} from '@/components/products/audit-icon';
+import {
+  BUILDER_PRODUCTS,
+  DOCUMENTATION_PRODUCTS,
+  buildAuditProductHref,
+  buildBuilderProductHref,
+  buildDocumentationProductHref,
+  type DocumentationCategory as CatalogDocumentationCategory,
+} from '@/lib/products-catalog';
 
 const DOCUMENT_CATEGORIES = ['All', 'Access & Identity', 'Devices & Endpoints', 'Data Protection', 'Operations', 'Governance', 'Response'] as const;
 
 export type DocumentationCategory = (typeof DOCUMENT_CATEGORIES)[number];
-
-type DocumentationSection = {
-  id: 'mobileDevice' | 'remoteWork' | 'accessControl' | 'incidentResponse' | 'dataClassification' | 'securityGovernance';
-  name: string;
-  price: string;
-  subtitle: string;
-  badge?: string;
-  points: string[];
-  category: Exclude<DocumentationCategory, 'All'>;
-};
-
-const DOCUMENT_SECTIONS: DocumentationSection[] = [
-  {
-    id: 'mobileDevice',
-    name: 'Mobile Device Policy',
-    price: '€149',
-    subtitle: 'Define rules for corporate and personal mobile devices.',
-    badge: 'Popular',
-    category: 'Devices & Endpoints',
-    points: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
-  },
-  {
-    id: 'remoteWork',
-    name: 'Remote Work Policy',
-    price: '€149',
-    subtitle: 'Secure and productive remote work, clearly defined.',
-    category: 'Operations',
-    points: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
-  },
-  {
-    id: 'accessControl',
-    name: 'Access Control Policy',
-    price: '€179',
-    subtitle: 'Manage who has access to what, and under which conditions.',
-    category: 'Access & Identity',
-    points: ['Policy Document', 'User Guidelines', 'Admin Guidelines', 'Admin Guidelines (Advanced)'],
-  },
-  {
-    id: 'incidentResponse',
-    name: 'Incident Response Policy',
-    price: '€199',
-    subtitle: 'Be ready when incidents happen. Act fast. Act right.',
-    category: 'Response',
-    points: ['Policy Document', 'User Guidelines', 'Admin Guidelines', 'Response Playbooks'],
-  },
-  {
-    id: 'dataClassification',
-    name: 'Data Classification Policy',
-    price: '€149',
-    subtitle: 'Define how data is labeled, handled, and protected.',
-    category: 'Data Protection',
-    points: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
-  },
-  {
-    id: 'securityGovernance',
-    name: 'Security Governance Policy',
-    price: '€189',
-    subtitle: 'Roles, accountability, and oversight for your information security program.',
-    category: 'Governance',
-    points: ['Policy Document', 'User Guidelines', 'Admin Guidelines'],
-  },
-];
 
 function CheckBadgeIcon() {
   return (
@@ -85,36 +39,73 @@ function CheckBadgeIcon() {
   );
 }
 
+
+function formatChecklistPrice(
+  pricing: CustomerChecklist['pricing'],
+  locale: string,
+  freeLabel: string,
+): string {
+  if (!pricing || !pricing.amount_cents) return freeLabel;
+  const amount = pricing.amount_cents / 100;
+  const currency = (pricing.currency || 'USD').toUpperCase();
+  try {
+    return new Intl.NumberFormat(locale === 'cs' ? 'cs-CZ' : 'en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
+    }).format(amount);
+  } catch {
+    return `${amount.toFixed(2)} ${currency}`;
+  }
+}
+
 function ProductsPageContent() {
   const { locale } = useLocale();
   const t = (key: string, values?: Record<string, string>) => translate(productsMessages, locale, key, values);
   const [activeCategory, setActiveCategory] = useState<DocumentationCategory>('All');
+  const [publishedChecklists, setPublishedChecklists] = useState<CustomerChecklist[]>([]);
+  const [checklistsLoading, setChecklistsLoading] = useState(true);
+  const [checklistsError, setChecklistsError] = useState('');
 
-  const pointKey = (point: string) => {
-    if (point === 'Policy Document') return 'docPoint.policyDocument';
-    if (point === 'User Guidelines') return 'docPoint.userGuidelines';
-    if (point === 'Admin Guidelines') return 'docPoint.adminGuidelines';
-    if (point === 'Admin Guidelines (Advanced)') return 'docPoint.adminGuidelinesAdvanced';
-    if (point === 'Response Playbooks') return 'docPoint.responsePlaybooks';
-    return point;
-  };
+  useEffect(() => {
+    let cancelled = false;
+    setChecklistsLoading(true);
+    setChecklistsError('');
+    listPublishedCustomerChecklists({ sortBy: 'updated_at', sortOrder: 'desc', limit: 100 })
+      .then((items) => {
+        if (cancelled) return;
+        setPublishedChecklists(items.filter((item) => item.status === 'published'));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setChecklistsError(t('audits.error'));
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setChecklistsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
 
   const sections = useMemo(() => {
-    return DOCUMENT_SECTIONS.map((doc) => ({
-      ...doc,
+    return DOCUMENTATION_PRODUCTS.map((doc) => ({
+      id: doc.id,
+      slug: doc.slug,
       name: t(`doc.${doc.id}.name`),
       subtitle: t(`doc.${doc.id}.subtitle`),
-      points: doc.points.map((p) => {
-        const key = pointKey(p);
-        return key === p ? p : t(key);
-      }),
+      price: doc.price,
+      iconKind: doc.iconKind,
+      category: doc.category as CatalogDocumentationCategory,
+      points: doc.points.map((p) => t(`docPoint.${p}`)),
       badge: doc.badge ? t('common.popular') : undefined,
     }));
   }, [locale]);
 
   const filteredSections = useMemo(() => {
     if (activeCategory === 'All') return sections;
-    return sections.filter((doc) => doc.category === activeCategory);
+    return sections.filter((doc) => doc.category === (activeCategory as CatalogDocumentationCategory));
   }, [activeCategory, sections]);
 
   const categoryLabel = (category: DocumentationCategory) => {
@@ -154,6 +145,38 @@ function ProductsPageContent() {
             <p className="public-hero-subtitle mt-4 max-w-xl text-[#c7d8f8] motion-safe:animate-fade-in-up motion-safe:delay-200">
               {t('hero.subtitle')}
             </p>
+            <div className="mt-6 flex flex-wrap gap-3 motion-safe:animate-fade-in-up motion-safe:delay-250">
+              <Link
+                href="#browse-docs"
+                className="group inline-flex min-w-[220px] items-center gap-3 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-4 py-3 text-left transition-colors hover:bg-[#143264]"
+              >
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                    <path d="M8 4h8l2 2v14H6V6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                    <path d="M9 4v3h6V4M9 12h6M9 16h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <span className="flex flex-col">
+                  <span className="text-sm font-semibold text-white">{t('hero.cat.docs.title')}</span>
+                  <span className="text-xs text-[#a9c0e6]">{t('hero.cat.docs.subtitle')}</span>
+                </span>
+              </Link>
+              <Link
+                href="#audits-checklists"
+                className="group inline-flex min-w-[220px] items-center gap-3 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-4 py-3 text-left transition-colors hover:bg-[#143264]"
+              >
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                    <path d="M12 3l8 4v5c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V7l8-4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                    <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <span className="flex flex-col">
+                  <span className="text-sm font-semibold text-white">{t('hero.cat.audits.title')}</span>
+                  <span className="text-xs text-[#a9c0e6]">{t('hero.cat.audits.subtitle')}</span>
+                </span>
+              </Link>
+            </div>
             <div className="mt-7 grid gap-3 motion-safe:animate-fade-in-up motion-safe:delay-300 sm:grid-cols-3">
               <article className="rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 p-4 transition-colors duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5">
                 <p className="text-sm font-semibold text-white">{t('hero.highlight1.title')}</p>
@@ -241,7 +264,7 @@ function ProductsPageContent() {
           </div>
         </article>
 
-        <div>
+        <div id="browse-docs" className="scroll-mt-24">
           <h3 className="text-4xl font-semibold text-[#1a2440]">{t('browse.title')}</h3>
           <p className="mt-2 text-base text-[#5e7293]">{t('browse.subtitle')}</p>
           <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Documentation categories">
@@ -279,98 +302,177 @@ function ProductsPageContent() {
               .
             </p>
           ) : (
-            filteredSections.map((doc) => (
-            <article key={doc.name} className="flex h-full flex-col rounded-2xl border border-[#d7deeb] bg-white p-4 shadow-sm transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="text-base font-semibold text-[#1f2741]">{doc.name}</h2>
-                {doc.badge ? (
-                  <span className="rounded-full bg-[#dbf8e9] px-2 py-0.5 text-[10px] font-semibold text-[#2f9c65]">
-                    {doc.badge}
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-2 text-sm text-[#5e7293]">{doc.subtitle}</p>
-              <ul className="mt-3 space-y-1.5 text-xs text-[#5f7394]">
-                {doc.points.map((point) => (
-                  <li key={point} className="flex items-center gap-2">
-                    <CheckBadgeIcon />
-                    <span>{point}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-auto pt-5 text-2xl font-semibold text-[#1f355d]">{doc.price}</p>
-              <Link
-                href="/register"
-                className="mt-3 flex w-full items-center justify-center rounded-lg border border-[#1f7bff] bg-[#1f7bff]/10 px-3 py-2 text-sm font-semibold text-[#1f7bff] transition-colors hover:bg-[#1f7bff]/20"
-              >
-                {t('common.getStarted')}
-              </Link>
-            </article>
-            ))
+            filteredSections.map((doc) => {
+              const docIconTheme = AUDIT_ICON_THEMES[doc.iconKind];
+              return (
+                <Link
+                  key={doc.id}
+                  href={`/products/${doc.slug}` as Route}
+                  className="group flex h-full flex-col rounded-2xl border border-[#d7deeb] bg-white p-4 shadow-sm transition-shadow duration-300 ease-out hover:border-[#1f7bff] motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${docIconTheme.bg} ${docIconTheme.fg}`}
+                      aria-hidden="true"
+                    >
+                      <AuditIcon kind={doc.iconKind} className="h-6 w-6" />
+                    </div>
+                    <span className="inline-flex rounded-full border border-amber-300/60 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-700">
+                      {t('detail.status.comingSoon')}
+                    </span>
+                  </div>
+                  <h2 className="mt-3 text-base font-semibold text-[#1f2741]">{doc.name}</h2>
+                  <p className="mt-1 text-sm text-[#5e7293]">{doc.subtitle}</p>
+                  <ul className="mt-3 space-y-1.5 text-xs text-[#5f7394]">
+                    {doc.points.map((point) => (
+                      <li key={point} className="flex items-center gap-2">
+                        <CheckBadgeIcon />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-auto pt-5 text-2xl font-semibold text-[#1f355d]">{doc.price}</p>
+                </Link>
+              );
+            })
           )}
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-[1.9fr_1fr]">
-          <article className="rounded-2xl border border-[#d7deeb] bg-[#eef2fa] p-5 transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md md:p-6">
-            <h3 className="text-3xl font-semibold text-[#1a2440]">{t('bundle.title')}</h3>
-            <p className="mt-2 text-sm text-[#5e7293]">{t('bundle.subtitle')}</p>
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <div className="flex h-full flex-col rounded-xl border border-[#d7deeb] bg-white p-4 text-center">
-                <p className="font-semibold text-[#1f355d]">{t('bundle.essential.title')}</p>
-                <p className="mt-1 text-sm text-[#5e7293]">{t('bundle.essential.subtitle')}</p>
-                <p className="mt-2 text-xs font-semibold text-[#2f9c65]">{t('bundle.essential.save')}</p>
-                <p className="mt-auto pt-3 text-3xl font-bold text-[#1f355d]">€399</p>
-                <p className="mt-1 text-xs text-[#7e8fa9] line-through">€447</p>
-                <Link
-                  href="/register"
-                  className="mt-3 flex items-center justify-center rounded-lg border border-[#b8c9e8] px-3 py-1.5 text-center text-sm font-semibold text-[#355d99] transition-colors hover:bg-[#f3f7ff]"
-                >
-                  {t('common.getStarted')}
-                </Link>
-              </div>
-              <div className="flex h-full flex-col rounded-xl border-2 border-[#2f7dff] bg-white p-4 text-center">
-                <p className="inline-flex rounded-full bg-[#2f7dff] px-3 py-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-white">
-                  {t('bundle.professional.badge')}
-                </p>
-                <p className="mt-2 font-semibold text-[#1f355d]">{t('bundle.professional.title')}</p>
-                <p className="mt-1 text-sm text-[#5e7293]">{t('bundle.professional.subtitle')}</p>
-                <p className="mt-2 text-xs font-semibold text-[#2f9c65]">{t('bundle.professional.save')}</p>
-                <p className="mt-auto pt-3 text-3xl font-bold text-[#1f355d]">€599</p>
-                <p className="mt-1 text-xs text-[#7e8fa9] line-through">€745</p>
-                <Link
-                  href="/register"
-                  className="mt-3 flex items-center justify-center rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-3 py-1.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[#2e87ff]"
-                >
-                  {t('common.getStarted')}
-                </Link>
-              </div>
-              <div className="flex h-full flex-col rounded-xl border border-[#d7deeb] bg-white p-4 text-center">
-                <p className="font-semibold text-[#1f355d]">{t('bundle.complete.title')}</p>
-                <p className="mt-1 text-sm text-[#5e7293]">{t('bundle.complete.subtitle')}</p>
-                <p className="mt-2 text-xs font-semibold text-[#2f9c65]">{t('bundle.complete.save')}</p>
-                <p className="mt-auto pt-3 text-3xl font-bold text-[#1f355d]">€999</p>
-                <p className="mt-1 text-xs text-[#7e8fa9] line-through">€1,490</p>
-                <Link
-                  href="/register"
-                  className="mt-3 flex items-center justify-center rounded-lg border border-[#b8c9e8] px-3 py-1.5 text-center text-sm font-semibold text-[#355d99] transition-colors hover:bg-[#f3f7ff]"
-                >
-                  {t('common.getStarted')}
-                </Link>
-              </div>
-            </div>
-          </article>
+        <section id="audits-checklists" className="space-y-4 scroll-mt-24">
+          <div>
+            <h3 className="text-4xl font-semibold text-[#1a2440]">{t('audits.title')}</h3>
+            <p className="mt-2 max-w-3xl text-base text-[#5e7293]">{t('audits.subtitle')}</p>
+          </div>
 
-          <article className="rounded-2xl border border-[#d7e7de] bg-[#edf7f0] p-5 transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md md:p-6">
-            <h3 className="text-3xl font-semibold text-[#1f3a31]">{t('why.title')}</h3>
-            <ul className="mt-4 space-y-2.5 text-base leading-7 text-[#2f7f57]">
-              <li className="flex items-center gap-2.5"><CheckBadgeIcon />{t('why.0')}</li>
-              <li className="flex items-center gap-2.5"><CheckBadgeIcon />{t('why.1')}</li>
-              <li className="flex items-center gap-2.5"><CheckBadgeIcon />{t('why.2')}</li>
-              <li className="flex items-center gap-2.5"><CheckBadgeIcon />{t('why.3')}</li>
-              <li className="flex items-center gap-2.5"><CheckBadgeIcon />{t('why.4')}</li>
-            </ul>
-          </article>
-        </div>
+          {checklistsLoading ? (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {[0, 1, 2].map((idx) => (
+                <div
+                  key={idx}
+                  className="h-44 animate-pulse rounded-2xl border border-[#e2e8f5] bg-white"
+                />
+              ))}
+            </div>
+          ) : checklistsError ? (
+            <p className="rounded-2xl border border-[#f0c7cf] bg-[#fff2f4] px-4 py-3 text-sm text-[#b63d51]">
+              {checklistsError}
+            </p>
+          ) : publishedChecklists.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-[#d7deeb] bg-white px-4 py-10 text-center text-sm text-[#5e7293]">
+              {t('audits.empty')}
+            </p>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {publishedChecklists.map((checklist, index) => {
+                const priceLabel = formatChecklistPrice(
+                  checklist.pricing,
+                  locale,
+                  t('audits.price.free'),
+                );
+                const iconKind = pickAuditIconKind(checklist.checklist_type?.code, index);
+                const iconTheme = AUDIT_ICON_THEMES[iconKind];
+                return (
+                  <Link
+                    key={checklist.id}
+                    href={buildAuditProductHref(checklist.id) as Route}
+                    className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#d7deeb] bg-white shadow-sm transition-shadow duration-300 ease-out hover:border-[#1f7bff] motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md"
+                  >
+                    <div className="flex gap-4 p-4">
+                      <div
+                        className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-xl ${iconTheme.bg} ${iconTheme.fg}`}
+                        aria-hidden="true"
+                      >
+                        <AuditIcon kind={iconKind} className="h-12 w-12" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-base font-semibold text-[#1f2741]">{checklist.title}</h4>
+                        {checklist.checklist_type?.description ? (
+                          <p className="mt-1.5 line-clamp-3 text-sm text-[#5e7293]">
+                            {checklist.checklist_type.description}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="mt-auto flex items-center justify-between gap-3 px-4 pb-4 pt-2">
+                      <p className="text-2xl font-semibold text-[#1f355d]">{priceLabel}</p>
+                      <span className="text-sm font-semibold text-[#1f7bff] group-hover:underline">
+                        {t('detail.buy')} →
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          {!checklistsLoading && !checklistsError && publishedChecklists.length > 0 ? (
+            <p className="flex items-start gap-2 rounded-xl border border-[#dde6f5] bg-[#f4f7fc] px-4 py-3 text-sm text-[#4a5b7c]">
+              <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#dceaff] text-[#1f5fb8]" aria-hidden="true">
+                <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none">
+                  <path d="m4.2 8.1 2.2 2.2 5.2-5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <span>{t('audits.footerNote')}</span>
+            </p>
+          ) : null}
+        </section>
+
+        <section id="builders" className="space-y-4 scroll-mt-24">
+          <div>
+            <h3 className="text-4xl font-semibold text-[#1a2440]">{t('builders.title')}</h3>
+            <p className="mt-2 max-w-3xl text-base text-[#5e7293]">{t('builders.subtitle')}</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {BUILDER_PRODUCTS.map((builder) => {
+              const theme = AUDIT_ICON_THEMES[builder.iconKind];
+              return (
+                <Link
+                  key={builder.id}
+                  href={buildBuilderProductHref(builder) as Route}
+                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#d7deeb] bg-white shadow-sm transition-shadow duration-300 ease-out hover:border-[#1f7bff] motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md"
+                >
+                  <div className="flex gap-4 p-4">
+                    <div
+                      className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-xl ${theme.bg} ${theme.fg}`}
+                      aria-hidden="true"
+                    >
+                      <AuditIcon kind={builder.iconKind} className="h-12 w-12" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="text-base font-semibold text-[#1f2741]">
+                          {t(`builders.${builder.id}.title`)}
+                        </h4>
+                        <span className="inline-flex rounded-full border border-amber-300/60 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-700">
+                          {t('detail.status.comingSoon')}
+                        </span>
+                      </div>
+                      <p className="mt-1.5 line-clamp-3 text-sm text-[#5e7293]">
+                        {t(`builders.${builder.id}.subtitle`)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-auto flex items-center justify-end gap-3 px-4 pb-4 pt-2">
+                    <span className="text-sm font-semibold text-[#1f7bff] group-hover:underline">
+                      {t('cta.viewDetails')} →
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        <article className="rounded-2xl border border-[#d7e7de] bg-[#edf7f0] p-5 transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md md:p-6">
+          <h3 className="text-3xl font-semibold text-[#1f3a31]">{t('why.title')}</h3>
+          <ul className="mt-4 grid gap-2.5 text-base leading-7 text-[#2f7f57] md:grid-cols-2">
+            <li className="flex items-center gap-2.5"><CheckBadgeIcon />{t('why.0')}</li>
+            <li className="flex items-center gap-2.5"><CheckBadgeIcon />{t('why.1')}</li>
+            <li className="flex items-center gap-2.5"><CheckBadgeIcon />{t('why.2')}</li>
+            <li className="flex items-center gap-2.5"><CheckBadgeIcon />{t('why.3')}</li>
+            <li className="flex items-center gap-2.5"><CheckBadgeIcon />{t('why.4')}</li>
+          </ul>
+        </article>
 
         <article className="rounded-2xl border border-[#17489b] bg-[linear-gradient(90deg,#0b2f73,#0e3f9d)] p-5 text-white transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:hover:shadow-[0_18px_34px_rgba(17,62,148,0.28)] md:p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">

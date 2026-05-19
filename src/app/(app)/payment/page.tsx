@@ -1,15 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
-import { createStripeCheckoutSession, getUserPaymentStatus } from '@/lib/payments';
+import { createStripeCheckoutSession } from '@/lib/payments';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerPaymentMessages } from '@/locales/customer-payment';
+import {
+  CHECKOUT_CHECKLIST_ID_STORAGE_KEY,
+  getCheckoutIntent,
+  setCheckoutIntent,
+} from '@/lib/checkout-intent';
 
 const LATEST_PAYMENT_ID_STORAGE_KEY = 'checklist_latest_payment_id';
-const CHECKOUT_CHECKLIST_ID_STORAGE_KEY = 'checklist_checkout_selected_id';
 
 function formatCheckoutError(err: unknown, t: (key: string) => string): string {
   const rawMessage = err instanceof Error ? err.message : '';
@@ -33,6 +37,36 @@ export default function PaymentPage() {
   const [error, setError] = useState('');
   const [checklists, setChecklists] = useState<CustomerChecklist[]>([]);
   const [selectedChecklistId, setSelectedChecklistId] = useState('');
+  const [autoStarting, setAutoStarting] = useState(false);
+  const hasAutoStartedRef = useRef(false);
+  const checkoutCancelled = searchParams.get('checkout') === 'cancelled';
+
+  async function beginCheckout(explicitChecklistId?: string) {
+    const checklistId = (explicitChecklistId ?? selectedChecklistId).trim();
+    if (!checklistId) {
+      setError(t('errors.selectChecklist'));
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      const origin = window.location.origin;
+      window.localStorage.setItem(CHECKOUT_CHECKLIST_ID_STORAGE_KEY, checklistId);
+      const checkoutUrl = await createStripeCheckoutSession({
+        checklist_id: checklistId,
+        success_url: `${origin}/payment/success?checklist_id=${encodeURIComponent(checklistId)}`,
+        cancel_url: `${origin}/payment?checkout=cancelled`,
+      });
+      if (checkoutUrl.paymentId) {
+        window.localStorage.setItem(LATEST_PAYMENT_ID_STORAGE_KEY, checkoutUrl.paymentId);
+      }
+      window.location.assign(checkoutUrl.checkoutUrl);
+    } catch (err) {
+      setError(formatCheckoutError(err, t));
+      setLoading(false);
+      setAutoStarting(false);
+    }
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -42,7 +76,23 @@ export default function PaymentPage() {
         const catalog = await listPublishedCustomerChecklists({ sortBy: 'updated_at', sortOrder: 'desc', limit: 100 });
         if (!mounted) return;
         setChecklists(catalog);
-        setSelectedChecklistId('');
+
+        // Preselect the checklist the visitor picked on /products, if any.
+        // The id can come from the current URL (?checklist_id=...) or, as a
+        // fallback, from the persisted checkout intent (carried across the
+        // auth flow). It is only honored when it matches a checklist that is
+        // currently published, otherwise we fall back to no selection.
+        const queryChecklistId = (searchParams.get('checklist_id') ?? '').trim();
+        const preferredChecklistId = queryChecklistId || getCheckoutIntent();
+        const preselected = preferredChecklistId
+          ? catalog.find((item) => item.id === preferredChecklistId) ?? null
+          : null;
+        if (preselected) {
+          setSelectedChecklistId(preselected.id);
+          setCheckoutIntent(preselected.id);
+        } else {
+          setSelectedChecklistId('');
+        }
 
         // NOTE: Customers can purchase multiple checklists.
         // Do not redirect away from `/payment` just because an earlier payment succeeded.
@@ -51,6 +101,23 @@ export default function PaymentPage() {
           await getCurrentUser();
         } catch {
           // Ignore; layout auth gate will handle unauthenticated users.
+        }
+
+        // Auto-start Stripe checkout when the user came in via the products →
+        // register/login flow (signalled by ?checklist_id= in the URL) so they
+        // don't have to click "Proceed to payment" again. We do NOT auto-start
+        // when the user is returning after cancelling, or when /payment is
+        // opened from inside the app without an explicit query param.
+        if (
+          mounted &&
+          preselected &&
+          queryChecklistId &&
+          !checkoutCancelled &&
+          !hasAutoStartedRef.current
+        ) {
+          hasAutoStartedRef.current = true;
+          setAutoStarting(true);
+          await beginCheckout(preselected.id);
         }
       } catch (err) {
         if (!mounted) {
@@ -68,34 +135,8 @@ export default function PaymentPage() {
     return () => {
       mounted = false;
     };
-  }, []);
-
-  async function beginCheckout() {
-    if (!selectedChecklistId) {
-      setError(t('errors.selectChecklist'));
-      return;
-    }
-    setError('');
-    setLoading(true);
-    try {
-      const origin = window.location.origin;
-      window.localStorage.setItem(CHECKOUT_CHECKLIST_ID_STORAGE_KEY, selectedChecklistId);
-      const checkoutUrl = await createStripeCheckoutSession({
-        checklist_id: selectedChecklistId,
-        success_url: `${origin}/payment/success?checklist_id=${encodeURIComponent(selectedChecklistId)}`,
-        cancel_url: `${origin}/payment?checkout=cancelled`,
-      });
-      if (checkoutUrl.paymentId) {
-        window.localStorage.setItem(LATEST_PAYMENT_ID_STORAGE_KEY, checkoutUrl.paymentId);
-      }
-      window.location.assign(checkoutUrl.checkoutUrl);
-    } catch (err) {
-      setError(formatCheckoutError(err, t));
-      setLoading(false);
-    }
-  }
-
-  const checkoutCancelled = searchParams.get('checkout') === 'cancelled';
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   return (
     <section className="flex min-h-[70vh] w-full flex-col justify-start space-y-6 px-1 pt-1 text-[#1f2d45]">
@@ -107,7 +148,10 @@ export default function PaymentPage() {
 
       <article className="rounded-2xl border border-[#13305c] bg-[linear-gradient(140deg,#071733_0%,#0c2144_50%,#13356d_100%)] p-6 text-sm text-[#d8e6ff] shadow-[0_10px_30px_rgba(6,20,47,0.25)]">
         {catalogLoading ? <p>{t('loading.catalog')}</p> : null}
-        {checkoutCancelled ? (
+        {autoStarting && !error ? (
+          <p className="text-[#9ec6ff]">{t('actions.redirecting')}</p>
+        ) : null}
+        {checkoutCancelled && !autoStarting ? (
           <p className="text-amber-200">{t('checkout.cancelled')}</p>
         ) : null}
         {error ? <p className="mt-2 text-rose-300">{error}</p> : null}

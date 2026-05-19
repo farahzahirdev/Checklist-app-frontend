@@ -6,8 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import { getCurrentUser, persistAccessToken, startMfaSetup, verifyMfaCode } from '@/lib/auth';
 import { listPublishedCustomerChecklists, selectChecklistAfterPayment, type CustomerChecklist } from '@/lib/checklist-api';
 import { getUserPaymentStatus, type PaymentStatusResponse } from '@/lib/payments';
+import { clearCheckoutIntent, getCheckoutIntent } from '@/lib/checkout-intent';
 
-const CHECKOUT_CHECKLIST_ID_STORAGE_KEY = 'checklist_checkout_selected_id';
 const PURCHASED_CHECKLIST_IDS_STORAGE_KEY = 'checklist_purchased_ids';
 
 function rememberPurchasedChecklistId(checklistId: string) {
@@ -27,8 +27,7 @@ function rememberPurchasedChecklistId(checklistId: string) {
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
-  const preferredChecklistIdFromCheckout =
-    searchParams.get('checklist_id') || (typeof window !== 'undefined' ? window.localStorage.getItem(CHECKOUT_CHECKLIST_ID_STORAGE_KEY) : '') || '';
+  const preferredChecklistIdFromCheckout = (searchParams.get('checklist_id') || '').trim() || getCheckoutIntent();
   const [checklists, setChecklists] = useState<CustomerChecklist[]>([]);
   const [selectedChecklistId, setSelectedChecklistId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -118,21 +117,20 @@ export default function PaymentSuccessPage() {
                 ? 'Payment confirmed and checklist access is active. You can continue to dashboard.'
                 : 'Payment confirmed. Complete MFA setup to continue to dashboard.',
             );
-            window.localStorage.removeItem(CHECKOUT_CHECKLIST_ID_STORAGE_KEY);
+            clearCheckoutIntent();
             if (!me.mfa_enabled) {
               await loadMfaSetup();
             }
             setMfaResolving(false);
           } else {
-            const preferredChecklistId =
-              searchParams.get('checklist_id') || window.localStorage.getItem(CHECKOUT_CHECKLIST_ID_STORAGE_KEY) || '';
+            const preferredChecklistId = (searchParams.get('checklist_id') || '').trim() || getCheckoutIntent();
 
             if (preferredChecklistId) {
               try {
                 await selectChecklistAfterPayment(preferredChecklistId);
                 rememberPurchasedChecklistId(preferredChecklistId);
                 const refreshed = await getUserPaymentStatus(currentUserId);
-                window.localStorage.removeItem(CHECKOUT_CHECKLIST_ID_STORAGE_KEY);
+                clearCheckoutIntent();
                 setSelectedChecklistFromStatus(refreshed.checklist ?? null);
                 setAccessExpiresAt(refreshed.access_expires_at);
                 setStatusMessage(
@@ -148,7 +146,7 @@ export default function PaymentSuccessPage() {
               } catch (selectErr) {
                 const message = selectErr instanceof Error ? selectErr.message : 'Failed to activate checklist access.';
                 if (message.includes('checklist_already_selected')) {
-                  window.localStorage.removeItem(CHECKOUT_CHECKLIST_ID_STORAGE_KEY);
+                  clearCheckoutIntent();
                   rememberPurchasedChecklistId(preferredChecklistId);
                   setStatusMessage(
                     me.mfa_enabled

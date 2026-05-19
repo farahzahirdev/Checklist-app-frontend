@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Route } from 'next';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { translate, useLocale } from '@/lib/i18n';
 import { getRoleHomePath, getRoleKey, persistAccessToken, registerAccount, startMfaSetup, verifyMfaCode } from '@/lib/auth';
@@ -11,6 +11,11 @@ import authBackground from '@/assets/cybersecurity-background.jpg';
 import { authPagesMessages } from '@/locales/auth-pages';
 import { useCMSPage } from '@/hooks/useCMSPage';
 import { PageRenderer } from '@/components/cms/PageRenderer';
+import {
+  appendChecklistIdParam,
+  buildPaymentHref,
+  setCheckoutIntent,
+} from '@/lib/checkout-intent';
 
 function getPasswordPolicyError(password: string): string | null {
   if (password.length < 12) return 'errors.passwordMin';
@@ -28,8 +33,21 @@ function normalizeOptionalField(value: string) {
 
 function RegisterPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { locale } = useLocale();
   const t = (key: string) => translate(authPagesMessages, locale, key);
+  const checklistIdFromQuery = useMemo(() => {
+    const raw = searchParams.get('checklist_id');
+    return raw ? raw.trim() : '';
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (checklistIdFromQuery) {
+      setCheckoutIntent(checklistIdFromQuery);
+    }
+  }, [checklistIdFromQuery]);
+
+  const customerDestination = buildPaymentHref(checklistIdFromQuery);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -109,7 +127,7 @@ function RegisterPageContent() {
         company_region: trimmedRegion,
       });
       const role = getRoleKey(data.user.role);
-      const destination = role === 'customer' ? '/payment' : getRoleHomePath(data.user.role);
+      const destination = role === 'customer' ? customerDestination : getRoleHomePath(data.user.role);
 
       if (role === 'admin' || role === 'auditor') {
         if (!data.access_token) {
@@ -167,7 +185,7 @@ function RegisterPageContent() {
       persistAccessToken(data.access_token);
       toast.success(t('success.mfaVerified'));
       const role = getRoleKey(data.user.role);
-      const destination = role === 'customer' ? '/payment' : getRoleHomePath(data.user.role);
+      const destination = role === 'customer' ? customerDestination : getRoleHomePath(data.user.role);
       if (role === 'customer') {
         router.push(destination as Route);
         router.refresh();
@@ -492,7 +510,10 @@ function RegisterPageContent() {
         {step === 'credentials' ? (
           <p className="text-center text-sm text-[#97a5bb]">
             {t('register.haveAccount')}{' '}
-            <Link href="/login" className="text-[#9dc5ff] hover:text-[#c6dcff]">
+            <Link
+              href={appendChecklistIdParam('/login', checklistIdFromQuery) as Route}
+              className="text-[#9dc5ff] hover:text-[#c6dcff]"
+            >
               {t('register.signIn')}
             </Link>
           </p>

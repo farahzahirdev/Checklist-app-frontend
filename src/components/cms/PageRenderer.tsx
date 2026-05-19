@@ -1088,10 +1088,32 @@ function ContactInfoSectionRenderer({ data }: { data: Record<string, any> }) {
   );
 }
 
+// Shared typographic styles applied to CMS-rendered HTML so generic
+// blocks (headings, lists, paragraphs, tables, etc.) render consistently.
+const CMS_PROSE_CLASSES =
+  'text-[15px] leading-7 text-black ' +
+  '[&_a]:text-[#1f7bff] [&_a]:underline ' +
+  '[&_h1]:mb-3 [&_h1]:text-3xl [&_h1]:font-semibold [&_h1]:text-black sm:[&_h1]:text-4xl ' +
+  '[&_h2]:mt-10 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-black ' +
+  '[&_h3]:mt-6 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-black ' +
+  '[&_p]:mt-3 ' +
+  '[&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:marker:text-black ' +
+  '[&_ol]:mt-3 [&_ol]:list-decimal [&_ol]:pl-6 ' +
+  '[&_li]:mt-1 ' +
+  // The CMS HTML wraps tables in <div class="table-wrap"> so we get a horizontal
+  // scroll container on narrow viewports. We also harden bare <table> tags by
+  // giving them a min width and forcing the page itself to not overflow.
+  '[&_.table-wrap]:mt-4 [&_.table-wrap]:max-w-full [&_.table-wrap]:overflow-x-auto [&_.table-wrap]:rounded-xl [&_.table-wrap]:border [&_.table-wrap]:border-black/10 ' +
+  '[&_.table-wrap_table]:mt-0 [&_.table-wrap_table]:rounded-none [&_.table-wrap_table]:border-0 ' +
+  '[&_table]:mt-4 [&_table]:w-full [&_table]:min-w-[640px] [&_table]:table-auto [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-xl [&_table]:border [&_table]:border-black/10 [&_table]:text-left [&_table]:text-[14px] ' +
+  '[&_thead]:bg-black/5 ' +
+  '[&_th]:border [&_th]:border-black/10 [&_th]:px-3 [&_th]:py-2 [&_th]:font-semibold [&_th]:text-black [&_th]:align-top [&_th]:whitespace-normal ' +
+  '[&_td]:border [&_td]:border-black/10 [&_td]:px-3 [&_td]:py-2 [&_td]:text-black [&_td]:align-top [&_td]:whitespace-normal';
+
 function LegalSectionRenderer({ data }: { data: Record<string, any> }) {
   return (
     <section className="bg-white px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl text-[15px] leading-7 text-black [&_a]:text-[#1f7bff] [&_a]:underline [&_h1]:mb-3 [&_h1]:text-3xl [&_h1]:font-semibold [&_h1]:text-black sm:[&_h1]:text-4xl [&_h2]:mt-10 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-black [&_h3]:mt-6 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-black [&_li]:mt-1 [&_ol]:mt-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:marker:text-black">
+      <div className={`mx-auto max-w-4xl ${CMS_PROSE_CLASSES}`}>
         {data.content && <div dangerouslySetInnerHTML={{ __html: data.content }} />}
       </div>
     </section>
@@ -1101,7 +1123,7 @@ function LegalSectionRenderer({ data }: { data: Record<string, any> }) {
 function StandardSectionRenderer({ data }: { data: Record<string, any> }) {
   return (
     <section className="bg-white px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl text-[15px] leading-7 text-black [&_a]:text-[#1f7bff] [&_a]:underline [&_h1]:mb-3 [&_h1]:text-3xl [&_h1]:font-semibold [&_h1]:text-black sm:[&_h1]:text-4xl [&_h2]:mt-10 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-black [&_h3]:mt-6 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-black [&_li]:mt-1 [&_ol]:mt-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:marker:text-black">
+      <div className={`mx-auto max-w-4xl ${CMS_PROSE_CLASSES}`}>
         {data.content && <div dangerouslySetInnerHTML={{ __html: data.content }} />}
       </div>
     </section>

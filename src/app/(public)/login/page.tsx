@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Route } from 'next';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { translate, useLocale } from '@/lib/i18n';
 import { useCMSPage } from '@/hooks/useCMSPage';
@@ -21,13 +21,31 @@ import {
 } from '@/lib/auth';
 import { hasCookieConsent } from '@/lib/cookie-consent';
 import { getCustomerPostLoginDestination } from '@/lib/customer-post-login';
+import {
+  appendChecklistIdParam,
+  buildPaymentHref,
+  setCheckoutIntent,
+} from '@/lib/checkout-intent';
 import authBackground from '@/assets/cybersecurity-background.jpg';
 import { authPagesMessages } from '@/locales/auth-pages';
 
 function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { locale } = useLocale();
   const t = (key: string) => translate(authPagesMessages, locale, key);
+  const checklistIdFromQuery = useMemo(() => {
+    const raw = searchParams.get('checklist_id');
+    return raw ? raw.trim() : '';
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (checklistIdFromQuery) {
+      setCheckoutIntent(checklistIdFromQuery);
+    }
+  }, [checklistIdFromQuery]);
+
+  const customerDestination = buildPaymentHref(checklistIdFromQuery);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -47,7 +65,14 @@ function LoginPageContent() {
       try {
         const me = await getCurrentUser();
         if (cancelled) return;
-        router.replace(getRoleHomePath(me.user.role) as Route);
+        const role = getRoleKey(me.user.role);
+        // If a checkout intent was carried into /login (visitor clicked an
+        // audit card while still logged in), respect it for customers.
+        if (role === 'customer' && checklistIdFromQuery) {
+          router.replace(customerDestination as Route);
+        } else {
+          router.replace(getRoleHomePath(me.user.role) as Route);
+        }
         router.refresh();
       } catch {
         // Keep user on login if token is stale/invalid.
@@ -59,7 +84,7 @@ function LoginPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, checklistIdFromQuery, customerDestination]);
 
   async function redirectCustomerAfterAuth(userId: string) {
     const destination = await getCustomerPostLoginDestination(userId);
@@ -90,7 +115,7 @@ function LoginPageContent() {
       const data = await loginAccount(payload);
 
       const role = getRoleKey(data.user.role);
-      const destination = role === 'customer' ? '/payment' : getRoleHomePath(data.user.role);
+      const destination = role === 'customer' ? customerDestination : getRoleHomePath(data.user.role);
       if (role === 'admin' || role === 'auditor') {
         if (!data.access_token) {
           toast.error(t('errors.signInNoToken'));
@@ -187,7 +212,11 @@ function LoginPageContent() {
         router.refresh();
         return;
       }
-      router.push('/dashboard');
+      if (checklistIdFromQuery) {
+        router.push(customerDestination as Route);
+      } else {
+        router.push('/dashboard');
+      }
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.mfaVerifyFailed'));
@@ -216,7 +245,11 @@ function LoginPageContent() {
         router.refresh();
         return;
       }
-      router.push('/dashboard');
+      if (checklistIdFromQuery) {
+        router.push(customerDestination as Route);
+      } else {
+        router.push('/dashboard');
+      }
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.mfaSetupCompleteFailed'));
@@ -398,7 +431,10 @@ function LoginPageContent() {
 
         <p className="text-center text-sm text-[#97a5bb]">
           {t('login.newHere')}{' '}
-          <Link href="/register" className="text-[#9dc5ff] hover:text-[#c6dcff]">
+          <Link
+            href={appendChecklistIdParam('/register', checklistIdFromQuery) as Route}
+            className="text-[#9dc5ff] hover:text-[#c6dcff]"
+          >
             {t('login.createAccount')}
           </Link>
         </p>

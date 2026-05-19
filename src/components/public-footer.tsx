@@ -67,7 +67,7 @@ export function PublicFooter() {
             <Link href="/products" className="hover:text-[#dce8ff]">{t('nav.products')}</Link>
             <Link href="/faq" className="hover:text-[#dce8ff]">{t('nav.faq')}</Link>
             <Link href="/contact" className="hover:text-[#dce8ff]">{t('nav.contact')}</Link>
-            <Link href="/products/audit-readiness-checklist" className="hover:text-[#dce8ff]">{t('nav.productDetails')}</Link>
+            <Link href="/products" className="hover:text-[#dce8ff]">{t('nav.productDetails')}</Link>
           </div>
         </div>
 
