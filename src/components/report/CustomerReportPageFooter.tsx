@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { translate, useLocale } from '@/lib/i18n';
+import { PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO } from '@/lib/public-contact';
 import { customerReportMessages } from '@/locales/customer-report';
 
 /**
@@ -39,14 +40,14 @@ export function CustomerReportPageFooter() {
           </div>
         </div>
         <a
-          href="mailto:info@auditready.cz"
+          href={PUBLIC_CONTACT_MAILTO}
           className="inline-flex items-center gap-2 self-start rounded-xl border border-white/80 bg-white px-4 py-2.5 text-sm font-semibold text-[#0066ff] shadow-sm sm:self-center"
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
             <path d="M4 6h16v12H4z" strokeLinejoin="round" />
             <path d="m4 7 8 6 8-6" strokeLinecap="round" />
           </svg>
-          info@auditready.cz
+          {PUBLIC_CONTACT_EMAIL}
         </a>
       </div>
 

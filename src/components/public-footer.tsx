@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCookieConsentGate } from '@/hooks/useCookieConsentGate';
 import { translate, useLocale } from '@/lib/i18n';
+import { PUBLIC_CONTACT_MAILTO } from '@/lib/public-contact';
 import { publicFooterMessages } from '@/locales/public-footer';
 
 export function PublicFooter() {
@@ -49,7 +50,7 @@ export function PublicFooter() {
               </svg>
             </a>
             <a
-              href="#"
+              href={PUBLIC_CONTACT_MAILTO}
               aria-label={t('social.email')}
               className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#28446f] text-[#a7b7d3] hover:text-white"
             >

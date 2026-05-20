@@ -5,6 +5,7 @@ import bgImage from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { PublicFooter } from '@/components/public-footer';
 import { translate, useLocale } from '@/lib/i18n';
 import { contactMessages } from '@/locales/contact';
+import { PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_MAILTO } from '@/lib/public-contact';
 import { useCMSPage } from '@/hooks/useCMSPage';
 import { PageRenderer } from '@/components/cms/PageRenderer';
 
@@ -89,15 +90,18 @@ function ContactPageContent() {
               </span>
               <h2 className="mt-5 text-2xl font-semibold text-[#1f2741] sm:text-3xl">{t('direct.title')}</h2>
               <p className="mt-2 text-lg text-[#4c5f80] sm:text-xl">{t('direct.subtitle')}</p>
-              <p className="mt-6 inline-flex max-w-full items-center gap-3 break-all text-lg font-semibold text-[#1f2741] sm:text-2xl lg:text-3xl">
+              <a
+                href={PUBLIC_CONTACT_MAILTO}
+                className="mt-6 inline-flex max-w-full items-center gap-3 break-all text-lg font-semibold text-[#1f2741] transition-colors hover:text-[#2f7dff] sm:text-2xl lg:text-3xl"
+              >
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#e7eeff] text-[#2f7dff]">
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
                     <path d="M3 7.5h18v9H3z" stroke="currentColor" strokeWidth="1.8" />
                     <path d="m3.5 8 8.5 6 8.5-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>
-                info@auditready.cz
-              </p>
+                {PUBLIC_CONTACT_EMAIL}
+              </a>
               <p className="mt-5 text-lg text-[#4c5f80] sm:text-xl">{t('direct.response')}</p>
             </div>
           </div>

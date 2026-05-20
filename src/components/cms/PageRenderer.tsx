@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { PageDetail, PageSection } from '@/lib/api/cms-api';
+import { PUBLIC_CONTACT_MAILTO, resolvePublicContactEmail } from '@/lib/public-contact';
 import { PublicFooter } from '@/components/public-footer';
 
 interface PageRendererProps {
@@ -687,7 +688,14 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
             <div className="w-full max-w-xl rounded-2xl border border-[#d7deeb] bg-white p-6 shadow-sm sm:p-8">
               <h2 className="text-2xl font-semibold text-[#1f2741] sm:text-3xl">{data.directContact.title || 'Direct contact'}</h2>
               {data.directContact.subtitle && <p className="mt-2 text-lg text-[#4c5f80] sm:text-xl">{data.directContact.subtitle}</p>}
-              {data.directContact.email && <p className="mt-6 text-lg font-semibold text-[#1f2741] sm:text-2xl lg:text-3xl">{data.directContact.email}</p>}
+              {data.directContact.email ? (
+                <a
+                  href={PUBLIC_CONTACT_MAILTO}
+                  className="mt-6 inline-block text-lg font-semibold text-[#1f2741] transition-colors hover:text-[#2f7dff] sm:text-2xl lg:text-3xl"
+                >
+                  {resolvePublicContactEmail(data.directContact.email)}
+                </a>
+              ) : null}
               {data.directContact.responseTime && <p className="mt-5 text-lg text-[#4c5f80] sm:text-xl">{data.directContact.responseTime}</p>}
             </div>
           </div>
@@ -1061,6 +1069,7 @@ function StepsSectionRenderer({ data }: { data: Record<string, any> }) {
 }
 
 function ContactInfoSectionRenderer({ data }: { data: Record<string, any> }) {
+  const email = resolvePublicContactEmail(data.email);
   return (
     <section className="py-12 px-4 bg-white">
       <div className="max-w-2xl mx-auto text-center">
@@ -1068,8 +1077,8 @@ function ContactInfoSectionRenderer({ data }: { data: Record<string, any> }) {
         {data.email && (
           <p className="text-lg mb-2">
             <strong>Email:</strong>{' '}
-            <a href={`mailto:${data.email}`} className="text-blue-600 hover:underline">
-              {data.email}
+            <a href={PUBLIC_CONTACT_MAILTO} className="text-blue-600 hover:underline">
+              {email}
             </a>
           </p>
         )}

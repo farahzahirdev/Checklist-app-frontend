@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
   ADMIN_PAGE_HERO_EYEBROW_CLASS,
@@ -229,6 +229,7 @@ export default function AdminProductsPage() {
   const [editingCategory, setEditingCategory] = useState<AdminProductCategory | null>(null);
   const [productForm, setProductForm] = useState<ProductFormState>(() => emptyProductForm([]));
   const [categoryForm, setCategoryForm] = useState<CategoryFormState>(() => emptyCategoryForm());
+  const productsLoadSeq = useRef(0);
 
   const statusFilterOptions = useMemo(
     () => [
@@ -342,15 +343,19 @@ export default function AdminProductsPage() {
     }
   }
 
-  async function loadCategories() {
+  const loadCategories = useCallback(async () => {
     const response = await listAdminProductCategories({ limit: 200 });
     setCategories(response.categories);
-  }
+  }, []);
 
-  async function loadProducts() {
+  const loadProducts = useCallback(async () => {
+    const seq = ++productsLoadSeq.current;
     const response = await listAdminProducts(queryParams);
+    if (seq !== productsLoadSeq.current) {
+      return;
+    }
     setProducts(response.products);
-  }
+  }, [queryParams]);
 
   async function hydrateData() {
     setLoading(true);
@@ -373,7 +378,7 @@ export default function AdminProductsPage() {
     void loadProducts().catch((err) => {
       toast.error(err instanceof Error ? err.message : t('toast.loadFailed'));
     });
-  }, [queryParams, loading]);
+  }, [loadProducts, loading]);
 
   async function handleSyncChecklists() {
     setSyncing(true);
@@ -446,10 +451,12 @@ export default function AdminProductsPage() {
     setSavingProduct(true);
     try {
       if (editingProduct) {
-        await updateAdminProduct(editingProduct.id, payload);
+        const updated = await updateAdminProduct(editingProduct.id, payload);
+        setProducts((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
         toast.success(t('toast.productUpdated'));
       } else {
-        await createAdminProduct(payload);
+        const created = await createAdminProduct(payload);
+        setProducts((prev) => [created, ...prev.filter((item) => item.id !== created.id)]);
         toast.success(t('toast.productCreated'));
       }
       setShowProductModal(false);

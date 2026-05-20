@@ -230,9 +230,10 @@ function ProductsPageContent() {
   const displayDocSections = apiDocSections.length > 0 ? apiDocSections : staticDocSections;
 
   const filteredSections = useMemo(() => {
+    if (apiDocSections.length > 0) return displayDocSections;
     if (activeCategory === 'All') return displayDocSections;
     return displayDocSections.filter((doc) => doc.category === (activeCategory as CatalogDocumentationCategory));
-  }, [activeCategory, displayDocSections]);
+  }, [activeCategory, apiDocSections.length, displayDocSections]);
 
   const categoryLabel = (category: DocumentationCategory) => {
     if (category === 'All') return t('filters.all');
@@ -393,27 +394,29 @@ function ProductsPageContent() {
         <div id="browse-docs" className="scroll-mt-24">
           <h3 className="text-4xl font-semibold text-[#1a2440]">{t('browse.title')}</h3>
           <p className="mt-2 text-base text-[#5e7293]">{t('browse.subtitle')}</p>
-          <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Documentation categories">
-            {DOCUMENT_CATEGORIES.map((chip) => {
-              const selected = activeCategory === chip;
-              return (
-                <button
-                  key={chip}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  onClick={() => setActiveCategory(chip)}
-                  className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
-                    selected
-                      ? 'border-[#1f7bff] bg-[#1f7bff] text-white'
-                      : 'border-[#d7deeb] bg-white text-[#5e7293] hover:bg-[#f7f9ff]'
-                  }`}
-                >
-                  {categoryLabel(chip)}
-                </button>
-              );
-            })}
-          </div>
+          {apiDocSections.length === 0 ? (
+            <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Documentation categories">
+              {DOCUMENT_CATEGORIES.map((chip) => {
+                const selected = activeCategory === chip;
+                return (
+                  <button
+                    key={chip}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => setActiveCategory(chip)}
+                    className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
+                      selected
+                        ? 'border-[#1f7bff] bg-[#1f7bff] text-white'
+                        : 'border-[#d7deeb] bg-white text-[#5e7293] hover:bg-[#f7f9ff]'
+                    }`}
+                  >
+                    {categoryLabel(chip)}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
 
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
