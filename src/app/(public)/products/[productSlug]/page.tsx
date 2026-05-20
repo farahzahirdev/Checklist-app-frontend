@@ -10,7 +10,13 @@ import { translate, useLocale } from '@/lib/i18n';
 import { productsMessages } from '@/locales/products';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
 import { getApiBaseUrl } from '@/lib/api';
-import { getPublicProductBySlug, publicChecklistProductToCustomerChecklist, type PublicProductDetail } from '@/lib/public-products';
+import {
+  formatPublicProductPriceLabel,
+  getPublicProductBySlug,
+  isPublicProductPriceUnset,
+  publicChecklistProductToCustomerChecklist,
+  type PublicProductDetail,
+} from '@/lib/public-products';
 import { getCurrentUser, getRoleKey } from '@/lib/auth';
 import { buildPaymentHref, setCheckoutIntent } from '@/lib/checkout-intent';
 import {
@@ -25,28 +31,25 @@ import {
 function formatChecklistPrice(
   pricing: CustomerChecklist['pricing'],
   locale: string,
-  freeLabel: string,
+  labels: { free: string; comingSoon: string },
 ): string {
-  if (!pricing || !pricing.amount_cents) return freeLabel;
-  const amount = pricing.amount_cents / 100;
-  const currency = (pricing.currency || 'USD').toUpperCase();
-  try {
-    return new Intl.NumberFormat(locale === 'cs' ? 'cs-CZ' : 'en-US', {
-      style: 'currency',
-      currency,
-      maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
-    }).format(amount);
-  } catch {
-    return `${amount.toFixed(2)} ${currency}`;
-  }
+  return formatPublicProductPriceLabel(pricing, locale, labels);
 }
 
 function pricingForDisplay(detail: PublicProductDetail): CustomerChecklist['pricing'] | null {
-  if (!detail.pricing || !detail.pricing.amount_cents) return null;
+  if (isPublicProductPriceUnset(detail.pricing)) return null;
+  const amountCents = detail.pricing!.amount_cents!;
+  if (amountCents === 0) {
+    return {
+      price_id: detail.pricing?.price_id ?? '',
+      amount_cents: 0,
+      currency: (detail.pricing?.currency || 'USD').toUpperCase(),
+    };
+  }
   return {
-    price_id: detail.pricing.price_id ?? '',
-    amount_cents: detail.pricing.amount_cents,
-    currency: (detail.pricing.currency || 'USD').toUpperCase(),
+    price_id: detail.pricing!.price_id ?? '',
+    amount_cents: amountCents,
+    currency: (detail.pricing!.currency || 'USD').toUpperCase(),
   };
 }
 
@@ -192,10 +195,16 @@ export default function ProductDetailPage() {
   }, []);
 
   const audit = resolved?.kind === 'audit' ? resolved.checklist : null;
+  const priceLabels = useMemo(
+    () => ({ free: t('audits.price.free'), comingSoon: t('detail.status.comingSoon') }),
+    [locale, t],
+  );
   const canPurchaseAudit = useMemo(() => {
     if (!resolved || resolved.kind !== 'audit') return false;
-    return resolved.publicProductStatus !== 'coming_soon';
-  }, [resolved]);
+    if (resolved.publicProductStatus === 'coming_soon') return false;
+    if (isPublicProductPriceUnset(audit?.pricing)) return false;
+    return (audit?.pricing?.amount_cents ?? 0) > 0;
+  }, [resolved, audit?.pricing]);
 
   const brochureLinkHref = useMemo(() => {
     if (resolved?.kind === 'audit') return absolutePublicAssetUrl(resolved.brochurePdfUrl);
@@ -220,8 +229,10 @@ export default function ProductDetailPage() {
     if (docProduct || builderProduct) return true;
     if (resolved?.kind === 'api' && resolved.detail.status === 'coming_soon') return true;
     if (resolved?.kind === 'audit' && resolved.publicProductStatus === 'coming_soon') return true;
+    if (resolved?.kind === 'audit' && isPublicProductPriceUnset(audit?.pricing)) return true;
+    if (resolved?.kind === 'api' && isPublicProductPriceUnset(resolved.detail.pricing)) return true;
     return false;
-  }, [docProduct, builderProduct, resolved]);
+  }, [docProduct, builderProduct, resolved, audit?.pricing]);
 
   const apiDetail = resolved?.kind === 'api' ? resolved.detail : null;
   const apiIconKind = useMemo(
@@ -490,7 +501,7 @@ export default function ProductDetailPage() {
               </p>
               {audit ? (
                 <p className="mt-2 text-3xl font-semibold text-[#1f355d]">
-                  {formatChecklistPrice(audit.pricing, locale, t('audits.price.free'))}
+                  {formatChecklistPrice(audit.pricing, locale, priceLabels)}
                 </p>
               ) : null}
               {docProduct ? (
@@ -501,7 +512,7 @@ export default function ProductDetailPage() {
               ) : null}
               {apiDetail ? (
                 <p className="mt-2 text-3xl font-semibold text-[#1f355d]">
-                  {formatChecklistPrice(pricingForDisplay(apiDetail), locale, t('audits.price.free'))}
+                  {formatChecklistPrice(pricingForDisplay(apiDetail), locale, priceLabels)}
                 </p>
               ) : null}
 
@@ -524,9 +535,7 @@ export default function ProductDetailPage() {
                     {t('detail.buy')}
                   </button>
                 )
-              ) : null}
-
-              {!audit ? (
+              ) : (
                 <button
                   type="button"
                   disabled
@@ -535,7 +544,7 @@ export default function ProductDetailPage() {
                 >
                   {t('detail.buy')}
                 </button>
-              ) : null}
+              )}
 
               {brochureLinkHref ? (
                 <a

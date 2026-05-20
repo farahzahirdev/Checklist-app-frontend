@@ -12,7 +12,10 @@ import { PageRenderer } from '@/components/cms/PageRenderer';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
 import {
   flattenPublicProducts,
+  formatPublicProductPriceLabel,
   isPublicCatalogProductListable,
+  isPublicProductPriceUnset,
+  canPurchasePublicCatalogProduct,
   listPublicProducts,
   publicChecklistProductToCustomerChecklist,
   type PublicProduct,
@@ -65,37 +68,21 @@ function CheckBadgeIcon() {
 function formatChecklistPrice(
   pricing: CustomerChecklist['pricing'],
   locale: string,
-  freeLabel: string,
+  labels: { free: string; comingSoon: string },
 ): string {
-  if (!pricing || !pricing.amount_cents) return freeLabel;
-  const amount = pricing.amount_cents / 100;
-  const currency = (pricing.currency || 'USD').toUpperCase();
-  try {
-    return new Intl.NumberFormat(locale === 'cs' ? 'cs-CZ' : 'en-US', {
-      style: 'currency',
-      currency,
-      maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
-    }).format(amount);
-  } catch {
-    return `${amount.toFixed(2)} ${currency}`;
-  }
+  return formatPublicProductPriceLabel(pricing, locale, labels);
 }
 
 function formatCatalogPricing(
   pricing: PublicProduct['pricing'] | undefined,
   locale: string,
-  freeLabel: string,
+  labels: { free: string; comingSoon: string },
 ): string {
-  if (!pricing || !pricing.amount_cents) return freeLabel;
-  return formatChecklistPrice(
-    {
-      price_id: pricing.price_id ?? '',
-      amount_cents: pricing.amount_cents,
-      currency: (pricing.currency || 'USD').toUpperCase(),
-    },
-    locale,
-    freeLabel,
-  );
+  return formatPublicProductPriceLabel(pricing, locale, labels);
+}
+
+function priceLabels(t: (key: string) => string) {
+  return { free: t('audits.price.free'), comingSoon: t('detail.status.comingSoon') };
 }
 
 function mapApiCategoryNameToDocFilter(name: string | null | undefined): CatalogDocumentationCategory {
@@ -179,9 +166,14 @@ function ProductsPageContent() {
   );
 
   const apiAuditRows = useMemo(() => {
+    const checklistProducts = listableCatalogProducts
+      .filter((p) => p.product_kind === 'checklist')
+      .sort((a, b) => {
+        if (a.display_order !== b.display_order) return a.display_order - b.display_order;
+        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+      });
     const rows: { checklist: CustomerChecklist; slug: string; catalogStatus: PublicProductStatus }[] = [];
-    for (const p of listableCatalogProducts) {
-      if (p.product_kind !== 'checklist') continue;
+    for (const p of checklistProducts) {
       const ch = publicChecklistProductToCustomerChecklist(p);
       if (ch) rows.push({ checklist: ch, slug: p.slug, catalogStatus: p.status });
     }
@@ -226,7 +218,7 @@ function ProductsPageContent() {
       slug: p.slug,
       name: p.name,
       subtitle: (p.short_description ?? '').trim() || t('browse.apiSubtitleFallback'),
-      price: formatCatalogPricing(p.pricing, locale, t('audits.price.free')),
+      price: formatCatalogPricing(p.pricing, locale, priceLabels(t)),
       iconKind: pickAuditIconKind(p.checklist_type?.checklist_type_code, idx) as AuditIconKind,
       category: mapApiCategoryNameToDocFilter(p.category?.name),
       points: buildDocBulletLines(p),
@@ -510,15 +502,15 @@ function ProductsPageContent() {
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {auditGridItems.map((item, index) => {
                 const { checklist, slug, catalogStatus } = item;
-                const priceLabel = formatChecklistPrice(
-                  checklist.pricing,
-                  locale,
-                  t('audits.price.free'),
-                );
+                const labels = priceLabels(t);
+                const priceLabel = formatChecklistPrice(checklist.pricing, locale, labels);
                 const iconKind = pickAuditIconKind(checklist.checklist_type?.code, index);
                 const iconTheme = AUDIT_ICON_THEMES[iconKind];
                 const href = (slug ? `/products/${encodeURIComponent(slug)}` : buildAuditProductHref(checklist.id)) as Route;
-                const ctaLabel = catalogStatus === 'coming_soon' ? t('cta.viewDetails') : t('detail.buy');
+                const ctaLabel =
+                  catalogStatus === 'coming_soon' || isPublicProductPriceUnset(checklist.pricing)
+                    ? t('cta.viewDetails')
+                    : t('detail.buy');
                 return (
                   <Link
                     key={slug ?? checklist.id}
@@ -610,7 +602,9 @@ function ProductsPageContent() {
               const iconKind = pickAuditIconKind(mod.checklist_type?.checklist_type_code, modIdx) as AuditIconKind;
               const theme = AUDIT_ICON_THEMES[iconKind];
               const statusLabel = mod.status === 'published' ? 'available' : 'comingSoon';
-              const modCtaLabel = mod.status === 'published' ? t('detail.buy') : t('cta.viewDetails');
+              const modCtaLabel = canPurchasePublicCatalogProduct(mod.status, mod.pricing)
+                ? t('detail.buy')
+                : t('cta.viewDetails');
               return (
                 <Link
                   key={mod.id}
@@ -643,10 +637,12 @@ function ProductsPageContent() {
                     </div>
                   </div>
                   <div className="mt-auto flex w-full flex-col gap-3 border-t border-[#eef1f7] px-4 pb-4 pt-4">
-                    {mod.status === 'published' ? (
+                    {mod.status === 'published' && !isPublicProductPriceUnset(mod.pricing) ? (
                       <p className="text-2xl font-semibold text-[#1f355d]">
-                        {formatCatalogPricing(mod.pricing, locale, t('audits.price.free'))}
+                        {formatCatalogPricing(mod.pricing, locale, priceLabels(t))}
                       </p>
+                    ) : mod.status === 'published' ? (
+                      <p className="text-lg font-semibold text-[#5e7293]">{t('detail.status.comingSoon')}</p>
                     ) : null}
                     <span className={PRODUCT_CARD_OUTLINE_CTA_CLASS}>{modCtaLabel}</span>
                   </div>

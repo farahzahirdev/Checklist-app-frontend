@@ -140,6 +140,45 @@ export function isPublicCatalogProductListable(product: PublicProduct): boolean 
   return product.status === 'published' || product.status === 'coming_soon';
 }
 
+/** True when pricing is missing or amount_cents was not set (null/undefined). */
+export function isPublicProductPriceUnset(
+  pricing: PublicProductPricing | { amount_cents?: number | null } | null | undefined,
+): boolean {
+  if (!pricing) return true;
+  return pricing.amount_cents == null;
+}
+
+/** Format catalogue price; unset/null price shows coming-soon label instead of free. */
+export function formatPublicProductPriceLabel(
+  pricing: PublicProductPricing | { amount_cents?: number | null; currency?: string | null } | null | undefined,
+  locale: string,
+  labels: { free: string; comingSoon: string },
+): string {
+  if (isPublicProductPriceUnset(pricing)) return labels.comingSoon;
+  const amountCents = pricing!.amount_cents!;
+  if (amountCents === 0) return labels.free;
+  const amount = amountCents / 100;
+  const currency = (pricing!.currency || 'USD').toUpperCase();
+  try {
+    return new Intl.NumberFormat(locale === 'cs' ? 'cs-CZ' : 'en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
+    }).format(amount);
+  } catch {
+    return `${amount.toFixed(2)} ${currency}`;
+  }
+}
+
+export function canPurchasePublicCatalogProduct(
+  status: PublicProductStatus | string,
+  pricing: PublicProductPricing | { amount_cents?: number | null } | null | undefined,
+): boolean {
+  if (status === 'coming_soon') return false;
+  if (isPublicProductPriceUnset(pricing)) return false;
+  return (pricing!.amount_cents ?? 0) > 0;
+}
+
 /** Map API checklist product to the checklist shape used by /products cards and detail. */
 export function publicChecklistProductToCustomerChecklist(product: PublicProduct | PublicProductDetail): CustomerChecklist | null {
   const checklistId = product.checklist?.checklist_id;
