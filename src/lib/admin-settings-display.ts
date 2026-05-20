@@ -11,6 +11,8 @@ export const SETTING_KEY_ORDER: Record<string, string[]> = {
     'email_reply_to',
     'smtp_host',
     'smtp_port',
+    'smtp_username',
+    'smtp_password',
     'smtp_use_tls',
     'graph_client_id',
     'graph_client_secret',
