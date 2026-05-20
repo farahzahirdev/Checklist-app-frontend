@@ -218,6 +218,7 @@ export default function AdminProductsPage() {
   const [savingCategory, setSavingCategory] = useState(false);
   const [loadingProductDetail, setLoadingProductDetail] = useState(false);
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
+  const [productPendingDelete, setProductPendingDelete] = useState<AdminProduct | null>(null);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [categories, setCategories] = useState<AdminProductCategory[]>([]);
   const [search, setSearch] = useState('');
@@ -321,10 +322,10 @@ export default function AdminProductsPage() {
     };
   }
 
-  async function handleDeleteProduct(product: AdminProduct) {
-    const confirmKey = product.product_kind === 'checklist' ? 'confirm.deleteChecklistProduct' : 'confirm.deleteProduct';
-    if (!window.confirm(t(confirmKey))) return;
+  async function handleConfirmDeleteProduct() {
+    if (!productPendingDelete) return;
 
+    const product = productPendingDelete;
     setDeletingProductId(product.id);
     try {
       await deleteAdminProduct(product.id);
@@ -333,6 +334,7 @@ export default function AdminProductsPage() {
         setShowProductModal(false);
         resetProductForm();
       }
+      setProductPendingDelete(null);
       await loadProducts();
       await loadCategories();
     } catch (err) {
@@ -610,7 +612,7 @@ export default function AdminProductsPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => void handleDeleteProduct(product)}
+                          onClick={() => setProductPendingDelete(product)}
                           disabled={deletingProductId === product.id}
                           className="text-sm font-semibold text-[#cc5163] disabled:opacity-60"
                         >
@@ -954,6 +956,38 @@ export default function AdminProductsPage() {
                   : editingCategory
                     ? t('actions.saveCategory')
                     : t('actions.createCategory')}
+              </button>
+            </div>
+          </article>
+        </div>
+      ) : null}
+
+      {productPendingDelete ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#08162c]/70 px-4 py-6">
+          <article className="w-full max-w-md rounded-2xl border border-[#d5deef] bg-white p-6 shadow-2xl scheme-light">
+            <h3 className="text-lg font-semibold text-[#243555]">{t('modal.delete.title')}</h3>
+            <p className="mt-2 text-sm font-medium text-[#25375a]">{productPendingDelete.name}</p>
+            <p className="mt-2 text-sm text-[#607594]">
+              {productPendingDelete.product_kind === 'checklist'
+                ? t('confirm.deleteChecklistProduct')
+                : t('confirm.deleteProduct')}
+            </p>
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setProductPendingDelete(null)}
+                disabled={deletingProductId === productPendingDelete.id}
+                className="rounded-xl border border-[#cad5e8] bg-white px-4 py-2 text-sm font-semibold text-[#38506f] hover:bg-[#f7faff] disabled:opacity-60"
+              >
+                {t('actions.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleConfirmDeleteProduct()}
+                disabled={deletingProductId === productPendingDelete.id}
+                className="rounded-xl border border-[#d45f6b] bg-[#fff1f3] px-4 py-2 text-sm font-semibold text-[#a73a46] hover:bg-[#ffe4e8] disabled:opacity-60"
+              >
+                {deletingProductId === productPendingDelete.id ? t('actions.deleting') : t('actions.confirmDelete')}
               </button>
             </div>
           </article>
