@@ -204,7 +204,7 @@ export default function AdminAssessmentsPage() {
                 <th className="py-2 pr-4">{t('table.checklist')}</th>
                 <th className="py-2 pr-4">{t('table.submitted')}</th>
                 <th className="py-2 pr-4">{t('table.reviewStatus')}</th>
-                <th className="py-2 pr-4">{t('table.reviewedAnswers')}</th>
+                <th className="py-2 pr-4 text-center">{t('table.reviewedAnswers')}</th>
                 <th className="py-2">{t('table.action')}</th>
               </tr>
             </thead>
@@ -233,7 +233,7 @@ export default function AdminAssessmentsPage() {
                       {statusLabel(row.status)}
                     </span>
                   </td>
-                  <td className="py-3 pr-4 text-[#5f7395]">{row.answer_reviews_count}</td>
+                  <td className="py-3 pr-4 text-center tabular-nums text-[#5f7395]">{row.answer_reviews_count}</td>
                   <td className="py-3">
                     <Link href={`/admin/assessments/${row.assessment_id}`} className="text-sm font-semibold text-[#3e69b0]">
                       {t('actions.openReview')}
@@ -243,7 +243,7 @@ export default function AdminAssessmentsPage() {
               ))}
               {!loading && !visibleRows.length ? (
                 <tr>
-                  <td className="py-3 text-[#607594]" colSpan={7}>
+                  <td className="py-3 text-[#607594]" colSpan={6}>
                     {t('empty.reviews')}
                   </td>
                 </tr>
