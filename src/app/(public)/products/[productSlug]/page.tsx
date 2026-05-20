@@ -72,6 +72,15 @@ function absolutePublicAssetUrl(url: string | null | undefined): string | null {
   return `${base}${path}`;
 }
 
+function hasPdfExtension(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return /\.pdf$/i.test(parsed.pathname);
+  } catch {
+    return /\.pdf(?:$|[?#])/i.test(url);
+  }
+}
+
 type AuthState = { kind: 'unknown' } | { kind: 'guest' } | { kind: 'customer' } | { kind: 'staff' };
 
 export default function ProductDetailPage() {
@@ -106,6 +115,7 @@ export default function ProductDetailPage() {
                 checklist: ch,
                 publicProductStatus: apiDetail.status === 'coming_soon' ? 'coming_soon' : 'published',
                 brochurePdfUrl: apiDetail.brochure_pdf_url,
+                heroImageUrl: apiDetail.hero_image_url,
               });
               setLoading(false);
               return;
@@ -209,6 +219,17 @@ export default function ProductDetailPage() {
   const brochureLinkHref = useMemo(() => {
     if (resolved?.kind === 'audit') return absolutePublicAssetUrl(resolved.brochurePdfUrl);
     if (resolved?.kind === 'api') return absolutePublicAssetUrl(resolved.detail.brochure_pdf_url);
+    return null;
+  }, [resolved]);
+
+  const hasBrochurePdf = useMemo(
+    () => Boolean(brochureLinkHref && hasPdfExtension(brochureLinkHref)),
+    [brochureLinkHref],
+  );
+
+  const heroImageHref = useMemo(() => {
+    if (resolved?.kind === 'audit') return absolutePublicAssetUrl(resolved.heroImageUrl);
+    if (resolved?.kind === 'api') return absolutePublicAssetUrl(resolved.detail.hero_image_url);
     return null;
   }, [resolved]);
 
@@ -403,6 +424,17 @@ export default function ProductDetailPage() {
               </div>
             </header>
           ) : null}
+
+          {!loading && heroImageHref ? (
+            <div className="overflow-hidden rounded-2xl border border-[#1f3a6d] bg-[#0d2246]/50">
+              <img
+                src={heroImageHref}
+                alt={audit?.title || apiDetail?.name || t('detail.aboutTitle')}
+                className="h-56 w-full object-cover sm:h-72"
+                loading="lazy"
+              />
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -546,7 +578,7 @@ export default function ProductDetailPage() {
                 </button>
               )}
 
-              {brochureLinkHref ? (
+              {hasBrochurePdf && brochureLinkHref ? (
                 <a
                   href={brochureLinkHref}
                   target="_blank"
@@ -555,17 +587,7 @@ export default function ProductDetailPage() {
                 >
                   {t('detail.brochure')}
                 </a>
-              ) : (
-                <button
-                  type="button"
-                  disabled
-                  aria-disabled="true"
-                  title={t('detail.brochureUnavailable')}
-                  className="mt-2 flex w-full cursor-not-allowed items-center justify-center rounded-lg border border-[#d7deeb] bg-white px-3 py-2 text-sm font-semibold text-[#9aa6bd]"
-                >
-                  {t('detail.brochure')}
-                </button>
-              )}
+              ) : null}
 
               {!audit || !canPurchaseAudit ? (
                 <Link

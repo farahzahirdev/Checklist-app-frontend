@@ -1,6 +1,6 @@
 import type { SystemSetting } from '@/lib/admin-settings';
 
-export const SETTING_CATEGORY_ORDER = ['email', 'lifecycle'] as const;
+export const SETTING_CATEGORY_ORDER = ['email', 'payment', 'security', 'routing', 'storage', 'cache', 'lifecycle'] as const;
 
 export const SETTING_KEY_ORDER: Record<string, string[]> = {
   email: [
@@ -23,6 +23,28 @@ export const SETTING_KEY_ORDER: Record<string, string[]> = {
     'email_max_retries',
     'email_retry_delay_seconds',
   ],
+  payment: [
+    'stripe_currency',
+    'stripe_default_amount_cents',
+  ],
+  security: [
+    'auth_token_ttl_minutes',
+    'mfa_secret_token_ttl_minutes',
+    'access_unlock_days',
+  ],
+  routing: [
+    'production_base_url',
+  ],
+  storage: [
+    'aws_default_region',
+    's3_bucket_arn',
+  ],
+  cache: [
+    'cache_default_ttl',
+    'cache_max_memory_mb',
+    'cache_memory_warn_percent',
+    'cache_memory_critical_percent',
+  ],
   lifecycle: ['assessment_completion_days', 'evidence_retention_hours'],
 };
 
@@ -38,6 +60,10 @@ export function settingUnitKey(key: string): string | null {
   if (key.endsWith('_days')) return 'unit.days';
   if (key.endsWith('_hours')) return 'unit.hours';
   if (key.endsWith('_seconds')) return 'unit.seconds';
+  if (key.endsWith('_minutes')) return 'unit.minutes';
+  if (key.endsWith('_mb')) return 'unit.mb';
+  if (key.endsWith('_cents')) return 'unit.cents';
+  if (key.endsWith('_percent')) return 'unit.percent';
   return null;
 }
 

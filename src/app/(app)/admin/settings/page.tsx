@@ -40,6 +40,56 @@ function CategoryIcon({ category }: { category: string }) {
       </svg>
     );
   }
+  if (category === 'payment') {
+    return (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
+        <path d="M3 8h18a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.6" />
+        <circle cx="12" cy="14" r="1.5" stroke="currentColor" strokeWidth="1.6" />
+      </svg>
+    );
+  }
+  if (category === 'security') {
+    return (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
+        <path
+          d="M12 2l8 3v5c0 5-8 7-8 7s-8-2-8-7V5l8-3Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path d="m10 13 2 2 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (category === 'routing') {
+    return (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
+        <path d="M3 7h4M3 12h4M3 17h4M10 5l6 7-6 7M21 5l-6 7 6 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (category === 'storage') {
+    return (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
+        <path d="M3 7h18a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M3 12h18a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.6" />
+      </svg>
+    );
+  }
+  if (category === 'cache') {
+    return (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
+        <path
+          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+        <path d="M12 7v5l3.5 2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
   if (category === 'lifecycle') {
     return (
       <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
@@ -203,11 +253,6 @@ export default function AdminSettingsPage() {
     }
   }
 
-  const filterClass = (active: boolean) =>
-    active
-      ? 'border-[#2d4f83] bg-[linear-gradient(180deg,#182843_0%,#223657_100%)] text-white shadow-sm'
-      : 'border-[#d4dced] bg-white text-[#36507b] hover:border-[#b8c9e6] hover:bg-[#f7f9fe]';
-
   return (
     <section className="space-y-4">
       <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
@@ -230,20 +275,23 @@ export default function AdminSettingsPage() {
                 </p>
               ) : null}
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => setActiveCategory('all')} className={`rounded-xl border px-3.5 py-2 text-xs font-semibold transition ${filterClass(activeCategory === 'all')}`}>
-                {t('category.all')}
-              </button>
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => setActiveCategory(category)}
-                  className={`rounded-xl border px-3.5 py-2 text-xs font-semibold transition ${filterClass(activeCategory === category)}`}
-                >
-                  {categoryLabel(category)}
-                </button>
-              ))}
+            <div className="flex items-center gap-3">
+              <label htmlFor="category-filter" className="text-sm font-medium text-[#36507b]">
+                {t('general.filter')}:
+              </label>
+              <select
+                id="category-filter"
+                value={activeCategory}
+                onChange={(e) => setActiveCategory(e.target.value)}
+                className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm font-medium text-[#36507b] shadow-sm transition hover:border-[#b8c9e6] focus:border-[#2d4f83] focus:outline-none focus:ring-2 focus:ring-[#2d4f83]/20"
+              >
+                <option value="all">{t('category.all')}</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {categoryLabel(category)}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

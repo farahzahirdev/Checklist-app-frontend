@@ -167,6 +167,7 @@ export type ResolvedProduct =
       /** Set when resolved from `GET /products/{slug}` checklist product */
       publicProductStatus?: 'published' | 'coming_soon';
       brochurePdfUrl?: string | null;
+      heroImageUrl?: string | null;
     }
   | { kind: 'documentation'; status: ProductStatus; documentation: DocumentationProduct }
   | { kind: 'builder'; status: ProductStatus; builder: BuilderProduct }
