@@ -100,6 +100,12 @@ function buildDocBulletLines(product: PublicProduct): string[] {
   return (sentences.length ? sentences : [text]).slice(0, 4);
 }
 
+function productStatusSortRank(status: PublicProductStatus): number {
+  if (status === 'published') return 0;
+  if (status === 'coming_soon') return 1;
+  return 2;
+}
+
 function ProductsPageContent() {
   const { locale } = useLocale();
   const t = (key: string, values?: Record<string, string>) => translate(productsMessages, locale, key, values);
@@ -169,6 +175,8 @@ function ProductsPageContent() {
     const checklistProducts = listableCatalogProducts
       .filter((p) => p.product_kind === 'checklist')
       .sort((a, b) => {
+        const statusRankDiff = productStatusSortRank(a.status) - productStatusSortRank(b.status);
+        if (statusRankDiff !== 0) return statusRankDiff;
         if (a.display_order !== b.display_order) return a.display_order - b.display_order;
         return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
       });
