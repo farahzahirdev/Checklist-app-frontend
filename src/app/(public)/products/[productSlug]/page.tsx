@@ -72,15 +72,6 @@ function absolutePublicAssetUrl(url: string | null | undefined): string | null {
   return `${base}${path}`;
 }
 
-function hasPdfExtension(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    return /\.pdf$/i.test(parsed.pathname);
-  } catch {
-    return /\.pdf(?:$|[?#])/i.test(url);
-  }
-}
-
 type AuthState = { kind: 'unknown' } | { kind: 'guest' } | { kind: 'customer' } | { kind: 'staff' };
 
 export default function ProductDetailPage() {
@@ -222,10 +213,7 @@ export default function ProductDetailPage() {
     return null;
   }, [resolved]);
 
-  const hasBrochurePdf = useMemo(
-    () => Boolean(brochureLinkHref && hasPdfExtension(brochureLinkHref)),
-    [brochureLinkHref],
-  );
+  const hasBrochurePdf = useMemo(() => Boolean(brochureLinkHref), [brochureLinkHref]);
 
   const heroImageHref = useMemo(() => {
     if (resolved?.kind === 'audit') return absolutePublicAssetUrl(resolved.heroImageUrl);
