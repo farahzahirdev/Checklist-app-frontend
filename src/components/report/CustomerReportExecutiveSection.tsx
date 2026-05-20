@@ -10,8 +10,31 @@ import { customerReportMessages } from '@/locales/customer-report';
 import {
   ReportMaturitySectionSpiderChart,
   buildMaturitySpiderSeries,
+  clampSpiderPct,
   type MaturitySpiderSourceRow,
 } from '@/components/report/ReportMaturitySpiderChart';
+
+function maturityBarToneClass(pct: number): string {
+  if (pct >= 70) return 'bg-[#2563eb]';
+  if (pct >= 45) return 'bg-[#ea580c]';
+  return 'bg-[#dc2626]';
+}
+
+function DomainScoreShield({ pct }: { pct: number }) {
+  const stroke = pct >= 70 ? '#2563eb' : pct >= 45 ? '#ea580c' : '#dc2626';
+  const fill = pct >= 70 ? '#eff6ff' : pct >= 45 ? '#fff7ed' : '#fef2f2';
+  return (
+    <svg width="26" height="30" viewBox="0 0 40 44" className="shrink-0" aria-hidden>
+      <path
+        d="M20 2 36 8v14c0 10-7 18-16 20-9-2-16-10-16-20V8L20 2Z"
+        fill={fill}
+        stroke={stroke}
+        strokeWidth="1.6"
+      />
+      <path d="M20 14v10M20 28h.01" stroke={stroke} strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 function formatReportDate(value: string | null | undefined, dateLocale: string) {
   if (!value) return '—';
@@ -608,59 +631,71 @@ export function CustomerReportExecutiveSection({
           <article id="maturity-overview" className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm sm:p-5 scroll-mt-24">
             <h3 className="text-lg font-semibold text-[#0f172a]">{t('exec.maturity.title')}</h3>
             <p className="mt-1 text-sm text-[#64748b]">{t('exec.maturity.subtitle')}</p>
-            <div className="mt-4 flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-between">
-              {maturitySpider ? (
-                <ReportMaturitySectionSpiderChart
-                  labels={maturitySpider.labels}
-                  values={maturitySpider.values}
-                  targetValues={maturitySpider.targetValues}
-                  areaHint={maturitySpider.areaHint}
-                  ariaLabel={t('exec.radar.aria')}
-                  legendCurrent={t('exec.radar.legendCurrent')}
-                  legendTarget={t('exec.radar.legendTarget')}
-                  legendTargetWhenApi={t('exec.radar.legendTargetHint')}
-                  currentStroke="#0066ff"
-                  currentFill="rgba(0,102,255,0.14)"
-                />
-              ) : (
-                <p className="max-w-xs text-center text-sm text-[#64748b]">{t('exec.maturity.chartEmpty')}</p>
-              )}
-              <div className="w-full min-w-0 flex-1 overflow-x-auto">
-                <table className="w-full min-w-[280px] text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-[#e8edf5] text-[0.65rem] font-semibold uppercase tracking-wide text-[#64748b]">
-                      <th className="pb-2 pr-2">{t('exec.maturity.col.domain')}</th>
-                      <th className="pb-2">{t('exec.maturity.col.score')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {domainRows.length ? (
-                      domainRows.map((row, idx) => {
-                        const barColor =
-                          row.pct >= 80 ? 'bg-emerald-500' : row.pct >= 60 ? 'bg-[#0066ff]' : row.pct >= 45 ? 'bg-amber-500' : 'bg-red-500';
-                        return (
-                          <tr key={`${row.title}-${idx}`} className="border-b border-[#f1f5f9] last:border-0">
-                            <td className="py-2.5 pr-2 font-medium text-[#0f172a]">{row.title}</td>
-                            <td className="py-2.5 pr-2">
-                              <div className="flex items-center gap-2">
-                                <div className="h-2 w-20 overflow-hidden rounded-full bg-[#eef2f9]">
-                                  <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.min(row.pct, 100)}%` }} />
-                                </div>
-                                <span className="tabular-nums font-semibold text-[#0f172a]">{row.pct}%</span>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    ) : (
+            <div className="mt-6 grid min-w-0 gap-8 xl:grid-cols-2 xl:items-start">
+              <div className="flex min-w-0 justify-center xl:justify-start">
+                {maturitySpider ? (
+                  <ReportMaturitySectionSpiderChart
+                    labels={maturitySpider.labels}
+                    values={maturitySpider.values}
+                    targetValues={maturitySpider.targetValues}
+                    areaHint={maturitySpider.areaHint}
+                    ariaLabel={t('exec.radar.aria')}
+                    legendCurrent={t('exec.radar.legendCurrent')}
+                    legendTarget={t('exec.radar.legendTarget')}
+                    legendTargetWhenApi={t('exec.radar.legendTargetHint')}
+                    currentStroke="#0066ff"
+                    currentFill="rgba(0,102,255,0.14)"
+                  />
+                ) : (
+                  <p className="max-w-xs text-center text-sm text-[#64748b]">{t('exec.maturity.chartEmpty')}</p>
+                )}
+              </div>
+              <div className="min-w-0 xl:pl-6">
+                <h4 className="text-base font-semibold text-[#0f172a]">{t('exec.maturity.domainScores')}</h4>
+                <div className="mt-4 overflow-x-auto rounded-xl border border-[#e8edf5]">
+                  <table className="w-full min-w-[280px] text-left text-sm">
+                    <thead className="border-b border-[#e8edf5] bg-[#f8fafc] text-xs font-semibold uppercase tracking-wide text-[#64748b]">
                       <tr>
-                        <td colSpan={2} className="py-4 text-sm text-[#64748b]">
-                          {t('exec.maturity.noBreakdown')}
-                        </td>
+                        <th className="px-3 py-2.5">{t('exec.maturity.col.domain')}</th>
+                        <th className="px-3 py-2.5">{t('exec.maturity.col.score')}</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-[#eef2f9]">
+                      {domainRows.length ? (
+                        domainRows.map((row, idx) => {
+                          const pct = clampSpiderPct(row.pct);
+                          return (
+                            <tr key={`${row.title}-${idx}`}>
+                              <td className="px-3 py-3">
+                                <div className="flex items-center gap-2">
+                                  <DomainScoreShield pct={pct} />
+                                  <p className="min-w-0 truncate font-semibold text-[#0f172a]">{row.title}</p>
+                                </div>
+                              </td>
+                              <td className="px-3 py-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-2 min-w-[4rem] flex-1 overflow-hidden rounded-full bg-[#e2e8f0]">
+                                    <div
+                                      className={`h-full rounded-full ${maturityBarToneClass(pct)}`}
+                                      style={{ width: `${pct}%` }}
+                                    />
+                                  </div>
+                                  <span className="shrink-0 tabular-nums font-semibold text-[#0f172a]">{pct}%</span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={2} className="px-3 py-4 text-sm text-[#64748b]">
+                            {t('exec.maturity.noBreakdown')}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </article>
