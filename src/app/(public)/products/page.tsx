@@ -47,6 +47,10 @@ const DOC_FILTER_NAMES = new Set<string>([
 
 export type DocumentationCategory = (typeof DOCUMENT_CATEGORIES)[number];
 
+/** Outline CTA on product grid cards (documentation, audits, builders). */
+const PRODUCT_CARD_OUTLINE_CTA_CLASS =
+  'inline-flex w-full items-center justify-center rounded-md border border-[#2563eb] bg-[#eff6ff] px-3 py-2 text-sm font-semibold text-[#2563eb] transition-colors group-hover:border-[#1d4ed8] group-hover:bg-[#dbeafe] group-hover:text-[#1d4ed8]';
+
 function CheckBadgeIcon() {
   return (
     <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#ddf5e8] text-[#2f9c65]">
@@ -467,7 +471,12 @@ function ProductsPageContent() {
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-auto pt-5 text-2xl font-semibold text-[#1f355d]">{doc.price}</p>
+                  <div className="mt-auto flex w-full flex-col gap-3 border-t border-[#eef1f7] pt-4">
+                    <p className="text-2xl font-semibold text-[#1f355d]">{doc.price}</p>
+                    <span className={PRODUCT_CARD_OUTLINE_CTA_CLASS}>
+                      {t('browse.getStarted')}
+                    </span>
+                  </div>
                 </Link>
               );
             })
@@ -516,7 +525,7 @@ function ProductsPageContent() {
                     href={href}
                     className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#d7deeb] bg-white shadow-sm transition-shadow duration-300 ease-out hover:border-[#1f7bff] motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md"
                   >
-                    <div className="flex gap-4 p-4">
+                    <div className="flex flex-1 gap-4 p-4">
                       <div
                         className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-xl ${iconTheme.bg} ${iconTheme.fg}`}
                         aria-hidden="true"
@@ -532,10 +541,10 @@ function ProductsPageContent() {
                         ) : null}
                       </div>
                     </div>
-                    <div className="mt-auto flex items-center justify-between gap-3 px-4 pb-4 pt-2">
+                    <div className="mt-auto flex w-full flex-col gap-3 border-t border-[#eef1f7] px-4 pb-4 pt-4">
                       <p className="text-2xl font-semibold text-[#1f355d]">{priceLabel}</p>
-                      <span className="text-sm font-semibold text-[#1f7bff] group-hover:underline">
-                        {ctaLabel} →
+                      <span className={PRODUCT_CARD_OUTLINE_CTA_CLASS}>
+                        {ctaLabel}
                       </span>
                     </div>
                   </Link>
@@ -570,7 +579,7 @@ function ProductsPageContent() {
                   href={buildBuilderProductHref(builder) as Route}
                   className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#d7deeb] bg-white shadow-sm transition-shadow duration-300 ease-out hover:border-[#1f7bff] motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md"
                 >
-                  <div className="flex gap-4 p-4">
+                  <div className="flex flex-1 gap-4 p-4">
                     <div
                       className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-xl ${theme.bg} ${theme.fg}`}
                       aria-hidden="true"
@@ -591,10 +600,8 @@ function ProductsPageContent() {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-auto flex items-center justify-end gap-3 px-4 pb-4 pt-2">
-                    <span className="text-sm font-semibold text-[#1f7bff] group-hover:underline">
-                      {t('cta.viewDetails')} →
-                    </span>
+                  <div className="mt-auto flex w-full flex-col gap-3 border-t border-[#eef1f7] px-4 pb-4 pt-4">
+                    <span className={PRODUCT_CARD_OUTLINE_CTA_CLASS}>{t('cta.viewDetails')}</span>
                   </div>
                 </Link>
               );
@@ -603,13 +610,14 @@ function ProductsPageContent() {
               const iconKind = pickAuditIconKind(mod.checklist_type?.checklist_type_code, modIdx) as AuditIconKind;
               const theme = AUDIT_ICON_THEMES[iconKind];
               const statusLabel = mod.status === 'published' ? 'available' : 'comingSoon';
+              const modCtaLabel = mod.status === 'published' ? t('detail.buy') : t('cta.viewDetails');
               return (
                 <Link
                   key={mod.id}
                   href={`/products/${encodeURIComponent(mod.slug)}` as Route}
                   className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#d7deeb] bg-white shadow-sm transition-shadow duration-300 ease-out hover:border-[#1f7bff] motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md"
                 >
-                  <div className="flex gap-4 p-4">
+                  <div className="flex flex-1 gap-4 p-4">
                     <div
                       className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-xl ${theme.bg} ${theme.fg}`}
                       aria-hidden="true"
@@ -634,10 +642,13 @@ function ProductsPageContent() {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-auto flex items-center justify-end gap-3 px-4 pb-4 pt-2">
-                    <span className="text-sm font-semibold text-[#1f7bff] group-hover:underline">
-                      {t('cta.viewDetails')} →
-                    </span>
+                  <div className="mt-auto flex w-full flex-col gap-3 border-t border-[#eef1f7] px-4 pb-4 pt-4">
+                    {mod.status === 'published' ? (
+                      <p className="text-2xl font-semibold text-[#1f355d]">
+                        {formatCatalogPricing(mod.pricing, locale, t('audits.price.free'))}
+                      </p>
+                    ) : null}
+                    <span className={PRODUCT_CARD_OUTLINE_CTA_CLASS}>{modCtaLabel}</span>
                   </div>
                 </Link>
               );
