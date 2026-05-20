@@ -19,6 +19,7 @@ import {
   listAdminProductCategories,
   listAdminProducts,
   syncChecklistProducts,
+  uploadProductHeroImage,
   updateAdminProduct,
   updateAdminProductCategory,
   type AdminProduct,
@@ -143,6 +144,7 @@ type ProductFormState = {
   product_kind: ProductKind;
   status: ProductStatus;
   brochure_pdf_url: string;
+  hero_image_url: string;
   external_url: string;
   cta_label: string;
   display_order: string;
@@ -170,6 +172,7 @@ function productToForm(product: AdminProduct, categories: AdminProductCategory[]
     product_kind: product.product_kind,
     status: product.status,
     brochure_pdf_url: product.brochure_pdf_url ?? '',
+    hero_image_url: product.hero_image_url ?? '',
     external_url: product.external_url ?? '',
     cta_label: product.cta_label ?? '',
     display_order: String(product.display_order ?? 0),
@@ -187,6 +190,7 @@ function emptyProductForm(categories: AdminProductCategory[]): ProductFormState 
     product_kind: 'documentation',
     status: 'draft',
     brochure_pdf_url: '',
+    hero_image_url: '',
     external_url: '',
     cta_label: '',
     display_order: '0',
@@ -215,6 +219,7 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
+  const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
   const [savingCategory, setSavingCategory] = useState(false);
   const [loadingProductDetail, setLoadingProductDetail] = useState(false);
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
@@ -309,11 +314,35 @@ export default function AdminProductsPage() {
       product_kind: productForm.product_kind,
       status: productForm.status,
       brochure_pdf_url: productForm.brochure_pdf_url.trim() || undefined,
+      hero_image_url: productForm.hero_image_url.trim() || undefined,
       external_url: productForm.external_url.trim() || undefined,
       cta_label: productForm.cta_label.trim() || undefined,
       display_order: Number.isFinite(displayOrder) ? displayOrder : undefined,
       is_featured: productForm.is_featured,
     };
+  }
+
+  async function handleHeroImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('toast.heroImageTypeInvalid'));
+      event.target.value = '';
+      return;
+    }
+
+    setUploadingHeroImage(true);
+    try {
+      const imageUrl = await uploadProductHeroImage(file);
+      setProductForm((previous) => ({ ...previous, hero_image_url: imageUrl }));
+      toast.success(t('toast.heroImageUploaded'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('toast.heroImageUploadFailed'));
+    } finally {
+      setUploadingHeroImage(false);
+      event.target.value = '';
+    }
   }
 
   async function handleConfirmDeleteProduct() {
@@ -815,6 +844,39 @@ export default function AdminProductsPage() {
                     className={INPUT_CLASS}
                   />
                 </label>
+                <label className="space-y-1 md:col-span-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.heroImageUrl')}</span>
+                  <div className="flex flex-col gap-2">
+                    <input
+                      value={productForm.hero_image_url}
+                      onChange={(event) => setProductForm((previous) => ({ ...previous, hero_image_url: event.target.value }))}
+                      disabled={loadingProductDetail || uploadingHeroImage}
+                      className={INPUT_CLASS}
+                    />
+                    <div className="flex items-center gap-3">
+                      <label className="inline-flex cursor-pointer items-center rounded-xl border border-[#cad5e8] bg-white px-3 py-2 text-xs font-semibold text-[#38506f] hover:bg-[#f7faff]">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => void handleHeroImageUpload(event)}
+                          disabled={loadingProductDetail || uploadingHeroImage}
+                          className="hidden"
+                        />
+                        {uploadingHeroImage ? t('actions.uploadingImage') : t('actions.uploadImage')}
+                      </label>
+                      {productForm.hero_image_url ? (
+                        <a
+                          href={productForm.hero_image_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-semibold text-[#3e69b0] hover:underline"
+                        >
+                          {t('actions.previewImage')}
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                </label>
                 <label className="space-y-1">
                   <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.externalUrl')}</span>
                   <input
@@ -849,7 +911,7 @@ export default function AdminProductsPage() {
               <button
                 type="button"
                 onClick={() => void handleSaveProduct()}
-                disabled={savingProduct || loadingProductDetail}
+                disabled={savingProduct || loadingProductDetail || uploadingHeroImage}
                 className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-70"
               >
                 {savingProduct ? t('actions.saving') : t('actions.save')}

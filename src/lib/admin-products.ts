@@ -1,4 +1,4 @@
-import { apiDelete, apiGetWithAuth, apiPatch, apiPost } from '@/lib/api';
+import { apiDelete, apiGetWithAuth, apiPatch, apiPost, apiPostFormData, getApiBaseUrl } from '@/lib/api';
 
 export type ProductKind = 'checklist' | 'documentation' | 'module';
 export type ProductStatus = 'draft' | 'published' | 'coming_soon' | 'archived';
@@ -170,4 +170,15 @@ export async function deleteAdminProduct(productId: string) {
 
 export async function syncChecklistProducts() {
   return apiPost<AdminProductListResponse, Record<string, never>>('/admin/products/sync-checklists', {});
+}
+
+type MediaUploadResponse = {
+  id: string;
+};
+
+export async function uploadProductHeroImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const uploaded = await apiPostFormData<MediaUploadResponse>('/media/upload', formData);
+  return `${getApiBaseUrl()}/media/${encodeURIComponent(uploaded.id)}/direct`;
 }
