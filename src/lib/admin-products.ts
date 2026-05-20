@@ -164,6 +164,10 @@ export async function deleteChecklistProduct(checklistId: string) {
   await apiDelete<unknown>(`/admin/products/checklist/${encodeURIComponent(checklistId)}`);
 }
 
+export async function deleteAdminProduct(productId: string) {
+  await apiDelete<unknown>(`/admin/products/${encodeURIComponent(productId)}`);
+}
+
 export async function syncChecklistProducts() {
   return apiPost<AdminProductListResponse, Record<string, never>>('/admin/products/sync-checklists', {});
 }

@@ -73,6 +73,23 @@ export type PublicProductDetail = PublicProduct & {
   checkout_available?: boolean;
 };
 
+function normalizeProductSlug(slug: string): string {
+  let value = slug.trim();
+  if (!value) return value;
+
+  // Handle slugs that may already be URL-encoded in links/router params.
+  for (let i = 0; i < 3; i += 1) {
+    try {
+      const decoded = decodeURIComponent(value);
+      if (decoded === value) break;
+      value = decoded;
+    } catch {
+      break;
+    }
+  }
+  return value;
+}
+
 function acceptLanguageHeader(): string {
   if (typeof window === 'undefined') return 'cs-CZ';
   const locale = window.localStorage.getItem('checklist_locale') || 'cs';
@@ -112,9 +129,9 @@ export async function listPublicProducts(): Promise<PublicProductsResponse> {
 
 /** Public product by slug; returns null when not found (404). */
 export async function getPublicProductBySlug(slug: string): Promise<PublicProductDetail | null> {
-  const trimmed = slug.trim();
-  if (!trimmed) return null;
-  const response = await fetch(`${getApiBaseUrl()}/products/${encodeURIComponent(trimmed)}`, {
+  const normalized = normalizeProductSlug(slug);
+  if (!normalized) return null;
+  const response = await fetch(`${getApiBaseUrl()}/products/${encodeURIComponent(normalized)}`, {
     method: 'GET',
     headers: {
       Accept: 'application/json',

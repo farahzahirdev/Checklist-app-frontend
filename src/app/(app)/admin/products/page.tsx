@@ -14,7 +14,7 @@ import { adminProductsMessages } from '@/locales/admin-products';
 import {
   createAdminProduct,
   createAdminProductCategory,
-  deleteChecklistProduct,
+  deleteAdminProduct,
   getAdminProduct,
   listAdminProductCategories,
   listAdminProducts,
@@ -321,14 +321,13 @@ export default function AdminProductsPage() {
     };
   }
 
-  async function handleDeleteChecklistProduct(product: AdminProduct) {
-    const checklistId = product.checklist?.checklist_id;
-    if (!checklistId) return;
-    if (!window.confirm(t('confirm.deleteChecklistProduct'))) return;
+  async function handleDeleteProduct(product: AdminProduct) {
+    const confirmKey = product.product_kind === 'checklist' ? 'confirm.deleteChecklistProduct' : 'confirm.deleteProduct';
+    if (!window.confirm(t(confirmKey))) return;
 
     setDeletingProductId(product.id);
     try {
-      await deleteChecklistProduct(checklistId);
+      await deleteAdminProduct(product.id);
       toast.success(t('toast.productDeleted'));
       if (editingProduct?.id === product.id) {
         setShowProductModal(false);
@@ -609,16 +608,14 @@ export default function AdminProductsPage() {
                         >
                           {t('actions.edit')}
                         </button>
-                        {product.product_kind === 'checklist' && product.checklist?.checklist_id ? (
-                          <button
-                            type="button"
-                            onClick={() => void handleDeleteChecklistProduct(product)}
-                            disabled={deletingProductId === product.id}
-                            className="text-sm font-semibold text-[#cc5163] disabled:opacity-60"
-                          >
-                            {deletingProductId === product.id ? t('actions.deleting') : t('actions.delete')}
-                          </button>
-                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteProduct(product)}
+                          disabled={deletingProductId === product.id}
+                          className="text-sm font-semibold text-[#cc5163] disabled:opacity-60"
+                        >
+                          {deletingProductId === product.id ? t('actions.deleting') : t('actions.delete')}
+                        </button>
                       </div>
                     </td>
                   </tr>
