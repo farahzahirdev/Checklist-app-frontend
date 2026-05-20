@@ -276,12 +276,6 @@ export default function AdminProductsPage() {
     setShowProductModal(true);
   }
 
-  function openCreateCategoryModal() {
-    setEditingCategory(null);
-    setCategoryForm(emptyCategoryForm());
-    setShowCategoryModal(true);
-  }
-
   function openEditCategoryModal(category: AdminProductCategory) {
     setEditingCategory(category);
     setCategoryForm(categoryToForm(category));
@@ -407,7 +401,6 @@ export default function AdminProductsPage() {
     try {
       if (editingCategory) {
         await updateAdminProductCategory(editingCategory.id, {
-          code,
           name,
           description: categoryForm.description.trim() || undefined,
           display_order: Number.isFinite(displayOrder) ? displayOrder : undefined,
@@ -519,13 +512,6 @@ export default function AdminProductsPage() {
             </button>
             <button
               type="button"
-              onClick={openCreateCategoryModal}
-              className="rounded-xl border border-[#2d4f83] bg-white px-4 py-2 text-sm font-semibold text-[#2d4f83] hover:bg-[#f2f7ff]"
-            >
-              {t('actions.addCategory')}
-            </button>
-            <button
-              type="button"
               onClick={openCreateProductModal}
               className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657]"
             >
@@ -629,15 +615,8 @@ export default function AdminProductsPage() {
       </article>
 
       <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ecf0f8] px-4 py-3">
+        <div className="border-b border-[#ecf0f8] px-4 py-3">
           <h2 className="text-xl font-semibold text-[#243555]">{t('section.categories')}</h2>
-          <button
-            type="button"
-            onClick={openCreateCategoryModal}
-            className="rounded-xl border border-[#2d4f83] bg-white px-4 py-2 text-sm font-semibold text-[#2d4f83] hover:bg-[#f2f7ff]"
-          >
-            {t('actions.addCategory')}
-          </button>
         </div>
         <div className="overflow-x-auto px-4 py-3">
           <table className="min-w-full text-left text-sm text-[#2b3e60]">
@@ -892,8 +871,13 @@ export default function AdminProductsPage() {
                 <input
                   value={categoryForm.code}
                   onChange={(event) => setCategoryForm((previous) => ({ ...previous, code: event.target.value }))}
-                  className={INPUT_CLASS}
+                  readOnly={Boolean(editingCategory)}
+                  disabled={Boolean(editingCategory)}
+                  className={`${INPUT_CLASS} ${editingCategory ? 'cursor-not-allowed bg-[#f4f7fc] text-[#607594]' : ''}`}
                 />
+                {editingCategory ? (
+                  <p className="text-xs leading-relaxed text-[#607594]">{t('form.categoryCodeLocked')}</p>
+                ) : null}
               </label>
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.categoryName')}</span>
