@@ -30,7 +30,6 @@ export const SETTING_KEY_ORDER: Record<string, string[]> = {
   security: [
     'auth_token_ttl_minutes',
     'mfa_secret_token_ttl_minutes',
-    'access_unlock_days',
   ],
   routing: [
     'production_base_url',
