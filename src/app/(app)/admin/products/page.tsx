@@ -14,10 +14,13 @@ import { adminProductsMessages } from '@/locales/admin-products';
 import {
   createAdminProduct,
   createAdminProductCategory,
+  deleteChecklistProduct,
+  getAdminProduct,
   listAdminProductCategories,
   listAdminProducts,
   syncChecklistProducts,
   updateAdminProduct,
+  updateAdminProductCategory,
   type AdminProduct,
   type AdminProductCategory,
   type ProductKind,
@@ -135,16 +138,75 @@ type ProductFormState = {
   name: string;
   slug: string;
   short_description: string;
+  description: string;
   category_code: string;
   product_kind: ProductKind;
   status: ProductStatus;
+  brochure_pdf_url: string;
+  external_url: string;
+  cta_label: string;
+  display_order: string;
+  is_featured: boolean;
 };
 
 type CategoryFormState = {
   code: string;
   name: string;
   description: string;
+  display_order: string;
+  is_active: boolean;
 };
+
+const INPUT_CLASS =
+  'w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]';
+
+function productToForm(product: AdminProduct, categories: AdminProductCategory[]): ProductFormState {
+  return {
+    name: product.name,
+    slug: product.slug,
+    short_description: product.short_description ?? '',
+    description: product.description ?? '',
+    category_code: product.category?.code ?? categories[0]?.code ?? '',
+    product_kind: product.product_kind,
+    status: product.status,
+    brochure_pdf_url: product.brochure_pdf_url ?? '',
+    external_url: product.external_url ?? '',
+    cta_label: product.cta_label ?? '',
+    display_order: String(product.display_order ?? 0),
+    is_featured: product.is_featured ?? false,
+  };
+}
+
+function emptyProductForm(categories: AdminProductCategory[]): ProductFormState {
+  return {
+    name: '',
+    slug: '',
+    short_description: '',
+    description: '',
+    category_code: categories[0]?.code ?? '',
+    product_kind: 'documentation',
+    status: 'draft',
+    brochure_pdf_url: '',
+    external_url: '',
+    cta_label: '',
+    display_order: '0',
+    is_featured: false,
+  };
+}
+
+function emptyCategoryForm(): CategoryFormState {
+  return { code: '', name: '', description: '', display_order: '0', is_active: true };
+}
+
+function categoryToForm(category: AdminProductCategory): CategoryFormState {
+  return {
+    code: category.code,
+    name: category.name,
+    description: category.description ?? '',
+    display_order: String(category.display_order ?? 0),
+    is_active: category.is_active,
+  };
+}
 
 export default function AdminProductsPage() {
   const { locale } = useLocale();
@@ -154,6 +216,8 @@ export default function AdminProductsPage() {
   const [syncing, setSyncing] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
   const [savingCategory, setSavingCategory] = useState(false);
+  const [loadingProductDetail, setLoadingProductDetail] = useState(false);
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [categories, setCategories] = useState<AdminProductCategory[]>([]);
   const [search, setSearch] = useState('');
@@ -162,19 +226,9 @@ export default function AdminProductsPage() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [productForm, setProductForm] = useState<ProductFormState>({
-    name: '',
-    slug: '',
-    short_description: '',
-    category_code: '',
-    product_kind: 'documentation',
-    status: 'draft',
-  });
-  const [categoryForm, setCategoryForm] = useState<CategoryFormState>({
-    code: '',
-    name: '',
-    description: '',
-  });
+  const [editingCategory, setEditingCategory] = useState<AdminProductCategory | null>(null);
+  const [productForm, setProductForm] = useState<ProductFormState>(() => emptyProductForm([]));
+  const [categoryForm, setCategoryForm] = useState<CategoryFormState>(() => emptyCategoryForm());
 
   const statusFilterOptions = useMemo(
     () => [
@@ -212,14 +266,7 @@ export default function AdminProductsPage() {
 
   function resetProductForm() {
     setEditingProduct(null);
-    setProductForm({
-      name: '',
-      slug: '',
-      short_description: '',
-      category_code: categories[0]?.code ?? '',
-      product_kind: 'documentation',
-      status: 'draft',
-    });
+    setProductForm(emptyProductForm(categories));
   }
 
   function openCreateProductModal() {
@@ -227,17 +274,72 @@ export default function AdminProductsPage() {
     setShowProductModal(true);
   }
 
-  function openEditProductModal(product: AdminProduct) {
+  function openCreateCategoryModal() {
+    setEditingCategory(null);
+    setCategoryForm(emptyCategoryForm());
+    setShowCategoryModal(true);
+  }
+
+  function openEditCategoryModal(category: AdminProductCategory) {
+    setEditingCategory(category);
+    setCategoryForm(categoryToForm(category));
+    setShowCategoryModal(true);
+  }
+
+  async function openEditProductModal(product: AdminProduct) {
     setEditingProduct(product);
-    setProductForm({
-      name: product.name,
-      slug: product.slug,
-      short_description: product.short_description ?? '',
-      category_code: product.category?.code ?? categories[0]?.code ?? '',
-      product_kind: product.product_kind,
-      status: product.status,
-    });
+    setProductForm(productToForm(product, categories));
     setShowProductModal(true);
+    setLoadingProductDetail(true);
+    try {
+      const detail = await getAdminProduct(product.id);
+      setEditingProduct(detail);
+      setProductForm(productToForm(detail, categories));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('toast.loadProductFailed'));
+    } finally {
+      setLoadingProductDetail(false);
+    }
+  }
+
+  function buildProductPayload() {
+    const displayOrder = Number.parseInt(productForm.display_order, 10);
+    return {
+      name: productForm.name.trim(),
+      slug: productForm.slug.trim() || undefined,
+      short_description: productForm.short_description.trim() || undefined,
+      description: productForm.description.trim() || undefined,
+      category_code: productForm.category_code,
+      product_kind: productForm.product_kind,
+      status: productForm.status,
+      brochure_pdf_url: productForm.brochure_pdf_url.trim() || undefined,
+      external_url: productForm.external_url.trim() || undefined,
+      cta_label: productForm.cta_label.trim() || undefined,
+      display_order: Number.isFinite(displayOrder) ? displayOrder : undefined,
+      is_featured: productForm.is_featured,
+    };
+  }
+
+  async function handleDeleteChecklistProduct(product: AdminProduct) {
+    const checklistId = product.checklist?.checklist_id;
+    if (!checklistId) return;
+    if (!window.confirm(t('confirm.deleteChecklistProduct'))) return;
+
+    setDeletingProductId(product.id);
+    try {
+      await deleteChecklistProduct(checklistId);
+      toast.success(t('toast.productDeleted'));
+      if (editingProduct?.id === product.id) {
+        setShowProductModal(false);
+        resetProductForm();
+      }
+      await loadProducts();
+      await loadCategories();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('toast.productDeleteFailed'));
+    } finally {
+      setDeletingProductId(null);
+    }
   }
 
   async function loadCategories() {
@@ -294,33 +396,47 @@ export default function AdminProductsPage() {
       toast.error(t('toast.categoryRequired'));
       return;
     }
+    const displayOrder = Number.parseInt(categoryForm.display_order, 10);
     setSavingCategory(true);
     try {
-      await createAdminProductCategory({
-        code,
-        name,
-        description: categoryForm.description.trim() || undefined,
-      });
-      toast.success(t('toast.categoryCreated'));
+      if (editingCategory) {
+        await updateAdminProductCategory(editingCategory.id, {
+          code,
+          name,
+          description: categoryForm.description.trim() || undefined,
+          display_order: Number.isFinite(displayOrder) ? displayOrder : undefined,
+          is_active: categoryForm.is_active,
+        });
+        toast.success(t('toast.categoryUpdated'));
+      } else {
+        await createAdminProductCategory({
+          code,
+          name,
+          description: categoryForm.description.trim() || undefined,
+          display_order: Number.isFinite(displayOrder) ? displayOrder : undefined,
+          is_active: categoryForm.is_active,
+        });
+        toast.success(t('toast.categoryCreated'));
+      }
       setShowCategoryModal(false);
-      setCategoryForm({ code: '', name: '', description: '' });
+      setEditingCategory(null);
+      setCategoryForm(emptyCategoryForm());
       await loadCategories();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('toast.categoryCreateFailed'));
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : editingCategory
+            ? t('toast.categoryUpdateFailed')
+            : t('toast.categoryCreateFailed'),
+      );
     } finally {
       setSavingCategory(false);
     }
   }
 
   async function handleSaveProduct() {
-    const payload = {
-      name: productForm.name.trim(),
-      slug: productForm.slug.trim() || undefined,
-      short_description: productForm.short_description.trim() || undefined,
-      category_code: productForm.category_code,
-      product_kind: productForm.product_kind,
-      status: productForm.status,
-    };
+    const payload = buildProductPayload();
 
     if (!payload.name || !payload.category_code) {
       toast.error(t('toast.productRequired'));
@@ -337,6 +453,7 @@ export default function AdminProductsPage() {
         toast.success(t('toast.productCreated'));
       }
       setShowProductModal(false);
+      resetProductForm();
       await loadProducts();
       await loadCategories();
     } catch (err) {
@@ -394,7 +511,7 @@ export default function AdminProductsPage() {
             </button>
             <button
               type="button"
-              onClick={() => setShowCategoryModal(true)}
+              onClick={openCreateCategoryModal}
               className="rounded-xl border border-[#2d4f83] bg-white px-4 py-2 text-sm font-semibold text-[#2d4f83] hover:bg-[#f2f7ff]"
             >
               {t('actions.addCategory')}
@@ -477,12 +594,91 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="py-3 pr-4 text-[#5f7395]">{formatDate(product.updated_at)}</td>
                     <td className="py-3">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => void openEditProductModal(product)}
+                          className="text-sm font-semibold text-[#3e69b0]"
+                        >
+                          {t('actions.edit')}
+                        </button>
+                        {product.product_kind === 'checklist' && product.checklist?.checklist_id ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleDeleteChecklistProduct(product)}
+                            disabled={deletingProductId === product.id}
+                            className="text-sm font-semibold text-[#cc5163] disabled:opacity-60"
+                          >
+                            {deletingProductId === product.id ? t('actions.deleting') : t('actions.delete')}
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ecf0f8] px-4 py-3">
+          <h2 className="text-xl font-semibold text-[#243555]">{t('section.categories')}</h2>
+          <button
+            type="button"
+            onClick={openCreateCategoryModal}
+            className="rounded-xl border border-[#2d4f83] bg-white px-4 py-2 text-sm font-semibold text-[#2d4f83] hover:bg-[#f2f7ff]"
+          >
+            {t('actions.addCategory')}
+          </button>
+        </div>
+        <div className="overflow-x-auto px-4 py-3">
+          <table className="min-w-full text-left text-sm text-[#2b3e60]">
+            <thead className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7a8ca8]">
+              <tr className="border-b border-[#edf2f9]">
+                <th className="py-2 pr-4">{t('form.categoryName')}</th>
+                <th className="py-2 pr-4">{t('form.categoryCode')}</th>
+                <th className="py-2 pr-4">{t('th.products')}</th>
+                <th className="py-2 pr-4">{t('th.active')}</th>
+                <th className="py-2">{t('th.action')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td className="py-6 text-sm text-[#5f7395]" colSpan={5}>
+                    {t('state.loading')}
+                  </td>
+                </tr>
+              ) : categories.length === 0 ? (
+                <tr>
+                  <td className="py-6 text-sm text-[#5f7395]" colSpan={5}>
+                    {t('state.categoriesEmpty')}
+                  </td>
+                </tr>
+              ) : (
+                categories.map((category) => (
+                  <tr key={category.id} className="border-b border-[#edf2f9] last:border-0">
+                    <td className="py-3 pr-4 font-semibold text-[#25375a]">{category.name}</td>
+                    <td className="py-3 pr-4 text-[#5f7395]">{category.code}</td>
+                    <td className="py-3 pr-4 text-[#5f7395]">{category.product_count}</td>
+                    <td className="py-3 pr-4">
+                      <span
+                        className={`rounded-md px-2 py-1 text-xs font-semibold ${
+                          category.is_active ? 'bg-[#e9f8ef] text-[#2f9960]' : 'bg-[#edf1f8] text-[#607594]'
+                        }`}
+                      >
+                        {category.is_active ? t('status.published') : t('status.archived')}
+                      </span>
+                    </td>
+                    <td className="py-3">
                       <button
                         type="button"
-                        onClick={() => openEditProductModal(product)}
+                        onClick={() => openEditCategoryModal(category)}
                         className="text-sm font-semibold text-[#3e69b0]"
                       >
-                        {t('actions.edit')}
+                        {t('actions.editCategory')}
                       </button>
                     </td>
                   </tr>
@@ -494,88 +690,173 @@ export default function AdminProductsPage() {
       </article>
 
       {showProductModal ? (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#08162c]/70 px-4">
-          <article className="w-full max-w-xl rounded-2xl border border-[#d5deef] bg-white p-5 shadow-2xl scheme-light">
-            <h3 className="text-lg font-semibold text-[#243555]">
-              {editingProduct ? t('modal.editTitle') : t('modal.createTitle')}
-            </h3>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <label className="space-y-1 md:col-span-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.name')}</span>
-                <input
-                  value={productForm.name}
-                  onChange={(event) => setProductForm((previous) => ({ ...previous, name: event.target.value }))}
-                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
-                />
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.slug')}</span>
-                <input
-                  value={productForm.slug}
-                  onChange={(event) => setProductForm((previous) => ({ ...previous, slug: event.target.value }))}
-                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
-                />
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.category')}</span>
-                <select
-                  value={productForm.category_code}
-                  onChange={(event) => setProductForm((previous) => ({ ...previous, category_code: event.target.value }))}
-                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a]"
-                >
-                  <option value="">{t('form.selectCategory')}</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.code}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.kind')}</span>
-                <select
-                  value={productForm.product_kind}
-                  onChange={(event) =>
-                    setProductForm((previous) => ({ ...previous, product_kind: event.target.value as ProductKind }))
-                  }
-                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a]"
-                >
-                  <option value="checklist">{t('kind.checklist')}</option>
-                  <option value="documentation">{t('kind.documentation')}</option>
-                  <option value="module">{t('kind.module')}</option>
-                </select>
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.status')}</span>
-                <select
-                  value={productForm.status}
-                  onChange={(event) =>
-                    setProductForm((previous) => ({ ...previous, status: event.target.value as ProductStatus }))
-                  }
-                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a]"
-                >
-                  <option value="draft">{t('status.draft')}</option>
-                  <option value="published">{t('status.published')}</option>
-                  <option value="coming_soon">{t('status.coming_soon')}</option>
-                  <option value="archived">{t('status.archived')}</option>
-                </select>
-              </label>
-              <label className="space-y-1 md:col-span-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.shortDescription')}</span>
-                <textarea
-                  value={productForm.short_description}
-                  onChange={(event) =>
-                    setProductForm((previous) => ({ ...previous, short_description: event.target.value }))
-                  }
-                  rows={3}
-                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
-                />
-              </label>
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#08162c]/70 px-4 py-6">
+          <article className="flex max-h-[min(90vh,820px)] w-full max-w-2xl flex-col rounded-2xl border border-[#d5deef] bg-white shadow-2xl scheme-light">
+            <div className="border-b border-[#ecf0f8] px-5 py-4">
+              <h3 className="text-lg font-semibold text-[#243555]">
+                {editingProduct ? t('modal.editTitle') : t('modal.createTitle')}
+              </h3>
+              {loadingProductDetail ? (
+                <p className="mt-1 text-sm text-[#5f7395]">{t('state.loadingProduct')}</p>
+              ) : null}
             </div>
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="flex-1 overflow-y-auto px-5 py-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="space-y-1 md:col-span-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.name')}</span>
+                  <input
+                    value={productForm.name}
+                    onChange={(event) => setProductForm((previous) => ({ ...previous, name: event.target.value }))}
+                    disabled={loadingProductDetail}
+                    className={INPUT_CLASS}
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.slug')}</span>
+                  <input
+                    value={productForm.slug}
+                    onChange={(event) => setProductForm((previous) => ({ ...previous, slug: event.target.value }))}
+                    disabled={loadingProductDetail}
+                    className={INPUT_CLASS}
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.category')}</span>
+                  <select
+                    value={productForm.category_code}
+                    onChange={(event) => setProductForm((previous) => ({ ...previous, category_code: event.target.value }))}
+                    disabled={loadingProductDetail}
+                    className={INPUT_CLASS}
+                  >
+                    <option value="">{t('form.selectCategory')}</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.code}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.kind')}</span>
+                  <select
+                    value={productForm.product_kind}
+                    onChange={(event) =>
+                      setProductForm((previous) => ({ ...previous, product_kind: event.target.value as ProductKind }))
+                    }
+                    disabled={loadingProductDetail || Boolean(editingProduct?.checklist?.checklist_id)}
+                    className={INPUT_CLASS}
+                  >
+                    <option value="checklist">{t('kind.checklist')}</option>
+                    <option value="documentation">{t('kind.documentation')}</option>
+                    <option value="module">{t('kind.module')}</option>
+                  </select>
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.status')}</span>
+                  <select
+                    value={productForm.status}
+                    onChange={(event) =>
+                      setProductForm((previous) => ({ ...previous, status: event.target.value as ProductStatus }))
+                    }
+                    disabled={loadingProductDetail}
+                    className={INPUT_CLASS}
+                  >
+                    <option value="draft">{t('status.draft')}</option>
+                    <option value="published">{t('status.published')}</option>
+                    <option value="coming_soon">{t('status.coming_soon')}</option>
+                    <option value="archived">{t('status.archived')}</option>
+                  </select>
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.displayOrder')}</span>
+                  <input
+                    type="number"
+                    value={productForm.display_order}
+                    onChange={(event) => setProductForm((previous) => ({ ...previous, display_order: event.target.value }))}
+                    disabled={loadingProductDetail}
+                    className={INPUT_CLASS}
+                  />
+                </label>
+                <label className="flex items-center gap-2 md:col-span-2">
+                  <input
+                    type="checkbox"
+                    checked={productForm.is_featured}
+                    onChange={(event) => setProductForm((previous) => ({ ...previous, is_featured: event.target.checked }))}
+                    disabled={loadingProductDetail}
+                    className="h-4 w-4 rounded border-[#d4dced] text-[#3e69b0]"
+                  />
+                  <span className="text-sm font-medium text-[#25375a]">{t('form.isFeatured')}</span>
+                </label>
+                {editingProduct?.checklist?.checklist_id ? (
+                  <div className="md:col-span-2 rounded-xl border border-[#dde6f5] bg-[#f4f7fc] px-3 py-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.checklistLinked')}</p>
+                    <p className="mt-1 text-sm font-semibold text-[#25375a]">
+                      {editingProduct.checklist.checklist_title ?? editingProduct.name}
+                      {editingProduct.checklist.checklist_version
+                        ? ` (${editingProduct.checklist.checklist_version})`
+                        : ''}
+                    </p>
+                    <p className="mt-1 text-xs text-[#5f7395]">{t('form.checklistReadOnly')}</p>
+                  </div>
+                ) : null}
+                <label className="space-y-1 md:col-span-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.shortDescription')}</span>
+                  <textarea
+                    value={productForm.short_description}
+                    onChange={(event) =>
+                      setProductForm((previous) => ({ ...previous, short_description: event.target.value }))
+                    }
+                    rows={2}
+                    disabled={loadingProductDetail}
+                    className={INPUT_CLASS}
+                  />
+                </label>
+                <label className="space-y-1 md:col-span-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.description')}</span>
+                  <textarea
+                    value={productForm.description}
+                    onChange={(event) => setProductForm((previous) => ({ ...previous, description: event.target.value }))}
+                    rows={4}
+                    disabled={loadingProductDetail}
+                    className={INPUT_CLASS}
+                  />
+                </label>
+                <label className="space-y-1 md:col-span-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.brochurePdfUrl')}</span>
+                  <input
+                    value={productForm.brochure_pdf_url}
+                    onChange={(event) => setProductForm((previous) => ({ ...previous, brochure_pdf_url: event.target.value }))}
+                    disabled={loadingProductDetail}
+                    className={INPUT_CLASS}
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.externalUrl')}</span>
+                  <input
+                    value={productForm.external_url}
+                    onChange={(event) => setProductForm((previous) => ({ ...previous, external_url: event.target.value }))}
+                    disabled={loadingProductDetail}
+                    className={INPUT_CLASS}
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.ctaLabel')}</span>
+                  <input
+                    value={productForm.cta_label}
+                    onChange={(event) => setProductForm((previous) => ({ ...previous, cta_label: event.target.value }))}
+                    disabled={loadingProductDetail}
+                    className={INPUT_CLASS}
+                  />
+                </label>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-[#ecf0f8] px-5 py-4">
               <button
                 type="button"
-                onClick={() => setShowProductModal(false)}
+                onClick={() => {
+                  setShowProductModal(false);
+                  resetProductForm();
+                }}
                 className="rounded-xl border border-[#cad5e8] bg-white px-4 py-2 text-sm font-semibold text-[#38506f] hover:bg-[#f7faff]"
               >
                 {t('actions.cancel')}
@@ -583,7 +864,7 @@ export default function AdminProductsPage() {
               <button
                 type="button"
                 onClick={() => void handleSaveProduct()}
-                disabled={savingProduct}
+                disabled={savingProduct || loadingProductDetail}
                 className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-70"
               >
                 {savingProduct ? t('actions.saving') : t('actions.save')}
@@ -596,14 +877,16 @@ export default function AdminProductsPage() {
       {showCategoryModal ? (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#08162c]/70 px-4">
           <article className="w-full max-w-lg rounded-2xl border border-[#d5deef] bg-white p-5 shadow-2xl scheme-light">
-            <h3 className="text-lg font-semibold text-[#243555]">{t('modal.categoryTitle')}</h3>
+            <h3 className="text-lg font-semibold text-[#243555]">
+              {editingCategory ? t('modal.editCategoryTitle') : t('modal.categoryTitle')}
+            </h3>
             <div className="mt-4 grid gap-3">
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.categoryCode')}</span>
                 <input
                   value={categoryForm.code}
                   onChange={(event) => setCategoryForm((previous) => ({ ...previous, code: event.target.value }))}
-                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
+                  className={INPUT_CLASS}
                 />
               </label>
               <label className="space-y-1">
@@ -611,7 +894,7 @@ export default function AdminProductsPage() {
                 <input
                   value={categoryForm.name}
                   onChange={(event) => setCategoryForm((previous) => ({ ...previous, name: event.target.value }))}
-                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
+                  className={INPUT_CLASS}
                 />
               </label>
               <label className="space-y-1">
@@ -622,14 +905,36 @@ export default function AdminProductsPage() {
                     setCategoryForm((previous) => ({ ...previous, description: event.target.value }))
                   }
                   rows={3}
-                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
+                  className={INPUT_CLASS}
                 />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.displayOrder')}</span>
+                <input
+                  type="number"
+                  value={categoryForm.display_order}
+                  onChange={(event) => setCategoryForm((previous) => ({ ...previous, display_order: event.target.value }))}
+                  className={INPUT_CLASS}
+                />
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={categoryForm.is_active}
+                  onChange={(event) => setCategoryForm((previous) => ({ ...previous, is_active: event.target.checked }))}
+                  className="h-4 w-4 rounded border-[#d4dced] text-[#3e69b0]"
+                />
+                <span className="text-sm font-medium text-[#25375a]">{t('form.isActive')}</span>
               </label>
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setShowCategoryModal(false)}
+                onClick={() => {
+                  setShowCategoryModal(false);
+                  setEditingCategory(null);
+                  setCategoryForm(emptyCategoryForm());
+                }}
                 className="rounded-xl border border-[#cad5e8] bg-white px-4 py-2 text-sm font-semibold text-[#38506f] hover:bg-[#f7faff]"
               >
                 {t('actions.cancel')}
@@ -640,7 +945,11 @@ export default function AdminProductsPage() {
                 disabled={savingCategory}
                 className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-70"
               >
-                {savingCategory ? t('actions.saving') : t('actions.createCategory')}
+                {savingCategory
+                  ? t('actions.saving')
+                  : editingCategory
+                    ? t('actions.saveCategory')
+                    : t('actions.createCategory')}
               </button>
             </div>
           </article>

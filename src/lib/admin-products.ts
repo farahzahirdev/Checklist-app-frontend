@@ -84,6 +84,10 @@ export type CreateAdminProductPayload = {
   description?: string;
   product_kind?: ProductKind;
   status?: ProductStatus;
+  checklist_id?: string;
+  checklist_type_id?: string;
+  checklist_type_code?: string;
+  parent_product_id?: string;
   display_order?: number;
   is_featured?: boolean;
   brochure_pdf_url?: string;
