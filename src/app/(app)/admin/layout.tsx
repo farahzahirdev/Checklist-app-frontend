@@ -37,6 +37,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { href: '/admin/cms', labelKey: 'nav.cms', icon: 'cms' },
     { href: '/admin/support', labelKey: 'nav.support', icon: 'report' },
     { href: '/admin/logs', labelKey: 'nav.logs', icon: 'shield' },
+    { href: '/admin/settings', labelKey: 'nav.settings', icon: 'settings' },
   ] as const;
   const auditorNavHrefs = new Set(['/admin', '/admin/checklists', '/admin/users']);
   const isReadOnly = role !== 'admin';
