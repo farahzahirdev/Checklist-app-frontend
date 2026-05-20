@@ -75,7 +75,7 @@ function AdminToolbarSelect({
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative min-w-[12rem] shrink-0">
+    <div ref={rootRef} className={`relative min-w-[12rem] shrink-0 ${open ? 'z-[60]' : 'z-[20]'}`}>
       <button
         type="button"
         aria-label={ariaLabel}
@@ -102,7 +102,7 @@ function AdminToolbarSelect({
       </button>
       {open ? (
         <ul
-          className="absolute left-0 right-0 z-30 mt-1 max-h-64 overflow-auto rounded-xl border border-[#c5d2eb] bg-white py-1 shadow-[0_12px_28px_rgba(15,40,84,0.12)] ring-1 ring-[#0a1f4a]/5"
+          className="absolute left-0 right-0 z-[70] mt-1 max-h-64 overflow-auto rounded-xl border border-[#c5d2eb] bg-white py-1 shadow-[0_12px_28px_rgba(15,40,84,0.12)] ring-1 ring-[#0a1f4a]/5"
           role="listbox"
         >
           {options.map((opt) => {
@@ -505,7 +505,7 @@ export default function AdminProductsPage() {
         ))}
       </div>
 
-      <article className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
+      <article className="rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ecf0f8] px-4 py-3">
           <h2 className="text-xl font-semibold text-[#243555]">{t('section.title')}</h2>
           <div className="flex items-center gap-2">
@@ -534,7 +534,7 @@ export default function AdminProductsPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 border-b border-[#ecf0f8] px-4 py-3">
+        <div className="relative z-20 flex flex-wrap items-center gap-3 border-b border-[#ecf0f8] px-4 py-3">
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -555,7 +555,7 @@ export default function AdminProductsPage() {
           />
         </div>
 
-        <div className="overflow-x-auto px-4 py-3">
+        <div className="relative z-0 overflow-x-auto px-4 py-3">
           <table className="min-w-full text-left text-sm text-[#2b3e60]">
             <thead className="text-xs font-semibold uppercase tracking-[0.08em] text-[#7a8ca8]">
               <tr className="border-b border-[#edf2f9]">
