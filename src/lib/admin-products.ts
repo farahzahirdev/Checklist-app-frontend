@@ -176,9 +176,17 @@ type MediaUploadResponse = {
   id: string;
 };
 
-export async function uploadProductHeroImage(file: File): Promise<string> {
+async function uploadProductMedia(file: File): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
   const uploaded = await apiPostFormData<MediaUploadResponse>('/media/upload', formData);
   return `${getApiBaseUrl()}/media/${encodeURIComponent(uploaded.id)}/direct`;
+}
+
+export async function uploadProductHeroImage(file: File): Promise<string> {
+  return uploadProductMedia(file);
+}
+
+export async function uploadProductBrochurePdf(file: File): Promise<string> {
+  return uploadProductMedia(file);
 }

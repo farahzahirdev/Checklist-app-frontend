@@ -19,6 +19,7 @@ import {
   listAdminProductCategories,
   listAdminProducts,
   syncChecklistProducts,
+  uploadProductBrochurePdf,
   uploadProductHeroImage,
   updateAdminProduct,
   updateAdminProductCategory,
@@ -220,6 +221,7 @@ export default function AdminProductsPage() {
   const [syncing, setSyncing] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
   const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
+  const [uploadingBrochurePdf, setUploadingBrochurePdf] = useState(false);
   const [savingCategory, setSavingCategory] = useState(false);
   const [loadingProductDetail, setLoadingProductDetail] = useState(false);
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
@@ -341,6 +343,29 @@ export default function AdminProductsPage() {
       toast.error(err instanceof Error ? err.message : t('toast.heroImageUploadFailed'));
     } finally {
       setUploadingHeroImage(false);
+      event.target.value = '';
+    }
+  }
+
+  async function handleBrochurePdfUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast.error(t('toast.brochurePdfTypeInvalid'));
+      event.target.value = '';
+      return;
+    }
+
+    setUploadingBrochurePdf(true);
+    try {
+      const pdfUrl = await uploadProductBrochurePdf(file);
+      setProductForm((previous) => ({ ...previous, brochure_pdf_url: pdfUrl }));
+      toast.success(t('toast.brochurePdfUploaded'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('toast.brochurePdfUploadFailed'));
+    } finally {
+      setUploadingBrochurePdf(false);
       event.target.value = '';
     }
   }
@@ -837,22 +862,40 @@ export default function AdminProductsPage() {
                 </label>
                 <label className="space-y-1 md:col-span-2">
                   <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.brochurePdfUrl')}</span>
-                  <input
-                    value={productForm.brochure_pdf_url}
-                    onChange={(event) => setProductForm((previous) => ({ ...previous, brochure_pdf_url: event.target.value }))}
-                    disabled={loadingProductDetail}
-                    className={INPUT_CLASS}
-                  />
+                  <div className="flex flex-col gap-2">
+                    <div className="min-h-10 rounded-xl border border-[#d4dced] bg-[#f8fbff] px-3 py-2 text-sm text-[#456087]">
+                      {productForm.brochure_pdf_url || t('state.noBrochurePdf')}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <label className="inline-flex cursor-pointer items-center rounded-xl border border-[#cad5e8] bg-white px-3 py-2 text-xs font-semibold text-[#38506f] hover:bg-[#f7faff]">
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          onChange={(event) => void handleBrochurePdfUpload(event)}
+                          disabled={loadingProductDetail || uploadingBrochurePdf}
+                          className="hidden"
+                        />
+                        {uploadingBrochurePdf ? t('actions.uploadingPdf') : t('actions.uploadPdf')}
+                      </label>
+                      {productForm.brochure_pdf_url ? (
+                        <a
+                          href={productForm.brochure_pdf_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-semibold text-[#3e69b0] hover:underline"
+                        >
+                          {t('actions.previewPdf')}
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
                 </label>
                 <label className="space-y-1 md:col-span-2">
                   <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.heroImageUrl')}</span>
                   <div className="flex flex-col gap-2">
-                    <input
-                      value={productForm.hero_image_url}
-                      onChange={(event) => setProductForm((previous) => ({ ...previous, hero_image_url: event.target.value }))}
-                      disabled={loadingProductDetail || uploadingHeroImage}
-                      className={INPUT_CLASS}
-                    />
+                    <div className="min-h-10 rounded-xl border border-[#d4dced] bg-[#f8fbff] px-3 py-2 text-sm text-[#456087]">
+                      {productForm.hero_image_url || t('state.noHeroImage')}
+                    </div>
                     <div className="flex items-center gap-3">
                       <label className="inline-flex cursor-pointer items-center rounded-xl border border-[#cad5e8] bg-white px-3 py-2 text-xs font-semibold text-[#38506f] hover:bg-[#f7faff]">
                         <input
@@ -911,7 +954,7 @@ export default function AdminProductsPage() {
               <button
                 type="button"
                 onClick={() => void handleSaveProduct()}
-                disabled={savingProduct || loadingProductDetail || uploadingHeroImage}
+                disabled={savingProduct || loadingProductDetail || uploadingHeroImage || uploadingBrochurePdf}
                 className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-70"
               >
                 {savingProduct ? t('actions.saving') : t('actions.save')}
