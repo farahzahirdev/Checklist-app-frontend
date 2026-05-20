@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { ADMIN_PAGE_TITLE_CLASS } from '@/app/(app)/admin/admin-page-title';
-import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
+import {
+  ADMIN_PAGE_HERO_EYEBROW_CLASS,
+  ADMIN_PAGE_HERO_HEADER_CLASS,
+  ADMIN_PAGE_HERO_SUBTITLE_CLASS,
+  ADMIN_PAGE_TITLE_CLASS,
+} from '@/app/(app)/admin/admin-page-title';
 import { translate, useLocale } from '@/lib/i18n';
 import { adminProductsMessages } from '@/locales/admin-products';
 
@@ -32,6 +36,100 @@ const kindClass: Record<string, string> = {
   documentation: 'bg-[#f3edff] text-[#6944b2]',
   module: 'bg-[#edf8f0] text-[#2f9960]',
 };
+
+type ToolbarSelectOption = { value: string; label: string };
+
+function AdminToolbarSelect({
+  value,
+  onChange,
+  options,
+  ariaLabel,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  options: ToolbarSelectOption[];
+  ariaLabel: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const selected = options.find((o) => o.value === value) ?? options[0];
+
+  useEffect(() => {
+    if (!open) return;
+    function handlePointerDown(ev: PointerEvent) {
+      const el = rootRef.current;
+      if (el && !el.contains(ev.target as Node)) setOpen(false);
+    }
+    function handleKeyDown(ev: KeyboardEvent) {
+      if (ev.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="relative min-w-[12rem] shrink-0">
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        onClick={() => setOpen((previous) => !previous)}
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-[#b8c9e6] bg-[linear-gradient(180deg,#ffffff_0%,#f0f5ff_100%)] px-3.5 py-2 text-left text-sm font-semibold text-[#1a2d4d] shadow-sm outline-none transition hover:border-[#7a9bd4] hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#3e69b0] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f4f7fc]"
+      >
+        <span className="truncate">{selected.label}</span>
+        <svg
+          viewBox="0 0 20 20"
+          fill="none"
+          aria-hidden
+          className={`h-4 w-4 shrink-0 text-[#4a6aa3] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        >
+          <path
+            d="M5 7.5 10 12.5 15 7.5"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      {open ? (
+        <ul
+          className="absolute left-0 right-0 z-30 mt-1 max-h-64 overflow-auto rounded-xl border border-[#c5d2eb] bg-white py-1 shadow-[0_12px_28px_rgba(15,40,84,0.12)] ring-1 ring-[#0a1f4a]/5"
+          role="listbox"
+        >
+          {options.map((opt) => {
+            const isActive = opt.value === value;
+            return (
+              <li key={opt.value} role="presentation">
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={isActive}
+                  className={`flex w-full items-center px-3 py-2 text-left text-sm transition-colors ${
+                    isActive
+                      ? 'bg-[linear-gradient(90deg,#eef4ff_0%,#f7faff_100%)] font-semibold text-[#10284f]'
+                      : 'text-[#334866] hover:bg-[#f4f8ff]'
+                  }`}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                  }}
+                >
+                  {opt.label}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
 
 type ProductFormState = {
   name: string;
@@ -77,6 +175,25 @@ export default function AdminProductsPage() {
     name: '',
     description: '',
   });
+
+  const statusFilterOptions = useMemo(
+    () => [
+      { value: 'all', label: translate(adminProductsMessages, locale, 'filters.statusAll') },
+      { value: 'published', label: translate(adminProductsMessages, locale, 'status.published') },
+      { value: 'draft', label: translate(adminProductsMessages, locale, 'status.draft') },
+      { value: 'coming_soon', label: translate(adminProductsMessages, locale, 'status.coming_soon') },
+      { value: 'archived', label: translate(adminProductsMessages, locale, 'status.archived') },
+    ],
+    [locale],
+  );
+
+  const categoryFilterOptions = useMemo(
+    () => [
+      { value: 'all', label: translate(adminProductsMessages, locale, 'filters.categoryAll') },
+      ...categories.map((c) => ({ value: c.code, label: c.name })),
+    ],
+    [locale, categories],
+  );
 
   const queryParams = useMemo(
     (): {
@@ -244,16 +361,10 @@ export default function AdminProductsPage() {
 
   return (
     <section className="space-y-4">
-      <header className="rounded-2xl border border-[#dbe4f4] bg-white px-5 py-4 shadow-sm">
-        <AdminBreadcrumbs
-          items={[
-            { label: t('crumbs.dashboard'), href: '/admin' },
-            { label: t('crumbs.products') },
-          ]}
-        />
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6f82a3]">{t('hero.eyebrow')}</p>
-        <h1 className={`mt-2 ${ADMIN_PAGE_TITLE_CLASS}`}>{t('hero.title')}</h1>
-        <p className="mt-1 text-sm text-[#607594]">{t('hero.subtitle')}</p>
+      <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
+        <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>{t('hero.eyebrow')}</p>
+        <h1 className={`mt-2 ${ADMIN_PAGE_TITLE_CLASS} text-white`}>{t('hero.title')}</h1>
+        <p className={ADMIN_PAGE_HERO_SUBTITLE_CLASS}>{t('hero.subtitle')}</p>
       </header>
 
       <div className="grid gap-3 md:grid-cols-3">
@@ -305,29 +416,18 @@ export default function AdminProductsPage() {
             placeholder={t('search.placeholder')}
             className="min-w-[240px] flex-1 rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
           />
-          <select
+          <AdminToolbarSelect
+            ariaLabel={t('filters.ariaStatus')}
             value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as ProductStatus | 'all')}
-            className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a]"
-          >
-            <option value="all">{t('filters.statusAll')}</option>
-            <option value="published">{t('status.published')}</option>
-            <option value="draft">{t('status.draft')}</option>
-            <option value="coming_soon">{t('status.coming_soon')}</option>
-            <option value="archived">{t('status.archived')}</option>
-          </select>
-          <select
+            onChange={(next) => setStatusFilter(next as ProductStatus | 'all')}
+            options={statusFilterOptions}
+          />
+          <AdminToolbarSelect
+            ariaLabel={t('filters.ariaCategory')}
             value={categoryFilter}
-            onChange={(event) => setCategoryFilter(event.target.value)}
-            className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a]"
-          >
-            <option value="all">{t('filters.categoryAll')}</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.code}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+            onChange={setCategoryFilter}
+            options={categoryFilterOptions}
+          />
         </div>
 
         <div className="overflow-x-auto px-4 py-3">
@@ -395,7 +495,7 @@ export default function AdminProductsPage() {
 
       {showProductModal ? (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#08162c]/70 px-4">
-          <article className="w-full max-w-xl rounded-2xl border border-[#d5deef] bg-white p-5 shadow-2xl">
+          <article className="w-full max-w-xl rounded-2xl border border-[#d5deef] bg-white p-5 shadow-2xl scheme-light">
             <h3 className="text-lg font-semibold text-[#243555]">
               {editingProduct ? t('modal.editTitle') : t('modal.createTitle')}
             </h3>
@@ -405,7 +505,7 @@ export default function AdminProductsPage() {
                 <input
                   value={productForm.name}
                   onChange={(event) => setProductForm((previous) => ({ ...previous, name: event.target.value }))}
-                  className="w-full rounded-xl border border-[#d4dced] px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
                 />
               </label>
               <label className="space-y-1">
@@ -413,7 +513,7 @@ export default function AdminProductsPage() {
                 <input
                   value={productForm.slug}
                   onChange={(event) => setProductForm((previous) => ({ ...previous, slug: event.target.value }))}
-                  className="w-full rounded-xl border border-[#d4dced] px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
                 />
               </label>
               <label className="space-y-1">
@@ -421,7 +521,7 @@ export default function AdminProductsPage() {
                 <select
                   value={productForm.category_code}
                   onChange={(event) => setProductForm((previous) => ({ ...previous, category_code: event.target.value }))}
-                  className="w-full rounded-xl border border-[#d4dced] px-3 py-2 text-sm text-[#25375a]"
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a]"
                 >
                   <option value="">{t('form.selectCategory')}</option>
                   {categories.map((category) => (
@@ -438,7 +538,7 @@ export default function AdminProductsPage() {
                   onChange={(event) =>
                     setProductForm((previous) => ({ ...previous, product_kind: event.target.value as ProductKind }))
                   }
-                  className="w-full rounded-xl border border-[#d4dced] px-3 py-2 text-sm text-[#25375a]"
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a]"
                 >
                   <option value="checklist">{t('kind.checklist')}</option>
                   <option value="documentation">{t('kind.documentation')}</option>
@@ -452,7 +552,7 @@ export default function AdminProductsPage() {
                   onChange={(event) =>
                     setProductForm((previous) => ({ ...previous, status: event.target.value as ProductStatus }))
                   }
-                  className="w-full rounded-xl border border-[#d4dced] px-3 py-2 text-sm text-[#25375a]"
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a]"
                 >
                   <option value="draft">{t('status.draft')}</option>
                   <option value="published">{t('status.published')}</option>
@@ -468,7 +568,7 @@ export default function AdminProductsPage() {
                     setProductForm((previous) => ({ ...previous, short_description: event.target.value }))
                   }
                   rows={3}
-                  className="w-full rounded-xl border border-[#d4dced] px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
                 />
               </label>
             </div>
@@ -495,7 +595,7 @@ export default function AdminProductsPage() {
 
       {showCategoryModal ? (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#08162c]/70 px-4">
-          <article className="w-full max-w-lg rounded-2xl border border-[#d5deef] bg-white p-5 shadow-2xl">
+          <article className="w-full max-w-lg rounded-2xl border border-[#d5deef] bg-white p-5 shadow-2xl scheme-light">
             <h3 className="text-lg font-semibold text-[#243555]">{t('modal.categoryTitle')}</h3>
             <div className="mt-4 grid gap-3">
               <label className="space-y-1">
@@ -503,7 +603,7 @@ export default function AdminProductsPage() {
                 <input
                   value={categoryForm.code}
                   onChange={(event) => setCategoryForm((previous) => ({ ...previous, code: event.target.value }))}
-                  className="w-full rounded-xl border border-[#d4dced] px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
                 />
               </label>
               <label className="space-y-1">
@@ -511,7 +611,7 @@ export default function AdminProductsPage() {
                 <input
                   value={categoryForm.name}
                   onChange={(event) => setCategoryForm((previous) => ({ ...previous, name: event.target.value }))}
-                  className="w-full rounded-xl border border-[#d4dced] px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
                 />
               </label>
               <label className="space-y-1">
@@ -522,7 +622,7 @@ export default function AdminProductsPage() {
                     setCategoryForm((previous) => ({ ...previous, description: event.target.value }))
                   }
                   rows={3}
-                  className="w-full rounded-xl border border-[#d4dced] px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#25375a] outline-none focus:border-[#3e69b0]"
                 />
               </label>
             </div>

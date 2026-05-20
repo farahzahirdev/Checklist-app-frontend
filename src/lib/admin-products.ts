@@ -1,4 +1,4 @@
-import { apiGetWithAuth, apiPatch, apiPost } from '@/lib/api';
+import { apiDelete, apiGetWithAuth, apiPatch, apiPost } from '@/lib/api';
 
 export type ProductKind = 'checklist' | 'documentation' | 'module';
 export type ProductStatus = 'draft' | 'published' | 'coming_soon' | 'archived';
@@ -40,6 +40,16 @@ export type AdminProduct = {
   cta_label: string | null;
   stripe_product_id: string | null;
   pricing: ProductPricingInfo | null;
+  checklist?: {
+    checklist_id: string;
+    checklist_title: string | null;
+    checklist_version: string | null;
+  } | null;
+  checklist_type?: {
+    checklist_type_id: string;
+    checklist_type_code: string;
+    checklist_type_name: string;
+  } | null;
   created_at: string;
   updated_at: string;
 };
@@ -92,6 +102,8 @@ export type CreateAdminCategoryPayload = {
   is_active?: boolean;
 };
 
+export type UpdateAdminCategoryPayload = Partial<CreateAdminCategoryPayload>;
+
 function cleanPayload<T extends Record<string, unknown>>(payload: T): T {
   const out = { ...payload };
   for (const [key, value] of Object.entries(out)) {
@@ -125,12 +137,27 @@ export async function createAdminProduct(payload: CreateAdminProductPayload) {
   return apiPost<AdminProduct, CreateAdminProductPayload>('/admin/products', cleanPayload(payload));
 }
 
+export async function getAdminProduct(productId: string) {
+  return apiGetWithAuth<AdminProduct>(`/admin/products/${encodeURIComponent(productId)}`);
+}
+
 export async function updateAdminProduct(productId: string, payload: UpdateAdminProductPayload) {
   return apiPatch<AdminProduct, UpdateAdminProductPayload>(`/admin/products/${encodeURIComponent(productId)}`, cleanPayload(payload));
 }
 
 export async function createAdminProductCategory(payload: CreateAdminCategoryPayload) {
   return apiPost<AdminProductCategory, CreateAdminCategoryPayload>('/admin/products/categories', cleanPayload(payload));
+}
+
+export async function updateAdminProductCategory(categoryId: string, payload: UpdateAdminCategoryPayload) {
+  return apiPatch<AdminProductCategory, UpdateAdminCategoryPayload>(
+    `/admin/products/categories/${encodeURIComponent(categoryId)}`,
+    cleanPayload(payload),
+  );
+}
+
+export async function deleteChecklistProduct(checklistId: string) {
+  await apiDelete<unknown>(`/admin/products/checklist/${encodeURIComponent(checklistId)}`);
 }
 
 export async function syncChecklistProducts() {

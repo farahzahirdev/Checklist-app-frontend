@@ -2,8 +2,6 @@ import type { TranslationMessages } from '@/lib/i18n';
 
 export const adminProductsMessages: TranslationMessages = {
   en: {
-    'crumbs.dashboard': 'Dashboard',
-    'crumbs.products': 'Products',
     'hero.eyebrow': 'Products',
     'hero.title': 'Product Catalog',
     'hero.subtitle': 'Manage product catalog items shown on customer and public pages.',
@@ -22,6 +20,8 @@ export const adminProductsMessages: TranslationMessages = {
     'search.placeholder': 'Search products...',
     'filters.statusAll': 'All statuses',
     'filters.categoryAll': 'All categories',
+    'filters.ariaStatus': 'Filter catalog by status',
+    'filters.ariaCategory': 'Filter catalog by category',
     'th.product': 'Product',
     'th.category': 'Category',
     'th.kind': 'Kind',
@@ -63,8 +63,6 @@ export const adminProductsMessages: TranslationMessages = {
     'toast.productSaveFailed': 'Failed to save product.',
   },
   cs: {
-    'crumbs.dashboard': 'Dashboard',
-    'crumbs.products': 'Produkty',
     'hero.eyebrow': 'Produkty',
     'hero.title': 'Katalog produktů',
     'hero.subtitle': 'Spravujte katalog produktů zobrazovaný zákazníkům a na veřejných stránkách.',
@@ -83,6 +81,8 @@ export const adminProductsMessages: TranslationMessages = {
     'search.placeholder': 'Hledat produkty...',
     'filters.statusAll': 'Všechny stavy',
     'filters.categoryAll': 'Všechny kategorie',
+    'filters.ariaStatus': 'Filtrovat katalog podle stavu',
+    'filters.ariaCategory': 'Filtrovat katalog podle kategorie',
     'th.product': 'Produkt',
     'th.category': 'Kategorie',
     'th.kind': 'Typ',

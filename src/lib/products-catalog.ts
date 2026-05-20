@@ -8,6 +8,7 @@
 
 import type { AuditIconKind } from '@/components/products/audit-icon';
 import type { CustomerChecklist } from '@/lib/checklist-api';
+import type { PublicProductDetail } from '@/lib/public-products';
 
 export type ProductKind = 'audit' | 'documentation' | 'builder';
 export type ProductStatus = 'available' | 'coming_soon';
@@ -159,6 +160,14 @@ export function buildBuilderProductHref(product: BuilderProduct): string {
 }
 
 export type ResolvedProduct =
-  | { kind: 'audit'; status: 'available'; checklist: CustomerChecklist }
+  | {
+      kind: 'audit';
+      status: 'available';
+      checklist: CustomerChecklist;
+      /** Set when resolved from `GET /products/{slug}` checklist product */
+      publicProductStatus?: 'published' | 'coming_soon';
+      brochurePdfUrl?: string | null;
+    }
   | { kind: 'documentation'; status: ProductStatus; documentation: DocumentationProduct }
-  | { kind: 'builder'; status: ProductStatus; builder: BuilderProduct };
+  | { kind: 'builder'; status: ProductStatus; builder: BuilderProduct }
+  | { kind: 'api'; detail: PublicProductDetail };

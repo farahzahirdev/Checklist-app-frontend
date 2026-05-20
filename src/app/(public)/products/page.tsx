@@ -11,6 +11,15 @@ import { useCMSPage } from '@/hooks/useCMSPage';
 import { PageRenderer } from '@/components/cms/PageRenderer';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
 import {
+  flattenPublicProducts,
+  isPublicCatalogProductListable,
+  listPublicProducts,
+  publicChecklistProductToCustomerChecklist,
+  type PublicProduct,
+  type PublicProductStatus,
+  type PublicProductsResponse,
+} from '@/lib/public-products';
+import {
   AuditIcon,
   AUDIT_ICON_THEMES,
   pickAuditIconKind,
@@ -26,6 +35,15 @@ import {
 } from '@/lib/products-catalog';
 
 const DOCUMENT_CATEGORIES = ['All', 'Access & Identity', 'Devices & Endpoints', 'Data Protection', 'Operations', 'Governance', 'Response'] as const;
+
+const DOC_FILTER_NAMES = new Set<string>([
+  'Access & Identity',
+  'Devices & Endpoints',
+  'Data Protection',
+  'Operations',
+  'Governance',
+  'Response',
+]);
 
 export type DocumentationCategory = (typeof DOCUMENT_CATEGORIES)[number];
 
@@ -59,6 +77,38 @@ function formatChecklistPrice(
   }
 }
 
+function formatCatalogPricing(
+  pricing: PublicProduct['pricing'] | undefined,
+  locale: string,
+  freeLabel: string,
+): string {
+  if (!pricing || !pricing.amount_cents) return freeLabel;
+  return formatChecklistPrice(
+    {
+      price_id: pricing.price_id ?? '',
+      amount_cents: pricing.amount_cents,
+      currency: (pricing.currency || 'USD').toUpperCase(),
+    },
+    locale,
+    freeLabel,
+  );
+}
+
+function mapApiCategoryNameToDocFilter(name: string | null | undefined): CatalogDocumentationCategory {
+  const n = (name ?? '').trim();
+  if (DOC_FILTER_NAMES.has(n)) return n as CatalogDocumentationCategory;
+  return 'Operations';
+}
+
+function buildDocBulletLines(product: PublicProduct): string[] {
+  const text = (product.short_description ?? product.description ?? '').trim();
+  if (!text) return [product.name];
+  const lines = text.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+  if (lines.length >= 2) return lines.slice(0, 4);
+  const sentences = text.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+  return (sentences.length ? sentences : [text]).slice(0, 4);
+}
+
 function ProductsPageContent() {
   const { locale } = useLocale();
   const t = (key: string, values?: Record<string, string>) => translate(productsMessages, locale, key, values);
@@ -66,6 +116,29 @@ function ProductsPageContent() {
   const [publishedChecklists, setPublishedChecklists] = useState<CustomerChecklist[]>([]);
   const [checklistsLoading, setChecklistsLoading] = useState(true);
   const [checklistsError, setChecklistsError] = useState('');
+  const [publicCatalog, setPublicCatalog] = useState<PublicProductsResponse | null>(null);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setCatalogLoading(true);
+    listPublicProducts()
+      .then((data) => {
+        if (cancelled) return;
+        setPublicCatalog(data);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPublicCatalog(null);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setCatalogLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,7 +162,46 @@ function ProductsPageContent() {
     };
   }, [locale]);
 
-  const sections = useMemo(() => {
+  const listableCatalogProducts = useMemo(() => {
+    if (!publicCatalog) return [];
+    return flattenPublicProducts(publicCatalog).filter(isPublicCatalogProductListable);
+  }, [publicCatalog]);
+
+  const catalogSucceeded = !catalogLoading && publicCatalog !== null;
+
+  const apiDocumentationProducts = useMemo(
+    () => listableCatalogProducts.filter((p) => p.product_kind === 'documentation'),
+    [listableCatalogProducts],
+  );
+
+  const apiAuditRows = useMemo(() => {
+    const rows: { checklist: CustomerChecklist; slug: string; catalogStatus: PublicProductStatus }[] = [];
+    for (const p of listableCatalogProducts) {
+      if (p.product_kind !== 'checklist') continue;
+      const ch = publicChecklistProductToCustomerChecklist(p);
+      if (ch) rows.push({ checklist: ch, slug: p.slug, catalogStatus: p.status });
+    }
+    return rows;
+  }, [listableCatalogProducts]);
+
+  const apiModuleProducts = useMemo(
+    () => listableCatalogProducts.filter((p) => p.product_kind === 'module'),
+    [listableCatalogProducts],
+  );
+
+  const auditGridItems = useMemo(() => {
+    if (catalogSucceeded) return apiAuditRows;
+    return publishedChecklists.map((checklist) => ({
+      checklist,
+      slug: null as string | null,
+      catalogStatus: 'published' as PublicProductStatus,
+    }));
+  }, [catalogSucceeded, apiAuditRows, publishedChecklists]);
+
+  const auditsLoading = catalogLoading || (!catalogSucceeded && checklistsLoading);
+  const auditsError = !catalogSucceeded ? checklistsError : '';
+
+  const staticDocSections = useMemo(() => {
     return DOCUMENTATION_PRODUCTS.map((doc) => ({
       id: doc.id,
       slug: doc.slug,
@@ -100,13 +212,31 @@ function ProductsPageContent() {
       category: doc.category as CatalogDocumentationCategory,
       points: doc.points.map((p) => t(`docPoint.${p}`)),
       badge: doc.badge ? t('common.popular') : undefined,
+      statusLabel: 'comingSoon' as const,
     }));
-  }, [locale]);
+  }, [locale, t]);
+
+  const apiDocSections = useMemo(() => {
+    return apiDocumentationProducts.map((p, idx) => ({
+      id: p.id,
+      slug: p.slug,
+      name: p.name,
+      subtitle: (p.short_description ?? '').trim() || t('browse.apiSubtitleFallback'),
+      price: formatCatalogPricing(p.pricing, locale, t('audits.price.free')),
+      iconKind: pickAuditIconKind(p.checklist_type?.checklist_type_code, idx) as AuditIconKind,
+      category: mapApiCategoryNameToDocFilter(p.category?.name),
+      points: buildDocBulletLines(p),
+      badge: p.is_featured ? t('common.popular') : undefined,
+      statusLabel: p.status === 'published' ? ('available' as const) : ('comingSoon' as const),
+    }));
+  }, [apiDocumentationProducts, locale, t]);
+
+  const displayDocSections = apiDocSections.length > 0 ? apiDocSections : staticDocSections;
 
   const filteredSections = useMemo(() => {
-    if (activeCategory === 'All') return sections;
-    return sections.filter((doc) => doc.category === (activeCategory as CatalogDocumentationCategory));
-  }, [activeCategory, sections]);
+    if (activeCategory === 'All') return displayDocSections;
+    return displayDocSections.filter((doc) => doc.category === (activeCategory as CatalogDocumentationCategory));
+  }, [activeCategory, displayDocSections]);
 
   const categoryLabel = (category: DocumentationCategory) => {
     if (category === 'All') return t('filters.all');
@@ -317,8 +447,14 @@ function ProductsPageContent() {
                     >
                       <AuditIcon kind={doc.iconKind} className="h-6 w-6" />
                     </div>
-                    <span className="inline-flex rounded-full border border-amber-300/60 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-700">
-                      {t('detail.status.comingSoon')}
+                    <span
+                      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${
+                        doc.statusLabel === 'available'
+                          ? 'border-[#1f8a4b]/70 bg-emerald-50 text-emerald-800'
+                          : 'border-amber-300/60 bg-amber-50 text-amber-700'
+                      }`}
+                    >
+                      {doc.statusLabel === 'available' ? t('detail.status.available') : t('detail.status.comingSoon')}
                     </span>
                   </div>
                   <h2 className="mt-3 text-base font-semibold text-[#1f2741]">{doc.name}</h2>
@@ -344,7 +480,7 @@ function ProductsPageContent() {
             <p className="mt-2 max-w-3xl text-base text-[#5e7293]">{t('audits.subtitle')}</p>
           </div>
 
-          {checklistsLoading ? (
+          {auditsLoading ? (
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {[0, 1, 2].map((idx) => (
                 <div
@@ -353,17 +489,18 @@ function ProductsPageContent() {
                 />
               ))}
             </div>
-          ) : checklistsError ? (
+          ) : auditsError ? (
             <p className="rounded-2xl border border-[#f0c7cf] bg-[#fff2f4] px-4 py-3 text-sm text-[#b63d51]">
-              {checklistsError}
+              {auditsError}
             </p>
-          ) : publishedChecklists.length === 0 ? (
+          ) : auditGridItems.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-[#d7deeb] bg-white px-4 py-10 text-center text-sm text-[#5e7293]">
               {t('audits.empty')}
             </p>
           ) : (
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {publishedChecklists.map((checklist, index) => {
+              {auditGridItems.map((item, index) => {
+                const { checklist, slug, catalogStatus } = item;
                 const priceLabel = formatChecklistPrice(
                   checklist.pricing,
                   locale,
@@ -371,10 +508,12 @@ function ProductsPageContent() {
                 );
                 const iconKind = pickAuditIconKind(checklist.checklist_type?.code, index);
                 const iconTheme = AUDIT_ICON_THEMES[iconKind];
+                const href = (slug ? `/products/${encodeURIComponent(slug)}` : buildAuditProductHref(checklist.id)) as Route;
+                const ctaLabel = catalogStatus === 'coming_soon' ? t('cta.viewDetails') : t('detail.buy');
                 return (
                   <Link
-                    key={checklist.id}
-                    href={buildAuditProductHref(checklist.id) as Route}
+                    key={slug ?? checklist.id}
+                    href={href}
                     className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#d7deeb] bg-white shadow-sm transition-shadow duration-300 ease-out hover:border-[#1f7bff] motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md"
                   >
                     <div className="flex gap-4 p-4">
@@ -396,7 +535,7 @@ function ProductsPageContent() {
                     <div className="mt-auto flex items-center justify-between gap-3 px-4 pb-4 pt-2">
                       <p className="text-2xl font-semibold text-[#1f355d]">{priceLabel}</p>
                       <span className="text-sm font-semibold text-[#1f7bff] group-hover:underline">
-                        {t('detail.buy')} →
+                        {ctaLabel} →
                       </span>
                     </div>
                   </Link>
@@ -405,7 +544,7 @@ function ProductsPageContent() {
             </div>
           )}
 
-          {!checklistsLoading && !checklistsError && publishedChecklists.length > 0 ? (
+          {!auditsLoading && !auditsError && auditGridItems.length > 0 ? (
             <p className="flex items-start gap-2 rounded-xl border border-[#dde6f5] bg-[#f4f7fc] px-4 py-3 text-sm text-[#4a5b7c]">
               <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#dceaff] text-[#1f5fb8]" aria-hidden="true">
                 <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none">
@@ -449,6 +588,49 @@ function ProductsPageContent() {
                       </div>
                       <p className="mt-1.5 line-clamp-3 text-sm text-[#5e7293]">
                         {t(`builders.${builder.id}.subtitle`)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-auto flex items-center justify-end gap-3 px-4 pb-4 pt-2">
+                    <span className="text-sm font-semibold text-[#1f7bff] group-hover:underline">
+                      {t('cta.viewDetails')} →
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+            {apiModuleProducts.map((mod, modIdx) => {
+              const iconKind = pickAuditIconKind(mod.checklist_type?.checklist_type_code, modIdx) as AuditIconKind;
+              const theme = AUDIT_ICON_THEMES[iconKind];
+              const statusLabel = mod.status === 'published' ? 'available' : 'comingSoon';
+              return (
+                <Link
+                  key={mod.id}
+                  href={`/products/${encodeURIComponent(mod.slug)}` as Route}
+                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#d7deeb] bg-white shadow-sm transition-shadow duration-300 ease-out hover:border-[#1f7bff] motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md"
+                >
+                  <div className="flex gap-4 p-4">
+                    <div
+                      className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-xl ${theme.bg} ${theme.fg}`}
+                      aria-hidden="true"
+                    >
+                      <AuditIcon kind={iconKind} className="h-12 w-12" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="text-base font-semibold text-[#1f2741]">{mod.name}</h4>
+                        <span
+                          className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${
+                            statusLabel === 'available'
+                              ? 'border-[#1f8a4b]/70 bg-emerald-50 text-emerald-800'
+                              : 'border-amber-300/60 bg-amber-50 text-amber-700'
+                          }`}
+                        >
+                          {statusLabel === 'available' ? t('detail.status.available') : t('detail.status.comingSoon')}
+                        </span>
+                      </div>
+                      <p className="mt-1.5 line-clamp-3 text-sm text-[#5e7293]">
+                        {(mod.short_description ?? '').trim() || t('browse.apiSubtitleFallback')}
                       </p>
                     </div>
                   </div>

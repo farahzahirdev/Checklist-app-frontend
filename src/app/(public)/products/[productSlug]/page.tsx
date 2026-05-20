@@ -9,6 +9,8 @@ import { AuditIcon, AUDIT_ICON_THEMES, pickAuditIconKind } from '@/components/pr
 import { translate, useLocale } from '@/lib/i18n';
 import { productsMessages } from '@/locales/products';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
+import { getApiBaseUrl } from '@/lib/api';
+import { getPublicProductBySlug, publicChecklistProductToCustomerChecklist, type PublicProductDetail } from '@/lib/public-products';
 import { getCurrentUser, getRoleKey } from '@/lib/auth';
 import { buildPaymentHref, setCheckoutIntent } from '@/lib/checkout-intent';
 import {
@@ -39,6 +41,34 @@ function formatChecklistPrice(
   }
 }
 
+function pricingForDisplay(detail: PublicProductDetail): CustomerChecklist['pricing'] | null {
+  if (!detail.pricing || !detail.pricing.amount_cents) return null;
+  return {
+    price_id: detail.pricing.price_id ?? '',
+    amount_cents: detail.pricing.amount_cents,
+    currency: (detail.pricing.currency || 'USD').toUpperCase(),
+  };
+}
+
+function includeLinesFromApi(description: string | null | undefined, short: string | null | undefined): string[] {
+  const text = (description ?? short ?? '').trim();
+  if (!text) return [];
+  const lines = text.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+  if (lines.length >= 2) return lines.slice(0, 6);
+  const sentences = text.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+  return (sentences.length ? sentences : [text]).slice(0, 6);
+}
+
+/** Resolve relative brochure paths against the public API origin. */
+function absolutePublicAssetUrl(url: string | null | undefined): string | null {
+  const u = (url ?? '').trim();
+  if (!u) return null;
+  if (/^https?:\/\//i.test(u)) return u;
+  const base = getApiBaseUrl().replace(/\/$/, '');
+  const path = u.startsWith('/') ? u : `/${u}`;
+  return `${base}${path}`;
+}
+
 type AuthState = { kind: 'unknown' } | { kind: 'guest' } | { kind: 'customer' } | { kind: 'staff' };
 
 export default function ProductDetailPage() {
@@ -61,6 +91,35 @@ export default function ProductDetailPage() {
     setResolved(null);
 
     async function resolveProduct() {
+      try {
+        const apiDetail = await getPublicProductBySlug(slug);
+        if (!cancelled && apiDetail) {
+          if (apiDetail.product_kind === 'checklist') {
+            const ch = publicChecklistProductToCustomerChecklist(apiDetail);
+            if (ch && (apiDetail.status === 'published' || apiDetail.status === 'coming_soon')) {
+              setResolved({
+                kind: 'audit',
+                status: 'available',
+                checklist: ch,
+                publicProductStatus: apiDetail.status === 'coming_soon' ? 'coming_soon' : 'published',
+                brochurePdfUrl: apiDetail.brochure_pdf_url,
+              });
+              setLoading(false);
+              return;
+            }
+          } else if (apiDetail.product_kind === 'documentation' || apiDetail.product_kind === 'module') {
+            if (apiDetail.status === 'published' || apiDetail.status === 'coming_soon') {
+              setResolved({ kind: 'api', detail: apiDetail });
+              setLoading(false);
+              return;
+            }
+          }
+        }
+      } catch {
+        // fall through to static resolution
+      }
+      if (cancelled) return;
+
       const builder = findBuilderProductBySlug(slug);
       if (builder) {
         if (!cancelled) {
@@ -89,7 +148,12 @@ export default function ProductDetailPage() {
           if (cancelled) return;
           const match = list.find((item) => item.id === slug && item.status === 'published');
           if (match) {
-            setResolved({ kind: 'audit', status: 'available', checklist: match });
+            setResolved({
+              kind: 'audit',
+              status: 'available',
+              checklist: match,
+              publicProductStatus: 'published',
+            });
             setLoading(false);
             return;
           }
@@ -128,6 +192,17 @@ export default function ProductDetailPage() {
   }, []);
 
   const audit = resolved?.kind === 'audit' ? resolved.checklist : null;
+  const canPurchaseAudit = useMemo(() => {
+    if (!resolved || resolved.kind !== 'audit') return false;
+    return resolved.publicProductStatus !== 'coming_soon';
+  }, [resolved]);
+
+  const brochureLinkHref = useMemo(() => {
+    if (resolved?.kind === 'audit') return absolutePublicAssetUrl(resolved.brochurePdfUrl);
+    if (resolved?.kind === 'api') return absolutePublicAssetUrl(resolved.detail.brochure_pdf_url);
+    return null;
+  }, [resolved]);
+
   const auditIconKind = useMemo(
     () => (audit ? pickAuditIconKind(audit.checklist_type?.code, 0) : 'shield'),
     [audit],
@@ -141,8 +216,26 @@ export default function ProductDetailPage() {
   const builderProduct: BuilderProduct | null = resolved?.kind === 'builder' ? resolved.builder : null;
   const builderIconTheme = builderProduct ? AUDIT_ICON_THEMES[builderProduct.iconKind] : null;
 
+  const showComingSoonNotice = useMemo(() => {
+    if (docProduct || builderProduct) return true;
+    if (resolved?.kind === 'api' && resolved.detail.status === 'coming_soon') return true;
+    if (resolved?.kind === 'audit' && resolved.publicProductStatus === 'coming_soon') return true;
+    return false;
+  }, [docProduct, builderProduct, resolved]);
+
+  const apiDetail = resolved?.kind === 'api' ? resolved.detail : null;
+  const apiIconKind = useMemo(
+    () => (apiDetail ? pickAuditIconKind(apiDetail.checklist_type?.checklist_type_code, 0) : 'clipboard'),
+    [apiDetail],
+  );
+  const apiIconTheme = AUDIT_ICON_THEMES[apiIconKind];
+  const apiIncludeLines = useMemo(
+    () => (apiDetail ? includeLinesFromApi(apiDetail.description, apiDetail.short_description) : []),
+    [apiDetail],
+  );
+
   function onBuyAudit() {
-    if (!audit) return;
+    if (!audit || !canPurchaseAudit) return;
     setCheckoutIntent(audit.id);
     if (authState.kind === 'customer') {
       router.push(buildPaymentHref(audit.id) as Route);
@@ -194,9 +287,15 @@ export default function ProductDetailPage() {
                   <span className="inline-flex rounded-full border border-[#3f8bff] bg-[#143264]/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#cfe1ff]">
                     {t('detail.kind.audit')}
                   </span>
-                  <span className="inline-flex rounded-full border border-[#1f8a4b]/70 bg-[#0e3b22]/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9beaba]">
-                    {t('detail.status.available')}
-                  </span>
+                  {resolved?.kind === 'audit' && resolved.publicProductStatus === 'coming_soon' ? (
+                    <span className="inline-flex rounded-full border border-amber-300/40 bg-amber-500/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100">
+                      {t('detail.status.comingSoon')}
+                    </span>
+                  ) : (
+                    <span className="inline-flex rounded-full border border-[#1f8a4b]/70 bg-[#0e3b22]/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9beaba]">
+                      {t('detail.status.available')}
+                    </span>
+                  )}
                   {audit.version ? (
                     <span className="text-[11px] font-medium text-[#a9c0e6]">
                       {t('audits.version', { version: String(audit.version) })}
@@ -260,6 +359,39 @@ export default function ProductDetailPage() {
               </div>
             </header>
           ) : null}
+
+          {!loading && apiDetail ? (
+            <header className="flex flex-col gap-5 md:flex-row md:items-start">
+              <div
+                className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl ${apiIconTheme.bg} ${apiIconTheme.fg}`}
+                aria-hidden="true"
+              >
+                <AuditIcon kind={apiIconKind} className="h-12 w-12" />
+              </div>
+              <div className="min-w-0 flex-1 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex rounded-full border border-[#3f8bff] bg-[#143264]/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#cfe1ff]">
+                    {apiDetail.product_kind === 'documentation'
+                      ? t('detail.kind.documentation')
+                      : t('detail.kind.builder')}
+                  </span>
+                  <span
+                    className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
+                      apiDetail.status === 'published'
+                        ? 'border-[#1f8a4b]/70 bg-[#0e3b22]/70 text-[#9beaba]'
+                        : 'border-amber-300/40 bg-amber-500/15 text-amber-100'
+                    }`}
+                  >
+                    {apiDetail.status === 'published' ? t('detail.status.available') : t('detail.status.comingSoon')}
+                  </span>
+                </div>
+                <h1 className="text-3xl font-semibold text-white sm:text-4xl">{apiDetail.name}</h1>
+                <p className="max-w-2xl text-sm text-[#c7d8f8]">
+                  {(apiDetail.short_description ?? '').trim() || t('browse.apiSubtitleFallback')}
+                </p>
+              </div>
+            </header>
+          ) : null}
         </div>
       </section>
 
@@ -287,6 +419,11 @@ export default function ProductDetailPage() {
               {builderProduct ? (
                 <p className="mt-2 text-sm leading-relaxed text-[#5e7293]">
                   {t(`builders.${builderProduct.id}.description`)}
+                </p>
+              ) : null}
+              {apiDetail ? (
+                <p className="mt-2 text-sm leading-relaxed text-[#5e7293]">
+                  {(apiDetail.description ?? apiDetail.short_description ?? '').trim() || t('browse.apiSubtitleFallback')}
                 </p>
               ) : null}
             </div>
@@ -326,6 +463,24 @@ export default function ProductDetailPage() {
                 </ul>
               </div>
             ) : null}
+
+            {apiDetail && apiIncludeLines.length ? (
+              <div>
+                <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.includesTitle')}</h3>
+                <ul className="mt-3 grid gap-2 text-sm text-[#3f4f6e] md:grid-cols-2">
+                  {apiIncludeLines.map((line, idx) => (
+                    <li key={`api-line-${idx}`} className="flex items-start gap-2">
+                      <span className="mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#ddf5e8] text-[#2f9c65]" aria-hidden="true">
+                        <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none">
+                          <path d="m4.2 8.1 2.2 2.2 5.2-5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </article>
 
           <aside className="space-y-3">
@@ -344,15 +499,31 @@ export default function ProductDetailPage() {
               {builderProduct ? (
                 <p className="mt-2 text-2xl font-semibold text-[#5e7293]">—</p>
               ) : null}
+              {apiDetail ? (
+                <p className="mt-2 text-3xl font-semibold text-[#1f355d]">
+                  {formatChecklistPrice(pricingForDisplay(apiDetail), locale, t('audits.price.free'))}
+                </p>
+              ) : null}
 
               {audit ? (
-                <button
-                  type="button"
-                  onClick={onBuyAudit}
-                  className="mt-4 flex w-full items-center justify-center rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2e87ff]"
-                >
-                  {t('detail.buy')}
-                </button>
+                canPurchaseAudit ? (
+                  <button
+                    type="button"
+                    onClick={onBuyAudit}
+                    className="mt-4 flex w-full items-center justify-center rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2e87ff]"
+                  >
+                    {t('detail.buy')}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    className="mt-4 flex w-full cursor-not-allowed items-center justify-center rounded-lg border border-[#d7deeb] bg-[#f3f5fb] px-3 py-2 text-sm font-semibold text-[#9aa6bd]"
+                  >
+                    {t('detail.buy')}
+                  </button>
+                )
               ) : null}
 
               {!audit ? (
@@ -366,17 +537,28 @@ export default function ProductDetailPage() {
                 </button>
               ) : null}
 
-              <button
-                type="button"
-                disabled
-                aria-disabled="true"
-                title={t('detail.brochureUnavailable')}
-                className="mt-2 flex w-full cursor-not-allowed items-center justify-center rounded-lg border border-[#d7deeb] bg-white px-3 py-2 text-sm font-semibold text-[#9aa6bd]"
-              >
-                {t('detail.brochure')}
-              </button>
+              {brochureLinkHref ? (
+                <a
+                  href={brochureLinkHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 flex w-full items-center justify-center rounded-lg border border-[#1f7bff] bg-white px-3 py-2 text-sm font-semibold text-[#1f7bff] transition-colors hover:bg-[#f3f7ff]"
+                >
+                  {t('detail.brochure')}
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  aria-disabled="true"
+                  title={t('detail.brochureUnavailable')}
+                  className="mt-2 flex w-full cursor-not-allowed items-center justify-center rounded-lg border border-[#d7deeb] bg-white px-3 py-2 text-sm font-semibold text-[#9aa6bd]"
+                >
+                  {t('detail.brochure')}
+                </button>
+              )}
 
-              {!audit ? (
+              {!audit || !canPurchaseAudit ? (
                 <Link
                   href="/contact"
                   className="mt-2 flex w-full items-center justify-center rounded-lg border border-[#d7deeb] bg-white px-3 py-2 text-sm font-semibold text-[#1f355d] transition-colors hover:bg-[#f3f7ff]"
@@ -386,7 +568,7 @@ export default function ProductDetailPage() {
               ) : null}
             </div>
 
-            {!audit ? (
+            {showComingSoonNotice ? (
               <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
                 {t('detail.comingSoonNotice')}
               </p>

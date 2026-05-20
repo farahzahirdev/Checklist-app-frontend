@@ -140,7 +140,7 @@ export function SiteHeader() {
             {t('auth.login')}
           </Link>
           <Link
-            href="/register"
+            href="/products"
             className="rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-4 py-2 text-sm font-medium text-[#f5f8ff] hover:bg-[#2e87ff]"
           >
             {t('auth.getAccess')}
@@ -239,7 +239,7 @@ export function SiteHeader() {
                 {t('auth.login')}
               </Link>
               <Link
-                href="/register"
+                href="/products"
                 className="flex-1 rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-4 py-2 text-center text-[#f5f8ff] hover:bg-[#2e87ff]"
                 onClick={() => setMobileOpen(false)}
               >

@@ -3,6 +3,7 @@ import type { TranslationMessages } from '@/lib/i18n';
 export const adminMessages: TranslationMessages = {
   en: {
     'nav.dashboard': 'Dashboard',
+    'nav.products': 'Products',
     'nav.assessments': 'Assessments',
     'nav.reports': 'Reports',
     'nav.checklists': 'Checklist Content',
@@ -21,6 +22,7 @@ export const adminMessages: TranslationMessages = {
   },
   cs: {
     'nav.dashboard': 'Přehled',
+    'nav.products': 'Produkty',
     'nav.assessments': 'Hodnocení',
     'nav.reports': 'Zprávy',
     'nav.checklists': 'Obsah checklistů',
