@@ -62,6 +62,29 @@ function includeLinesFromApi(description: string | null | undefined, short: stri
   return (sentences.length ? sentences : [text]).slice(0, 6);
 }
 
+function ProductHeroImage({ src, alt }: { src: string; alt: string }) {
+  return (
+    <figure className="w-full shrink-0 lg:max-w-[380px] lg:justify-self-end">
+      <div className="overflow-hidden rounded-2xl border border-[#2a4a7f] bg-[#0a1a38] shadow-[0_12px_32px_rgba(0,0,0,0.35)]">
+        <div className="flex aspect-[16/10] max-h-[280px] items-center justify-center p-3 sm:max-h-[320px] lg:aspect-[4/3] lg:max-h-none lg:min-h-[240px]">
+          <img
+            src={src}
+            alt={alt}
+            className="max-h-full max-w-full object-contain object-center"
+            loading="lazy"
+          />
+        </div>
+      </div>
+    </figure>
+  );
+}
+
+function productDetailHeroGridClass(hasHeroImage: boolean): string {
+  return hasHeroImage
+    ? 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_min(380px,38%)] lg:items-start'
+    : '';
+}
+
 /** Resolve relative brochure paths against the public API origin. */
 function absolutePublicAssetUrl(url: string | null | undefined): string | null {
   const u = (url ?? '').trim();
@@ -295,39 +318,42 @@ export default function ProductDetailPage() {
           ) : null}
 
           {!loading && audit ? (
-            <header className="flex flex-col gap-5 md:flex-row md:items-start">
-              <div
-                className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl ${auditIconTheme.bg} ${auditIconTheme.fg}`}
-                aria-hidden="true"
-              >
-                <AuditIcon kind={auditIconKind} className="h-12 w-12" />
-              </div>
-              <div className="min-w-0 flex-1 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex rounded-full border border-[#3f8bff] bg-[#143264]/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#cfe1ff]">
-                    {t('detail.kind.audit')}
-                  </span>
-                  {resolved?.kind === 'audit' && resolved.publicProductStatus === 'coming_soon' ? (
-                    <span className="inline-flex rounded-full border border-amber-300/40 bg-amber-500/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100">
-                      {t('detail.status.comingSoon')}
+            <div className={productDetailHeroGridClass(Boolean(heroImageHref))}>
+              <header className="flex min-w-0 flex-col gap-5 md:flex-row md:items-start">
+                <div
+                  className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl ${auditIconTheme.bg} ${auditIconTheme.fg}`}
+                  aria-hidden="true"
+                >
+                  <AuditIcon kind={auditIconKind} className="h-12 w-12" />
+                </div>
+                <div className="min-w-0 flex-1 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex rounded-full border border-[#3f8bff] bg-[#143264]/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#cfe1ff]">
+                      {t('detail.kind.audit')}
                     </span>
-                  ) : (
-                    <span className="inline-flex rounded-full border border-[#1f8a4b]/70 bg-[#0e3b22]/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9beaba]">
-                      {t('detail.status.available')}
-                    </span>
-                  )}
-                  {audit.version ? (
-                    <span className="text-[11px] font-medium text-[#a9c0e6]">
-                      {t('audits.version', { version: String(audit.version) })}
-                    </span>
+                    {resolved?.kind === 'audit' && resolved.publicProductStatus === 'coming_soon' ? (
+                      <span className="inline-flex rounded-full border border-amber-300/40 bg-amber-500/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100">
+                        {t('detail.status.comingSoon')}
+                      </span>
+                    ) : (
+                      <span className="inline-flex rounded-full border border-[#1f8a4b]/70 bg-[#0e3b22]/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9beaba]">
+                        {t('detail.status.available')}
+                      </span>
+                    )}
+                    {audit.version ? (
+                      <span className="text-[11px] font-medium text-[#a9c0e6]">
+                        {t('audits.version', { version: String(audit.version) })}
+                      </span>
+                    ) : null}
+                  </div>
+                  <h1 className="text-3xl font-semibold text-white sm:text-4xl">{audit.title}</h1>
+                  {audit.checklist_type?.name ? (
+                    <p className="text-sm text-[#a9c0e6]">{audit.checklist_type.name}</p>
                   ) : null}
                 </div>
-                <h1 className="text-3xl font-semibold text-white sm:text-4xl">{audit.title}</h1>
-                {audit.checklist_type?.name ? (
-                  <p className="text-sm text-[#a9c0e6]">{audit.checklist_type.name}</p>
-                ) : null}
-              </div>
-            </header>
+              </header>
+              {heroImageHref ? <ProductHeroImage src={heroImageHref} alt={audit.title} /> : null}
+            </div>
           ) : null}
 
           {!loading && docProduct ? (
@@ -381,46 +407,38 @@ export default function ProductDetailPage() {
           ) : null}
 
           {!loading && apiDetail ? (
-            <header className="flex flex-col gap-5 md:flex-row md:items-start">
-              <div
-                className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl ${apiIconTheme.bg} ${apiIconTheme.fg}`}
-                aria-hidden="true"
-              >
-                <AuditIcon kind={apiIconKind} className="h-12 w-12" />
-              </div>
-              <div className="min-w-0 flex-1 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex rounded-full border border-[#3f8bff] bg-[#143264]/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#cfe1ff]">
-                    {apiDetail.product_kind === 'documentation'
-                      ? t('detail.kind.documentation')
-                      : t('detail.kind.builder')}
-                  </span>
-                  <span
-                    className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
-                      apiDetail.status === 'published'
-                        ? 'border-[#1f8a4b]/70 bg-[#0e3b22]/70 text-[#9beaba]'
-                        : 'border-amber-300/40 bg-amber-500/15 text-amber-100'
-                    }`}
-                  >
-                    {apiDetail.status === 'published' ? t('detail.status.available') : t('detail.status.comingSoon')}
-                  </span>
+            <div className={productDetailHeroGridClass(Boolean(heroImageHref))}>
+              <header className="flex min-w-0 flex-col gap-5 md:flex-row md:items-start">
+                <div
+                  className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl ${apiIconTheme.bg} ${apiIconTheme.fg}`}
+                  aria-hidden="true"
+                >
+                  <AuditIcon kind={apiIconKind} className="h-12 w-12" />
                 </div>
-                <h1 className="text-3xl font-semibold text-white sm:text-4xl">{apiDetail.name}</h1>
-                <p className="max-w-2xl text-sm text-[#c7d8f8]">
-                  {(apiDetail.short_description ?? '').trim() || t('browse.apiSubtitleFallback')}
-                </p>
-              </div>
-            </header>
-          ) : null}
-
-          {!loading && heroImageHref ? (
-            <div className="overflow-hidden rounded-2xl border border-[#1f3a6d] bg-[#0d2246]/50">
-              <img
-                src={heroImageHref}
-                alt={audit?.title || apiDetail?.name || t('detail.aboutTitle')}
-                className="h-56 w-full object-cover sm:h-72"
-                loading="lazy"
-              />
+                <div className="min-w-0 flex-1 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex rounded-full border border-[#3f8bff] bg-[#143264]/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#cfe1ff]">
+                      {apiDetail.product_kind === 'documentation'
+                        ? t('detail.kind.documentation')
+                        : t('detail.kind.builder')}
+                    </span>
+                    <span
+                      className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
+                        apiDetail.status === 'published'
+                          ? 'border-[#1f8a4b]/70 bg-[#0e3b22]/70 text-[#9beaba]'
+                          : 'border-amber-300/40 bg-amber-500/15 text-amber-100'
+                      }`}
+                    >
+                      {apiDetail.status === 'published' ? t('detail.status.available') : t('detail.status.comingSoon')}
+                    </span>
+                  </div>
+                  <h1 className="text-3xl font-semibold text-white sm:text-4xl">{apiDetail.name}</h1>
+                  <p className="max-w-2xl text-sm text-[#c7d8f8]">
+                    {(apiDetail.short_description ?? '').trim() || t('browse.apiSubtitleFallback')}
+                  </p>
+                </div>
+              </header>
+              {heroImageHref ? <ProductHeroImage src={heroImageHref} alt={apiDetail.name} /> : null}
             </div>
           ) : null}
         </div>
