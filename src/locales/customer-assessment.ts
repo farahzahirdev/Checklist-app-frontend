@@ -14,6 +14,10 @@ export const customerAssessmentMessages: TranslationMessages = {
     'actions.submitting': 'Submitting…',
     'toasts.submitted': 'Assessment submitted.',
     'messages.submittedWithCompletion': 'Assessment submitted. Completion: {percent}%',
+    'evidence.uploadTitle': 'Upload evidence',
+    'evidence.optional': '(optional)',
+    'evidence.hint': 'PDF, PNG, or JPEG. Maximum file size: {maxMb} MB.',
+    'evidence.uploading': 'Uploading…',
   },
   cs: {
     'title.kicker': 'Hodnocení',
@@ -28,6 +32,10 @@ export const customerAssessmentMessages: TranslationMessages = {
     'actions.submitting': 'Odesílám…',
     'toasts.submitted': 'Hodnocení bylo odesláno.',
     'messages.submittedWithCompletion': 'Hodnocení odesláno. Dokončeno: {percent}%',
+    'evidence.uploadTitle': 'Nahrát důkaz',
+    'evidence.optional': '(volitelné)',
+    'evidence.hint': 'PDF, PNG nebo JPEG. Maximální velikost souboru: {maxMb} MB.',
+    'evidence.uploading': 'Nahrávám…',
   },
 };
 

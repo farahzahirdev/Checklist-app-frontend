@@ -182,7 +182,8 @@ function sanitizeRichHtml(input?: string | null) {
 
 export default function AssessmentPage() {
   const { locale } = useLocale();
-  const t = (key: string) => translate(customerAssessmentMessages, locale, key);
+  const t = (key: string, values?: Record<string, string>) =>
+    translate(customerAssessmentMessages, locale, key, values);
   const searchParams = useSearchParams();
   const questionPanelTopRef = useRef<HTMLDivElement | null>(null);
   const evidenceInputRef = useRef<HTMLInputElement | null>(null);
@@ -1395,11 +1396,18 @@ export default function AssessmentPage() {
 
                 {isEvidenceEnabledForActiveQuestion ? (
                   <div className="mt-4 rounded-lg border border-[#dbe4f4] bg-[#f9fbff] p-3">
-                    <p className="text-sm font-semibold text-[#1f2d45]">Upload evidence <span className="font-normal text-[#7b88a3]">(optional)</span></p>
+                    <p className="text-sm font-semibold text-[#1f2d45]">
+                      {t('evidence.uploadTitle')}{' '}
+                      <span className="font-normal text-[#7b88a3]">{t('evidence.optional')}</span>
+                    </p>
+                    <p className="mt-1 text-xs text-[#607594]">
+                      {t('evidence.hint', { maxMb: String(EVIDENCE_MAX_FILE_SIZE_MB) })}
+                    </p>
                     <div className="mt-2 space-y-1">
                       <input
                         type="file"
                         ref={evidenceInputRef}
+                        accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
                         disabled={showUploadProgress === activeQuestion.id}
                         onChange={(event) => {
                           const picked = event.target.files?.[0];
@@ -1409,7 +1417,7 @@ export default function AssessmentPage() {
                         className="max-w-full rounded-lg border border-[#d4dced] bg-white px-2 py-1 text-xs text-[#3f5677] disabled:cursor-not-allowed disabled:opacity-60"
                       />
                       {showUploadProgress === activeQuestion.id ? (
-                        <p className="text-xs text-[#607594]">Uploading…</p>
+                        <p className="text-xs text-[#607594]">{t('evidence.uploading')}</p>
                       ) : null}
                     </div>
                     {/* Display existing evidence files from backend */}
