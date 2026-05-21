@@ -216,19 +216,19 @@ export default function AdminSettingsPage() {
     if (item.value_type === 'bool') {
       return asBoolValue(item.value) ? t('field.enabled') : t('field.disabled');
     }
+    if (item.is_secret) {
+      return item.has_value ? t('field.secretConfigured') : t('field.secretNotConfigured');
+    }
     const unitKey = settingUnitKey(item.key);
     if (unitKey && item.value_type === 'int') {
       const unit = t(unitKey);
       return `${item.value} ${unit}`;
     }
-    if (item.is_secret && item.value) {
-      return '••••••••';
-    }
     return item.value;
   }
 
   function beginEdit(item: SystemSetting) {
-    setEdit({ settingId: item.id, value: item.value, reason: '' });
+    setEdit({ settingId: item.id, value: item.is_secret ? '' : item.value, reason: '' });
     setSuccess('');
     setError('');
   }
@@ -245,6 +245,22 @@ export default function AdminSettingsPage() {
       const updated = await updateSystemSetting(item.key, edit.value, edit.reason || undefined);
       setSettings((prev) => sortSettings(prev.map((entry) => (entry.id === item.id ? updated : entry))));
       setSuccess(t('actions.saved'));
+      cancelEdit();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('errors.save'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeSecret(item: SystemSetting) {
+    setSaving(true);
+    setError('');
+    setSuccess('');
+    try {
+      const updated = await updateSystemSetting(item.key, '', edit.reason || undefined);
+      setSettings((prev) => sortSettings(prev.map((entry) => (entry.id === item.id ? updated : entry))));
+      setSuccess(t('actions.secretRemoved'));
       cancelEdit();
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.save'));
@@ -370,7 +386,13 @@ export default function AdminSettingsPage() {
                                   disabled={isReadOnly || item.is_locked}
                                   className="rounded-xl border border-[#c5d2eb] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#3e69b0] transition hover:border-[#7ea6e7] hover:bg-[#f4f8ff] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                  {item.is_locked ? t('field.locked') : t('actions.edit')}
+                                  {item.is_locked
+                                    ? t('field.locked')
+                                    : item.is_secret
+                                      ? item.has_value
+                                        ? t('actions.replaceSecret')
+                                        : t('actions.addSecret')
+                                      : t('actions.edit')}
                                 </button>
                               </div>
                             ) : null}
@@ -401,9 +423,10 @@ export default function AdminSettingsPage() {
                                 ) : (
                                   <div className="flex items-center gap-2">
                                     <input
-                                      type={item.value_type === 'int' ? 'number' : 'text'}
+                                      type={item.is_secret ? 'password' : item.value_type === 'int' ? 'number' : 'text'}
                                       value={edit.value}
                                       onChange={(event) => setEdit((prev) => ({ ...prev, value: event.target.value }))}
+                                      placeholder={item.is_secret ? t('field.secretInputPlaceholder') : undefined}
                                       className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2.5 text-sm text-[#2a3d5f] outline-none focus:border-[#7ea6e7] focus:ring-2 focus:ring-[#7ea6e7]/20"
                                       disabled={saving}
                                     />
@@ -431,11 +454,27 @@ export default function AdminSettingsPage() {
                                   <button
                                     type="button"
                                     onClick={() => void saveEdit(item)}
-                                    disabled={saving}
+                                    disabled={saving || (item.is_secret && !edit.value.trim())}
                                     className="rounded-xl border border-[#2d4f83] bg-[linear-gradient(180deg,#182843_0%,#223657_100%)] px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-60"
                                   >
-                                    {saving ? t('actions.saving') : t('actions.save')}
+                                    {saving
+                                      ? t('actions.saving')
+                                      : item.is_secret
+                                        ? item.has_value
+                                          ? t('actions.saveNewSecret')
+                                          : t('actions.addSecret')
+                                        : t('actions.save')}
                                   </button>
+                                  {item.is_secret && item.has_value ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => void removeSecret(item)}
+                                      disabled={saving}
+                                      className="rounded-xl border border-[#f0c7cf] bg-white px-4 py-2 text-xs font-semibold text-[#b63d51] disabled:opacity-60"
+                                    >
+                                      {t('actions.removeSecret')}
+                                    </button>
+                                  ) : null}
                                   <button
                                     type="button"
                                     onClick={cancelEdit}

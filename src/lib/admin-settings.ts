@@ -10,6 +10,7 @@ export type SystemSetting = {
   category: string;
   description: string | null;
   is_secret: boolean;
+  has_value: boolean;
   is_locked: boolean;
   created_at: string;
   updated_at: string;
