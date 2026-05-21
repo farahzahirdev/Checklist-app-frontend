@@ -5,6 +5,7 @@ import Link from 'next/link';
 import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { PageDetail, PageSection } from '@/lib/api/cms-api';
 import { PUBLIC_CONTACT_MAILTO, resolvePublicContactEmail } from '@/lib/public-contact';
+import { publicMarketingButtonHref, publicMarketingButtonIsPrimary } from '@/lib/public-cta-links';
 import { PublicFooter } from '@/components/public-footer';
 
 interface PageRendererProps {
@@ -206,7 +207,7 @@ function ResourcesPublicPageRenderer({ page }: { page: PageDetail }) {
       <section style={heroStyle}>
         <div className="mx-auto min-h-[520px] max-w-7xl px-4 py-6 sm:px-6 md:px-6 md:py-8 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
           <Link
-            href="/"
+            href={hero.back_to_products_url || '/products'}
             className="inline-flex items-center gap-2 text-sm font-medium text-[#64799d] transition-colors duration-200 hover:text-[#3f5376]"
           >
             <span aria-hidden="true">←</span>
@@ -243,10 +244,10 @@ function ResourcesPublicPageRenderer({ page }: { page: PageDetail }) {
               <div className="flex flex-wrap gap-3 motion-safe:animate-fade-in-up motion-safe:delay-200">
                 {heroButtons.map((button: any) => (
                   <Link
-                    key={`${button.text}-${button.url}`}
-                    href={button.url || '#'}
+                    key={`${button.text}-${publicMarketingButtonHref(button)}`}
+                    href={publicMarketingButtonHref(button)}
                     className={`inline-flex items-center gap-2 rounded-xl border px-7 py-3 text-2xl font-semibold transition-colors duration-200 active:scale-[0.98] motion-safe:active:transition-transform ${
-                      button.primary
+                      publicMarketingButtonIsPrimary(button)
                         ? 'border-[#1f7bff] bg-[#1f7bff] text-white hover:bg-[#2e87ff]'
                         : 'border-[#b5c7e7] bg-white/85 text-[#334a72] hover:bg-white'
                     }`}
@@ -517,10 +518,10 @@ function ResourcesPublicPageRenderer({ page }: { page: PageDetail }) {
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               {(closingCta.buttons || []).map((button: any) => (
                 <Link
-                  key={`${button.text}-${button.url}`}
-                  href={button.url || '#'}
+                  key={`${button.text}-${publicMarketingButtonHref(button)}`}
+                  href={publicMarketingButtonHref(button)}
                   className={`inline-flex items-center justify-center gap-2 rounded-xl border px-7 py-3 text-base font-semibold transition-colors duration-200 active:scale-[0.98] motion-safe:active:transition-transform md:text-lg ${
-                    button.primary
+                    publicMarketingButtonIsPrimary(button)
                       ? 'border-[#1f7bff] bg-[#1f7bff] text-white hover:bg-[#2e87ff]'
                       : 'border-[#456298] text-[#e5eeff] hover:bg-[#173160]'
                   }`}
@@ -819,9 +820,9 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
                 ? data.buttons.map((button: any, index: number) => (
                     <a
                       key={index}
-                      href={button.url || '#'}
+                      href={publicMarketingButtonHref(button)}
                       className={`inline-flex items-center rounded-lg px-5 py-3 text-sm font-medium transition ${
-                        button.primary
+                        publicMarketingButtonIsPrimary(button)
                           ? 'bg-[#2e82ff] text-white hover:bg-[#276fd5]'
                           : 'border border-white/25 bg-white/10 text-white hover:bg-white/15'
                       }`}
@@ -1226,9 +1227,9 @@ function CTASectionRenderer({ data }: { data: Record<string, any> }) {
             {(data.buttons || []).map((button: any, index: number) => (
               <a
                 key={index}
-                href={button.url || '#'}
+                href={publicMarketingButtonHref(button)}
                 className={`inline-flex min-w-[180px] items-center justify-center gap-2 whitespace-nowrap rounded-xl px-6 py-3 text-base font-semibold transition-colors duration-200 active:scale-[0.98] motion-safe:active:transition-transform md:text-lg ${
-                  button.primary
+                  publicMarketingButtonIsPrimary(button)
                     ? 'border border-[#1f7bff] bg-[#1f7bff] hover:bg-[#2e87ff]'
                     : 'border border-[#456298] text-[#e5eeff] hover:bg-[#173160]'
                 }`}

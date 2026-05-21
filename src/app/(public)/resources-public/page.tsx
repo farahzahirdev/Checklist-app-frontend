@@ -120,7 +120,7 @@ function ResourcesPageContent() {
       <section style={heroStyle}>
         <div className="mx-auto min-h-[520px] max-w-7xl px-4 py-6 sm:px-6 md:px-6 md:py-8 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
           <Link
-            href="/"
+            href="/products"
             className="inline-flex items-center gap-2 text-sm font-medium text-[#64799d] transition-colors duration-200 hover:text-[#3f5376]"
           >
             <span aria-hidden="true">←</span>
@@ -152,15 +152,15 @@ function ResourcesPageContent() {
               </p>
 
               <div className="flex flex-wrap gap-3 motion-safe:animate-fade-in-up motion-safe:delay-200">
-                <a
-                  href="/register"
+                <Link
+                  href="/products"
                   className="inline-flex items-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-7 py-3 text-2xl font-semibold text-white transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform"
                 >
                   {t('hero.getAccess')}
                   <ArrowRightIcon />
-                </a>
+                </Link>
                 <Link
-                  href="/products/audit-readiness-checklist"
+                  href="/products"
                   className="inline-flex items-center gap-2 rounded-xl border border-[#b5c7e7] bg-white/85 px-7 py-3 text-2xl font-semibold text-[#334a72] transition-colors duration-200 hover:bg-white active:scale-[0.98] motion-safe:active:transition-transform"
                 >
                   {t('hero.viewProduct')}
@@ -492,14 +492,14 @@ function ResourcesPageContent() {
             </div>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <Link
-                href="/register"
+                href="/products"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-7 py-3 text-base font-semibold text-white transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
               >
                 {t('closingCta.getAccess')}
                 <ArrowRightIcon />
               </Link>
               <Link
-                href="/products/audit-readiness-checklist"
+                href="/products"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#456298] px-7 py-3 text-base font-semibold text-[#e5eeff] transition-colors duration-200 hover:bg-[#173160] active:scale-[0.98] motion-safe:active:transition-transform md:text-lg"
               >
                 {t('closingCta.viewProduct')}

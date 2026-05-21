@@ -116,14 +116,14 @@ function ContactPageContent() {
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3 motion-safe:animate-fade-in-up motion-safe:delay-200">
             <Link
-              href="/register"
+              href="/products"
               className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-8 py-3 text-xl font-semibold text-white transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform"
             >
               {t('cta.getAccess')}
               <ArrowRightIcon className="h-5 w-5" />
             </Link>
             <Link
-              href="/products/audit-readiness-checklist"
+              href="/products"
               className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl border border-[#cfd8ea] bg-white/85 px-8 py-3 text-xl font-semibold text-[#233553] transition-colors duration-200 hover:bg-white active:scale-[0.98] motion-safe:active:transition-transform"
             >
               {t('cta.viewProducts')}

@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Route } from 'next';
+import { ScrollToTop } from '@/components/scroll-to-top';
 import { SiteHeader } from '@/components/site-header';
 import type { ReactNode } from 'react';
 import { ACCESS_TOKEN_STORAGE_KEY, getCurrentUser, getRoleHomePath } from '@/lib/auth';
@@ -61,6 +62,7 @@ export default function PublicLayout({
 
   return (
     <div className={isConsentGate ? 'min-h-screen bg-white' : 'public-shell min-h-screen bg-slate-950 text-slate-100'}>
+      <ScrollToTop />
       {!isConsentGate ? <SiteHeader /> : null}
       {children}
     </div>
