@@ -15,7 +15,6 @@ import {
   formatPublicProductPriceLabel,
   isPublicCatalogProductListable,
   isPublicProductPriceUnset,
-  canPurchasePublicCatalogProduct,
   listPublicProducts,
   publicChecklistProductToCustomerChecklist,
   type PublicProduct,
@@ -33,7 +32,6 @@ import {
   DOCUMENTATION_PRODUCTS,
   buildAuditProductHref,
   buildBuilderProductHref,
-  buildDocumentationProductHref,
   type DocumentationCategory as CatalogDocumentationCategory,
 } from '@/lib/products-catalog';
 
@@ -282,7 +280,22 @@ function ProductsPageContent() {
             </p>
             <div className="mt-6 flex flex-wrap gap-3 motion-safe:animate-fade-in-up motion-safe:delay-250">
               <Link
-                href="#browse-docs"
+                href="#audits-checklists"
+                className="group inline-flex min-w-[220px] items-center gap-3 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-4 py-3 text-left transition-colors hover:bg-[#143264]"
+              >
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                    <path d="M12 3l8 4v5c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V7l8-4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                    <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <span className="flex flex-col">
+                  <span className="text-sm font-semibold text-white">{t('hero.cat.audits.title')}</span>
+                  <span className="text-xs text-[#a9c0e6]">{t('hero.cat.audits.subtitle')}</span>
+                </span>
+              </Link>
+              <Link
+                href="#documentation"
                 className="group inline-flex min-w-[220px] items-center gap-3 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-4 py-3 text-left transition-colors hover:bg-[#143264]"
               >
                 <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
@@ -297,18 +310,18 @@ function ProductsPageContent() {
                 </span>
               </Link>
               <Link
-                href="#audits-checklists"
+                href="#plans"
                 className="group inline-flex min-w-[220px] items-center gap-3 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-4 py-3 text-left transition-colors hover:bg-[#143264]"
               >
                 <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
-                    <path d="M12 3l8 4v5c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V7l8-4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                    <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                    <path d="M8 10h8M8 14h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   </svg>
                 </span>
                 <span className="flex flex-col">
-                  <span className="text-sm font-semibold text-white">{t('hero.cat.audits.title')}</span>
-                  <span className="text-xs text-[#a9c0e6]">{t('hero.cat.audits.subtitle')}</span>
+                  <span className="text-sm font-semibold text-white">{t('hero.cat.plans.title')}</span>
+                  <span className="text-xs text-[#a9c0e6]">{t('hero.cat.plans.subtitle')}</span>
                 </span>
               </Link>
             </div>
@@ -344,10 +357,14 @@ function ProductsPageContent() {
                 <div className="p-5 text-[#1f3253]">
                   <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#4e6c96]">{t('mock.library')}</p>
                   <div className="mt-3 space-y-2.5">
-                    <div className="rounded-lg border border-[#e2e8f4] bg-white p-3 text-base">{t('doc.mobileDevice.name')}</div>
-                    <div className="rounded-lg border border-[#e2e8f4] bg-white p-3 text-base">{t('doc.accessControl.name')}</div>
-                    <div className="rounded-lg border border-[#e2e8f4] bg-white p-3 text-base">{t('doc.incidentResponse.name')}</div>
-                    <div className="rounded-lg border border-[#e2e8f4] bg-white p-3 text-base">{t('doc.dataClassification.name')}</div>
+                    {(auditGridItems.length > 0
+                      ? auditGridItems.slice(0, 4).map((item) => item.checklist.title)
+                      : displayDocSections.slice(0, 4).map((doc) => doc.name)
+                    ).map((name) => (
+                      <div key={name} className="rounded-lg border border-[#e2e8f4] bg-white p-3 text-base">
+                        {name}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -361,10 +378,18 @@ function ProductsPageContent() {
               </ul>
               <p className="mt-3 text-lg font-bold text-[#1f355d]">€149</p>
               <Link
-                href="/register"
+                href={
+                  (auditGridItems[0]?.slug
+                    ? `/products/${encodeURIComponent(auditGridItems[0].slug)}`
+                    : auditGridItems[0]
+                      ? buildAuditProductHref(auditGridItems[0].checklist.id)
+                      : displayDocSections[0]
+                        ? `/products/${displayDocSections[0].slug}`
+                        : '/products') as Route
+                }
                 className="mt-2 flex w-full items-center justify-center rounded-lg bg-[#1f7bff] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2e87ff]"
               >
-                {t('common.getStarted')}
+                {t('cta.viewDetails')}
               </Link>
             </div>
           </div>
@@ -399,93 +424,6 @@ function ProductsPageContent() {
           </div>
         </article>
 
-        <div id="browse-docs" className="scroll-mt-24">
-          <h3 className="text-4xl font-semibold text-[#1a2440]">{t('browse.title')}</h3>
-          <p className="mt-2 text-base text-[#5e7293]">{t('browse.subtitle')}</p>
-          {apiDocSections.length === 0 ? (
-            <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Documentation categories">
-              {DOCUMENT_CATEGORIES.map((chip) => {
-                const selected = activeCategory === chip;
-                return (
-                  <button
-                    key={chip}
-                    type="button"
-                    role="tab"
-                    aria-selected={selected}
-                    onClick={() => setActiveCategory(chip)}
-                    className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
-                      selected
-                        ? 'border-[#1f7bff] bg-[#1f7bff] text-white'
-                        : 'border-[#d7deeb] bg-white text-[#5e7293] hover:bg-[#f7f9ff]'
-                    }`}
-                  >
-                    {categoryLabel(chip)}
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {filteredSections.length === 0 ? (
-            <p className="col-span-full rounded-2xl border border-dashed border-[#d7deeb] bg-white px-4 py-10 text-center text-sm text-[#5e7293]">
-              {t('empty', {
-                all: t('filters.all'),
-              })}{' '}
-              <button type="button" className="font-semibold text-[#1f7bff] underline hover:no-underline" onClick={() => setActiveCategory('All')}>
-                {t('filters.all')}
-              </button>
-              .
-            </p>
-          ) : (
-            filteredSections.map((doc) => {
-              const docIconTheme = AUDIT_ICON_THEMES[doc.iconKind];
-              return (
-                <Link
-                  key={doc.id}
-                  href={`/products/${doc.slug}` as Route}
-                  className="group flex h-full flex-col rounded-2xl border border-[#d7deeb] bg-white p-4 shadow-sm transition-shadow duration-300 ease-out hover:border-[#1f7bff] motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${docIconTheme.bg} ${docIconTheme.fg}`}
-                      aria-hidden="true"
-                    >
-                      <AuditIcon kind={doc.iconKind} className="h-6 w-6" />
-                    </div>
-                    <span
-                      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${
-                        doc.statusLabel === 'available'
-                          ? 'border-[#1f8a4b]/70 bg-emerald-50 text-emerald-800'
-                          : 'border-amber-300/60 bg-amber-50 text-amber-700'
-                      }`}
-                    >
-                      {doc.statusLabel === 'available' ? t('detail.status.available') : t('detail.status.comingSoon')}
-                    </span>
-                  </div>
-                  <h2 className="mt-3 text-base font-semibold text-[#1f2741]">{doc.name}</h2>
-                  <p className="mt-1 text-sm text-[#5e7293]">{doc.subtitle}</p>
-                  <ul className="mt-3 space-y-1.5 text-xs text-[#5f7394]">
-                    {doc.points.map((point) => (
-                      <li key={point} className="flex items-center gap-2">
-                        <CheckBadgeIcon />
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-auto flex w-full flex-col gap-3 border-t border-[#eef1f7] pt-4">
-                    <p className="text-2xl font-semibold text-[#1f355d]">{doc.price}</p>
-                    <span className={PRODUCT_CARD_OUTLINE_CTA_CLASS}>
-                      {t('browse.getStarted')}
-                    </span>
-                  </div>
-                </Link>
-              );
-            })
-          )}
-        </div>
-
         <section id="audits-checklists" className="space-y-4 scroll-mt-24">
           <div>
             <h3 className="text-4xl font-semibold text-[#1a2440]">{t('audits.title')}</h3>
@@ -512,16 +450,12 @@ function ProductsPageContent() {
           ) : (
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {auditGridItems.map((item, index) => {
-                const { checklist, slug, catalogStatus } = item;
+                const { checklist, slug } = item;
                 const labels = priceLabels(t);
                 const priceLabel = formatChecklistPrice(checklist.pricing, locale, labels);
                 const iconKind = pickAuditIconKind(checklist.checklist_type?.code, index);
                 const iconTheme = AUDIT_ICON_THEMES[iconKind];
                 const href = (slug ? `/products/${encodeURIComponent(slug)}` : buildAuditProductHref(checklist.id)) as Route;
-                const ctaLabel =
-                  catalogStatus === 'coming_soon' || isPublicProductPriceUnset(checklist.pricing)
-                    ? t('cta.viewDetails')
-                    : t('detail.buy');
                 return (
                   <Link
                     key={slug ?? checklist.id}
@@ -547,7 +481,7 @@ function ProductsPageContent() {
                     <div className="mt-auto flex w-full flex-col gap-3 border-t border-[#eef1f7] px-4 pb-4 pt-4">
                       <p className="text-2xl font-semibold text-[#1f355d]">{priceLabel}</p>
                       <span className={PRODUCT_CARD_OUTLINE_CTA_CLASS}>
-                        {ctaLabel}
+                        {t('cta.viewDetails')}
                       </span>
                     </div>
                   </Link>
@@ -568,10 +502,99 @@ function ProductsPageContent() {
           ) : null}
         </section>
 
-        <section id="builders" className="space-y-4 scroll-mt-24">
+        <section id="documentation" className="space-y-4 scroll-mt-24">
           <div>
-            <h3 className="text-4xl font-semibold text-[#1a2440]">{t('builders.title')}</h3>
-            <p className="mt-2 max-w-3xl text-base text-[#5e7293]">{t('builders.subtitle')}</p>
+            <h3 className="text-4xl font-semibold text-[#1a2440]">{t('documentation.title')}</h3>
+            <p className="mt-2 max-w-3xl text-base text-[#5e7293]">{t('documentation.subtitle')}</p>
+            {apiDocSections.length === 0 ? (
+              <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Documentation categories">
+                {DOCUMENT_CATEGORIES.map((chip) => {
+                  const selected = activeCategory === chip;
+                  return (
+                    <button
+                      key={chip}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      onClick={() => setActiveCategory(chip)}
+                      className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
+                        selected
+                          ? 'border-[#1f7bff] bg-[#1f7bff] text-white'
+                          : 'border-[#d7deeb] bg-white text-[#5e7293] hover:bg-[#f7f9ff]'
+                      }`}
+                    >
+                      {categoryLabel(chip)}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {filteredSections.length === 0 ? (
+              <p className="col-span-full rounded-2xl border border-dashed border-[#d7deeb] bg-white px-4 py-10 text-center text-sm text-[#5e7293]">
+                {t('empty', {
+                  all: t('filters.all'),
+                })}{' '}
+                <button type="button" className="font-semibold text-[#1f7bff] underline hover:no-underline" onClick={() => setActiveCategory('All')}>
+                  {t('filters.all')}
+                </button>
+                .
+              </p>
+            ) : (
+              filteredSections.map((doc) => {
+                const docIconTheme = AUDIT_ICON_THEMES[doc.iconKind];
+                return (
+                  <Link
+                    key={doc.id}
+                    href={`/products/${doc.slug}` as Route}
+                    className="group flex h-full flex-col rounded-2xl border border-[#d7deeb] bg-white p-4 shadow-sm transition-shadow duration-300 ease-out hover:border-[#1f7bff] motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-md"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${docIconTheme.bg} ${docIconTheme.fg}`}
+                        aria-hidden="true"
+                      >
+                        <AuditIcon kind={doc.iconKind} className="h-6 w-6" />
+                      </div>
+                      <span
+                        className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${
+                          doc.statusLabel === 'available'
+                            ? 'border-[#1f8a4b]/70 bg-emerald-50 text-emerald-800'
+                            : 'border-amber-300/60 bg-amber-50 text-amber-700'
+                        }`}
+                      >
+                        {doc.statusLabel === 'available' ? t('detail.status.available') : t('detail.status.comingSoon')}
+                      </span>
+                    </div>
+                    <h2 className="mt-3 text-base font-semibold text-[#1f2741]">{doc.name}</h2>
+                    <p className="mt-1 text-sm text-[#5e7293]">{doc.subtitle}</p>
+                    <ul className="mt-3 space-y-1.5 text-xs text-[#5f7394]">
+                      {doc.points.map((point) => (
+                        <li key={point} className="flex items-center gap-2">
+                          <CheckBadgeIcon />
+                          <span>{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-auto flex w-full flex-col gap-3 border-t border-[#eef1f7] pt-4">
+                      <p className="text-2xl font-semibold text-[#1f355d]">{doc.price}</p>
+                      <span className={PRODUCT_CARD_OUTLINE_CTA_CLASS}>
+                        {t('cta.viewDetails')}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })
+            )}
+          </div>
+        </section>
+
+        <section id="plans" className="space-y-4 scroll-mt-24">
+          <div>
+            <h3 className="text-4xl font-semibold text-[#1a2440]">{t('plans.title')}</h3>
+            <p className="mt-2 max-w-3xl text-base text-[#5e7293]">{t('plans.subtitle')}</p>
           </div>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {BUILDER_PRODUCTS.map((builder) => {
@@ -613,9 +636,6 @@ function ProductsPageContent() {
               const iconKind = pickAuditIconKind(mod.checklist_type?.checklist_type_code, modIdx) as AuditIconKind;
               const theme = AUDIT_ICON_THEMES[iconKind];
               const statusLabel = mod.status === 'published' ? 'available' : 'comingSoon';
-              const modCtaLabel = canPurchasePublicCatalogProduct(mod.status, mod.pricing)
-                ? t('detail.buy')
-                : t('cta.viewDetails');
               return (
                 <Link
                   key={mod.id}
@@ -655,7 +675,7 @@ function ProductsPageContent() {
                     ) : mod.status === 'published' ? (
                       <p className="text-lg font-semibold text-[#5e7293]">{t('detail.status.comingSoon')}</p>
                     ) : null}
-                    <span className={PRODUCT_CARD_OUTLINE_CTA_CLASS}>{modCtaLabel}</span>
+                    <span className={PRODUCT_CARD_OUTLINE_CTA_CLASS}>{t('cta.viewDetails')}</span>
                   </div>
                 </Link>
               );
