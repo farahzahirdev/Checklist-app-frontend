@@ -154,7 +154,7 @@ export default function DashboardPage() {
               {reports.filter((report) => report.status === 'published').slice(0, 5).map((report) => (
                 <li key={report.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-[#1f2d45]">{t('report.itemTitle')}</p>
+                    <p className="truncate font-semibold text-[#1f2d45]">{report.checklist_title?.trim() || t('report.itemTitle')}</p>
                     <p className="mt-0.5 truncate text-xs text-[#607594]">
                       {report.status === 'published' ? t('report.status.published') :
                        report.status === 'approved' ? t('report.status.approved') :

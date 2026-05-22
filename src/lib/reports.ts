@@ -26,6 +26,8 @@ export type ReportResponse = {
   final_pdf_published_at: string | null;
   findings_count: number;
   summaries_count: number;
+  checklist_title?: string | null;
+  checklist_version?: string | null;
   /** Checklist sections (domains) with scores; returned by admin GET report when available */
   section_overviews?: ReportSectionOverview[] | null;
 };

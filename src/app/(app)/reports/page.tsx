@@ -82,7 +82,7 @@ export default function ReportsPage() {
               <li key={report.id} className="grid grid-cols-[1.1fr_0.9fr_auto] items-center gap-3 px-4 py-3">
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-[#1f2d45]">
-                    {report.company_name?.trim() || t('list.report.fallback')}
+                    {report.checklist_title?.trim() || report.company_name?.trim() || t('list.report.fallback')}
                   </p>
                   <p className="mt-0.5 truncate text-xs text-[#607594]">
                     {t('list.meta.approved', {
