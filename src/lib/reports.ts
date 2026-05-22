@@ -356,9 +356,19 @@ export function generateDraftReport(assessmentId: string) {
     .then(normalizeAdminReportSectionOverviews);
 }
 
-export function getReportsList(params?: { status?: string; skip?: number; limit?: number }) {
+export function getReportsList(params?: {
+  status?: string;
+  search?: string;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
+  skip?: number;
+  limit?: number;
+}) {
   const query = new URLSearchParams();
   if (params?.status) query.set('status', params.status);
+  if (params?.search) query.set('search', params.search);
+  if (params?.sort_by) query.set('sort_by', params.sort_by);
+  if (params?.sort_order) query.set('sort_order', params.sort_order);
   if (typeof params?.skip === 'number') query.set('skip', String(params.skip));
   if (typeof params?.limit === 'number') query.set('limit', String(params.limit));
   const qs = query.toString();

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
@@ -21,6 +21,10 @@ import {
   ADMIN_PAGE_TITLE_CLASS,
 } from '@/app/(app)/admin/admin-page-title';
 import { adminReportsMessages } from '@/locales/admin-reports';
+
+const PAGE_SIZE = 20;
+type SortBy = 'draft_generated_at' | 'approved_at' | 'reviewed_at' | 'created_at';
+type SortOrder = 'desc' | 'asc';
 
 const statusClass: Record<ReportStatus, string> = {
   draft_generated: 'bg-[#fff4df] text-[#b6862f]',
@@ -45,6 +49,12 @@ export default function AdminReportsPage({ searchParams }: ReportsPageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<SortBy>('draft_generated_at');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const statusFromQuery = query.get('status');
@@ -60,14 +70,25 @@ export default function AdminReportsPage({ searchParams }: ReportsPageProps) {
     if (validStatuses.includes(normalized as ReportStatus)) {
       setStatusFilter(normalized as ReportStatus);
     }
+    setPage(1);
   }, [query]);
 
   async function loadReports() {
+  const loadReports = useCallback(async (opts?: { page?: number; status?: string; search?: string; sortBy?: SortBy; sortOrder?: SortOrder }) => {
     setLoading(true);
     setError('');
     try {
-      const response = await getReportsList({ limit: 50 });
+      const currentPage = opts?.page ?? 1;
+      const response = await getReportsList({
+        status: opts?.status ?? statusFilter || undefined,
+        search: opts?.search ?? search || undefined,
+        sort_by: opts?.sortBy ?? sortBy,
+        sort_order: opts?.sortOrder ?? sortOrder,
+        skip: (currentPage - 1) * PAGE_SIZE,
+        limit: PAGE_SIZE,
+      });
       setReports(response.reports);
+      setTotal(response.total ?? 0);
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('errors.loadReports');
       setError(msg);
@@ -75,15 +96,14 @@ export default function AdminReportsPage({ searchParams }: ReportsPageProps) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [statusFilter, search, sortBy, sortOrder, t]);
 
   useEffect(() => {
-    void loadReports();
-  }, [locale]);
+    void loadReports({ page });
+  }, [locale, statusFilter, sortBy, sortOrder, page]);
 
-  const filteredReports = statusFilter 
-    ? reports.filter((report) => report.status === statusFilter)
-    : reports;
+  const filteredReports = reports;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const stats = {
     ready: reports.filter(r => r.status === 'under_review').length,
@@ -133,9 +153,24 @@ export default function AdminReportsPage({ searchParams }: ReportsPageProps) {
         <div className="flex items-center justify-between border-b border-[#ecf0f8] px-4 py-3">
           <h2 className="text-xl font-semibold text-[#243555]">{t('section.recent')}</h2>
           <div className="flex gap-2">
-            <select 
-              value={statusFilter} 
-              onChange={(e) => setStatusFilter(e.target.value)}
+            <input
+              type="search"
+              value={search}
+              placeholder={t('filters.search')}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSearch(val);
+                if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+                searchDebounceRef.current = setTimeout(() => {
+                  setPage(1);
+                  void loadReports({ page: 1, search: val });
+                }, 400);
+              }}
+              className="rounded-lg border border-[#d4dced] bg-white px-3 py-1.5 text-sm w-44"
+            />
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
               className="rounded-lg border border-[#d4dced] bg-white px-3 py-1 text-sm"
             >
               <option value="">{t('filters.all')}</option>
@@ -145,9 +180,27 @@ export default function AdminReportsPage({ searchParams }: ReportsPageProps) {
               <option value="approved">{t('status.approved')}</option>
               <option value="published">{t('status.published')}</option>
             </select>
-            <button 
-              type="button" 
-              onClick={() => void loadReports()}
+            <select
+              value={sortBy}
+              onChange={(e) => { setSortBy(e.target.value as SortBy); setPage(1); }}
+              className="rounded-lg border border-[#d4dced] bg-white px-3 py-1 text-sm"
+            >
+              <option value="draft_generated_at">{t('filters.sortBy.draft_generated_at')}</option>
+              <option value="approved_at">{t('filters.sortBy.approved_at')}</option>
+              <option value="reviewed_at">{t('filters.sortBy.reviewed_at')}</option>
+              <option value="created_at">{t('filters.sortBy.created_at')}</option>
+            </select>
+            <select
+              value={sortOrder}
+              onChange={(e) => { setSortOrder(e.target.value as SortOrder); setPage(1); }}
+              className="rounded-lg border border-[#d4dced] bg-white px-3 py-1 text-sm"
+            >
+              <option value="desc">{t('filters.order.desc')}</option>
+              <option value="asc">{t('filters.order.asc')}</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => void loadReports({ page })}
               disabled={loading}
               className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
             >
@@ -212,5 +265,28 @@ export default function AdminReportsPage({ searchParams }: ReportsPageProps) {
         </div>
       </article>
     </section>
+    {totalPages > 1 && (
+      <div className="mt-4 flex items-center justify-between px-1">
+        <button
+          type="button"
+          disabled={page <= 1 || loading}
+          onClick={() => setPage((p) => p - 1)}
+          className="rounded-lg border border-[#d4dced] bg-white px-3 py-1.5 text-sm text-[#1f2d45] hover:bg-[#f0f4fb] disabled:opacity-40"
+        >
+          {t('pagination.prev')}
+        </button>
+        <span className="text-sm text-[#607594]">
+          {t('pagination.page').replace('{page}', String(page)).replace('{total}', String(totalPages))}
+        </span>
+        <button
+          type="button"
+          disabled={page >= totalPages || loading}
+          onClick={() => setPage((p) => p + 1)}
+          className="rounded-lg border border-[#d4dced] bg-white px-3 py-1.5 text-sm text-[#1f2d45] hover:bg-[#f0f4fb] disabled:opacity-40"
+        >
+          {t('pagination.next')}
+        </button>
+      </div>
+    )}
   );
 }
