@@ -38,6 +38,22 @@ function humanizeToken(value: string | null | undefined) {
     .join(' ');
 }
 
+function actionLabel(action: string | null | undefined, t: (key: string) => string) {
+  if (!action) return '-';
+  const actionKeyMap: Record<string, string> = {
+    email_notification_queued: 'actionsLabel.emailNotificationQueued',
+    email_queue_failed: 'actionsLabel.emailQueueFailed',
+    email_delivery_sent: 'actionsLabel.emailDeliverySent',
+    email_delivery_failed: 'actionsLabel.emailDeliveryFailed',
+    email_delivery_skipped: 'actionsLabel.emailDeliverySkipped',
+    email_retry_scheduled: 'actionsLabel.emailRetryScheduled',
+    email_retries_exhausted: 'actionsLabel.emailRetriesExhausted',
+  };
+  const translationKey = actionKeyMap[action];
+  if (translationKey) return t(translationKey);
+  return humanizeToken(action);
+}
+
 function toIsoFromDate(value: string, endOfDay = false): string | undefined {
   if (!value.trim()) return undefined;
   const date = new Date(`${value}T00:00:00`);
@@ -76,6 +92,18 @@ export default function AdminAuditLogsPage() {
   const [skip, setSkip] = useState(0);
   const [limit, setLimit] = useState(25);
   const [refreshNonce, setRefreshNonce] = useState(0);
+
+  const emailQuickFilters = useMemo(
+    () => [
+      { value: '', label: t('quickFilters.all') },
+      { value: 'email_notification_queued', label: t('quickFilters.queued') },
+      { value: 'email_delivery_sent', label: t('quickFilters.sent') },
+      { value: 'email_delivery_failed', label: t('quickFilters.failed') },
+      { value: 'email_retry_scheduled', label: t('quickFilters.retryScheduled') },
+      { value: 'email_retries_exhausted', label: t('quickFilters.retriesExhausted') },
+    ],
+    [t],
+  );
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const currentPage = Math.floor(skip / limit) + 1;
@@ -316,6 +344,30 @@ export default function AdminAuditLogsPage() {
             </label>
             <p className="ml-auto text-xs text-[#607594]">{t('meta.total')}: {total}</p>
           </div>
+          <div className="md:col-span-5 flex flex-wrap items-center gap-2 pt-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('quickFilters.label')}</span>
+            {emailQuickFilters.map((filter) => {
+              const active = action === filter.value;
+              return (
+                <button
+                  key={filter.value || 'all'}
+                  type="button"
+                  onClick={() => {
+                    setAction(filter.value);
+                    setSkip(0);
+                  }}
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                    active
+                      ? 'border-[#2d4f83] bg-[#eaf2ff] text-[#1f3f74]'
+                      : 'border-[#d4dced] bg-white text-[#5f7394] hover:bg-[#f1f6ff]'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              );
+            })}
+            <p className="ml-auto text-xs text-[#7083a2]">{t('quickFilters.hint')}</p>
+          </div>
         </div>
 
         <div className="overflow-x-auto px-4 py-3">
@@ -348,7 +400,7 @@ export default function AdminAuditLogsPage() {
                 return (
                 <tr key={log.id} className="border-b border-[#edf2f9] last:border-0">
                   <td className="py-3 pr-4 font-semibold text-[#25375a]">{actor}</td>
-                  <td className="py-3 pr-4 text-[#5f7395]">{humanizeToken(log.action)}</td>
+                  <td className="py-3 pr-4 text-[#5f7395]">{actionLabel(log.action, t)}</td>
                   <td className="py-3 pr-4 text-[#5f7395]">{target}</td>
                   <td className="py-3 pr-4 text-[#5f7395]">{formatTimestamp(log.created_at)}</td>
                   <td className="py-3">
