@@ -19,6 +19,21 @@ export const authPagesMessages: TranslationMessages = {
     'login.submitting': 'Signing in…',
     'login.newHere': 'New here?',
     'login.createAccount': 'Create an account',
+    'login.forgotPassword': 'Forgot password?',
+
+    'forgot.title': 'Reset your password',
+    'forgot.subtitle': 'Enter your account email and we will send you a reset link.',
+    'forgot.submit': 'Send reset link',
+    'forgot.submitting': 'Sending…',
+    'forgot.backToLogin': 'Back to sign in',
+    'forgot.success': 'If an account exists, a reset email has been sent.',
+
+    'reset.title': 'Set a new password',
+    'reset.subtitle': 'Use the link token to choose your new password.',
+    'reset.submit': 'Update password',
+    'reset.submitting': 'Updating…',
+    'reset.success': 'Password updated. You can sign in now.',
+    'reset.tokenMissing': 'Reset token is missing. Use the email link again.',
 
     'login.mfa.enabledBanner': 'MFA is enabled. Enter your MFA code to complete sign in.',
     'login.mfa.verifyToast': 'Enter your OTP code to complete sign in.',
@@ -78,6 +93,7 @@ export const authPagesMessages: TranslationMessages = {
     'errors.mfaVerifyFailed': 'Failed to verify OTP code.',
     'errors.mfaSetupLoadFailed': 'Failed to load MFA setup details.',
     'errors.mfaSetupCompleteFailed': 'Failed to complete MFA setup.',
+    'errors.resetFailed': 'Failed to reset password.',
 
     'success.signedIn': 'Signed in successfully.',
     'success.accountCreated': 'Account created successfully.',
@@ -102,6 +118,21 @@ export const authPagesMessages: TranslationMessages = {
     'login.submitting': 'Přihlašuji…',
     'login.newHere': 'Jste tu poprvé?',
     'login.createAccount': 'Vytvořit účet',
+    'login.forgotPassword': 'Zapomenuté heslo?',
+
+    'forgot.title': 'Obnovit heslo',
+    'forgot.subtitle': 'Zadejte e-mail účtu a pošleme vám odkaz pro reset.',
+    'forgot.submit': 'Poslat odkaz pro reset',
+    'forgot.submitting': 'Odesílám…',
+    'forgot.backToLogin': 'Zpět na přihlášení',
+    'forgot.success': 'Pokud účet existuje, byl odeslán e-mail pro reset hesla.',
+
+    'reset.title': 'Nastavit nové heslo',
+    'reset.subtitle': 'Použijte token z odkazu a nastavte nové heslo.',
+    'reset.submit': 'Aktualizovat heslo',
+    'reset.submitting': 'Aktualizuji…',
+    'reset.success': 'Heslo bylo změněno. Nyní se můžete přihlásit.',
+    'reset.tokenMissing': 'Chybí token pro reset hesla. Otevřete odkaz z e-mailu znovu.',
 
     'login.mfa.enabledBanner': 'MFA je zapnuto. Pro dokončení přihlášení zadejte MFA kód.',
     'login.mfa.verifyToast': 'Zadejte OTP kód pro dokončení přihlášení.',
@@ -161,6 +192,7 @@ export const authPagesMessages: TranslationMessages = {
     'errors.mfaVerifyFailed': 'Nepodařilo se ověřit OTP kód.',
     'errors.mfaSetupLoadFailed': 'Nepodařilo se načíst údaje pro nastavení MFA.',
     'errors.mfaSetupCompleteFailed': 'Nepodařilo se dokončit nastavení MFA.',
+    'errors.resetFailed': 'Reset hesla se nezdařil.',
 
     'success.signedIn': 'Přihlášení bylo úspěšné.',
     'success.accountCreated': 'Účet byl úspěšně vytvořen.',

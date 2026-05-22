@@ -25,6 +25,8 @@ export type AdminCustomer = {
   id: string;
   email: string;
   is_active: boolean;
+  mfa_required: boolean;
+  mfa_enabled: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -53,6 +55,13 @@ export type AdminCustomerDetail = AdminCustomer & {
     country?: string | null;
     is_active: boolean;
   };
+};
+
+export type CustomerMfaUpdateResponse = {
+  customer_id: string;
+  mfa_required: boolean;
+  mfa_enabled: boolean;
+  message: string;
 };
 
 type ListAdminUsersParams = {
@@ -143,6 +152,17 @@ export function deactivateCustomer(customerId: string, payload: { reason: string
 
 export function activateCustomer(customerId: string, payload: { reason: string }) {
   return apiPost<Record<string, unknown>, typeof payload>(`/admin/customers/${customerId}/activate`, payload);
+}
+
+export function updateCustomerMfaRequired(
+  customerId: string,
+  payload: { mfa_required: boolean; reason?: string },
+) {
+  return apiPatch<CustomerMfaUpdateResponse, typeof payload>(`/admin/customers/${customerId}/mfa-required`, payload);
+}
+
+export function resetCustomerMfa(customerId: string, payload: { reason?: string }) {
+  return apiPost<CustomerMfaUpdateResponse, typeof payload>(`/admin/customers/${customerId}/mfa/reset`, payload);
 }
 
 export function switchAdminRole(payload: { switch_to_role: 'customer' | 'auditor'; reason: string; duration_minutes: number }) {

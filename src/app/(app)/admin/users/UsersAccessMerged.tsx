@@ -17,8 +17,10 @@ import {
   impersonateCustomer,
   listAdminUsers,
   listCustomers,
+  resetCustomerMfa,
   resetAdminUserPassword,
   resetUserPermissions,
+  updateCustomerMfaRequired,
   viewCustomerDashboardAsAdmin,
   type AdminCustomer,
   type AdminCustomerDetail,
@@ -330,6 +332,7 @@ export default function UsersAccessMerged() {
   const [resetPasswordReason, setResetPasswordReason] = useState('Admin requested password reset');
   const [impersonationReason, setImpersonationReason] = useState('Impersonation requested by admin');
   const [customerReason, setCustomerReason] = useState('Support action');
+  const [customerMfaRequired, setCustomerMfaRequired] = useState(true);
   const [isPermanentDeactivation, setIsPermanentDeactivation] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState<'all' | 'admin' | 'auditor'>('all');
@@ -652,6 +655,12 @@ export default function UsersAccessMerged() {
   }, [selectedCustomerId]);
 
   useEffect(() => {
+    if (customerDetail) {
+      setCustomerMfaRequired(Boolean(customerDetail.mfa_required));
+    }
+  }, [customerDetail]);
+
+  useEffect(() => {
     if (!adminDetail) {
       setInspectorPermSelected(new Set());
       return;
@@ -895,6 +904,45 @@ export default function UsersAccessMerged() {
     try {
       await activateCustomer(selectedCustomerId, { reason: customerReason });
       toast.success('Activated.');
+      await loadLists();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed');
+    } finally {
+      setActionLoading('');
+      setLoading(false);
+    }
+  }
+
+  async function onUpdateCustomerMfaRequired() {
+    if (!selectedCustomerId) return toast.error('Select customer first.');
+    setActionLoading('mfa-required');
+    setLoading(true);
+    try {
+      await updateCustomerMfaRequired(selectedCustomerId, {
+        mfa_required: customerMfaRequired,
+        reason: customerReason,
+      });
+      toast.success('Customer MFA requirement updated.');
+      const d = await getCustomer(selectedCustomerId);
+      setCustomerDetail(d);
+      await loadLists();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed');
+    } finally {
+      setActionLoading('');
+      setLoading(false);
+    }
+  }
+
+  async function onResetCustomerMfa() {
+    if (!selectedCustomerId) return toast.error('Select customer first.');
+    setActionLoading('mfa-reset');
+    setLoading(true);
+    try {
+      await resetCustomerMfa(selectedCustomerId, { reason: customerReason });
+      toast.success('Customer MFA reset. User can relink MFA now.');
+      const d = await getCustomer(selectedCustomerId);
+      setCustomerDetail(d);
       await loadLists();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed');
@@ -1672,6 +1720,38 @@ export default function UsersAccessMerged() {
                       <div className="space-y-2">
                         <label className={`text-[10px] font-bold uppercase text-slate-600`}>Reason *</label>
                         <input className={inp} value={customerReason} onChange={(e) => setCustomerReason(e.target.value)} />
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                          <p className="text-[11px] font-semibold text-slate-700">MFA settings</p>
+                          <p className="mt-1 text-[11px] text-slate-600">
+                            Current: {customerDetail.mfa_enabled ? 'MFA linked' : 'No MFA linked'}
+                          </p>
+                          <label className="mt-2 flex items-center gap-2 text-[12px] text-slate-700">
+                            <input
+                              type="checkbox"
+                              checked={customerMfaRequired}
+                              onChange={(e) => setCustomerMfaRequired(e.target.checked)}
+                            />
+                            MFA required for login
+                          </label>
+                          <div className="mt-2 flex flex-col gap-2">
+                            <button
+                              type="button"
+                              className={btn}
+                              onClick={() => void onUpdateCustomerMfaRequired()}
+                              disabled={loading}
+                            >
+                              {actionLoading === 'mfa-required' ? 'Saving…' : 'Save MFA requirement'}
+                            </button>
+                            <button
+                              type="button"
+                              className={btnDanger}
+                              onClick={() => void onResetCustomerMfa()}
+                              disabled={loading}
+                            >
+                              {actionLoading === 'mfa-reset' ? 'Resetting…' : 'Reset linked MFA'}
+                            </button>
+                          </div>
+                        </div>
                         <button
                           type="button"
                           className={btnPri}

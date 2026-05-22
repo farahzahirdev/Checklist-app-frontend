@@ -126,12 +126,30 @@ export type LoginPayload = {
   password: string;
 };
 
+export type ForgotPasswordPayload = {
+  email: string;
+};
+
+export type ResetPasswordPayload = {
+  token: string;
+  new_password: string;
+  confirm_password: string;
+};
+
 export async function loginAccount(payload: LoginPayload) {
   return apiPost<AuthResponse, LoginPayload>('/auth/login', payload);
 }
 
 export async function verifyMfaChallenge(payload: { challenge_token: string; code: string }) {
   return apiPost<AuthResponse, { challenge_token: string; code: string }>('/auth/mfa/challenge/verify', payload);
+}
+
+export async function forgotPassword(payload: ForgotPasswordPayload) {
+  return apiPost<MessageResponse, ForgotPasswordPayload>('/auth/forgot-password', payload);
+}
+
+export async function resetPassword(payload: ResetPasswordPayload) {
+  return apiPost<MessageResponse, ResetPasswordPayload>('/auth/reset-password', payload);
 }
 
 export type MessageResponse = {

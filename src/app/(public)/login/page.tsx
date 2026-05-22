@@ -345,6 +345,11 @@ function LoginPageContent() {
             >
               {loading ? t('login.submitting') : t('login.submit')}
             </button>
+            <div className="text-right">
+              <Link href={'/forgot-password' as Route} className="text-xs text-[#9dc5ff] hover:text-[#c6dcff]">
+                {t('login.forgotPassword')}
+              </Link>
+            </div>
           </form>
         ) : null}
 
