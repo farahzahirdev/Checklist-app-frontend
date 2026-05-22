@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import type { Route } from 'next';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMemo, useState, type FormEvent } from 'react';
+import { Suspense, useMemo, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { resetPassword } from '@/lib/auth';
 import { translate, useLocale } from '@/lib/i18n';
@@ -11,6 +11,14 @@ import { authPagesMessages } from '@/locales/auth-pages';
 import authBackground from '@/assets/cybersecurity-background.jpg';
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<ResetPasswordFallback />}>
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}
+
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = useMemo(() => (searchParams.get('token') || '').trim(), [searchParams]);
@@ -102,6 +110,23 @@ export default function ResetPasswordPage() {
             {t('forgot.backToLogin')}
           </Link>
         </p>
+      </div>
+    </main>
+  );
+}
+
+function ResetPasswordFallback() {
+  const backgroundStyle = {
+    backgroundImage: `linear-gradient(rgba(5, 11, 26, 0.52), rgba(5, 11, 26, 0.6)), url(${authBackground.src})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+  } as const;
+
+  return (
+    <main className="flex min-h-screen items-center justify-center px-6 py-8 text-[#ffffff]" style={backgroundStyle}>
+      <div className="mx-auto w-full max-w-lg rounded-2xl border border-[#2f4d82] bg-[#07112a]/85 p-8 backdrop-blur md:p-10">
+        <p className="text-sm text-[#97a5bb]">Loading...</p>
       </div>
     </main>
   );
