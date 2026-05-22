@@ -73,15 +73,14 @@ export default function AdminReportsPage({ searchParams }: ReportsPageProps) {
     setPage(1);
   }, [query]);
 
-  async function loadReports() {
   const loadReports = useCallback(async (opts?: { page?: number; status?: string; search?: string; sortBy?: SortBy; sortOrder?: SortOrder }) => {
     setLoading(true);
     setError('');
     try {
       const currentPage = opts?.page ?? 1;
       const response = await getReportsList({
-        status: opts?.status ?? statusFilter || undefined,
-        search: opts?.search ?? search || undefined,
+        status: opts?.status ?? (statusFilter || undefined),
+        search: opts?.search ?? (search || undefined),
         sort_by: opts?.sortBy ?? sortBy,
         sort_order: opts?.sortOrder ?? sortOrder,
         skip: (currentPage - 1) * PAGE_SIZE,
@@ -112,6 +111,7 @@ export default function AdminReportsPage({ searchParams }: ReportsPageProps) {
   };
 
   return (
+    <>
     <section className="space-y-4">
       <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
         <AdminBreadcrumbs
@@ -288,5 +288,6 @@ export default function AdminReportsPage({ searchParams }: ReportsPageProps) {
         </button>
       </div>
     )}
+    </>
   );
 }
