@@ -1,15 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
-import { getCustomerReports, type CustomerReportSummary } from '@/lib/reports';
+import { getCustomerReportsPage, type CustomerReportSummary } from '@/lib/reports';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerReportMessages } from '@/locales/customer-report';
 
 const PAGE_SIZE = 10;
-type SortBy = 'approved_at' | 'final_pdf_published_at' | 'checklist_title';
+type SortBy = 'approved_at' | 'final_pdf_published_at';
 type SortOrder = 'desc' | 'asc';
 
 function statusLabelKey(status: CustomerReportSummary['status']): string {
@@ -36,14 +36,20 @@ export default function ReportsPage() {
   const [sortBy, setSortBy] = useState<SortBy>('final_pdf_published_at');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
-  const loadReports = useCallback(async () => {
+  const loadReports = useCallback(async (nextPage: number, nextSortBy: SortBy, nextSortOrder: SortOrder) => {
     setLoading(true);
     setError('');
     try {
-      const response = await getCustomerReports();
-      setReports(response.filter((report) => report.status === 'published'));
-      setPage(1);
+      const response = await getCustomerReportsPage({
+        skip: (nextPage - 1) * PAGE_SIZE,
+        limit: PAGE_SIZE,
+        sort_by: nextSortBy,
+        sort_order: nextSortOrder,
+      });
+      setReports(response.reports);
+      setTotal(response.total);
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('list.errors.load');
       setError(msg);
@@ -54,27 +60,12 @@ export default function ReportsPage() {
   }, [t]);
 
   useEffect(() => {
-    void loadReports();
-  }, [loadReports]);
+    void loadReports(page, sortBy, sortOrder);
+  }, [loadReports, page, sortBy, sortOrder]);
 
   const dateLocale = locale === 'cs' ? 'cs-CZ' : 'en-GB';
 
-  const sorted = useMemo(() => {
-    return [...reports].sort((a, b) => {
-      if (sortBy === 'checklist_title') {
-        const va = (a.checklist_title ?? a.company_name ?? '');
-        const vb = (b.checklist_title ?? b.company_name ?? '');
-        const cmp = va.localeCompare(vb);
-        return sortOrder === 'asc' ? cmp : -cmp;
-      }
-      const ta = a[sortBy] ? new Date(a[sortBy] as string).getTime() : 0;
-      const tb = b[sortBy] ? new Date(b[sortBy] as string).getTime() : 0;
-      return sortOrder === 'asc' ? ta - tb : tb - ta;
-    });
-  }, [reports, sortBy, sortOrder]);
-
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   function handleSortByChange(value: SortBy) { setSortBy(value); setPage(1); }
   function handleSortOrderChange(value: SortOrder) { setSortOrder(value); setPage(1); }
@@ -103,7 +94,6 @@ export default function ReportsPage() {
           >
             <option value="final_pdf_published_at">{t('list.filter.sortBy.published')}</option>
             <option value="approved_at">{t('list.filter.sortBy.approved')}</option>
-            <option value="checklist_title">{t('list.filter.sortBy.title')}</option>
           </select>
           <select
             value={sortOrder}
@@ -130,7 +120,7 @@ export default function ReportsPage() {
             <span className="text-right">{t('list.col.open')}</span>
           </div>
           <ul className="divide-y divide-[#eef2fa]">
-            {paginated.map((report) => (
+            {reports.map((report) => (
               <li key={report.id} className="grid grid-cols-[1.1fr_0.9fr_auto] items-center gap-3 px-4 py-3">
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-[#1f2d45]">

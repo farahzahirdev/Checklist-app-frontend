@@ -94,6 +94,11 @@ export type CustomerReportSummary = ReportResponse & {
   company_description?: string | null;
 };
 
+export type PaginatedCustomerReportsResponse = {
+  reports: CustomerReportSummary[];
+  total: number;
+};
+
 export type ReportListItem = {
   id: string;
   assessment_id: string;
@@ -453,9 +458,29 @@ export function upsertReportSummary(reportId: string, data: UpsertReportSummaryR
   return apiPost<ReportSummaryItem, UpsertReportSummaryRequest>(`/reports/${reportId}/summaries`, data);
 }
 
+export function getCustomerReportsPage(params?: {
+  skip?: number;
+  limit?: number;
+  sort_by?: 'final_pdf_published_at' | 'approved_at' | 'draft_generated_at' | 'created_at';
+  sort_order?: 'asc' | 'desc';
+}) {
+  const query = new URLSearchParams();
+  if (typeof params?.skip === 'number') query.set('skip', String(params.skip));
+  if (typeof params?.limit === 'number') query.set('limit', String(params.limit));
+  if (params?.sort_by) query.set('sort_by', params.sort_by);
+  if (params?.sort_order) query.set('sort_order', params.sort_order);
+  const qs = query.toString();
+  return apiGetWithAuth<PaginatedCustomerReportsResponse>(`/customer/reports/my-reports${qs ? `?${qs}` : ''}`).then(
+    (data) => ({
+      reports: data.reports.map(sanitizeLoadedCustomerReport),
+      total: data.total ?? 0,
+    }),
+  );
+}
+
 export function getCustomerReports() {
-  return apiGetWithAuth<CustomerReportSummary[]>('/customer/reports/my-reports').then((rows) =>
-    rows.map(sanitizeLoadedCustomerReport),
+  return getCustomerReportsPage({ skip: 0, limit: 200, sort_by: 'final_pdf_published_at', sort_order: 'desc' }).then(
+    (data) => data.reports,
   );
 }
 
