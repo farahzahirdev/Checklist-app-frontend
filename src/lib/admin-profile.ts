@@ -7,6 +7,7 @@ export type AdminProfile = {
   username: string | null;
   job_title: string | null;
   department: string | null;
+  preferred_language: 'en' | 'cs';
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -18,6 +19,7 @@ export type UpdateAdminProfilePayload = {
   username?: string;
   job_title?: string;
   department?: string;
+  preferred_language?: 'en' | 'cs';
 };
 
 export type ChangeAdminPasswordPayload = {

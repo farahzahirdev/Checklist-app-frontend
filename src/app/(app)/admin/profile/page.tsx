@@ -63,7 +63,7 @@ function PasswordToggleButton({
 }
 
 export default function AdminProfilePage() {
-  const { locale } = useLocale();
+  const { locale, setLocale } = useLocale();
   const t = (key: string) => translate(adminProfileMessages, locale, key);
 
   const [profile, setProfile] = useState<AdminProfile | null>(null);
@@ -74,6 +74,7 @@ export default function AdminProfilePage() {
 
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
+  const [preferredLanguage, setPreferredLanguage] = useState<'en' | 'cs'>('en');
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -90,6 +91,7 @@ export default function AdminProfilePage() {
       setProfile(data);
       setEmail(data.email ?? '');
       setFullName(data.full_name ?? '');
+      setPreferredLanguage(data.preferred_language ?? 'en');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.loadProfile'));
     } finally {
@@ -109,10 +111,13 @@ export default function AdminProfilePage() {
       const updated = await updateAdminProfile({
         email: normalizeOptional(email),
         full_name: normalizeOptional(fullName),
+        preferred_language: preferredLanguage,
       });
       setProfile(updated);
       setEmail(updated.email ?? '');
       setFullName(updated.full_name ?? '');
+      setPreferredLanguage(updated.preferred_language ?? 'en');
+      setLocale(updated.preferred_language ?? 'en');
       notifyAuthStateChanged({ full_name: updated.full_name });
       toast.success(t('toasts.profileUpdated'));
     } catch (err) {
@@ -213,6 +218,18 @@ export default function AdminProfilePage() {
                 onChange={(event) => setFullName(event.target.value)}
                 className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
               />
+            </label>
+
+            <label className="block space-y-1.5 text-sm">
+              <span className="text-[#4f6281]">{t('fields.preferredLanguage')}</span>
+              <select
+                value={preferredLanguage}
+                onChange={(event) => setPreferredLanguage(event.target.value as 'en' | 'cs')}
+                className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
+              >
+                <option value="en">{t('language.en')}</option>
+                <option value="cs">{t('language.cs')}</option>
+              </select>
             </label>
 
             <div className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#506282]">

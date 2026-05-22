@@ -7,6 +7,7 @@ export type CustomerProfile = {
   username: string | null;
   job_title: string | null;
   department: string | null;
+  preferred_language: 'en' | 'cs';
   primary_company_id: string | null;
   is_active: boolean;
   created_at: string;
@@ -27,6 +28,7 @@ export type UpdateCustomerProfilePayload = {
   username?: string;
   job_title?: string;
   department?: string;
+  preferred_language?: 'en' | 'cs';
   company_name?: string | null;
   company_slug?: string | null;
   company_email?: string | null;

@@ -27,7 +27,7 @@ function normalizeOptional(value: string): string | undefined {
 }
 
 export default function CustomerProfilePage() {
-  const { locale } = useLocale();
+  const { locale, setLocale } = useLocale();
   const t = (key: string) => translate(customerProfileMessages, locale, key);
 
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
@@ -45,6 +45,7 @@ export default function CustomerProfilePage() {
   const [username, setUsername] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [department, setDepartment] = useState('');
+  const [preferredLanguage, setPreferredLanguage] = useState<'en' | 'cs'>('en');
 
   // Company fields
   const [companyName, setCompanyName] = useState('');
@@ -89,6 +90,7 @@ export default function CustomerProfilePage() {
       setUsername(profileData.username ?? '');
       setJobTitle(profileData.job_title ?? '');
       setDepartment(profileData.department ?? '');
+      setPreferredLanguage(profileData.preferred_language ?? 'en');
 
       const firstCompany = companyList.companies?.[0] ?? null;
       setCompany(firstCompany);
@@ -134,6 +136,7 @@ export default function CustomerProfilePage() {
         username: normalizeOptional(username),
         job_title: normalizeOptional(jobTitle),
         department: normalizeOptional(department),
+        preferred_language: preferredLanguage,
       });
 
       setProfile(updated);
@@ -141,6 +144,8 @@ export default function CustomerProfilePage() {
       setUsername(updated.username ?? '');
       setJobTitle(updated.job_title ?? '');
       setDepartment(updated.department ?? '');
+      setPreferredLanguage(updated.preferred_language ?? 'en');
+      setLocale(updated.preferred_language ?? 'en');
       toast.success(t('toasts.profileUpdated'));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.updateProfile'));
@@ -303,6 +308,18 @@ export default function CustomerProfilePage() {
                 />
               </label>
             </div>
+
+            <label className="block space-y-1.5 text-sm">
+              <span className="text-[#4f6281]">{t('fields.preferredLanguage')}</span>
+              <select
+                value={preferredLanguage}
+                onChange={(event) => setPreferredLanguage(event.target.value as 'en' | 'cs')}
+                className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
+              >
+                <option value="en">{t('language.en')}</option>
+                <option value="cs">{t('language.cs')}</option>
+              </select>
+            </label>
 
             <button
               type="submit"
