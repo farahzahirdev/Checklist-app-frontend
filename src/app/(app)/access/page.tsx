@@ -2,418 +2,344 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { getCurrentAssessment, startAssessment } from '@/lib/assessment';
-import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
-import { listCustomerAssessments } from '@/lib/customer-assessments';
-import { listPurchasedChecklistIds } from '@/lib/customer-payments';
-import { formatStatusLabel } from '@/lib/status-format';
+import { listCustomerAssessments, type CustomerAssessmentListItem } from '@/lib/customer-assessments';
+import { getCustomerReports, type CustomerReportSummary } from '@/lib/reports';
+import { startAssessment } from '@/lib/assessment';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerAccessMessages } from '@/locales/customer-access';
 
-function formatTimeRemaining(expiresAt: string, t: (key: string) => string): string {
-  const expires = new Date(expiresAt).getTime();
-  if (Number.isNaN(expires)) {
-    return t('timer.invalid');
-  }
-  const diff = expires - Date.now();
-  if (diff <= 0) {
-    return t('timer.expired');
-  }
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-  const minutes = Math.floor((diff / (1000 * 60)) % 60);
-  return t('timer.remainingFmt')
-    .replace('{d}', String(days))
-    .replace('{h}', String(hours))
-    .replace('{m}', String(minutes));
+type StatusFilter = 'all' | 'not_started' | 'in_progress' | 'submitted' | 'closed' | 'expired';
+
+function statusBadgeClass(status: string) {
+  if (status === 'in_progress') return 'border-sky-300/40 bg-sky-400/15 text-sky-300';
+  if (status === 'not_started') return 'border-emerald-300/40 bg-emerald-400/15 text-emerald-300';
+  if (status === 'submitted' || status === 'closed') return 'border-slate-300/30 bg-slate-300/20 text-slate-200';
+  return 'border-amber-300/40 bg-amber-400/15 text-amber-300';
+}
+
+function clampPercent(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value)));
 }
 
 export default function AccessPage() {
   const { locale } = useLocale();
-  const t = (key: string) => translate(customerAccessMessages, locale, key);
-  const searchParams = useSearchParams();
-  const checklistIdFromQuery = searchParams.get('checklist_id') ?? '';
-  const [checklistId, setChecklistId] = useState('');
-  const [checklists, setChecklists] = useState<CustomerChecklist[]>([]);
-  const [purchasedChecklistIds, setPurchasedChecklistIds] = useState<string[]>([]);
-  const [blockedChecklistIds, setBlockedChecklistIds] = useState<string[]>([]);
-  const [checklistsLoading, setChecklistsLoading] = useState(true);
-  const [message, setMessage] = useState('');
+  const t = (key: string, values?: Record<string, string>) => translate(customerAccessMessages, locale, key, values);
+
+  const [loading, setLoading] = useState(true);
+  const [startingId, setStartingId] = useState('');
   const [error, setError] = useState('');
-  const [assessmentsByChecklistId, setAssessmentsByChecklistId] = useState<
-    Record<
-      string,
-      {
-        status: string;
-        started_at: string;
-        expires_at: string;
-        completion_percent: number;
-        checklist_id?: string;
-      }
-    >
-  >({});
-  const [assessment, setAssessment] = useState<{
-    status: string;
-    started_at: string;
-    expires_at: string;
-    completion_percent: number;
-    checklist_id?: string;
-  } | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [assessments, setAssessments] = useState<CustomerAssessmentListItem[]>([]);
+  const [reports, setReports] = useState<CustomerReportSummary[]>([]);
 
-  const remaining = useMemo(() => (assessment ? formatTimeRemaining(assessment.expires_at, t) : ''), [assessment, t]);
-  const isSubmittedAssessment = assessment?.status === 'submitted';
-  const assessmentAlreadyStarted = Boolean(assessment && assessment.status === 'in_progress');
-  const checklistLocked = Boolean(checklistIdFromQuery);
-  const selectedChecklistName = useMemo(
-    () => checklists.find((checklist) => checklist.id === checklistId)?.title ?? '',
-    [checklistId, checklists],
-  );
+  const reportByAssessmentId = useMemo(() => new Map(reports.map((report) => [report.assessment_id, report])), [reports]);
 
-  const purchasedOnlyChecklists = useMemo(() => {
-    if (!purchasedChecklistIds.length) return [];
-    const ids = new Set(purchasedChecklistIds);
-    return checklists.filter((item) => ids.has(item.id));
-  }, [checklists, purchasedChecklistIds]);
-
-  const blockedChecklistIdSet = useMemo(() => new Set(blockedChecklistIds), [blockedChecklistIds]);
-
-  const startableChecklists = useMemo(
-    () => purchasedOnlyChecklists.filter((item) => !blockedChecklistIdSet.has(item.id)),
-    [blockedChecklistIdSet, purchasedOnlyChecklists],
-  );
-
-  const orderedChecklists = useMemo(() => {
-    if (!checklistId) {
-      return startableChecklists;
-    }
-    const selected = startableChecklists.find((checklist) => checklist.id === checklistId);
-    if (!selected) {
-      return startableChecklists;
-    }
-    return [selected, ...startableChecklists.filter((checklist) => checklist.id !== checklistId)];
-  }, [checklistId, startableChecklists]);
-
-  const selectedChecklistBlocked = Boolean(checklistId && blockedChecklistIdSet.has(checklistId));
-
-  useEffect(() => {
-    if (checklistIdFromQuery) {
-      setChecklistId(checklistIdFromQuery);
-    }
-  }, [checklistIdFromQuery]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadBlockedChecklistIds() {
-      try {
-        const response = await listCustomerAssessments({
-          status: ['in_progress', 'submitted'],
-          limit: 200,
-          sort_by: 'updated_at',
-          sort_order: 'desc',
-        });
-        if (!mounted) return;
-        const ids = Array.from(new Set((response.assessments ?? []).map((item) => item.checklist_id)));
-        setBlockedChecklistIds(ids);
-      } catch {
-        // Keep access flow usable when history lookup fails.
-      }
-    }
-
-    async function preloadSelectedAssessment() {
-      if (!checklistIdFromQuery) return;
-      try {
-        const response = await getCurrentAssessment(checklistIdFromQuery);
-        if (!mounted) return;
-        setAssessment(response);
-        setAssessmentsByChecklistId((previous) => ({ ...previous, [checklistIdFromQuery]: response }));
-      } catch {
-        // No active assessment for this checklist yet.
-      }
-    }
-
-    void loadBlockedChecklistIds();
-    void preloadSelectedAssessment();
-    return () => {
-      mounted = false;
-    };
-  }, [checklistIdFromQuery]);
-
-  useEffect(() => {
-    if (!checklistLocked && checklistId && blockedChecklistIdSet.has(checklistId)) {
-      setChecklistId('');
-    }
-  }, [blockedChecklistIdSet, checklistId, checklistLocked]);
-
-  useEffect(() => {
-    let mounted = true;
-    async function loadPublishedChecklists() {
-      try {
-        const response = await listPublishedCustomerChecklists();
-        if (!mounted) {
-          return;
-        }
-        const sorted = [...response].sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
-        setChecklists(sorted);
-      } catch {
-        // keep access flow functional even when checklist catalog fails
-      } finally {
-        if (mounted) {
-          setChecklistsLoading(false);
-        }
-      }
-    }
-    void loadPublishedChecklists();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    async function loadPurchasedIds() {
-      setChecklistsLoading(true);
-      try {
-        const ids = await listPurchasedChecklistIds();
-        if (!mounted) return;
-        const next = Array.from(new Set([...(ids ?? []), ...(checklistIdFromQuery ? [checklistIdFromQuery] : [])]));
-        setPurchasedChecklistIds(next);
-      } catch {
-        // ignore and keep fallback behavior
-      } finally {
-        if (mounted) {
-          setChecklistsLoading(false);
-        }
-      }
-    }
-    void loadPurchasedIds();
-    return () => {
-      mounted = false;
-    };
-  }, [checklistIdFromQuery]);
-
-  useEffect(() => {
-    let intervalId: number | undefined;
-    if (assessment?.expires_at) {
-      intervalId = window.setInterval(() => {
-        setAssessment((prev) => (prev ? { ...prev } : prev));
-      }, 30000);
-    }
-    return () => {
-      if (intervalId) {
-        window.clearInterval(intervalId);
-      }
-    };
-  }, [assessment?.expires_at]);
-
-  async function loadCurrent() {
-    setError('');
-    setMessage('');
+  async function load() {
     setLoading(true);
+    setError('');
     try {
-      const response = await getCurrentAssessment(checklistId.trim() || undefined);
-      setAssessment(response);
-      if (checklistId.trim()) {
-        setAssessmentsByChecklistId((previous) => ({ ...previous, [checklistId.trim()]: response }));
-      }
-      setMessage(t('messages.activeLoaded'));
+      const [assessmentResponse, reportResponse] = await Promise.all([
+        listCustomerAssessments({ sort_by: 'updated_at', sort_order: 'desc', limit: 200 }),
+        getCustomerReports().catch(() => []),
+      ]);
+      setAssessments(assessmentResponse.assessments ?? []);
+      setReports(reportResponse);
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('errors.loadAssessment');
-      if (message.toLowerCase().includes('assessment not found')) {
-        setMessage(t('messages.noneActiveYet'));
-      } else {
-        setError(message);
-      }
+      setError(err instanceof Error ? err.message : t('errors.load'));
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    if (!checklistId.trim() || checklistLocked) {
-      return;
-    }
-    const cached = assessmentsByChecklistId[checklistId.trim()];
-    if (cached) {
-      setAssessment(cached);
-      return;
-    }
-    // Lazy-load current assessment for the selected checklist to support managing multiple checklists.
-    let cancelled = false;
-    void getCurrentAssessment(checklistId.trim())
-      .then((response) => {
-        if (cancelled) return;
-        setAssessment(response);
-        setAssessmentsByChecklistId((previous) => ({ ...previous, [checklistId.trim()]: response }));
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setAssessment(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [assessmentsByChecklistId, checklistId, checklistLocked]);
+    void load();
+  }, []);
 
-  async function start() {
+  const filtered = useMemo(() => {
+    return assessments.filter((item) => {
+      const searchTerm = search.trim().toLowerCase();
+      const matchesSearch =
+        !searchTerm ||
+        item.checklist_title.toLowerCase().includes(searchTerm) ||
+        item.checklist_type_code.toLowerCase().includes(searchTerm);
+      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [assessments, search, statusFilter]);
+
+  const activeCount = useMemo(
+    () => assessments.filter((item) => item.status === 'in_progress' || item.status === 'not_started').length,
+    [assessments],
+  );
+  const readyToStartCount = useMemo(() => assessments.filter((item) => item.status === 'not_started').length, [assessments]);
+  const inProgressCount = useMemo(() => assessments.filter((item) => item.status === 'in_progress').length, [assessments]);
+  const publishedReportsCount = useMemo(
+    () => reports.filter((report) => report.status === 'published').length,
+    [reports],
+  );
+
+  const recentActivity = useMemo(
+    () =>
+      assessments
+        .filter((item) => item.last_activity)
+        .slice(0, 4)
+        .map((item) => ({
+          id: item.id,
+          title: item.checklist_title,
+          status: item.status,
+          time: item.last_activity ? new Date(item.last_activity).toLocaleString() : '-',
+        })),
+    [assessments],
+  );
+
+  async function handleStart(item: CustomerAssessmentListItem) {
+    setStartingId(item.id);
     setError('');
-    setMessage('');
-    if (!checklistId.trim()) {
-      setError(t('errors.checklistRequired'));
-      return;
-    }
-    if (blockedChecklistIdSet.has(checklistId.trim())) {
-      setError(t('errors.checklistNotStartable'));
-      return;
-    }
-    setLoading(true);
     try {
-      const response = await startAssessment({ checklist_id: checklistId.trim() });
-      setAssessment(response);
-      setAssessmentsByChecklistId((previous) => ({ ...previous, [checklistId.trim()]: response }));
-      setMessage(t('messages.started'));
+      await startAssessment({ checklist_id: item.checklist_id });
+      window.location.href = `/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}`;
     } catch (err) {
-      const text = err instanceof Error ? err.message : t('errors.startAssessment');
-      if (text.includes('payment_required')) {
-        setError(t('errors.paymentPending'));
-      } else {
-        setError(text);
-      }
+      setError(err instanceof Error ? err.message : t('errors.start'));
     } finally {
-      setLoading(false);
+      setStartingId('');
     }
   }
 
   return (
-    <section className="space-y-6">
-      <header className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">{t('title.kicker')}</p>
-        <h1 className="text-3xl font-semibold text-[#1f2d45]">{t('title')}</h1>
-      </header>
+    <section className="-m-4 bg-[#0a0f1e] text-[#f1f5f9] md:-m-5">
+      <div className="border-b border-[#1e2d4a] bg-[linear-gradient(180deg,#0a1628_0%,#0a0f1e_100%)] px-6 py-10 md:px-8">
+        <div className="mx-auto max-w-[1280px]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#3b82f6]">{t('title.kicker')}</p>
+          <h1 className="mt-2 text-4xl font-bold tracking-[-0.02em] text-[#f1f5f9]">{t('title')}</h1>
+          <p className="mt-2 max-w-2xl text-sm text-[#94a3b8]">{t('title.subtitle')}</p>
+        </div>
+      </div>
 
-      {assessment ? (
-        <article className="rounded-xl border border-[#bfd4ff] bg-[#eef4ff] p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#4a6ea8]">{t('timer.remaining')}</p>
-          <p className="mt-1 text-3xl font-semibold text-[#1f2d45]">{remaining}</p>
-          <div className="mt-3 grid gap-2 text-sm text-[#445c7e] md:grid-cols-3">
-            {selectedChecklistName ? (
-              <p>
-                <span className="font-semibold">{t('labels.checklist')}:</span> {selectedChecklistName}
-              </p>
-            ) : null}
-            <p>
-              <span className="font-semibold">{t('labels.status')}:</span> {formatStatusLabel(assessment.status)}
-            </p>
-            <p>
-              <span className="font-semibold">{t('labels.completion')}:</span> {assessment.completion_percent}%
-            </p>
-            <p>
-              <span className="font-semibold">{t('labels.started')}:</span> {new Date(assessment.started_at).toLocaleString()}
-            </p>
-            <p>
-              <span className="font-semibold">{t('labels.expires')}:</span> {new Date(assessment.expires_at).toLocaleString()}
-            </p>
+      <div className="border-b border-[#1e2d4a] bg-[rgba(10,15,30,0.6)]">
+        <div className="mx-auto grid max-w-[1280px] grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
+          <div className="border-r border-[#1e2d4a] px-6 py-5">
+            <div className="text-sm font-semibold text-[#f1f5f9]">{t('stats.activeAudits')}</div>
+            <div className="mt-1 text-3xl font-bold">{activeCount}</div>
+            <div className="text-xs text-[#64748b]">{t('stats.activeSub')}</div>
           </div>
-        </article>
-      ) : null}
+          <div className="border-r border-[#1e2d4a] px-6 py-5">
+            <div className="text-sm font-semibold text-[#f1f5f9]">{t('stats.readyToStart')}</div>
+            <div className="mt-1 text-3xl font-bold">{readyToStartCount}</div>
+            <div className="text-xs text-[#64748b]">{t('stats.readySub')}</div>
+          </div>
+          <div className="border-r border-[#1e2d4a] px-6 py-5">
+            <div className="text-sm font-semibold text-[#f1f5f9]">{t('stats.inProgress')}</div>
+            <div className="mt-1 text-3xl font-bold">{inProgressCount}</div>
+            <div className="text-xs text-[#64748b]">{t('stats.progressSub')}</div>
+          </div>
+          <div className="px-6 py-5">
+            <div className="text-sm font-semibold text-[#f1f5f9]">{t('stats.publishedReports')}</div>
+            <div className="mt-1 text-3xl font-bold">{publishedReportsCount}</div>
+            <div className="text-xs text-[#64748b]">{t('stats.reportSub')}</div>
+          </div>
+        </div>
+      </div>
 
-      {!assessmentAlreadyStarted && !isSubmittedAssessment ? (
-        <>
-          <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-[#243555]">{t('before.title')}</h2>
-            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#4f6281]">
-              <li>{t('before.point1')}</li>
-              <li>{t('before.point2')}</li>
-              <li>{t('before.point3')}</li>
-            </ul>
-          </article>
+      <div className="mx-auto grid max-w-[1280px] gap-8 px-6 py-8 md:px-8 xl:grid-cols-[1fr_280px]">
+        <div>
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-bold">{t('section.auditListTitle')}</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={t('filters.searchPlaceholder')}
+                className="w-[220px] rounded-lg border border-[#1e2d4a] bg-[#111827] px-3 py-2 text-sm text-[#f1f5f9] placeholder:text-[#64748b] outline-none focus:border-[#2563eb]"
+              />
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+                className="rounded-lg border border-[#1e2d4a] bg-[#111827] px-3 py-2 text-sm text-[#f1f5f9] outline-none focus:border-[#2563eb]"
+              >
+                <option value="all">{t('filters.all')}</option>
+                <option value="not_started">{t('filters.notStarted')}</option>
+                <option value="in_progress">{t('filters.inProgress')}</option>
+                <option value="submitted">{t('filters.submitted')}</option>
+                <option value="closed">{t('filters.closed')}</option>
+                <option value="expired">{t('filters.expired')}</option>
+              </select>
+            </div>
+          </div>
 
-          <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-            {checklistLocked ? (
-              <div className="space-y-2 text-sm">
-                <p className="text-[#3f5677]">{t('labels.checklist')}</p>
-                <p className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555]">
-                  {selectedChecklistName || checklistId || t('checklist.selectedFallback')}
-                </p>
-              </div>
-            ) : (
-              <label className="block space-y-2 text-sm">
-                <span className="text-[#3f5677]">{t('labels.checklist')}</span>
-                {checklistsLoading ? (
-                  <div className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#607594]">
-                    {t('checklist.loadingPurchased')}
-                  </div>
-                ) : (
-                  <select
-                    value={checklistId}
-                    onChange={(event) => setChecklistId(event.target.value)}
-                    className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
-                    disabled={!orderedChecklists.length}
-                  >
-                    {!checklistId ? (
-                      <option value="">{orderedChecklists.length ? t('checklist.selectPurchased') : purchasedOnlyChecklists.length ? t('checklist.noneStartable') : t('checklist.nonePurchased')}</option>
-                    ) : null}
-                    {orderedChecklists.map((checklist) => (
-                      <option key={checklist.id} value={checklist.id}>
-                        {checklist.title}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                <p className="text-xs text-[#607594]">
-                  {t('checklist.helper').replace('{cta}', t('actions.buyAnother'))}
-                </p>
-                {selectedChecklistBlocked ? (
-                  <p className="text-xs text-[#b63d51]">{t('errors.checklistNotStartable')}</p>
-                ) : null}
-              </label>
-            )}
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={start}
-                disabled={loading || isSubmittedAssessment || selectedChecklistBlocked || !checklistId.trim()}
-                className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? t('actions.processing') : t('actions.start')}
-              </button>
-              <Link
-                href="/payment"
-                className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff]"
-              >
-                {t('actions.buyAnother')}
+          {error ? <p className="mb-3 rounded-lg border border-[#f59e0b]/40 bg-[#f59e0b]/10 px-3 py-2 text-sm text-[#fcd34d]">{error}</p> : null}
+
+          {loading ? (
+            <p className="rounded-xl border border-[#1e2d4a] bg-[#111827] px-4 py-3 text-sm text-[#94a3b8]">{t('loading')}</p>
+          ) : filtered.length === 0 ? (
+            <p className="rounded-xl border border-[#1e2d4a] bg-[#111827] px-4 py-3 text-sm text-[#94a3b8]">{t('empty')}</p>
+          ) : (
+            <div className="space-y-4">
+              {filtered.map((item) => {
+                const completion = clampPercent(item.completion_percent);
+                const report = reportByAssessmentId.get(item.id);
+                const reportId =
+                  report?.status === 'published'
+                    ? report.id
+                    : item.report_status === 'published' && item.report_id
+                    ? item.report_id
+                    : null;
+                const canViewPerformance = item.status === 'submitted' || item.status === 'closed';
+
+                return (
+                  <article key={item.id} className="grid gap-5 rounded-2xl border border-[#1e2d4a] bg-[#111827] p-5 lg:grid-cols-[1fr_230px]">
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-base font-bold text-[#f1f5f9]">{item.checklist_title}</h3>
+                        <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusBadgeClass(item.status)}`}>
+                          {t(`status.${item.status}`)}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-[11px] text-[#64748b]">
+                        <span className="rounded-md border border-[#1e2d4a] bg-[#0f172a] px-2 py-1">{item.checklist_type_code}</span>
+                        <span className="rounded-md border border-[#1e2d4a] bg-[#0f172a] px-2 py-1">{item.checklist_version}</span>
+                      </div>
+                      <div>
+                        <div className="mb-1 flex items-center justify-between text-xs text-[#94a3b8]">
+                          <span>{t('labels.progress')}</span>
+                          <span className="font-semibold text-[#f1f5f9]">{completion}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-[#1e293b]">
+                          <div
+                            className={`h-2 rounded-full ${completion >= 100 ? 'bg-[linear-gradient(90deg,#16a34a,#22c55e)]' : 'bg-[linear-gradient(90deg,#2563eb,#3b82f6)]'}`}
+                            style={{ width: `${completion}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className="text-xs text-[#94a3b8]">
+                        {t('labels.lastUpdated')}: {item.last_activity ? new Date(item.last_activity).toLocaleString() : t('labels.na')}
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {item.status === 'not_started' ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleStart(item)}
+                          disabled={startingId === item.id}
+                          className="rounded-lg bg-[#2563eb] px-3 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8] disabled:opacity-60"
+                        >
+                          {startingId === item.id ? t('actions.processing') : t('actions.startAudit')}
+                        </button>
+                      ) : (
+                        <Link
+                          href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
+                          className="rounded-lg bg-[#2563eb] px-3 py-2 text-center text-sm font-semibold text-white hover:bg-[#1d4ed8]"
+                        >
+                          {t('actions.continueAudit')}
+                        </Link>
+                      )}
+
+                      {canViewPerformance ? (
+                        <Link
+                          href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&view=performance`}
+                          className="rounded-lg border border-[#1e2d4a] bg-[#0f172a] px-3 py-2 text-center text-sm font-medium text-[#cbd5e1] hover:border-[#2563eb] hover:text-white"
+                        >
+                          {t('actions.viewPerformance')}
+                        </Link>
+                      ) : null}
+
+                      {reportId ? (
+                        <Link
+                          href={`/reports/${reportId}` as any}
+                          className="rounded-lg border border-[#166534] bg-[#052e16] px-3 py-2 text-center text-sm font-medium text-[#bbf7d0] hover:bg-[#064e1d]"
+                        >
+                          {t('actions.viewReport')}
+                        </Link>
+                      ) : null}
+
+                      <Link
+                        href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
+                        className="rounded-lg border border-[#1e2d4a] bg-transparent px-3 py-2 text-center text-sm font-medium text-[#94a3b8] hover:border-[#2563eb] hover:text-white"
+                      >
+                        {t('actions.viewDetails')}
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#64748b]">
+            <span>{t('pagination.showing', { count: String(filtered.length), total: String(assessments.length) })}</span>
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="rounded-md border border-[#1e2d4a] px-3 py-1.5 text-[#94a3b8] hover:border-[#2563eb] hover:text-white"
+            >
+              {t('actions.refresh')}
+            </button>
+          </div>
+
+          <div className="mt-6 grid gap-3 rounded-2xl border border-[#1e2d4a] bg-[#111827] p-5 md:grid-cols-2 xl:grid-cols-4">
+            <div>
+              <div className="text-sm font-semibold">{t('quick.purchaseTitle')}</div>
+              <p className="mt-1 text-xs text-[#64748b]">{t('quick.purchaseDesc')}</p>
+              <Link href="/payment" className="mt-2 inline-block text-xs font-semibold text-[#3b82f6] hover:underline">
+                {t('quick.open')}
               </Link>
             </div>
+            <div>
+              <div className="text-sm font-semibold">{t('quick.uploadTitle')}</div>
+              <p className="mt-1 text-xs text-[#64748b]">{t('quick.uploadDesc')}</p>
+              <Link href="/assessment" className="mt-2 inline-block text-xs font-semibold text-[#3b82f6] hover:underline">
+                {t('quick.open')}
+              </Link>
+            </div>
+            <div>
+              <div className="text-sm font-semibold">{t('quick.reportsTitle')}</div>
+              <p className="mt-1 text-xs text-[#64748b]">{t('quick.reportsDesc')}</p>
+              <Link href="/reports" className="mt-2 inline-block text-xs font-semibold text-[#3b82f6] hover:underline">
+                {t('quick.open')}
+              </Link>
+            </div>
+            <div>
+              <div className="text-sm font-semibold">{t('quick.helpTitle')}</div>
+              <p className="mt-1 text-xs text-[#64748b]">{t('quick.helpDesc')}</p>
+              <Link href="/support" className="mt-2 inline-block text-xs font-semibold text-[#3b82f6] hover:underline">
+                {t('quick.open')}
+              </Link>
+            </div>
+          </div>
+        </div>
 
-            {message ? <p className="mt-3 text-sm text-[#2f9960]">{message}</p> : null}
-            {error ? <p className="mt-3 text-sm text-[#c43e53]">{error}</p> : null}
-          </article>
-        </>
-      ) : isSubmittedAssessment ? (
-        <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-          <p className="text-sm text-[#3f5677]">
-            {t('submitted.notice')}
-          </p>
-          {message ? <p className="mt-3 text-sm text-[#2f9960]">{message}</p> : null}
-          {error ? <p className="mt-3 text-sm text-[#c43e53]">{error}</p> : null}
-        </article>
-      ) : (
-        <article className="rounded-xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href={checklistId.trim() ? `/assessment?checklist_id=${encodeURIComponent(checklistId.trim())}` : '/assessment'}
-              className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white"
-            >
-              {t('actions.continue')}
-            </Link>
+        <aside className="space-y-5">
+          <div className="rounded-2xl border border-[#1e2d4a] bg-[#111827] p-5">
+            <h3 className="text-sm font-bold">{t('workflow.title')}</h3>
+            <p className="mt-1 text-xs text-[#64748b]">{t('workflow.subtitle')}</p>
+            <ol className="mt-4 space-y-3 text-xs text-[#94a3b8]">
+              <li><span className="font-semibold text-[#f1f5f9]">1.</span> {t('workflow.step1')}</li>
+              <li><span className="font-semibold text-[#f1f5f9]">2.</span> {t('workflow.step2')}</li>
+              <li><span className="font-semibold text-[#f1f5f9]">3.</span> {t('workflow.step3')}</li>
+              <li><span className="font-semibold text-[#f1f5f9]">4.</span> {t('workflow.step4')}</li>
+              <li><span className="font-semibold text-[#f1f5f9]">5.</span> {t('workflow.step5')}</li>
+            </ol>
           </div>
 
-          {message ? <p className="mt-3 text-sm text-[#2f9960]">{message}</p> : null}
-          {error ? <p className="mt-3 text-sm text-[#c43e53]">{error}</p> : null}
-        </article>
-      )}
+          <div className="rounded-2xl border border-[#1e2d4a] bg-[#111827] p-5">
+            <h3 className="text-sm font-bold">{t('activity.title')}</h3>
+            <div className="mt-3 space-y-3">
+              {recentActivity.length ? (
+                recentActivity.map((activity) => (
+                  <div key={activity.id} className="rounded-lg border border-[#1e2d4a] bg-[#0f172a] px-3 py-2">
+                    <p className="text-xs font-semibold text-[#f1f5f9]">{activity.title}</p>
+                    <p className="text-[11px] text-[#94a3b8]">{t(`status.${activity.status}`)}</p>
+                    <p className="text-[11px] text-[#64748b]">{activity.time}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-[#64748b]">{t('activity.empty')}</p>
+              )}
+            </div>
+          </div>
+        </aside>
+      </div>
     </section>
   );
 }

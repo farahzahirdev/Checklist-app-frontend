@@ -48,8 +48,7 @@ export default function AppLayout({
   const isPaymentPath = pathname === '/payment' || pathname?.startsWith('/payment/') || false;
   const isPaymentsPath = pathname?.startsWith('/payments') ?? false;
   const dashboardActive = pathname === '/dashboard';
-  const assessmentActive = pathname?.startsWith('/assessment') ?? false;
-  const accessActive = pathname?.startsWith('/access') ?? false;
+  const auditActive = (pathname?.startsWith('/assessment') ?? false) || (pathname?.startsWith('/access') ?? false);
   const isFullBleedWorkspacePage =
     pathname === '/profile' ||
     pathname === '/my-audits' ||
@@ -260,20 +259,12 @@ export default function AppLayout({
                   {t('nav.dashboard')}
                 </Link>
                 <Link
-                  href="/assessment"
-                  className={`flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
-                    assessmentActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
-                  }`}
-                >
-                  {t('nav.assessment')}
-                </Link>
-                <Link
                   href="/access"
                   className={`flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
-                    accessActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
+                    auditActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
                   }`}
                 >
-                  {t('nav.access')}
+                  {t('nav.audit')}
                 </Link>
                 <Link
                   href={'/support' as Route}
