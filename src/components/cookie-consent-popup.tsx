@@ -7,6 +7,7 @@ import {
   saveCookieConsent,
   type CookieConsentPreferences,
 } from '@/lib/cookie-consent';
+import { ACCESS_TOKEN_STORAGE_KEY } from '@/lib/auth';
 
 type OptionalConsent = Omit<CookieConsentPreferences, 'necessary'>;
 
@@ -60,6 +61,12 @@ export function CookieConsentPopup() {
   });
 
   useEffect(() => {
+    const token = window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+    if (token) {
+      setOpen(false);
+      return;
+    }
+
     const existing = getCookieConsent();
     if (existing) {
       setOpen(false);

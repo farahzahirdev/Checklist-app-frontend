@@ -5,9 +5,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { ScrollToTop } from '@/components/scroll-to-top';
 import { SiteHeader } from '@/components/site-header';
+import { CookieConsentPopup } from '@/components/cookie-consent-popup';
 import type { ReactNode } from 'react';
 import { ACCESS_TOKEN_STORAGE_KEY, getCurrentUser, getRoleHomePath, getRoleKey } from '@/lib/auth';
-import { hasCookieConsent } from '@/lib/cookie-consent';
 import { useCookieConsentGate } from '@/hooks/useCookieConsentGate';
 
 export default function PublicLayout({
@@ -64,6 +64,7 @@ export default function PublicLayout({
       <ScrollToTop />
       {!isConsentGate ? <SiteHeader /> : null}
       {children}
+      {!isConsentGate ? <CookieConsentPopup /> : null}
     </div>
   );
 }
