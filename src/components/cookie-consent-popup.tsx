@@ -8,14 +8,95 @@ import {
   type CookieConsentPreferences,
 } from '@/lib/cookie-consent';
 import { ACCESS_TOKEN_STORAGE_KEY } from '@/lib/auth';
+import { useLocale } from '@/lib/i18n';
 
 type OptionalConsent = Omit<CookieConsentPreferences, 'necessary'>;
 
-const panelClass =
-  'fixed inset-x-4 bottom-4 z-[120] mx-auto max-w-3xl rounded-2xl border border-[#153566] bg-[linear-gradient(160deg,#071733_0%,#0b2448_55%,#113463_100%)] p-4 text-white shadow-[0_18px_50px_rgba(3,11,24,0.55)] sm:inset-x-6 sm:p-5';
+const itemClass = 'rounded-xl border border-[#dbe4f4] bg-[#f8fbff] px-3 py-2.5';
 
-const itemClass =
-  'rounded-xl border border-[#2b4f86] bg-[#0f2750]/70 px-3 py-2.5';
+const popupCopy = {
+  en: {
+    title: 'Cookie preferences',
+    subtitle:
+      'Choose how we can use cookies and browser storage on this device. Necessary cookies are always enabled.',
+    language: 'Language',
+    allowed: 'Allowed',
+    blocked: 'Blocked',
+    categoryNecessary: 'Necessary cookies',
+    categoryNecessaryDesc: 'Required for security, authentication, and core app behavior.',
+    categoryPreferences: 'Preference cookies',
+    categoryPreferencesDesc: 'Remember language and interface choices.',
+    categoryAnalytics: 'Analytics cookies',
+    categoryAnalyticsDesc: 'Help us measure usage and improve performance.',
+    categoryMarketing: 'Marketing cookies',
+    categoryMarketingDesc: 'Measure campaign effectiveness and communication relevance.',
+    inventoryTitle: 'Cookie and storage inventory',
+    inventoryNote: 'This list reflects cookies and related browser storage used by the app.',
+    inventoryName: 'Name',
+    inventoryType: 'Type',
+    inventoryCategory: 'Category',
+    inventoryPurpose: 'Purpose',
+    inventoryDuration: 'Duration',
+    allEnabled: 'All optional categories are enabled.',
+    partiallyBlocked: 'Optional categories are partially or fully blocked.',
+    saveSelected: 'Save selected',
+    allowAll: 'Allow all',
+    rejectOptional: 'Reject optional',
+    policyPrefix: 'Details:',
+    policyLink: 'Cookie Policy',
+  },
+  cs: {
+    title: 'Nastavení cookies',
+    subtitle:
+      'Vyberte, jak můžeme používat cookies a úložiště prohlížeče na tomto zařízení. Nezbytné cookies jsou vždy zapnuté.',
+    language: 'Jazyk',
+    allowed: 'Povoleno',
+    blocked: 'Blokováno',
+    categoryNecessary: 'Nezbytné cookies',
+    categoryNecessaryDesc: 'Nutné pro zabezpečení, přihlášení a základní fungování aplikace.',
+    categoryPreferences: 'Preferenční cookies',
+    categoryPreferencesDesc: 'Pamatují si jazyk a volby rozhraní.',
+    categoryAnalytics: 'Analytické cookies',
+    categoryAnalyticsDesc: 'Pomáhají měřit používání a zlepšovat výkon.',
+    categoryMarketing: 'Marketingové cookies',
+    categoryMarketingDesc: 'Měří účinnost kampaní a relevanci komunikace.',
+    inventoryTitle: 'Přehled cookies a úložišť',
+    inventoryNote: 'Seznam odpovídá cookies a souvisejícím uloženým datům používaným aplikací.',
+    inventoryName: 'Název',
+    inventoryType: 'Typ',
+    inventoryCategory: 'Kategorie',
+    inventoryPurpose: 'Účel',
+    inventoryDuration: 'Doba uložení',
+    allEnabled: 'Všechny volitelné kategorie jsou povoleny.',
+    partiallyBlocked: 'Volitelné kategorie jsou částečně nebo plně blokovány.',
+    saveSelected: 'Uložit vybrané',
+    allowAll: 'Povolit vše',
+    rejectOptional: 'Odmítnout volitelné',
+    policyPrefix: 'Detail:',
+    policyLink: 'Zásady cookies',
+  },
+} as const;
+
+const inventoryRows = {
+  en: [
+    ['auditready_consent', 'Cookie', 'Necessary', 'Stores the selected consent preferences.', '365 days'],
+    ['checklist_access_token', 'Local storage', 'Necessary', 'Keeps authenticated session in the browser.', 'Until logout/clear'],
+    ['checklist_original_access_token', 'Local storage', 'Necessary', 'Stores original token during role switch.', 'Until role switch ends'],
+    ['checklist_role_switch_active', 'Local storage', 'Necessary', 'Indicates active admin role switching.', 'Until role switch ends'],
+    ['checklist_locale', 'Local storage', 'Preferences', 'Stores selected interface language (CS/EN).', 'Until changed/clear'],
+    ['user_language_preference', 'Cookie', 'Preferences', 'Persists language preference when allowed.', '365 days'],
+    ['checklist_cookie_consent_v2', 'Legacy cookie/storage', 'Necessary', 'Backward-compatible consent storage key.', 'Legacy/read-only'],
+  ],
+  cs: [
+    ['auditready_consent', 'Cookie', 'Nezbytné', 'Ukládá zvolené preference souhlasu.', '365 dní'],
+    ['checklist_access_token', 'Local storage', 'Nezbytné', 'Udržuje přihlášenou relaci v prohlížeči.', 'Do odhlášení/smazání'],
+    ['checklist_original_access_token', 'Local storage', 'Nezbytné', 'Ukládá původní token při přepnutí role.', 'Do konce přepnutí role'],
+    ['checklist_role_switch_active', 'Local storage', 'Nezbytné', 'Určuje aktivní přepnutí admin role.', 'Do konce přepnutí role'],
+    ['checklist_locale', 'Local storage', 'Preferenční', 'Ukládá zvolený jazyk rozhraní (CS/EN).', 'Do změny/smazání'],
+    ['user_language_preference', 'Cookie', 'Preferenční', 'Ukládá jazykovou preferenci při povolení.', '365 dní'],
+    ['checklist_cookie_consent_v2', 'Legacy cookie/storage', 'Nezbytné', 'Zpětně kompatibilní klíč pro souhlas.', 'Legacy/pouze čtení'],
+  ],
+} as const;
 
 function ConsentToggle({
   label,
@@ -23,29 +104,34 @@ function ConsentToggle({
   checked,
   disabled,
   onChange,
+  stateLabel,
 }: {
   label: string;
   description: string;
   checked: boolean;
   disabled?: boolean;
   onChange?: (next: boolean) => void;
+  stateLabel: {
+    allowed: string;
+    blocked: string;
+  };
 }) {
   return (
     <div className={itemClass}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[13px] font-semibold text-white">{label}</p>
-          <p className="mt-1 text-[12px] leading-5 text-[#c8d9f5]">{description}</p>
+          <p className="text-[13px] font-semibold text-[#1f2d45]">{label}</p>
+          <p className="mt-1 text-[12px] leading-5 text-[#607594]">{description}</p>
         </div>
-        <label className="inline-flex shrink-0 items-center gap-2 text-[12px] text-[#d7e5ff]">
+        <label className="inline-flex shrink-0 items-center gap-2 text-[12px] text-[#4a5f7d]">
           <input
             type="checkbox"
             checked={checked}
             disabled={disabled}
             onChange={(e) => onChange?.(e.target.checked)}
-            className="h-4 w-4 accent-[#58a6ff]"
+            className="h-4 w-4 accent-[#2f4f83]"
           />
-          {checked ? 'Allowed' : 'Blocked'}
+          {checked ? stateLabel.allowed : stateLabel.blocked}
         </label>
       </div>
     </div>
@@ -53,6 +139,8 @@ function ConsentToggle({
 }
 
 export function CookieConsentPopup() {
+  const { locale, setLocale } = useLocale();
+  const copy = popupCopy[locale] ?? popupCopy.en;
   const [open, setOpen] = useState(false);
   const [prefs, setPrefs] = useState<OptionalConsent>({
     preferences: false,
@@ -79,6 +167,15 @@ export function CookieConsentPopup() {
     () => prefs.preferences && prefs.analytics && prefs.marketing,
     [prefs],
   );
+
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
 
   function allowAll() {
     const next: OptionalConsent = {
@@ -108,74 +205,139 @@ export function CookieConsentPopup() {
   if (!open) return null;
 
   return (
-    <section className={panelClass} role="dialog" aria-modal="true" aria-label="Cookie settings">
-      <div className="space-y-3">
-        <div>
-          <p className="text-[15px] font-bold tracking-tight">Cookie preferences</p>
-          <p className="mt-1 text-[12px] leading-5 text-[#c8d9f5]">
-            First visit on this browser: review each cookie category and allow them one by one.
-            Your selection is stored in this browser.
+    <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 sm:p-6">
+      <div className="absolute inset-0 bg-[#0d1d3a]/50 backdrop-blur-[1px]" />
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-label="Cookie settings"
+        className="relative z-10 flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[#dbe4f4] bg-white shadow-[0_22px_60px_rgba(15,32,62,0.25)]"
+      >
+        <div className="border-b border-[#e5ecf8] px-5 py-4 sm:px-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[17px] font-bold tracking-tight text-[#1f2d45]">{copy.title}</p>
+              <p className="mt-1 text-[13px] leading-5 text-[#607594]">{copy.subtitle}</p>
+            </div>
+            <div className="inline-flex items-center rounded-lg border border-[#d4dced] bg-[#f7f9fe] p-1">
+              <span className="px-2 text-[11px] font-semibold text-[#607594]">{copy.language}</span>
+              <button
+                type="button"
+                onClick={() => setLocale('cs')}
+                aria-pressed={locale === 'cs'}
+                className={`rounded-md px-2.5 py-1 text-xs font-semibold ${locale === 'cs' ? 'bg-[#1f2d45] text-white' : 'text-[#4c607d] hover:bg-[#eaf0fb]'}`}
+              >
+                CS
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocale('en')}
+                aria-pressed={locale === 'en'}
+                className={`rounded-md px-2.5 py-1 text-xs font-semibold ${locale === 'en' ? 'bg-[#1f2d45] text-white' : 'text-[#4c607d] hover:bg-[#eaf0fb]'}`}
+              >
+                EN
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4 overflow-y-auto px-5 py-4 sm:px-6">
+          <div className="space-y-2">
+            <ConsentToggle
+              label={copy.categoryNecessary}
+              description={copy.categoryNecessaryDesc}
+              checked
+              disabled
+              stateLabel={{ allowed: copy.allowed, blocked: copy.blocked }}
+            />
+            <ConsentToggle
+              label={copy.categoryPreferences}
+              description={copy.categoryPreferencesDesc}
+              checked={prefs.preferences}
+              onChange={(next) => setPrefs((prev) => ({ ...prev, preferences: next }))}
+              stateLabel={{ allowed: copy.allowed, blocked: copy.blocked }}
+            />
+            <ConsentToggle
+              label={copy.categoryAnalytics}
+              description={copy.categoryAnalyticsDesc}
+              checked={prefs.analytics}
+              onChange={(next) => setPrefs((prev) => ({ ...prev, analytics: next }))}
+              stateLabel={{ allowed: copy.allowed, blocked: copy.blocked }}
+            />
+            <ConsentToggle
+              label={copy.categoryMarketing}
+              description={copy.categoryMarketingDesc}
+              checked={prefs.marketing}
+              onChange={(next) => setPrefs((prev) => ({ ...prev, marketing: next }))}
+              stateLabel={{ allowed: copy.allowed, blocked: copy.blocked }}
+            />
+          </div>
+
+          <div className="rounded-xl border border-[#dbe4f4] bg-[#f9fbff] p-3">
+            <p className="text-sm font-semibold text-[#1f2d45]">{copy.inventoryTitle}</p>
+            <p className="mt-1 text-xs text-[#607594]">{copy.inventoryNote}</p>
+
+            <div className="mt-3 max-h-56 overflow-auto rounded-lg border border-[#dbe4f4] bg-white">
+              <table className="min-w-full text-left text-xs text-[#354a69]">
+                <thead className="sticky top-0 bg-[#f1f5fc] text-[#20314f]">
+                  <tr>
+                    <th className="px-3 py-2 font-semibold">{copy.inventoryName}</th>
+                    <th className="px-3 py-2 font-semibold">{copy.inventoryType}</th>
+                    <th className="px-3 py-2 font-semibold">{copy.inventoryCategory}</th>
+                    <th className="px-3 py-2 font-semibold">{copy.inventoryPurpose}</th>
+                    <th className="px-3 py-2 font-semibold">{copy.inventoryDuration}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(inventoryRows[locale] ?? inventoryRows.en).map((row) => (
+                    <tr key={row[0]} className="border-t border-[#edf2fa] align-top">
+                      <td className="px-3 py-2 font-mono text-[11px] text-[#1f2d45]">{row[0]}</td>
+                      <td className="px-3 py-2">{row[1]}</td>
+                      <td className="px-3 py-2">{row[2]}</td>
+                      <td className="px-3 py-2">{row[3]}</td>
+                      <td className="px-3 py-2">{row[4]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-[#607594]">
+            {copy.policyPrefix}{' '}
+            <Link href="/cookies" className="font-semibold text-[#2f4f83] underline underline-offset-2 hover:text-[#1d355c]">
+              {copy.policyLink}
+            </Link>
           </p>
         </div>
 
-        <div className="space-y-2">
-          <ConsentToggle
-            label="Necessary cookies"
-            description="Required for core security, login state, and basic app functionality. Always enabled."
-            checked
-            disabled
-          />
-          <ConsentToggle
-            label="Preference cookies"
-            description="Remember language and interface choices to improve your experience."
-            checked={prefs.preferences}
-            onChange={(next) => setPrefs((prev) => ({ ...prev, preferences: next }))}
-          />
-          <ConsentToggle
-            label="Analytics cookies"
-            description="Help us understand product usage and improve performance."
-            checked={prefs.analytics}
-            onChange={(next) => setPrefs((prev) => ({ ...prev, analytics: next }))}
-          />
-          <ConsentToggle
-            label="Marketing cookies"
-            description="Measure campaign effectiveness and tailor external communication."
-            checked={prefs.marketing}
-            onChange={(next) => setPrefs((prev) => ({ ...prev, marketing: next }))}
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 border-t border-[#e5ecf8] bg-[#fbfcff] px-5 py-3 sm:px-6">
           <button
             type="button"
             onClick={saveSelected}
-            className="rounded-lg border border-[#79b6ff]/35 bg-white px-3 py-2 text-[12px] font-semibold text-[#0b2448] hover:bg-[#e9f3ff]"
+            className="rounded-lg border border-[#cdd9ee] bg-white px-3 py-2 text-xs font-semibold text-[#2a3d5f] hover:bg-[#f2f6fd]"
           >
-            Save selected
+            {copy.saveSelected}
           </button>
           <button
             type="button"
             onClick={allowAll}
-            className="rounded-lg border border-[#295b9c] bg-[#1c3f72] px-3 py-2 text-[12px] font-semibold text-white hover:bg-[#265493]"
+            className="rounded-lg border border-[#2d4f83] bg-[#1f2d45] px-3 py-2 text-xs font-semibold text-white hover:bg-[#253a5e]"
           >
-            Allow all
+            {copy.allowAll}
           </button>
           <button
             type="button"
             onClick={rejectOptional}
-            className="rounded-lg border border-[#3b567d] bg-transparent px-3 py-2 text-[12px] font-semibold text-[#d7e5ff] hover:bg-[#12315a]"
+            className="rounded-lg border border-[#cdd9ee] bg-transparent px-3 py-2 text-xs font-semibold text-[#4c607d] hover:bg-[#eef3fb]"
           >
-            Reject optional
+            {copy.rejectOptional}
           </button>
-          <span className="ml-auto text-[11px] text-[#b8cdee]">
-            {allOptionalAllowed ? 'All optional categories are enabled.' : 'Optional categories are partially or fully blocked.'}
+          <span className="ml-auto text-[11px] text-[#607594]">
+            {allOptionalAllowed ? copy.allEnabled : copy.partiallyBlocked}
           </span>
         </div>
-
-        <p className="text-[11px] text-[#a9c3e6]">
-          Details: <Link href="/cookies" className="underline decoration-[#a9c3e6]/70 underline-offset-2 hover:text-white">Cookie Policy</Link>
-        </p>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }
