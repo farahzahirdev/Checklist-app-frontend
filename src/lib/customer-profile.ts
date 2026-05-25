@@ -4,7 +4,7 @@ import { apiPost } from '@/lib/api';
 export type CustomerProfile = {
   id: string;
   email: string;
-  email_verified: boolean;
+  email_verified?: boolean;
   email_verification_sent_at?: string | null;
   full_name: string | null;
   username: string | null;
@@ -29,6 +29,16 @@ export type CustomerProfile = {
   company_slug: string | null;
   company_country: string | null;
   company_description: string | null;
+  billing_contact_name: string | null;
+  billing_email: string | null;
+  billing_phone: string | null;
+  billing_address_line1: string | null;
+  billing_address_line2: string | null;
+  billing_city: string | null;
+  billing_state: string | null;
+  billing_postal_code: string | null;
+  billing_country: string | null;
+  billing_tax_id: string | null;
 };
 
 export type UpdateCustomerProfilePayload = {
@@ -47,9 +57,20 @@ export type UpdateCustomerProfilePayload = {
   company_email?: string | null;
   company_website?: string | null;
   company_industry?: string | null;
+  company_region?: string | null;
   company_country?: string | null;
   company_size?: string | null;
   company_description?: string | null;
+  billing_contact_name?: string | null;
+  billing_email?: string | null;
+  billing_phone?: string | null;
+  billing_address_line1?: string | null;
+  billing_address_line2?: string | null;
+  billing_city?: string | null;
+  billing_state?: string | null;
+  billing_postal_code?: string | null;
+  billing_country?: string | null;
+  billing_tax_id?: string | null;
 };
 
 export type ChangeCustomerPasswordPayload = {
@@ -70,6 +91,22 @@ export type ProfileCompletion = {
   is_complete: boolean;
   missing_fields: ProfileCompletionField[];
   completed_fields: ProfileCompletionField[];
+};
+
+const COMPLETION_FIELD_LABEL_KEYS: Record<string, string> = {
+  personal_details: 'completion.field.personalDetails',
+  organizational_company_details: 'completion.field.organizationDetails',
+  mfa_setup: 'completion.field.mfaSetup',
+  notification_preferences: 'completion.field.notificationPreferences',
+  billing_details: 'completion.field.billingDetails',
+};
+
+export const COMPLETION_SECTION_IDS: Record<string, string> = {
+  profile: 'profile-details',
+  company: 'organization',
+  security: 'security',
+  preferences: 'notifications',
+  billing: 'billing-details',
 };
 
 export async function getCustomerProfile() {
@@ -114,6 +151,7 @@ export function applyProfileCompanyFields(
     setCompanyEmail: (v: string) => void;
     setCompanyWebsite: (v: string) => void;
     setCompanyIndustry: (v: string) => void;
+    setCompanyRegion: (v: string) => void;
     setCompanyCountry: (v: string) => void;
     setCompanySize: (v: string) => void;
     setCompanyDescription: (v: string) => void;
@@ -123,35 +161,65 @@ export function applyProfileCompanyFields(
   setters.setCompanyEmail(profile.company_email ?? '');
   setters.setCompanyWebsite(profile.company_website ?? '');
   setters.setCompanyIndustry(profile.company_industry ?? '');
+  setters.setCompanyRegion(profile.company_region ?? '');
   setters.setCompanyCountry(profile.company_country ?? '');
   setters.setCompanySize(profile.company_size ?? '');
   setters.setCompanyDescription(profile.company_description ?? '');
 }
 
-const COMPLETION_FIELD_LABEL_KEYS: Record<string, string> = {
-  full_name: 'completion.field.fullName',
-  username: 'completion.field.username',
-  job_title: 'completion.field.jobTitle',
-  department: 'completion.field.department',
-  company_assigned: 'completion.field.companyAssigned',
-  company_name: 'completion.field.companyName',
-  company_slug: 'completion.field.companySlug',
-  company_industry: 'completion.field.companyIndustry',
-  company_size: 'completion.field.companySize',
-  company_region: 'completion.field.companyRegion',
-  company_country: 'completion.field.companyCountry',
-  company_website: 'completion.field.companyWebsite',
-  email_verified: 'completion.field.emailVerified',
-};
+export function applyProfileBillingFields(
+  profile: CustomerProfile,
+  setters: {
+    setBillingContactName: (v: string) => void;
+    setBillingEmail: (v: string) => void;
+    setBillingPhone: (v: string) => void;
+    setBillingAddressLine1: (v: string) => void;
+    setBillingAddressLine2: (v: string) => void;
+    setBillingCity: (v: string) => void;
+    setBillingState: (v: string) => void;
+    setBillingPostalCode: (v: string) => void;
+    setBillingCountry: (v: string) => void;
+    setBillingTaxId: (v: string) => void;
+  },
+) {
+  setters.setBillingContactName(profile.billing_contact_name ?? '');
+  setters.setBillingEmail(profile.billing_email ?? '');
+  setters.setBillingPhone(profile.billing_phone ?? '');
+  setters.setBillingAddressLine1(profile.billing_address_line1 ?? '');
+  setters.setBillingAddressLine2(profile.billing_address_line2 ?? '');
+  setters.setBillingCity(profile.billing_city ?? '');
+  setters.setBillingState(profile.billing_state ?? '');
+  setters.setBillingPostalCode(profile.billing_postal_code ?? '');
+  setters.setBillingCountry(profile.billing_country ?? '');
+  setters.setBillingTaxId(profile.billing_tax_id ?? '');
+}
 
 export function buildCompletionChecklist(
   completion: ProfileCompletion,
   t: (key: string) => string,
 ): Array<{ key: string; label: string; done: boolean }> {
   const ordered = [...completion.missing_fields, ...completion.completed_fields];
-  return ordered.slice(0, 10).map((item) => ({
+  return ordered.map((item) => ({
     key: `${item.section}.${item.field}`,
     label: t(COMPLETION_FIELD_LABEL_KEYS[item.field] ?? '') || item.label,
     done: item.completed,
   }));
+}
+
+export function completionCtaSectionId(completion: ProfileCompletion | null): string {
+  const firstMissing = completion?.missing_fields[0];
+  if (!firstMissing) return 'profile-details';
+  return COMPLETION_SECTION_IDS[firstMissing.section] ?? 'profile-details';
+}
+
+export function hasBillingDetails(profile: CustomerProfile | null): boolean {
+  if (!profile) return false;
+  return Boolean(
+    profile.billing_contact_name?.trim() &&
+      profile.billing_email?.trim() &&
+      profile.billing_address_line1?.trim() &&
+      profile.billing_city?.trim() &&
+      profile.billing_postal_code?.trim() &&
+      profile.billing_country?.trim(),
+  );
 }

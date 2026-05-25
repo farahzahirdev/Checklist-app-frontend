@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { LogoutButton } from '@/components/logout-button';
+import { CustomerProfileCompletionPrompt } from '@/components/customer-profile-completion-prompt';
 import { CustomerUserMenu } from '@/components/customer-user-menu';
 import { CustomerLanguageSwitcher } from '@/components/customer-language-switcher';
 import { translate, useLocale } from '@/lib/i18n';
@@ -221,8 +222,9 @@ export default function AppLayout({
       <main className="min-h-screen bg-[#e9eef8] text-[#ffffff]">{children}</main>
     ) : (
       isCustomerShell && isPaymentPath && needsCustomerMfa ? (
-        <main className="min-h-screen bg-white text-[#1f2d45]">
+        <main className="relative min-h-screen bg-white text-[#1f2d45]">
           <div className="px-6 py-8 md:px-8 md:py-10">{children}</div>
+          {authReady ? <CustomerProfileCompletionPrompt /> : null}
         </main>
       ) : isCustomerShell ? (
         <main className="relative h-screen w-full overflow-hidden bg-[#f4f6fb] text-[#182843]">
@@ -355,6 +357,7 @@ export default function AppLayout({
               >
                 {children}
               </div>
+              {authReady && isCustomerShell ? <CustomerProfileCompletionPrompt /> : null}
             </div>
           </div>
         </main>

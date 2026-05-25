@@ -19,6 +19,10 @@ export const customerLayoutMessages: TranslationMessages = {
     'lang.label': 'Language',
     'lang.cs': 'Čeština',
     'lang.en': 'English',
+    'profileCompletion.title': 'Complete your profile',
+    'profileCompletion.subtitle': 'Finish your profile before purchasing checklists.',
+    'profileCompletion.progressLabel': 'Profile progress',
+    'profileCompletion.cta': 'Complete profile',
   },
   cs: {
     'brand.name': 'AuditReady',
@@ -38,6 +42,10 @@ export const customerLayoutMessages: TranslationMessages = {
     'lang.label': 'Jazyk',
     'lang.cs': 'Čeština',
     'lang.en': 'English',
+    'profileCompletion.title': 'Dokončete profil',
+    'profileCompletion.subtitle': 'Před nákupem checklistů dokončete svůj profil.',
+    'profileCompletion.progressLabel': 'Průběh profilu',
+    'profileCompletion.cta': 'Dokončit profil',
   },
 };
 

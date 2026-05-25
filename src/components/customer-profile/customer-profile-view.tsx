@@ -45,6 +45,8 @@ export type CustomerProfileViewProps = {
   setEditingProfile: (value: boolean) => void;
   editingCompany: boolean;
   setEditingCompany: (value: boolean) => void;
+  editingBilling: boolean;
+  setEditingBilling: (value: boolean) => void;
   showPasswordForm: boolean;
   setShowPasswordForm: (value: boolean) => void;
   mfaRequestOpen: boolean;
@@ -73,10 +75,32 @@ export type CustomerProfileViewProps = {
   setCompanyIndustry: (value: string) => void;
   companyCountry: string;
   setCompanyCountry: (value: string) => void;
+  companyRegion: string;
+  setCompanyRegion: (value: string) => void;
   companySize: string;
   setCompanySize: (value: string) => void;
   companyDescription: string;
   setCompanyDescription: (value: string) => void;
+  billingContactName: string;
+  setBillingContactName: (value: string) => void;
+  billingEmail: string;
+  setBillingEmail: (value: string) => void;
+  billingPhone: string;
+  setBillingPhone: (value: string) => void;
+  billingAddressLine1: string;
+  setBillingAddressLine1: (value: string) => void;
+  billingAddressLine2: string;
+  setBillingAddressLine2: (value: string) => void;
+  billingCity: string;
+  setBillingCity: (value: string) => void;
+  billingState: string;
+  setBillingState: (value: string) => void;
+  billingPostalCode: string;
+  setBillingPostalCode: (value: string) => void;
+  billingCountry: string;
+  setBillingCountry: (value: string) => void;
+  billingTaxId: string;
+  setBillingTaxId: (value: string) => void;
   currentPassword: string;
   setCurrentPassword: (value: string) => void;
   newPassword: string;
@@ -91,6 +115,7 @@ export type CustomerProfileViewProps = {
   setShowConfirmPassword: (value: boolean) => void;
   savingProfile: boolean;
   savingCompany: boolean;
+  savingBilling: boolean;
   savingNotifications: boolean;
   changingPassword: boolean;
   requestingEmailVerification: boolean;
@@ -99,6 +124,7 @@ export type CustomerProfileViewProps = {
   setNotificationPrefs: (value: NotificationPrefs) => void;
   onSaveProfile: (event: FormEvent<HTMLFormElement>) => void;
   onSaveCompany: (event: FormEvent<HTMLFormElement>) => void;
+  onSaveBilling: (event: FormEvent<HTMLFormElement>) => void;
   onChangePassword: (event: FormEvent<HTMLFormElement>) => void;
   onRequestEmailVerification: () => void;
   onSubmitMfaSupportRequest: (event: FormEvent<HTMLFormElement>) => void;
@@ -215,7 +241,7 @@ const NAV_ICONS: Record<string, ReactNode> = {
       <path d="M4 7h16v12H4z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
     </svg>
   ),
-  billing: (
+  'billing-details': (
     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
       <path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="1.6" />
       <path d="M4 10h16" stroke="currentColor" strokeWidth="1.6" />
@@ -341,9 +367,9 @@ function PasswordField({
 const NAV_SECTIONS = [
   { id: 'profile-details', labelKey: 'nav.profileDetails' },
   { id: 'organization', labelKey: 'nav.organization' },
+  { id: 'billing-details', labelKey: 'nav.billingDetails' },
   { id: 'security', labelKey: 'nav.security' },
   { id: 'product-access', labelKey: 'nav.productAccess' },
-  { id: 'billing', labelKey: 'nav.billing' },
   { id: 'notifications', labelKey: 'nav.notifications' },
 ] as const;
 
@@ -367,6 +393,8 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
     setEditingProfile,
     editingCompany,
     setEditingCompany,
+    editingBilling,
+    setEditingBilling,
     showPasswordForm,
     setShowPasswordForm,
     mfaRequestOpen,
@@ -395,10 +423,32 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
     setCompanyIndustry,
     companyCountry,
     setCompanyCountry,
+    companyRegion,
+    setCompanyRegion,
     companySize,
     setCompanySize,
     companyDescription,
     setCompanyDescription,
+    billingContactName,
+    setBillingContactName,
+    billingEmail,
+    setBillingEmail,
+    billingPhone,
+    setBillingPhone,
+    billingAddressLine1,
+    setBillingAddressLine1,
+    billingAddressLine2,
+    setBillingAddressLine2,
+    billingCity,
+    setBillingCity,
+    billingState,
+    setBillingState,
+    billingPostalCode,
+    setBillingPostalCode,
+    billingCountry,
+    setBillingCountry,
+    billingTaxId,
+    setBillingTaxId,
     currentPassword,
     setCurrentPassword,
     newPassword,
@@ -413,6 +463,7 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
     setShowConfirmPassword,
     savingProfile,
     savingCompany,
+    savingBilling,
     savingNotifications,
     changingPassword,
     requestingEmailVerification,
@@ -421,6 +472,7 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
     setNotificationPrefs,
     onSaveProfile,
     onSaveCompany,
+    onSaveBilling,
     onChangePassword,
     onRequestEmailVerification,
     onSubmitMfaSupportRequest,
@@ -698,7 +750,9 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
                   <InfoField label={t('fields.companyName')} value={companyName} />
                   <InfoField label={t('fields.companySize')} value={companySize} />
                   <InfoField label={t('fields.companyIndustry')} value={companyIndustry} />
-                  <InfoField label={t('fields.companyFocus')} value={companyDescription || companyCountry} />
+                  <InfoField label={t('fields.companyRegion')} value={companyRegion} />
+                  <InfoField label={t('fields.companyCountry')} value={companyCountry} />
+                  <InfoField label={t('fields.companyFocus')} value={companyDescription} />
                 </div>
               ) : (
                 <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={onSaveCompany}>
@@ -717,6 +771,10 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
                   <label className="block space-y-1.5 text-sm">
                     <span className="font-medium text-[#475569]">{t('fields.companyIndustry')}</span>
                     <input type="text" value={companyIndustry} onChange={(e) => setCompanyIndustry(e.target.value)} className={inputClass} />
+                  </label>
+                  <label className="block space-y-1.5 text-sm">
+                    <span className="font-medium text-[#475569]">{t('fields.companyRegion')}</span>
+                    <input type="text" value={companyRegion} onChange={(e) => setCompanyRegion(e.target.value)} className={inputClass} />
                   </label>
                   <label className="block space-y-1.5 text-sm">
                     <span className="font-medium text-[#475569]">{t('fields.companyCountry')}</span>
@@ -738,6 +796,89 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
                   <div className="sm:col-span-2">
                     <button type="submit" disabled={savingCompany} className={primaryBtn}>
                       {savingCompany ? t('actions.saving') : t('actions.saveCompany')}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </article>
+
+            <article id="billing-details" className={`${cardClass} scroll-mt-28`}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <SectionIcon>
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                      <path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="1.8" />
+                      <path d="M4 10h16" stroke="currentColor" strokeWidth="1.8" />
+                    </svg>
+                  </SectionIcon>
+                  <div>
+                    <h2 className="text-lg font-semibold text-[#0f172a]">{t('section.billingDetails')}</h2>
+                    <p className="text-sm text-[#64748b]">{t('section.billingDetailsSubtitle')}</p>
+                  </div>
+                </div>
+                <button type="button" className={outlineBtn} onClick={() => setEditingBilling(!editingBilling)}>
+                  {editingBilling ? t('actions.cancel') : t('actions.editBilling')}
+                </button>
+              </div>
+
+              {!editingBilling ? (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <InfoField label={t('fields.billingContactName')} value={billingContactName} />
+                  <InfoField label={t('fields.billingEmail')} value={billingEmail} />
+                  <InfoField label={t('fields.billingPhone')} value={billingPhone} />
+                  <InfoField label={t('fields.billingTaxId')} value={billingTaxId} />
+                  <InfoField label={t('fields.billingAddressLine1')} value={billingAddressLine1} />
+                  <InfoField label={t('fields.billingAddressLine2')} value={billingAddressLine2} />
+                  <InfoField label={t('fields.billingCity')} value={billingCity} />
+                  <InfoField label={t('fields.billingState')} value={billingState} />
+                  <InfoField label={t('fields.billingPostalCode')} value={billingPostalCode} />
+                  <InfoField label={t('fields.billingCountry')} value={billingCountry} />
+                </div>
+              ) : (
+                <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={onSaveBilling}>
+                  <label className="block space-y-1.5 text-sm">
+                    <span className="font-medium text-[#475569]">{t('fields.billingContactName')}</span>
+                    <input type="text" value={billingContactName} onChange={(e) => setBillingContactName(e.target.value)} className={inputClass} />
+                  </label>
+                  <label className="block space-y-1.5 text-sm">
+                    <span className="font-medium text-[#475569]">{t('fields.billingEmail')}</span>
+                    <input type="email" value={billingEmail} onChange={(e) => setBillingEmail(e.target.value)} className={inputClass} />
+                  </label>
+                  <label className="block space-y-1.5 text-sm">
+                    <span className="font-medium text-[#475569]">{t('fields.billingPhone')}</span>
+                    <input type="tel" value={billingPhone} onChange={(e) => setBillingPhone(e.target.value)} className={inputClass} />
+                  </label>
+                  <label className="block space-y-1.5 text-sm">
+                    <span className="font-medium text-[#475569]">{t('fields.billingTaxId')}</span>
+                    <input type="text" value={billingTaxId} onChange={(e) => setBillingTaxId(e.target.value)} className={inputClass} />
+                  </label>
+                  <label className="block space-y-1.5 text-sm sm:col-span-2">
+                    <span className="font-medium text-[#475569]">{t('fields.billingAddressLine1')}</span>
+                    <input type="text" value={billingAddressLine1} onChange={(e) => setBillingAddressLine1(e.target.value)} className={inputClass} />
+                  </label>
+                  <label className="block space-y-1.5 text-sm sm:col-span-2">
+                    <span className="font-medium text-[#475569]">{t('fields.billingAddressLine2')}</span>
+                    <input type="text" value={billingAddressLine2} onChange={(e) => setBillingAddressLine2(e.target.value)} className={inputClass} />
+                  </label>
+                  <label className="block space-y-1.5 text-sm">
+                    <span className="font-medium text-[#475569]">{t('fields.billingCity')}</span>
+                    <input type="text" value={billingCity} onChange={(e) => setBillingCity(e.target.value)} className={inputClass} />
+                  </label>
+                  <label className="block space-y-1.5 text-sm">
+                    <span className="font-medium text-[#475569]">{t('fields.billingState')}</span>
+                    <input type="text" value={billingState} onChange={(e) => setBillingState(e.target.value)} className={inputClass} />
+                  </label>
+                  <label className="block space-y-1.5 text-sm">
+                    <span className="font-medium text-[#475569]">{t('fields.billingPostalCode')}</span>
+                    <input type="text" value={billingPostalCode} onChange={(e) => setBillingPostalCode(e.target.value)} className={inputClass} />
+                  </label>
+                  <label className="block space-y-1.5 text-sm">
+                    <span className="font-medium text-[#475569]">{t('fields.billingCountry')}</span>
+                    <input type="text" value={billingCountry} onChange={(e) => setBillingCountry(e.target.value)} className={inputClass} />
+                  </label>
+                  <div className="sm:col-span-2">
+                    <button type="submit" disabled={savingBilling} className={primaryBtn}>
+                      {savingBilling ? t('actions.saving') : t('actions.saveBilling')}
                     </button>
                   </div>
                 </form>
@@ -1103,7 +1244,7 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
               </button>
             </div>
 
-            <div id="billing" className={`${cardClass} scroll-mt-28`}>
+            <div id="payment-summary" className={`${cardClass} scroll-mt-28`}>
               <h3 className="text-sm font-semibold text-[#0f172a]">{t('billing.title')}</h3>
               <dl className="mt-4 space-y-3 text-sm">
                 <div className="flex justify-between gap-3">

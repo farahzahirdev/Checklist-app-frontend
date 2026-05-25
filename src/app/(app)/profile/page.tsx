@@ -5,10 +5,13 @@ import { toast } from 'sonner';
 import { CustomerProfileView } from '@/components/customer-profile/customer-profile-view';
 import { getCurrentUser, requestEmailVerification } from '@/lib/auth';
 import { translate, useLocale } from '@/lib/i18n';
+import { notifyProfileCompletionRefresh } from '@/components/customer-profile-completion-prompt';
 import {
+  applyProfileBillingFields,
   applyProfileCompanyFields,
   buildCompletionChecklist,
   changeCustomerPassword,
+  completionCtaSectionId,
   createCustomerMfaSupportRequest,
   getCustomerProfile,
   getCustomerProfileCompletion,
@@ -119,10 +122,12 @@ export default function CustomerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingCompany, setSavingCompany] = useState(false);
+  const [savingBilling, setSavingBilling] = useState(false);
   const [savingNotifications, setSavingNotifications] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
   const [editingCompany, setEditingCompany] = useState(false);
+  const [editingBilling, setEditingBilling] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [mfaRequestOpen, setMfaRequestOpen] = useState(false);
   const [mfaRequestType, setMfaRequestType] = useState<'reset' | 'disable'>('reset');
@@ -144,6 +149,18 @@ export default function CustomerProfilePage() {
   const [companyCountry, setCompanyCountry] = useState('');
   const [companySize, setCompanySize] = useState('');
   const [companyDescription, setCompanyDescription] = useState('');
+  const [companyRegion, setCompanyRegion] = useState('');
+
+  const [billingContactName, setBillingContactName] = useState('');
+  const [billingEmail, setBillingEmail] = useState('');
+  const [billingPhone, setBillingPhone] = useState('');
+  const [billingAddressLine1, setBillingAddressLine1] = useState('');
+  const [billingAddressLine2, setBillingAddressLine2] = useState('');
+  const [billingCity, setBillingCity] = useState('');
+  const [billingState, setBillingState] = useState('');
+  const [billingPostalCode, setBillingPostalCode] = useState('');
+  const [billingCountry, setBillingCountry] = useState('');
+  const [billingTaxId, setBillingTaxId] = useState('');
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -166,9 +183,26 @@ export default function CustomerProfilePage() {
       setCompanyEmail,
       setCompanyWebsite,
       setCompanyIndustry,
+      setCompanyRegion,
       setCompanyCountry,
       setCompanySize,
       setCompanyDescription,
+    }),
+    [],
+  );
+
+  const billingSetters = useMemo(
+    () => ({
+      setBillingContactName,
+      setBillingEmail,
+      setBillingPhone,
+      setBillingAddressLine1,
+      setBillingAddressLine2,
+      setBillingCity,
+      setBillingState,
+      setBillingPostalCode,
+      setBillingCountry,
+      setBillingTaxId,
     }),
     [],
   );
@@ -198,12 +232,10 @@ export default function CustomerProfilePage() {
     return Math.round(profileCompletion.completion_percent);
   }, [profileCompletion]);
 
-  const completionCtaSection = useMemo(() => {
-    const firstMissing = profileCompletion?.missing_fields[0];
-    if (!firstMissing) return 'profile-details';
-    if (firstMissing.section === 'company') return 'organization';
-    return 'profile-details';
-  }, [profileCompletion]);
+  const completionCtaSection = useMemo(
+    () => completionCtaSectionId(profileCompletion),
+    [profileCompletion],
+  );
 
   const securityLevel = mfaEnabled ? t('stats.securityHigh') : t('stats.securityMedium');
   const lastActivityParts = formatLastActivityParts(
@@ -241,6 +273,7 @@ export default function CustomerProfilePage() {
 
       applyProfileFormState(profileData, profileFormSetters);
       applyProfileCompanyFields(profileData, companySetters);
+      applyProfileBillingFields(profileData, billingSetters);
 
       const firstCompany = companyList.companies?.[0] ?? null;
       setCompany(firstCompany);
@@ -276,6 +309,7 @@ export default function CustomerProfilePage() {
 
       const completion = await getCustomerProfileCompletion().catch(() => null);
       if (completion) setProfileCompletion(completion);
+      notifyProfileCompletionRefresh();
 
       toast.success(t('toasts.profileUpdated'));
     } catch (err) {
@@ -294,6 +328,7 @@ export default function CustomerProfilePage() {
         company_email: normalizeOptional(companyEmail) ?? null,
         company_website: normalizeOptional(companyWebsite) ?? null,
         company_industry: normalizeOptional(companyIndustry) ?? null,
+        company_region: normalizeOptional(companyRegion) ?? null,
         company_country: normalizeOptional(companyCountry) ?? null,
         company_size: normalizeOptional(companySize) ?? null,
         company_description: normalizeOptional(companyDescription) ?? null,
@@ -308,6 +343,7 @@ export default function CustomerProfilePage() {
 
       const completion = await getCustomerProfileCompletion().catch(() => null);
       if (completion) setProfileCompletion(completion);
+      notifyProfileCompletionRefresh();
 
       toast.success(t('toasts.companyUpdated'));
     } catch (err) {
@@ -362,6 +398,39 @@ export default function CustomerProfilePage() {
     }
   }
 
+  async function onSaveBilling(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSavingBilling(true);
+    try {
+      const updated = await updateCustomerProfile({
+        billing_contact_name: normalizeOptional(billingContactName) ?? null,
+        billing_email: normalizeOptional(billingEmail) ?? null,
+        billing_phone: normalizeOptional(billingPhone) ?? null,
+        billing_address_line1: normalizeOptional(billingAddressLine1) ?? null,
+        billing_address_line2: normalizeOptional(billingAddressLine2) ?? null,
+        billing_city: normalizeOptional(billingCity) ?? null,
+        billing_state: normalizeOptional(billingState) ?? null,
+        billing_postal_code: normalizeOptional(billingPostalCode) ?? null,
+        billing_country: normalizeOptional(billingCountry) ?? null,
+        billing_tax_id: normalizeOptional(billingTaxId) ?? null,
+      });
+
+      setProfile(updated);
+      applyProfileBillingFields(updated, billingSetters);
+      setEditingBilling(false);
+
+      const completion = await getCustomerProfileCompletion().catch(() => null);
+      if (completion) setProfileCompletion(completion);
+      notifyProfileCompletionRefresh();
+
+      toast.success(t('toasts.billingUpdated'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('errors.updateBilling'));
+    } finally {
+      setSavingBilling(false);
+    }
+  }
+
   async function onSaveNotificationPrefs() {
     setSavingNotifications(true);
     try {
@@ -374,6 +443,11 @@ export default function CustomerProfilePage() {
       });
       setProfile(updated);
       setNotificationPrefs(profileToNotificationPrefs(updated));
+
+      const completion = await getCustomerProfileCompletion().catch(() => null);
+      if (completion) setProfileCompletion(completion);
+      notifyProfileCompletionRefresh();
+
       toast.success(t('toasts.preferencesSaved'));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.updatePreferences'));
@@ -391,6 +465,7 @@ export default function CustomerProfilePage() {
       setProfile(refreshed);
       const completion = await getCustomerProfileCompletion().catch(() => null);
       if (completion) setProfileCompletion(completion);
+      notifyProfileCompletionRefresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.requestEmailVerification'));
     } finally {
@@ -443,6 +518,8 @@ export default function CustomerProfilePage() {
       setEditingProfile={setEditingProfile}
       editingCompany={editingCompany}
       setEditingCompany={setEditingCompany}
+      editingBilling={editingBilling}
+      setEditingBilling={setEditingBilling}
       showPasswordForm={showPasswordForm}
       setShowPasswordForm={setShowPasswordForm}
       mfaRequestOpen={mfaRequestOpen}
@@ -471,10 +548,32 @@ export default function CustomerProfilePage() {
       setCompanyIndustry={setCompanyIndustry}
       companyCountry={companyCountry}
       setCompanyCountry={setCompanyCountry}
+      companyRegion={companyRegion}
+      setCompanyRegion={setCompanyRegion}
       companySize={companySize}
       setCompanySize={setCompanySize}
       companyDescription={companyDescription}
       setCompanyDescription={setCompanyDescription}
+      billingContactName={billingContactName}
+      setBillingContactName={setBillingContactName}
+      billingEmail={billingEmail}
+      setBillingEmail={setBillingEmail}
+      billingPhone={billingPhone}
+      setBillingPhone={setBillingPhone}
+      billingAddressLine1={billingAddressLine1}
+      setBillingAddressLine1={setBillingAddressLine1}
+      billingAddressLine2={billingAddressLine2}
+      setBillingAddressLine2={setBillingAddressLine2}
+      billingCity={billingCity}
+      setBillingCity={setBillingCity}
+      billingState={billingState}
+      setBillingState={setBillingState}
+      billingPostalCode={billingPostalCode}
+      setBillingPostalCode={setBillingPostalCode}
+      billingCountry={billingCountry}
+      setBillingCountry={setBillingCountry}
+      billingTaxId={billingTaxId}
+      setBillingTaxId={setBillingTaxId}
       currentPassword={currentPassword}
       setCurrentPassword={setCurrentPassword}
       newPassword={newPassword}
@@ -489,6 +588,7 @@ export default function CustomerProfilePage() {
       setShowConfirmPassword={setShowConfirmPassword}
       savingProfile={savingProfile}
       savingCompany={savingCompany}
+      savingBilling={savingBilling}
       savingNotifications={savingNotifications}
       changingPassword={changingPassword}
       requestingEmailVerification={requestingEmailVerification}
@@ -497,6 +597,7 @@ export default function CustomerProfilePage() {
       setNotificationPrefs={setNotificationPrefs}
       onSaveProfile={onSaveProfile}
       onSaveCompany={onSaveCompany}
+      onSaveBilling={onSaveBilling}
       onChangePassword={onChangePassword}
       onRequestEmailVerification={() => void onRequestEmailVerification()}
       onSubmitMfaSupportRequest={onSubmitMfaSupportRequest}
