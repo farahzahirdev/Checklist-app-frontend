@@ -164,41 +164,46 @@ export default function AccessPage() {
   }
 
   return (
-    <section className="-m-4 bg-[#f4f6fb] text-[#1f2d45] md:-m-5">
-      <div className="border-b border-[#dbe4f4] bg-[linear-gradient(180deg,#f8fbff_0%,#edf3ff_100%)] px-6 py-10 md:px-8">
-        <div className="mx-auto max-w-[1280px]">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5f7395]">{t('title.kicker')}</p>
-          <h1 className="mt-2 text-4xl font-bold tracking-[-0.02em] text-[#1f2d45]">{t('title')}</h1>
-          <p className="mt-2 max-w-2xl text-sm text-[#607594]">{t('title.subtitle')}</p>
+    <section className="space-y-6 text-[#1f2d45]">
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">{t('title.kicker')}</p>
+          <h1 className="text-3xl font-semibold text-[#1f2d45]">{t('title')}</h1>
+          <p className="mt-1 text-sm text-[#607594]">{t('title.subtitle')}</p>
         </div>
+        <button
+          type="button"
+          onClick={() => void handleRefreshClick()}
+          className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff]"
+        >
+          {t('actions.refresh')}
+        </button>
+      </header>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+          <div className="text-sm font-semibold text-[#243555]">{t('stats.activeAudits')}</div>
+          <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{activeCount}</div>
+          <div className="text-xs text-[#607594]">{t('stats.activeSub')}</div>
+        </article>
+        <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+          <div className="text-sm font-semibold text-[#243555]">{t('stats.readyToStart')}</div>
+          <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{readyToStartCount}</div>
+          <div className="text-xs text-[#607594]">{t('stats.readySub')}</div>
+        </article>
+        <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+          <div className="text-sm font-semibold text-[#243555]">{t('stats.inProgress')}</div>
+          <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{inProgressCount}</div>
+          <div className="text-xs text-[#607594]">{t('stats.progressSub')}</div>
+        </article>
+        <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+          <div className="text-sm font-semibold text-[#243555]">{t('stats.publishedReports')}</div>
+          <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{publishedReportsCount}</div>
+          <div className="text-xs text-[#607594]">{t('stats.reportSub')}</div>
+        </article>
       </div>
 
-      <div className="border-b border-[#dbe4f4] bg-[#f7f9fe]">
-        <div className="mx-auto grid max-w-[1280px] grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
-          <div className="border-r border-[#dbe4f4] px-6 py-5">
-            <div className="text-sm font-semibold text-[#243555]">{t('stats.activeAudits')}</div>
-            <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{activeCount}</div>
-            <div className="text-xs text-[#607594]">{t('stats.activeSub')}</div>
-          </div>
-          <div className="border-r border-[#dbe4f4] px-6 py-5">
-            <div className="text-sm font-semibold text-[#243555]">{t('stats.readyToStart')}</div>
-            <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{readyToStartCount}</div>
-            <div className="text-xs text-[#607594]">{t('stats.readySub')}</div>
-          </div>
-          <div className="border-r border-[#dbe4f4] px-6 py-5">
-            <div className="text-sm font-semibold text-[#243555]">{t('stats.inProgress')}</div>
-            <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{inProgressCount}</div>
-            <div className="text-xs text-[#607594]">{t('stats.progressSub')}</div>
-          </div>
-          <div className="px-6 py-5">
-            <div className="text-sm font-semibold text-[#243555]">{t('stats.publishedReports')}</div>
-            <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{publishedReportsCount}</div>
-            <div className="text-xs text-[#607594]">{t('stats.reportSub')}</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-auto grid max-w-[1280px] gap-8 px-6 py-8 md:px-8 xl:grid-cols-[1fr_280px]">
+      <div className="grid gap-8 xl:grid-cols-[1fr_280px]">
         <div>
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-bold">{t('section.auditListTitle')}</h2>
