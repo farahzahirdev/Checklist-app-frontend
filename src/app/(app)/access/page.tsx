@@ -11,10 +11,10 @@ import { customerAccessMessages } from '@/locales/customer-access';
 type StatusFilter = 'all' | 'not_started' | 'in_progress' | 'submitted' | 'closed' | 'expired';
 
 function statusBadgeClass(status: string) {
-  if (status === 'in_progress') return 'border-sky-300/40 bg-sky-400/15 text-sky-300';
-  if (status === 'not_started') return 'border-emerald-300/40 bg-emerald-400/15 text-emerald-300';
-  if (status === 'submitted' || status === 'closed') return 'border-slate-300/30 bg-slate-300/20 text-slate-200';
-  return 'border-amber-300/40 bg-amber-400/15 text-amber-300';
+  if (status === 'in_progress') return 'border-[#bfdbfe] bg-[#eff6ff] text-[#1e40af]';
+  if (status === 'not_started') return 'border-[#bbf7d0] bg-[#f0fdf4] text-[#166534]';
+  if (status === 'submitted' || status === 'closed') return 'border-[#dbe4f4] bg-[#f7f9fe] text-[#475569]';
+  return 'border-[#fde68a] bg-[#fffbeb] text-[#92400e]';
 }
 
 function clampPercent(value: number) {
@@ -108,36 +108,36 @@ export default function AccessPage() {
   }
 
   return (
-    <section className="-m-4 bg-[#0a0f1e] text-[#f1f5f9] md:-m-5">
-      <div className="border-b border-[#1e2d4a] bg-[linear-gradient(180deg,#0a1628_0%,#0a0f1e_100%)] px-6 py-10 md:px-8">
+    <section className="-m-4 bg-[#f4f6fb] text-[#1f2d45] md:-m-5">
+      <div className="border-b border-[#dbe4f4] bg-[linear-gradient(180deg,#f8fbff_0%,#edf3ff_100%)] px-6 py-10 md:px-8">
         <div className="mx-auto max-w-[1280px]">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#3b82f6]">{t('title.kicker')}</p>
-          <h1 className="mt-2 text-4xl font-bold tracking-[-0.02em] text-[#f1f5f9]">{t('title')}</h1>
-          <p className="mt-2 max-w-2xl text-sm text-[#94a3b8]">{t('title.subtitle')}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5f7395]">{t('title.kicker')}</p>
+          <h1 className="mt-2 text-4xl font-bold tracking-[-0.02em] text-[#1f2d45]">{t('title')}</h1>
+          <p className="mt-2 max-w-2xl text-sm text-[#607594]">{t('title.subtitle')}</p>
         </div>
       </div>
 
-      <div className="border-b border-[#1e2d4a] bg-[rgba(10,15,30,0.6)]">
+      <div className="border-b border-[#dbe4f4] bg-[#f7f9fe]">
         <div className="mx-auto grid max-w-[1280px] grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
-          <div className="border-r border-[#1e2d4a] px-6 py-5">
-            <div className="text-sm font-semibold text-[#f1f5f9]">{t('stats.activeAudits')}</div>
-            <div className="mt-1 text-3xl font-bold">{activeCount}</div>
-            <div className="text-xs text-[#64748b]">{t('stats.activeSub')}</div>
+          <div className="border-r border-[#dbe4f4] px-6 py-5">
+            <div className="text-sm font-semibold text-[#243555]">{t('stats.activeAudits')}</div>
+            <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{activeCount}</div>
+            <div className="text-xs text-[#607594]">{t('stats.activeSub')}</div>
           </div>
-          <div className="border-r border-[#1e2d4a] px-6 py-5">
-            <div className="text-sm font-semibold text-[#f1f5f9]">{t('stats.readyToStart')}</div>
-            <div className="mt-1 text-3xl font-bold">{readyToStartCount}</div>
-            <div className="text-xs text-[#64748b]">{t('stats.readySub')}</div>
+          <div className="border-r border-[#dbe4f4] px-6 py-5">
+            <div className="text-sm font-semibold text-[#243555]">{t('stats.readyToStart')}</div>
+            <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{readyToStartCount}</div>
+            <div className="text-xs text-[#607594]">{t('stats.readySub')}</div>
           </div>
-          <div className="border-r border-[#1e2d4a] px-6 py-5">
-            <div className="text-sm font-semibold text-[#f1f5f9]">{t('stats.inProgress')}</div>
-            <div className="mt-1 text-3xl font-bold">{inProgressCount}</div>
-            <div className="text-xs text-[#64748b]">{t('stats.progressSub')}</div>
+          <div className="border-r border-[#dbe4f4] px-6 py-5">
+            <div className="text-sm font-semibold text-[#243555]">{t('stats.inProgress')}</div>
+            <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{inProgressCount}</div>
+            <div className="text-xs text-[#607594]">{t('stats.progressSub')}</div>
           </div>
           <div className="px-6 py-5">
-            <div className="text-sm font-semibold text-[#f1f5f9]">{t('stats.publishedReports')}</div>
-            <div className="mt-1 text-3xl font-bold">{publishedReportsCount}</div>
-            <div className="text-xs text-[#64748b]">{t('stats.reportSub')}</div>
+            <div className="text-sm font-semibold text-[#243555]">{t('stats.publishedReports')}</div>
+            <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{publishedReportsCount}</div>
+            <div className="text-xs text-[#607594]">{t('stats.reportSub')}</div>
           </div>
         </div>
       </div>
@@ -151,12 +151,12 @@ export default function AccessPage() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder={t('filters.searchPlaceholder')}
-                className="w-[220px] rounded-lg border border-[#1e2d4a] bg-[#111827] px-3 py-2 text-sm text-[#f1f5f9] placeholder:text-[#64748b] outline-none focus:border-[#2563eb]"
+                className="w-[220px] rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#1f2d45] placeholder:text-[#7a8fab] outline-none focus:border-[#2f4f83]"
               />
               <select
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-                className="rounded-lg border border-[#1e2d4a] bg-[#111827] px-3 py-2 text-sm text-[#f1f5f9] outline-none focus:border-[#2563eb]"
+                className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#1f2d45] outline-none focus:border-[#2f4f83]"
               >
                 <option value="all">{t('filters.all')}</option>
                 <option value="not_started">{t('filters.notStarted')}</option>
@@ -168,12 +168,12 @@ export default function AccessPage() {
             </div>
           </div>
 
-          {error ? <p className="mb-3 rounded-lg border border-[#f59e0b]/40 bg-[#f59e0b]/10 px-3 py-2 text-sm text-[#fcd34d]">{error}</p> : null}
+          {error ? <p className="mb-3 rounded-lg border border-[#f0c7cf] bg-[#fff2f4] px-3 py-2 text-sm text-[#b63d51]">{error}</p> : null}
 
           {loading ? (
-            <p className="rounded-xl border border-[#1e2d4a] bg-[#111827] px-4 py-3 text-sm text-[#94a3b8]">{t('loading')}</p>
+            <p className="rounded-xl border border-[#dbe4f4] bg-white px-4 py-3 text-sm text-[#607594] shadow-sm">{t('loading')}</p>
           ) : filtered.length === 0 ? (
-            <p className="rounded-xl border border-[#1e2d4a] bg-[#111827] px-4 py-3 text-sm text-[#94a3b8]">{t('empty')}</p>
+            <p className="rounded-xl border border-[#dbe4f4] bg-white px-4 py-3 text-sm text-[#607594] shadow-sm">{t('empty')}</p>
           ) : (
             <div className="space-y-4">
               {filtered.map((item) => {
@@ -188,31 +188,31 @@ export default function AccessPage() {
                 const canViewPerformance = item.status === 'submitted' || item.status === 'closed';
 
                 return (
-                  <article key={item.id} className="grid gap-5 rounded-2xl border border-[#1e2d4a] bg-[#111827] p-5 lg:grid-cols-[1fr_230px]">
+                  <article key={item.id} className="grid gap-5 rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm lg:grid-cols-[1fr_230px]">
                     <div className="space-y-4">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-base font-bold text-[#f1f5f9]">{item.checklist_title}</h3>
+                        <h3 className="text-base font-bold text-[#1f2d45]">{item.checklist_title}</h3>
                         <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusBadgeClass(item.status)}`}>
                           {t(`status.${item.status}`)}
                         </span>
                       </div>
-                      <div className="flex flex-wrap gap-2 text-[11px] text-[#64748b]">
-                        <span className="rounded-md border border-[#1e2d4a] bg-[#0f172a] px-2 py-1">{item.checklist_type_code}</span>
-                        <span className="rounded-md border border-[#1e2d4a] bg-[#0f172a] px-2 py-1">{item.checklist_version}</span>
+                      <div className="flex flex-wrap gap-2 text-[11px] text-[#607594]">
+                        <span className="rounded-md border border-[#dbe4f4] bg-[#f7f9fe] px-2 py-1">{item.checklist_type_code}</span>
+                        <span className="rounded-md border border-[#dbe4f4] bg-[#f7f9fe] px-2 py-1">{item.checklist_version}</span>
                       </div>
                       <div>
-                        <div className="mb-1 flex items-center justify-between text-xs text-[#94a3b8]">
+                        <div className="mb-1 flex items-center justify-between text-xs text-[#607594]">
                           <span>{t('labels.progress')}</span>
-                          <span className="font-semibold text-[#f1f5f9]">{completion}%</span>
+                          <span className="font-semibold text-[#1f2d45]">{completion}%</span>
                         </div>
-                        <div className="h-2 rounded-full bg-[#1e293b]">
+                        <div className="h-2 rounded-full bg-[#e4ebf7]">
                           <div
-                            className={`h-2 rounded-full ${completion >= 100 ? 'bg-[linear-gradient(90deg,#16a34a,#22c55e)]' : 'bg-[linear-gradient(90deg,#2563eb,#3b82f6)]'}`}
+                            className={`h-2 rounded-full ${completion >= 100 ? 'bg-[linear-gradient(90deg,#1f9d63,#35c58a)]' : 'bg-[linear-gradient(90deg,#2f4f83,#5c7fb8)]'}`}
                             style={{ width: `${completion}%` }}
                           />
                         </div>
                       </div>
-                      <div className="text-xs text-[#94a3b8]">
+                      <div className="text-xs text-[#607594]">
                         {t('labels.lastUpdated')}: {item.last_activity ? new Date(item.last_activity).toLocaleString() : t('labels.na')}
                       </div>
                     </div>
@@ -222,14 +222,14 @@ export default function AccessPage() {
                           type="button"
                           onClick={() => void handleStart(item)}
                           disabled={startingId === item.id}
-                          className="rounded-lg bg-[#2563eb] px-3 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8] disabled:opacity-60"
+                          className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
                         >
                           {startingId === item.id ? t('actions.processing') : t('actions.startAudit')}
                         </button>
                       ) : (
                         <Link
                           href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
-                          className="rounded-lg bg-[#2563eb] px-3 py-2 text-center text-sm font-semibold text-white hover:bg-[#1d4ed8]"
+                          className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-center text-sm font-semibold text-white hover:bg-[#223657]"
                         >
                           {t('actions.continueAudit')}
                         </Link>
@@ -238,7 +238,7 @@ export default function AccessPage() {
                       {canViewPerformance ? (
                         <Link
                           href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&view=performance`}
-                          className="rounded-lg border border-[#1e2d4a] bg-[#0f172a] px-3 py-2 text-center text-sm font-medium text-[#cbd5e1] hover:border-[#2563eb] hover:text-white"
+                          className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-center text-sm font-medium text-[#4c607d] hover:border-[#2f4f83] hover:bg-[#edf3ff]"
                         >
                           {t('actions.viewPerformance')}
                         </Link>
@@ -247,7 +247,7 @@ export default function AccessPage() {
                       {reportId ? (
                         <Link
                           href={`/reports/${reportId}` as any}
-                          className="rounded-lg border border-[#166534] bg-[#052e16] px-3 py-2 text-center text-sm font-medium text-[#bbf7d0] hover:bg-[#064e1d]"
+                          className="rounded-lg border border-[#8ac8a7] bg-[#ecfbf3] px-3 py-2 text-center text-sm font-medium text-[#1f7a4f] hover:bg-[#dff7ea]"
                         >
                           {t('actions.viewReport')}
                         </Link>
@@ -255,7 +255,7 @@ export default function AccessPage() {
 
                       <Link
                         href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
-                        className="rounded-lg border border-[#1e2d4a] bg-transparent px-3 py-2 text-center text-sm font-medium text-[#94a3b8] hover:border-[#2563eb] hover:text-white"
+                        className="rounded-lg border border-[#d4dced] bg-transparent px-3 py-2 text-center text-sm font-medium text-[#607594] hover:border-[#2f4f83] hover:bg-[#f7f9fe]"
                       >
                         {t('actions.viewDetails')}
                       </Link>
@@ -266,43 +266,43 @@ export default function AccessPage() {
             </div>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#64748b]">
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#607594]">
             <span>{t('pagination.showing', { count: String(filtered.length), total: String(assessments.length) })}</span>
             <button
               type="button"
               onClick={() => void load()}
-              className="rounded-md border border-[#1e2d4a] px-3 py-1.5 text-[#94a3b8] hover:border-[#2563eb] hover:text-white"
+              className="rounded-md border border-[#d4dced] px-3 py-1.5 text-[#4c607d] hover:border-[#2f4f83] hover:bg-[#f7f9fe]"
             >
               {t('actions.refresh')}
             </button>
           </div>
 
-          <div className="mt-6 grid gap-3 rounded-2xl border border-[#1e2d4a] bg-[#111827] p-5 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-6 grid gap-3 rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm md:grid-cols-2 xl:grid-cols-4">
             <div>
-              <div className="text-sm font-semibold">{t('quick.purchaseTitle')}</div>
-              <p className="mt-1 text-xs text-[#64748b]">{t('quick.purchaseDesc')}</p>
-              <Link href="/payment" className="mt-2 inline-block text-xs font-semibold text-[#3b82f6] hover:underline">
+              <div className="text-sm font-semibold text-[#243555]">{t('quick.purchaseTitle')}</div>
+              <p className="mt-1 text-xs text-[#607594]">{t('quick.purchaseDesc')}</p>
+              <Link href="/payment" className="mt-2 inline-block text-xs font-semibold text-[#2f4f83] hover:underline">
                 {t('quick.open')}
               </Link>
             </div>
             <div>
-              <div className="text-sm font-semibold">{t('quick.uploadTitle')}</div>
-              <p className="mt-1 text-xs text-[#64748b]">{t('quick.uploadDesc')}</p>
-              <Link href="/assessment" className="mt-2 inline-block text-xs font-semibold text-[#3b82f6] hover:underline">
+              <div className="text-sm font-semibold text-[#243555]">{t('quick.uploadTitle')}</div>
+              <p className="mt-1 text-xs text-[#607594]">{t('quick.uploadDesc')}</p>
+              <Link href="/assessment" className="mt-2 inline-block text-xs font-semibold text-[#2f4f83] hover:underline">
                 {t('quick.open')}
               </Link>
             </div>
             <div>
-              <div className="text-sm font-semibold">{t('quick.reportsTitle')}</div>
-              <p className="mt-1 text-xs text-[#64748b]">{t('quick.reportsDesc')}</p>
-              <Link href="/reports" className="mt-2 inline-block text-xs font-semibold text-[#3b82f6] hover:underline">
+              <div className="text-sm font-semibold text-[#243555]">{t('quick.reportsTitle')}</div>
+              <p className="mt-1 text-xs text-[#607594]">{t('quick.reportsDesc')}</p>
+              <Link href="/reports" className="mt-2 inline-block text-xs font-semibold text-[#2f4f83] hover:underline">
                 {t('quick.open')}
               </Link>
             </div>
             <div>
-              <div className="text-sm font-semibold">{t('quick.helpTitle')}</div>
-              <p className="mt-1 text-xs text-[#64748b]">{t('quick.helpDesc')}</p>
-              <Link href="/support" className="mt-2 inline-block text-xs font-semibold text-[#3b82f6] hover:underline">
+              <div className="text-sm font-semibold text-[#243555]">{t('quick.helpTitle')}</div>
+              <p className="mt-1 text-xs text-[#607594]">{t('quick.helpDesc')}</p>
+              <Link href="/support" className="mt-2 inline-block text-xs font-semibold text-[#2f4f83] hover:underline">
                 {t('quick.open')}
               </Link>
             </div>
@@ -310,31 +310,31 @@ export default function AccessPage() {
         </div>
 
         <aside className="space-y-5">
-          <div className="rounded-2xl border border-[#1e2d4a] bg-[#111827] p-5">
-            <h3 className="text-sm font-bold">{t('workflow.title')}</h3>
-            <p className="mt-1 text-xs text-[#64748b]">{t('workflow.subtitle')}</p>
-            <ol className="mt-4 space-y-3 text-xs text-[#94a3b8]">
-              <li><span className="font-semibold text-[#f1f5f9]">1.</span> {t('workflow.step1')}</li>
-              <li><span className="font-semibold text-[#f1f5f9]">2.</span> {t('workflow.step2')}</li>
-              <li><span className="font-semibold text-[#f1f5f9]">3.</span> {t('workflow.step3')}</li>
-              <li><span className="font-semibold text-[#f1f5f9]">4.</span> {t('workflow.step4')}</li>
-              <li><span className="font-semibold text-[#f1f5f9]">5.</span> {t('workflow.step5')}</li>
+          <div className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-[#243555]">{t('workflow.title')}</h3>
+            <p className="mt-1 text-xs text-[#607594]">{t('workflow.subtitle')}</p>
+            <ol className="mt-4 space-y-3 text-xs text-[#607594]">
+              <li><span className="font-semibold text-[#1f2d45]">1.</span> {t('workflow.step1')}</li>
+              <li><span className="font-semibold text-[#1f2d45]">2.</span> {t('workflow.step2')}</li>
+              <li><span className="font-semibold text-[#1f2d45]">3.</span> {t('workflow.step3')}</li>
+              <li><span className="font-semibold text-[#1f2d45]">4.</span> {t('workflow.step4')}</li>
+              <li><span className="font-semibold text-[#1f2d45]">5.</span> {t('workflow.step5')}</li>
             </ol>
           </div>
 
-          <div className="rounded-2xl border border-[#1e2d4a] bg-[#111827] p-5">
-            <h3 className="text-sm font-bold">{t('activity.title')}</h3>
+          <div className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-[#243555]">{t('activity.title')}</h3>
             <div className="mt-3 space-y-3">
               {recentActivity.length ? (
                 recentActivity.map((activity) => (
-                  <div key={activity.id} className="rounded-lg border border-[#1e2d4a] bg-[#0f172a] px-3 py-2">
-                    <p className="text-xs font-semibold text-[#f1f5f9]">{activity.title}</p>
-                    <p className="text-[11px] text-[#94a3b8]">{t(`status.${activity.status}`)}</p>
-                    <p className="text-[11px] text-[#64748b]">{activity.time}</p>
+                  <div key={activity.id} className="rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2">
+                    <p className="text-xs font-semibold text-[#1f2d45]">{activity.title}</p>
+                    <p className="text-[11px] text-[#607594]">{t(`status.${activity.status}`)}</p>
+                    <p className="text-[11px] text-[#7a8fab]">{activity.time}</p>
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-[#64748b]">{t('activity.empty')}</p>
+                <p className="text-xs text-[#607594]">{t('activity.empty')}</p>
               )}
             </div>
           </div>
