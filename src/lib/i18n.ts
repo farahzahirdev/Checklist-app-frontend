@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useSyncExternalStore } from 'react';
+import { hasPreferenceCookieConsent } from '@/lib/cookie-consent';
 
 export const LOCALE_STORAGE_KEY = 'checklist_locale';
 export const SUPPORTED_LOCALES = ['cs', 'en'] as const;
@@ -10,6 +11,19 @@ export type TranslationMessages = Partial<Record<Locale, TranslationDictionary>>
 
 export const DEFAULT_LOCALE: Locale = 'cs';
 const LOCALE_CHANGE_EVENT = 'checklist_locale_change';
+const LANGUAGE_PREFERENCE_COOKIE_NAME = 'user_language_preference';
+
+function persistLanguagePreferenceCookie(locale: Locale) {
+  if (typeof document === 'undefined') return;
+
+  if (!hasPreferenceCookieConsent()) {
+    document.cookie = `${LANGUAGE_PREFERENCE_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
+    return;
+  }
+
+  const maxAge = 60 * 60 * 24 * 365;
+  document.cookie = `${LANGUAGE_PREFERENCE_COOKIE_NAME}=${encodeURIComponent(locale)}; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
+}
 
 export function isLocale(value: string): value is Locale {
   return SUPPORTED_LOCALES.includes(value as Locale);
@@ -67,6 +81,7 @@ export function useLocale() {
   const setLocale = useCallback((nextLocale: Locale) => {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(LOCALE_STORAGE_KEY, nextLocale);
+    persistLanguagePreferenceCookie(nextLocale);
     window.dispatchEvent(new CustomEvent(LOCALE_CHANGE_EVENT, { detail: nextLocale }));
   }, []);
 

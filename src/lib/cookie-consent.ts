@@ -1,5 +1,6 @@
 export const COOKIE_CONSENT_STORAGE_KEY = 'checklist_cookie_consent_v2';
-export const COOKIE_CONSENT_COOKIE_NAME = 'checklist_cookie_consent_v2';
+export const COOKIE_CONSENT_COOKIE_NAME = 'auditready_consent';
+export const LEGACY_COOKIE_CONSENT_COOKIE_NAME = 'checklist_cookie_consent_v2';
 export const COOKIE_CONSENT_VERSION = '2';
 
 export type CookieConsentPreferences = {
@@ -28,7 +29,9 @@ function parseCookieString(cookieString: string, key: string): string | null {
 
 function readConsentFromCookie(): CookieConsentState | null {
   if (typeof document === 'undefined') return null;
-  const raw = parseCookieString(document.cookie, COOKIE_CONSENT_COOKIE_NAME);
+  const raw =
+    parseCookieString(document.cookie, COOKIE_CONSENT_COOKIE_NAME) ??
+    parseCookieString(document.cookie, LEGACY_COOKIE_CONSENT_COOKIE_NAME);
   if (!raw) return null;
   try {
     const parsed = JSON.parse(decodeURIComponent(raw)) as Partial<CookieConsentState>;
@@ -58,6 +61,18 @@ export function getCookieConsent(): CookieConsentState | null {
 
 export function hasCookieConsent() {
   return Boolean(getCookieConsent());
+}
+
+export function hasAcceptedAllCookieCategories() {
+  const consent = getCookieConsent();
+  if (!consent) return false;
+  const { preferences, analytics, marketing } = consent.preferences;
+  return Boolean(preferences && analytics && marketing);
+}
+
+export function hasPreferenceCookieConsent() {
+  const consent = getCookieConsent();
+  return Boolean(consent?.preferences.preferences);
 }
 
 export function saveCookieConsent(preferences: Omit<CookieConsentPreferences, 'necessary'>) {

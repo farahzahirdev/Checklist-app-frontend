@@ -10,13 +10,78 @@ import { PublicFooter } from '@/components/public-footer';
 import { useCMSPage } from '@/hooks/useCMSPage';
 import { PageRenderer } from '@/components/cms/PageRenderer';
 import { ACCESS_TOKEN_STORAGE_KEY, getCurrentUser, getRoleHomePath } from '@/lib/auth';
-import { acceptCookieConsent, hasCookieConsent } from '@/lib/cookie-consent';
+import {
+  acceptCookieConsent,
+  getCookieConsent,
+  hasAcceptedAllCookieCategories,
+} from '@/lib/cookie-consent';
 import { getCustomerPostLoginDestination } from '@/lib/customer-post-login';
 import {
   cookiesContent,
   type CookiesBlock,
   type CookiesSection,
 } from '@/locales/cookies-content';
+
+const consentUi = {
+  cs: {
+    title: 'Souhlas s cookies',
+    alreadyAllAccepted: 'Všechny kategorie cookies jsou již pro toto zařízení povoleny.',
+    partialOrMissing: 'Přečtěte si zásady a potvrďte souhlas pro všechny kategorie cookies.',
+    saveSuccess: 'Souhlas s cookies byl uložen.',
+    saving: 'Ukládám...',
+    continue: 'Pokračovat',
+    acceptAndContinue: 'Přijmout vše a pokračovat',
+    languageLabel: 'Jazyk zásad cookies',
+  },
+  en: {
+    title: 'Cookie consent',
+    alreadyAllAccepted: 'All cookie categories are already enabled for this browser/device.',
+    partialOrMissing: 'Please review the policy and confirm consent for all cookie categories.',
+    saveSuccess: 'Cookie consent saved.',
+    saving: 'Saving...',
+    continue: 'Continue',
+    acceptAndContinue: 'Accept all and continue',
+    languageLabel: 'Cookie policy language',
+  },
+} as const;
+
+function CookiesLanguageSwitch() {
+  const { locale, setLocale } = useLocale();
+
+  return (
+    <section className="mb-5 rounded-xl border border-black/10 bg-black/[0.03] px-4 py-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-black/70">
+        {consentUi[locale].languageLabel}
+      </p>
+      <div className="mt-2 inline-flex rounded-lg border border-black/15 bg-white p-1">
+        <button
+          type="button"
+          onClick={() => setLocale('cs')}
+          aria-pressed={locale === 'cs'}
+          className={`rounded-md px-3 py-1.5 text-sm font-semibold transition ${
+            locale === 'cs'
+              ? 'bg-[#0d1d3a] text-white'
+              : 'text-black/80 hover:bg-black/[0.05]'
+          }`}
+        >
+          CS
+        </button>
+        <button
+          type="button"
+          onClick={() => setLocale('en')}
+          aria-pressed={locale === 'en'}
+          className={`rounded-md px-3 py-1.5 text-sm font-semibold transition ${
+            locale === 'en'
+              ? 'bg-[#0d1d3a] text-white'
+              : 'text-black/80 hover:bg-black/[0.05]'
+          }`}
+        >
+          EN
+        </button>
+      </div>
+    </section>
+  );
+}
 
 function renderBlocks(blocks: CookiesBlock[], depth = 0) {
   return blocks.map((block, index) => {
@@ -148,15 +213,17 @@ function CookiesPageContent({ footerSlot }: { footerSlot?: React.ReactNode }) {
 }
 
 function CookieConsentAction() {
+  const { locale, setLocale } = useLocale();
+  const ui = consentUi[locale];
   const router = useRouter();
   const searchParams = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
-  const [consentReady, setConsentReady] = useState(false);
+  const [allAccepted, setAllAccepted] = useState(false);
   const returnTo = searchParams.get('returnTo') ?? '';
   const postLogin = searchParams.get('postLogin') === '1';
 
   useEffect(() => {
-    setConsentReady(hasCookieConsent());
+    setAllAccepted(hasAcceptedAllCookieCategories());
   }, []);
 
   async function continueAfterConsent() {
@@ -199,9 +266,20 @@ function CookieConsentAction() {
   async function handleAccept() {
     setSubmitting(true);
     try {
-      acceptCookieConsent();
-      setConsentReady(true);
-      toast.success('Cookie consent saved.');
+      const existing = getCookieConsent();
+      const shouldSave =
+        !existing ||
+        !existing.preferences.preferences ||
+        !existing.preferences.analytics ||
+        !existing.preferences.marketing;
+
+      if (shouldSave) {
+        acceptCookieConsent();
+        // Re-persist current locale so preference cookie can be written after consent is granted.
+        setLocale(locale);
+      }
+      setAllAccepted(true);
+      toast.success(ui.saveSuccess);
       await continueAfterConsent();
     } finally {
       setSubmitting(false);
@@ -212,11 +290,9 @@ function CookieConsentAction() {
     <section className="mx-auto mt-8 max-w-4xl rounded-2xl border border-black/10 bg-[#0d1d3a] px-5 py-4 text-white shadow-lg">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
-          <p className="text-sm font-semibold">Cookie consent</p>
+          <p className="text-sm font-semibold">{ui.title}</p>
           <p className="text-sm text-white/75">
-            {consentReady
-              ? 'Consent is already saved for this browser/device.'
-              : 'Please read the policy and accept to continue.'}
+            {allAccepted ? ui.alreadyAllAccepted : ui.partialOrMissing}
           </p>
         </div>
         <button
@@ -225,7 +301,7 @@ function CookieConsentAction() {
           disabled={submitting}
           className="inline-flex items-center justify-center rounded-lg border border-white/15 bg-white px-4 py-2 text-sm font-semibold text-[#0d1d3a] transition-colors hover:bg-[#edf4ff] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? 'Saving...' : consentReady ? 'Continue' : 'Accept and continue'}
+          {submitting ? ui.saving : allAccepted ? ui.continue : ui.acceptAndContinue}
         </button>
       </div>
     </section>
@@ -245,6 +321,7 @@ function CookiesPageWithCMS() {
 
   const footerSlot = (
     <div className="px-4 pb-10 sm:px-6 lg:px-8">
+      <CookiesLanguageSwitch />
       <CookieConsentAction />
     </div>
   );
