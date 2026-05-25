@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import type { Route } from 'next';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { confirmEmailVerification } from '@/lib/auth';
 import { useLocale } from '@/lib/i18n';
 
-export default function VerifyEmailPage() {
+function VerifyEmailPageContent() {
   const { locale } = useLocale();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -65,5 +65,13 @@ export default function VerifyEmailPage() {
         ) : null}
       </section>
     </main>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<main className="mx-auto flex min-h-[70vh] max-w-xl items-center px-4 py-12" />}>
+      <VerifyEmailPageContent />
+    </Suspense>
   );
 }
