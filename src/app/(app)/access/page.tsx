@@ -25,6 +25,14 @@ function clampPercent(value: number) {
 export default function AccessPage() {
   const { locale } = useLocale();
   const t = (key: string, values?: Record<string, string>) => translate(customerAccessMessages, locale, key, values);
+  const loadErrorText = useMemo(
+    () => translate(customerAccessMessages, locale, 'errors.load'),
+    [locale],
+  );
+  const startErrorText = useMemo(
+    () => translate(customerAccessMessages, locale, 'errors.start'),
+    [locale],
+  );
 
   const [loading, setLoading] = useState(true);
   const [startingId, setStartingId] = useState('');
@@ -62,11 +70,11 @@ export default function AccessPage() {
         setPage(maxPage);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('errors.load'));
+      setError(err instanceof Error ? err.message : loadErrorText);
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, debouncedSearch, t]);
+  }, [page, statusFilter, debouncedSearch, loadErrorText]);
 
   const loadMeta = useCallback(async () => {
     try {
@@ -149,7 +157,7 @@ export default function AccessPage() {
       await startAssessment({ checklist_id: item.checklist_id });
       window.location.href = `/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}`;
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('errors.start'));
+      setError(err instanceof Error ? err.message : startErrorText);
     } finally {
       setStartingId('');
     }
