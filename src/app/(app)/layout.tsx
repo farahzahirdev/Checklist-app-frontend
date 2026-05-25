@@ -8,7 +8,6 @@ import type { Route } from 'next';
 import { LogoutButton } from '@/components/logout-button';
 import { CustomerLanguageSwitcher } from '@/components/customer-language-switcher';
 import { translate, useLocale } from '@/lib/i18n';
-import { hasCookieConsent } from '@/lib/cookie-consent';
 import { customerLayoutMessages } from '@/locales/customer-layout';
 import {
   ACCESS_TOKEN_STORAGE_KEY,
@@ -169,10 +168,6 @@ export default function AppLayout({
     if (!authReady) return;
     if (!pathname) return;
     if (!role) return;
-    if (role === 'customer' && !hasCookieConsent()) {
-      router.replace(`/cookies?returnTo=${encodeURIComponent(pathname)}` as Route);
-      return;
-    }
     if (!canAccessPath(role, pathname)) {
       router.push(defaultPathForRole(role) as Route);
     }

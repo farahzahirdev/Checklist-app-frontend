@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AppToaster } from '@/components/app-toaster';
+import { CookieConsentPopup } from '@/components/cookie-consent-popup';
 
 export const metadata: Metadata = {
   title: 'AuditReady',
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="font-sans">
         {children}
+        <CookieConsentPopup />
         <AppToaster />
       </body>
     </html>

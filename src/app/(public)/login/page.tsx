@@ -19,7 +19,6 @@ import {
   verifyMfaChallenge,
   verifyMfaCode,
 } from '@/lib/auth';
-import { hasCookieConsent } from '@/lib/cookie-consent';
 import { getCustomerPostLoginDestination } from '@/lib/customer-post-login';
 import {
   appendChecklistIdParam,
@@ -158,11 +157,6 @@ function LoginPageContent() {
       persistAccessToken(data.access_token);
       toast.success(t('success.signedIn'));
       if (role === 'customer') {
-        if (!hasCookieConsent()) {
-          router.push('/cookies?postLogin=1' as Route);
-          router.refresh();
-          return;
-        }
         await redirectCustomerAfterAuth(data.user.id);
       } else {
         router.push(destination as Route);
@@ -207,11 +201,6 @@ function LoginPageContent() {
       }
       persistAccessToken(data.access_token);
       toast.success(t('success.mfaVerified'));
-      if (!hasCookieConsent()) {
-        router.push('/cookies?postLogin=1' as Route);
-        router.refresh();
-        return;
-      }
       if (checklistIdFromQuery) {
         router.push(customerDestination as Route);
       } else {
@@ -240,11 +229,6 @@ function LoginPageContent() {
         persistAccessToken(data.access_token);
       }
       toast.success(t('success.mfaSetupCompleted'));
-      if (!hasCookieConsent()) {
-        router.push('/cookies?postLogin=1' as Route);
-        router.refresh();
-        return;
-      }
       if (checklistIdFromQuery) {
         router.push(customerDestination as Route);
       } else {

@@ -7,7 +7,6 @@ import { ScrollToTop } from '@/components/scroll-to-top';
 import { SiteHeader } from '@/components/site-header';
 import type { ReactNode } from 'react';
 import { ACCESS_TOKEN_STORAGE_KEY, getCurrentUser, getRoleHomePath } from '@/lib/auth';
-import { hasCookieConsent } from '@/lib/cookie-consent';
 import { useCookieConsentGate } from '@/hooks/useCookieConsentGate';
 
 export default function PublicLayout({
@@ -32,11 +31,6 @@ export default function PublicLayout({
         pathname === '/privacy-policy' ||
         pathname === '/terms-of-service'
       ) {
-        return;
-      }
-
-      if (!hasCookieConsent()) {
-        router.replace(`/cookies?postLogin=1&returnTo=${encodeURIComponent(pathname)}`);
         return;
       }
 
