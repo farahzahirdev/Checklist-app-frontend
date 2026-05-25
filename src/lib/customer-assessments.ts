@@ -15,6 +15,7 @@ export type CustomerAssessmentListItem = {
   expires_at: string | null;
   days_until_expiry: number | null;
   has_report: boolean;
+  report_id?: string | null;
   report_status: string | null;
   last_activity: string | null;
 };

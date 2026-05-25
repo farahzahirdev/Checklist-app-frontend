@@ -4,8 +4,8 @@ export const customerLayoutMessages: TranslationMessages = {
   en: {
     'brand.name': 'AuditReady',
     'nav.dashboard': 'Dashboard',
-    'nav.assessment': 'Assessment',
-    'nav.access': 'Access',
+    'nav.assessment': 'Audit',
+    'nav.access': 'Audit',
     'nav.support': 'Support',
     'nav.purchase': 'Purchase',
     'nav.payments': 'Payments',
@@ -27,8 +27,8 @@ export const customerLayoutMessages: TranslationMessages = {
   cs: {
     'brand.name': 'AuditReady',
     'nav.dashboard': 'Přehled',
-    'nav.assessment': 'Hodnocení',
-    'nav.access': 'Přístup',
+    'nav.assessment': 'Audit',
+    'nav.access': 'Audit',
     'nav.support': 'Podpora',
     'nav.purchase': 'Nákup',
     'nav.payments': 'Platby',
