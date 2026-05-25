@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { CustomerProfileView } from '@/components/customer-profile/customer-profile-view';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, requestEmailVerification } from '@/lib/auth';
 import { translate, useLocale } from '@/lib/i18n';
 import {
   applyProfileCompanyFields,
   buildCompletionChecklist,
   changeCustomerPassword,
+  createCustomerMfaSupportRequest,
   getCustomerProfile,
   getCustomerProfileCompletion,
   profileToNotificationPrefs,
@@ -123,7 +124,12 @@ export default function CustomerProfilePage() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [editingCompany, setEditingCompany] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [mfaRequestOpen, setMfaRequestOpen] = useState(false);
+  const [mfaRequestType, setMfaRequestType] = useState<'reset' | 'disable'>('reset');
+  const [mfaRequestMessage, setMfaRequestMessage] = useState('');
   const [error, setError] = useState('');
+  const [requestingEmailVerification, setRequestingEmailVerification] = useState(false);
+  const [requestingMfaSupport, setRequestingMfaSupport] = useState(false);
 
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
@@ -376,6 +382,47 @@ export default function CustomerProfilePage() {
     }
   }
 
+  async function onRequestEmailVerification() {
+    setRequestingEmailVerification(true);
+    try {
+      const response = await requestEmailVerification();
+      toast.success(response.message || t('toasts.emailVerificationRequested'));
+      const refreshed = await getCustomerProfile();
+      setProfile(refreshed);
+      const completion = await getCustomerProfileCompletion().catch(() => null);
+      if (completion) setProfileCompletion(completion);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('errors.requestEmailVerification'));
+    } finally {
+      setRequestingEmailVerification(false);
+    }
+  }
+
+  async function onSubmitMfaSupportRequest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmed = mfaRequestMessage.trim();
+    if (trimmed.length < 5) {
+      toast.error(t('errors.mfaSupportMessageTooShort'));
+      return;
+    }
+
+    setRequestingMfaSupport(true);
+    try {
+      await createCustomerMfaSupportRequest({
+        request_type: mfaRequestType,
+        message: trimmed,
+      });
+      toast.success(t('toasts.mfaSupportRequested'));
+      setMfaRequestOpen(false);
+      setMfaRequestType('reset');
+      setMfaRequestMessage('');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('errors.requestMfaSupport'));
+    } finally {
+      setRequestingMfaSupport(false);
+    }
+  }
+
   return (
     <CustomerProfileView
       t={t}
@@ -398,6 +445,12 @@ export default function CustomerProfilePage() {
       setEditingCompany={setEditingCompany}
       showPasswordForm={showPasswordForm}
       setShowPasswordForm={setShowPasswordForm}
+      mfaRequestOpen={mfaRequestOpen}
+      setMfaRequestOpen={setMfaRequestOpen}
+      mfaRequestType={mfaRequestType}
+      setMfaRequestType={setMfaRequestType}
+      mfaRequestMessage={mfaRequestMessage}
+      setMfaRequestMessage={setMfaRequestMessage}
       fullName={fullName}
       setFullName={setFullName}
       username={username}
@@ -438,11 +491,15 @@ export default function CustomerProfilePage() {
       savingCompany={savingCompany}
       savingNotifications={savingNotifications}
       changingPassword={changingPassword}
+      requestingEmailVerification={requestingEmailVerification}
+      requestingMfaSupport={requestingMfaSupport}
       notificationPrefs={notificationPrefs}
       setNotificationPrefs={setNotificationPrefs}
       onSaveProfile={onSaveProfile}
       onSaveCompany={onSaveCompany}
       onChangePassword={onChangePassword}
+      onRequestEmailVerification={() => void onRequestEmailVerification()}
+      onSubmitMfaSupportRequest={onSubmitMfaSupportRequest}
       onSaveNotificationPrefs={() => void onSaveNotificationPrefs()}
       profileCompletionPercent={profileCompletionPercent}
       completionItems={completionItems}

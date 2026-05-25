@@ -1,8 +1,11 @@
 import { apiGetWithAuth, apiPatch } from '@/lib/api';
+import { apiPost } from '@/lib/api';
 
 export type CustomerProfile = {
   id: string;
   email: string;
+  email_verified: boolean;
+  email_verification_sent_at?: string | null;
   full_name: string | null;
   username: string | null;
   job_title: string | null;
@@ -85,6 +88,13 @@ export async function changeCustomerPassword(payload: ChangeCustomerPasswordPayl
   return apiPatch<Record<string, unknown>, ChangeCustomerPasswordPayload>('/customer/profile/password', payload);
 }
 
+export async function createCustomerMfaSupportRequest(payload: {
+  request_type: 'reset' | 'disable';
+  message: string;
+}) {
+  return apiPost<Record<string, unknown>, typeof payload>('/customer/profile/mfa-support-request', payload);
+}
+
 export function profileToNotificationPrefs(profile: CustomerProfile) {
   return {
     notifications_enabled: profile.notifications_enabled,
@@ -131,6 +141,7 @@ const COMPLETION_FIELD_LABEL_KEYS: Record<string, string> = {
   company_region: 'completion.field.companyRegion',
   company_country: 'completion.field.companyCountry',
   company_website: 'completion.field.companyWebsite',
+  email_verified: 'completion.field.emailVerified',
 };
 
 export function buildCompletionChecklist(

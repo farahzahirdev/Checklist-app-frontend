@@ -7,6 +7,7 @@ export type UserRoleKey = 'admin' | 'auditor' | 'customer';
 export type AuthUser = {
   id: string;
   email: string;
+  email_verified?: boolean;
   name?: string | null;
   full_name?: string | null;
   username?: string | null;
@@ -150,6 +151,14 @@ export async function forgotPassword(payload: ForgotPasswordPayload) {
 
 export async function resetPassword(payload: ResetPasswordPayload) {
   return apiPost<MessageResponse, ResetPasswordPayload>('/auth/reset-password', payload);
+}
+
+export async function requestEmailVerification() {
+  return apiPostEmptyWithAuth<MessageResponse>('/auth/email-verification/request');
+}
+
+export async function confirmEmailVerification(token: string) {
+  return apiPost<AuthResponse, { token: string }>('/auth/email-verification/confirm', { token });
 }
 
 export type MessageResponse = {

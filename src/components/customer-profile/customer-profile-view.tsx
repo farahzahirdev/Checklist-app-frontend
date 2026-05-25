@@ -47,6 +47,12 @@ export type CustomerProfileViewProps = {
   setEditingCompany: (value: boolean) => void;
   showPasswordForm: boolean;
   setShowPasswordForm: (value: boolean) => void;
+  mfaRequestOpen: boolean;
+  setMfaRequestOpen: (value: boolean) => void;
+  mfaRequestType: 'reset' | 'disable';
+  setMfaRequestType: (value: 'reset' | 'disable') => void;
+  mfaRequestMessage: string;
+  setMfaRequestMessage: (value: string) => void;
   fullName: string;
   setFullName: (value: string) => void;
   username: string;
@@ -87,11 +93,15 @@ export type CustomerProfileViewProps = {
   savingCompany: boolean;
   savingNotifications: boolean;
   changingPassword: boolean;
+  requestingEmailVerification: boolean;
+  requestingMfaSupport: boolean;
   notificationPrefs: NotificationPrefs;
   setNotificationPrefs: (value: NotificationPrefs) => void;
   onSaveProfile: (event: FormEvent<HTMLFormElement>) => void;
   onSaveCompany: (event: FormEvent<HTMLFormElement>) => void;
   onChangePassword: (event: FormEvent<HTMLFormElement>) => void;
+  onRequestEmailVerification: () => void;
+  onSubmitMfaSupportRequest: (event: FormEvent<HTMLFormElement>) => void;
   onSaveNotificationPrefs: () => void;
   profileCompletionPercent: number;
   completionItems: Array<{ key: string; label: string; done: boolean }>;
@@ -359,6 +369,12 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
     setEditingCompany,
     showPasswordForm,
     setShowPasswordForm,
+    mfaRequestOpen,
+    setMfaRequestOpen,
+    mfaRequestType,
+    setMfaRequestType,
+    mfaRequestMessage,
+    setMfaRequestMessage,
     fullName,
     setFullName,
     username,
@@ -399,11 +415,15 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
     savingCompany,
     savingNotifications,
     changingPassword,
+    requestingEmailVerification,
+    requestingMfaSupport,
     notificationPrefs,
     setNotificationPrefs,
     onSaveProfile,
     onSaveCompany,
     onChangePassword,
+    onRequestEmailVerification,
+    onSubmitMfaSupportRequest,
     onSaveNotificationPrefs,
     profileCompletionPercent,
     completionItems,
@@ -760,6 +780,17 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
                   }
                 />
                 <SecurityTile
+                  iconTone={profile?.email_verified ? 'green' : 'blue'}
+                  title={t('security.emailVerification')}
+                  value={profile?.email_verified ? t('security.emailVerified') : t('security.emailNotVerified')}
+                  icon={
+                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+                      <path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="1.8" />
+                      <path d="m4 7 8 6 8-6" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                    </svg>
+                  }
+                />
+                <SecurityTile
                   title={t('security.recoveryEmail')}
                   value={profile?.email ?? '—'}
                   icon={
@@ -779,6 +810,26 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
                     </svg>
                   }
                 />
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {!profile?.email_verified ? (
+                  <button
+                    type="button"
+                    className={outlineBtn}
+                    onClick={onRequestEmailVerification}
+                    disabled={requestingEmailVerification}
+                  >
+                    {requestingEmailVerification ? t('actions.sending') : t('security.verifyEmail')}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className={outlineBtn}
+                  onClick={() => setMfaRequestOpen(true)}
+                >
+                  {t('security.requestMfaSupport')}
+                </button>
               </div>
 
               <div className="mt-4">
@@ -824,6 +875,41 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
                       {changingPassword ? t('actions.changing') : t('actions.changePassword')}
                     </button>
                     <p className="mt-2 text-xs text-[#64748b]">{t('password.hint')}</p>
+                  </div>
+                </form>
+              ) : null}
+
+              {mfaRequestOpen ? (
+                <form className="mt-6 space-y-4 border-t border-[#e2e8f4] pt-6" onSubmit={onSubmitMfaSupportRequest}>
+                  <h3 className="text-sm font-semibold text-[#0f172a]">{t('security.mfaSupportTitle')}</h3>
+                  <label className="block space-y-1.5 text-sm">
+                    <span className="font-medium text-[#475569]">{t('security.mfaSupportType')}</span>
+                    <select
+                      value={mfaRequestType}
+                      onChange={(event) => setMfaRequestType(event.target.value as 'reset' | 'disable')}
+                      className={inputClass}
+                    >
+                      <option value="reset">{t('security.mfaRequestReset')}</option>
+                      <option value="disable">{t('security.mfaRequestDisable')}</option>
+                    </select>
+                  </label>
+                  <label className="block space-y-1.5 text-sm">
+                    <span className="font-medium text-[#475569]">{t('security.mfaSupportMessage')}</span>
+                    <textarea
+                      rows={4}
+                      value={mfaRequestMessage}
+                      onChange={(event) => setMfaRequestMessage(event.target.value)}
+                      className={inputClass}
+                      placeholder={t('security.mfaSupportPlaceholder')}
+                    />
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="submit" disabled={requestingMfaSupport} className={primaryBtn}>
+                      {requestingMfaSupport ? t('actions.sending') : t('security.submitMfaSupport')}
+                    </button>
+                    <button type="button" className={outlineBtn} onClick={() => setMfaRequestOpen(false)}>
+                      {t('actions.cancel')}
+                    </button>
                   </div>
                 </form>
               ) : null}
