@@ -17,6 +17,10 @@ export type CustomerAssessmentListItem = {
   has_report: boolean;
   report_id?: string | null;
   report_status: string | null;
+  report_published_at?: string | null;
+  purchased_at?: string | null;
+  access_window_started_at?: string | null;
+  access_window_expires_at?: string | null;
   last_activity: string | null;
 };
 

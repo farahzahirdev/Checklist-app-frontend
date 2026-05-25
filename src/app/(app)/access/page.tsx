@@ -22,6 +22,51 @@ function clampPercent(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
+function formatDate(value: string | null | undefined, locale: 'en' | 'cs') {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString(locale === 'cs' ? 'cs-CZ' : 'en-GB', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function formatDateTime(value: string | null | undefined, locale: 'en' | 'cs') {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString(locale === 'cs' ? 'cs-CZ' : 'en-GB');
+}
+
+function formatLastChanged(value: string | null | undefined, locale: 'en' | 'cs') {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const now = new Date();
+  const isSameDay =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+
+  if (!isSameDay) {
+    return date.toLocaleString(locale === 'cs' ? 'cs-CZ' : 'en-GB');
+  }
+
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.max(0, Math.floor(diffMs / (1000 * 60)));
+  const rtf = new Intl.RelativeTimeFormat(locale === 'cs' ? 'cs-CZ' : 'en', { numeric: 'auto' });
+
+  if (diffMinutes < 60) {
+    return rtf.format(-diffMinutes, 'minute');
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  return rtf.format(-diffHours, 'hour');
+}
+
 export default function AccessPage() {
   const { locale } = useLocale();
   const t = (key: string, values?: Record<string, string>) => translate(customerAccessMessages, locale, key, values);
@@ -247,6 +292,13 @@ export default function AccessPage() {
                 const completion = clampPercent(item.completion_percent);
                 const reportId = item.report_status === 'published' && item.report_id ? item.report_id : null;
                 const canViewPerformance = item.status === 'submitted' || item.status === 'closed';
+                const accessWindowStart = formatDate(item.access_window_started_at, locale);
+                const accessWindowEnd = formatDate(item.access_window_expires_at ?? item.expires_at, locale);
+                const completedOn = formatDate(item.submitted_at, locale);
+                const reportPublishedOn = formatDate(item.report_published_at, locale);
+                const purchasedOn = formatDate(item.purchased_at, locale);
+                const lastChanged = formatLastChanged(item.last_activity, locale);
+                const fallbackLastUpdated = formatDateTime(item.last_activity, locale);
 
                 return (
                   <article key={item.id} className="grid gap-5 rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm lg:grid-cols-[1fr_230px]">
@@ -273,9 +325,43 @@ export default function AccessPage() {
                           />
                         </div>
                       </div>
-                      <div className="text-xs text-[#607594]">
-                        {t('labels.lastUpdated')}: {item.last_activity ? new Date(item.last_activity).toLocaleString() : t('labels.na')}
-                      </div>
+                      {item.status === 'in_progress' ? (
+                        <div className="space-y-1 text-xs text-[#607594]">
+                          <p>
+                            {t('labels.lastChanged')}: {lastChanged ?? fallbackLastUpdated ?? t('labels.na')}
+                          </p>
+                          <p>
+                            {t('labels.accessWindow')}: {accessWindowStart ?? t('labels.na')} - {accessWindowEnd ?? t('labels.na')}
+                          </p>
+                        </div>
+                      ) : null}
+
+                      {(item.status === 'submitted' || item.status === 'closed') ? (
+                        <div className="space-y-1 text-xs text-[#607594]">
+                          <p>
+                            {t('labels.completedOn')}: {completedOn ?? t('labels.na')}
+                          </p>
+                          {item.report_status === 'published' ? (
+                            <p>
+                              {t('labels.reportPublishedOn')}: {reportPublishedOn ?? t('labels.na')}
+                            </p>
+                          ) : (
+                            <p>{t('labels.reportInProgress')}</p>
+                          )}
+                        </div>
+                      ) : null}
+
+                      {item.status === 'not_started' ? (
+                        <div className="text-xs text-[#607594]">
+                          {t('labels.purchasedOn')}: {purchasedOn ?? accessWindowStart ?? t('labels.na')}
+                        </div>
+                      ) : null}
+
+                      {item.status === 'expired' ? (
+                        <div className="text-xs text-[#607594]">
+                          {t('labels.lastUpdated')}: {fallbackLastUpdated ?? t('labels.na')}
+                        </div>
+                      ) : null}
                     </div>
                     <div className="flex flex-col gap-2">
                       {item.status === 'not_started' ? (
