@@ -23,6 +23,9 @@ export type CustomerAssessmentListItem = {
 export type CustomerAssessmentListResponse = {
   assessments: CustomerAssessmentListItem[];
   total: number;
+  skip?: number;
+  limit?: number;
+  has_more?: boolean;
   filters_applied?: Record<string, unknown>;
   generated_at?: string;
 };

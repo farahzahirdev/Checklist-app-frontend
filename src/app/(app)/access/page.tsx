@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listCustomerAssessments, type CustomerAssessmentListItem } from '@/lib/customer-assessments';
 import { getCustomerReports, type CustomerReportSummary } from '@/lib/reports';
 import { startAssessment } from '@/lib/assessment';
@@ -9,6 +9,7 @@ import { translate, useLocale } from '@/lib/i18n';
 import { customerAccessMessages } from '@/locales/customer-access';
 
 type StatusFilter = 'all' | 'not_started' | 'in_progress' | 'submitted' | 'closed' | 'expired';
+const PAGE_SIZE = 12;
 
 function statusBadgeClass(status: string) {
   if (status === 'in_progress') return 'border-[#bfdbfe] bg-[#eff6ff] text-[#1e40af]';
@@ -30,51 +31,96 @@ export default function AccessPage() {
   const [startingId, setStartingId] = useState('');
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [page, setPage] = useState(1);
+  const [totalAssessments, setTotalAssessments] = useState(0);
+  const [activeCount, setActiveCount] = useState(0);
+  const [readyToStartCount, setReadyToStartCount] = useState(0);
+  const [inProgressCount, setInProgressCount] = useState(0);
   const [assessments, setAssessments] = useState<CustomerAssessmentListItem[]>([]);
   const [reports, setReports] = useState<CustomerReportSummary[]>([]);
 
   const reportByAssessmentId = useMemo(() => new Map(reports.map((report) => [report.assessment_id, report])), [reports]);
 
-  async function load() {
+  const loadPage = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const [assessmentResponse, reportResponse] = await Promise.all([
-        listCustomerAssessments({ sort_by: 'updated_at', sort_order: 'desc', limit: 200 }),
-        getCustomerReports().catch(() => []),
-      ]);
+      const skip = (page - 1) * PAGE_SIZE;
+      const statusParam = statusFilter === 'all' ? undefined : [statusFilter];
+      const assessmentResponse = await listCustomerAssessments({
+        sort_by: 'updated_at',
+        sort_order: 'desc',
+        status: statusParam,
+        search: debouncedSearch || undefined,
+        skip,
+        limit: PAGE_SIZE,
+      });
       setAssessments(assessmentResponse.assessments ?? []);
-      setReports(reportResponse);
+      setTotalAssessments(assessmentResponse.total ?? 0);
+
+      const maxPage = Math.max(1, Math.ceil((assessmentResponse.total ?? 0) / PAGE_SIZE));
+      if (page > maxPage) {
+        setPage(maxPage);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.load'));
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, statusFilter, debouncedSearch, t]);
 
-  useEffect(() => {
-    void load();
+  const loadMeta = useCallback(async () => {
+    try {
+      const [activeResponse, readyResponse, inProgressResponse, reportResponse] = await Promise.all([
+        listCustomerAssessments({ status: ['not_started', 'in_progress'], limit: 1 }).catch(() => ({ total: 0, assessments: [] })),
+        listCustomerAssessments({ status: ['not_started'], limit: 1 }).catch(() => ({ total: 0, assessments: [] })),
+        listCustomerAssessments({ status: ['in_progress'], limit: 1 }).catch(() => ({ total: 0, assessments: [] })),
+        getCustomerReports().catch(() => []),
+      ]);
+
+      setActiveCount(activeResponse.total ?? 0);
+      setReadyToStartCount(readyResponse.total ?? 0);
+      setInProgressCount(inProgressResponse.total ?? 0);
+      setReports(reportResponse);
+    } catch {
+      setActiveCount(0);
+      setReadyToStartCount(0);
+      setInProgressCount(0);
+      setReports([]);
+    }
   }, []);
 
-  const filtered = useMemo(() => {
-    return assessments.filter((item) => {
-      const searchTerm = search.trim().toLowerCase();
-      const matchesSearch =
-        !searchTerm ||
-        item.checklist_title.toLowerCase().includes(searchTerm) ||
-        item.checklist_type_code.toLowerCase().includes(searchTerm);
-      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [assessments, search, statusFilter]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
 
-  const activeCount = useMemo(
-    () => assessments.filter((item) => item.status === 'in_progress' || item.status === 'not_started').length,
-    [assessments],
-  );
-  const readyToStartCount = useMemo(() => assessments.filter((item) => item.status === 'not_started').length, [assessments]);
-  const inProgressCount = useMemo(() => assessments.filter((item) => item.status === 'in_progress').length, [assessments]);
+  useEffect(() => {
+    void loadPage();
+  }, [loadPage]);
+
+  useEffect(() => {
+    void loadMeta();
+  }, [loadMeta]);
+
+  async function reloadAll() {
+    await Promise.all([loadPage(), loadMeta()]);
+  }
+
+  const totalPages = Math.max(1, Math.ceil(totalAssessments / PAGE_SIZE));
+  const rangeFrom = totalAssessments === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const rangeTo = totalAssessments === 0 ? 0 : Math.min(page * PAGE_SIZE, totalAssessments);
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, debouncedSearch]);
+
+  const filtered = assessments;
+
   const publishedReportsCount = useMemo(
     () => reports.filter((report) => report.status === 'published').length,
     [reports],
@@ -93,6 +139,16 @@ export default function AccessPage() {
         })),
     [assessments],
   );
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
+  async function handleRefreshClick() {
+    await reloadAll();
+  }
 
   async function handleStart(item: CustomerAssessmentListItem) {
     setStartingId(item.id);
@@ -149,13 +205,19 @@ export default function AccessPage() {
             <div className="flex flex-wrap items-center gap-2">
               <input
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
                 placeholder={t('filters.searchPlaceholder')}
                 className="w-[220px] rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#1f2d45] placeholder:text-[#7a8fab] outline-none focus:border-[#2f4f83]"
               />
               <select
                 value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+                onChange={(event) => {
+                  setStatusFilter(event.target.value as StatusFilter);
+                  setPage(1);
+                }}
                 className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#1f2d45] outline-none focus:border-[#2f4f83]"
               >
                 <option value="all">{t('filters.all')}</option>
@@ -267,14 +329,33 @@ export default function AccessPage() {
           )}
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#607594]">
-            <span>{t('pagination.showing', { count: String(filtered.length), total: String(assessments.length) })}</span>
-            <button
-              type="button"
-              onClick={() => void load()}
-              className="rounded-md border border-[#d4dced] px-3 py-1.5 text-[#4c607d] hover:border-[#2f4f83] hover:bg-[#f7f9fe]"
-            >
-              {t('actions.refresh')}
-            </button>
+            <span>{t('pagination.showing', { from: String(rangeFrom), to: String(rangeTo), total: String(totalAssessments) })}</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                disabled={page <= 1 || loading}
+                className="rounded-md border border-[#d4dced] px-3 py-1.5 text-[#4c607d] hover:border-[#2f4f83] hover:bg-[#f7f9fe] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t('pagination.prev')}
+              </button>
+              <span>{t('pagination.page', { page: String(page), totalPages: String(totalPages) })}</span>
+              <button
+                type="button"
+                onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={page >= totalPages || loading}
+                className="rounded-md border border-[#d4dced] px-3 py-1.5 text-[#4c607d] hover:border-[#2f4f83] hover:bg-[#f7f9fe] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t('pagination.next')}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleRefreshClick()}
+                className="rounded-md border border-[#d4dced] px-3 py-1.5 text-[#4c607d] hover:border-[#2f4f83] hover:bg-[#f7f9fe]"
+              >
+                {t('actions.refresh')}
+              </button>
+            </div>
           </div>
 
           <div className="mt-6 grid gap-3 rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm md:grid-cols-2 xl:grid-cols-4">
