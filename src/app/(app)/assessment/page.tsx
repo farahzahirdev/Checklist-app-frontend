@@ -1362,7 +1362,7 @@ export default function AssessmentPage() {
                         disabled={autoSaving[activeQuestion.id] || false}
                       >
                         <p className="font-semibold">{option.label}</p>
-                        <p className="text-xs opacity-80">{option.description || 'Select this answer'}</p>
+                        {option.description ? <p className="text-xs opacity-80">{option.description}</p> : null}
                         {autoSaving[activeQuestion.id] && (
                           <div className="absolute top-1 right-1">
                             <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>

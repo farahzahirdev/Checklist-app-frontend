@@ -14,7 +14,7 @@ export interface ChecklistAnswerOption {
   label: string;
   score: number;
   choiceCode: string;
-  description: string;
+  description?: string | null;
   illustrativeImageId?: string | null;
 }
 

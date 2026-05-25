@@ -255,7 +255,7 @@ function mapApiQuestionToPanelQuestion(question: {
     label: string;
     score: number;
     choiceCode?: string;
-    description?: string;
+    description?: string | null;
     illustrativeImageId?: string | null;
   }>;
   points?: number;
@@ -297,7 +297,7 @@ function mapApiQuestionToPanelQuestion(question: {
             label: String(option.label ?? `Answer ${index + 1}`),
             score: fixedScoreForAnswer(index),
             choiceCode: String(option.choiceCode ?? option.label ?? `OPTION_${index + 1}`),
-            description: String(option.description ?? option.label ?? `Answer ${index + 1}`),
+            description: String(option.description ?? ''),
             illustrativeImageId: String(option.illustrativeImageId ?? ''),
           }))
         : fallbackAnswers,
@@ -710,7 +710,7 @@ export default function ChecklistPanelBuilderPage() {
       choiceCode: (option.choiceCode.trim() || option.label.trim() || `OPTION_${index + 1}`)
         .toUpperCase()
         .replace(/[^A-Z0-9]+/g, '_'),
-      description: option.description.trim() || option.label.trim() || `Answer ${index + 1}`,
+        description: option.description.trim() || null,
       illustrativeImageId: option.illustrativeImageId.trim() || null,
     }));
   }
@@ -931,18 +931,15 @@ export default function ChecklistPanelBuilderPage() {
     if (!draftQuestion.explanation.trim()) missingFields.push('explanation');
     if (!draftQuestion.expectedImplementation.trim()) missingFields.push('expectedImplementation');
 
-    // Validate answer labels and descriptions
+    // Validate answer labels
     const missingAnswerLabels: number[] = [];
-    const missingAnswerDescriptions: number[] = [];
     draftQuestion.answerOptions.forEach((opt, idx) => {
       if (!String(opt.label ?? '').trim()) missingAnswerLabels.push(idx);
-      if (!String(opt.description ?? '').trim()) missingAnswerDescriptions.push(idx);
     });
 
     // Compose missing fields for UI highlighting
     const answerFieldKeys: string[] = [];
     missingAnswerLabels.forEach((i) => answerFieldKeys.push(`answer_label_${i}`));
-    missingAnswerDescriptions.forEach((i) => answerFieldKeys.push(`answer_description_${i}`));
     const allMissing = [...missingFields, ...answerFieldKeys];
     if (allMissing.length > 0) {
       setCreateQuestionMissingFields(allMissing);
@@ -952,10 +949,6 @@ export default function ChecklistPanelBuilderPage() {
       }
       if (missingAnswerLabels.length > 0) {
         toast.error(t('toast.fillAnswer'));
-        return;
-      }
-      if (missingAnswerDescriptions.length > 0) {
-        toast.error(t('toast.fillDescription'));
         return;
       }
       // Fallback
@@ -1036,17 +1029,14 @@ export default function ChecklistPanelBuilderPage() {
     if (!questionForValidation.explanation.trim()) missingFields.push('explanation');
     if (!questionForValidation.expectedImplementation.trim()) missingFields.push('expectedImplementation');
 
-    // Validate answer labels and descriptions
+    // Validate answer labels
     const missingAnswerLabels: number[] = [];
-    const missingAnswerDescriptions: number[] = [];
     questionForValidation.answerOptions.forEach((opt, idx) => {
       if (!String(opt.label ?? '').trim()) missingAnswerLabels.push(idx);
-      if (!String(opt.description ?? '').trim()) missingAnswerDescriptions.push(idx);
     });
 
     const answerFieldKeys: string[] = [];
     missingAnswerLabels.forEach((i) => answerFieldKeys.push(`answer_label_${i}`));
-    missingAnswerDescriptions.forEach((i) => answerFieldKeys.push(`answer_description_${i}`));
     const allMissing = [...missingFields, ...answerFieldKeys];
     if (allMissing.length > 0) {
       setEditQuestionMissingFields(allMissing);
@@ -1056,10 +1046,6 @@ export default function ChecklistPanelBuilderPage() {
       }
       if (missingAnswerLabels.length > 0) {
         toast.error(t('toast.fillAnswer'));
-        return;
-      }
-      if (missingAnswerDescriptions.length > 0) {
-        toast.error(t('toast.fillDescription'));
         return;
       }
       toast.error(t('toast.fillRequiredFields'));
@@ -2008,7 +1994,7 @@ export default function ChecklistPanelBuilderPage() {
                                   ),
                                 }))
                               }
-                              className={`${textAreaClass} ${createQuestionMissingFields.includes(`answer_description_${index}`) ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
+                              className={textAreaClass}
                               placeholder={t('answer.descriptionPlaceholder')}
                             />
                           </div>
@@ -2310,7 +2296,7 @@ export default function ChecklistPanelBuilderPage() {
                                 ),
                               })
                             }
-                            className={`${textAreaClass} ${editQuestionMissingFields.includes(`answer_description_${index}`) ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
+                            className={textAreaClass}
                             placeholder={t('answer.descriptionPlaceholder')}
                           />
                         </div>

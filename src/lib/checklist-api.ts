@@ -87,8 +87,8 @@ type QuestionApiModel = {
     position: number;
     label: string;
     score: number;
-    choice_code: string;
-    description: string;
+    choice_code?: string | null;
+    description?: string | null;
     illustrative_image_id?: string | null;
   }>;
   points: number;
@@ -106,8 +106,8 @@ type QuestionAnswerOptionPayload = {
   position: number;
   label: string;
   score: number;
-  choice_code: string;
-  description: string;
+  choice_code?: string | null;
+  description?: string | null;
   illustrative_image_id?: string;
 };
 
@@ -238,7 +238,7 @@ function mapAnswerOption(option: ChecklistAnswerOption): QuestionAnswerOptionPay
     label: option.label,
     score: option.score,
     choice_code: option.choiceCode,
-    description: option.description,
+    description: option.description ?? null,
     illustrative_image_id: option.illustrativeImageId ?? undefined,
   };
 }
@@ -343,8 +343,8 @@ function mapQuestion(data: QuestionApiModel): ChecklistQuestion {
       position: option.position,
       label: option.label,
       score: option.score,
-      choiceCode: option.choice_code,
-      description: option.description,
+      choiceCode: option.choice_code ?? '',
+      description: option.description ?? '',
       illustrativeImageId: option.illustrative_image_id ?? null,
     })),
   };
