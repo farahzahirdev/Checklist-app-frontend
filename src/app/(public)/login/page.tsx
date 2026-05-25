@@ -196,11 +196,7 @@ function LoginPageContent() {
       }
       persistAccessToken(data.access_token);
       toast.success(t('success.mfaVerified'));
-      if (checklistIdFromQuery) {
-        router.push(customerDestination as Route);
-      } else {
-        router.push('/dashboard');
-      }
+      await redirectCustomerAfterAuth(data.user.id);
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.mfaVerifyFailed'));
@@ -224,11 +220,7 @@ function LoginPageContent() {
         persistAccessToken(data.access_token);
       }
       toast.success(t('success.mfaSetupCompleted'));
-      if (checklistIdFromQuery) {
-        router.push(customerDestination as Route);
-      } else {
-        router.push('/dashboard');
-      }
+      await redirectCustomerAfterAuth(data.user.id);
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.mfaSetupCompleteFailed'));
