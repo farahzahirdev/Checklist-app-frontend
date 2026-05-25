@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import type { Route } from 'next';
 import { getCurrentUser } from '@/lib/auth';
 import { createStripeCheckoutSession } from '@/lib/payments';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
@@ -9,8 +11,11 @@ import { translate, useLocale } from '@/lib/i18n';
 import { customerPaymentMessages } from '@/locales/customer-payment';
 import {
   CHECKOUT_CHECKLIST_ID_STORAGE_KEY,
+  clearPostSignupPaymentPrompt,
   getCheckoutIntent,
+  hasPostSignupPaymentPrompt,
   setCheckoutIntent,
+  shouldOfferPostSignupPurchaseSkip,
 } from '@/lib/checkout-intent';
 
 const LATEST_PAYMENT_ID_STORAGE_KEY = 'checklist_latest_payment_id';
@@ -37,8 +42,8 @@ export default function PaymentPage() {
   const [error, setError] = useState('');
   const [checklists, setChecklists] = useState<CustomerChecklist[]>([]);
   const [selectedChecklistId, setSelectedChecklistId] = useState('');
-  const [autoStarting, setAutoStarting] = useState(false);
-  const hasAutoStartedRef = useRef(false);
+  const [showOnboardingSkip, setShowOnboardingSkip] = useState(false);
+  const autoCheckoutAttemptedRef = useRef(false);
   const checkoutCancelled = searchParams.get('checkout') === 'cancelled';
 
   async function beginCheckout(explicitChecklistId?: string) {
@@ -64,7 +69,6 @@ export default function PaymentPage() {
     } catch (err) {
       setError(formatCheckoutError(err, t));
       setLoading(false);
-      setAutoStarting(false);
     }
   }
 
@@ -94,31 +98,28 @@ export default function PaymentPage() {
           setSelectedChecklistId('');
         }
 
+        setShowOnboardingSkip(
+          shouldOfferPostSignupPurchaseSkip(searchParams.get('checklist_id')),
+        );
+
+        const shouldAutoCheckout =
+          Boolean(preselected) &&
+          hasPostSignupPaymentPrompt() &&
+          !checkoutCancelled &&
+          !autoCheckoutAttemptedRef.current;
+
+        if (shouldAutoCheckout && preselected) {
+          autoCheckoutAttemptedRef.current = true;
+          clearPostSignupPaymentPrompt();
+          setShowOnboardingSkip(false);
+          await beginCheckout(preselected.id);
+          return;
+        }
+
         // NOTE: Customers can purchase multiple checklists.
         // Do not redirect away from `/payment` just because an earlier payment succeeded.
         // Stripe success flow already lands on `/payment/success`.
-        try {
-          await getCurrentUser();
-        } catch {
-          // Ignore; layout auth gate will handle unauthenticated users.
-        }
-
-        // Auto-start Stripe checkout when the user came in via the products →
-        // register/login flow (signalled by ?checklist_id= in the URL) so they
-        // don't have to click "Proceed to payment" again. We do NOT auto-start
-        // when the user is returning after cancelling, or when /payment is
-        // opened from inside the app without an explicit query param.
-        if (
-          mounted &&
-          preselected &&
-          queryChecklistId &&
-          !checkoutCancelled &&
-          !hasAutoStartedRef.current
-        ) {
-          hasAutoStartedRef.current = true;
-          setAutoStarting(true);
-          await beginCheckout(preselected.id);
-        }
+        await getCurrentUser();
       } catch (err) {
         if (!mounted) {
           return;
@@ -144,14 +145,22 @@ export default function PaymentPage() {
         <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">{t('title.kicker')}</p>
         <h1 className="text-3xl font-semibold text-[#1f2d45]">{t('title')}</h1>
         <p className="text-sm text-[#4f6281]">{t('subtitle')}</p>
+        {showOnboardingSkip ? (
+          <p className="text-sm text-[#4f6281]">
+            <Link
+              href={'/dashboard' as Route}
+              onClick={() => clearPostSignupPaymentPrompt()}
+              className="font-medium text-[#2f4f83] underline-offset-2 hover:underline"
+            >
+              {t('actions.skipToSite')}
+            </Link>
+          </p>
+        ) : null}
       </header>
 
       <article className="rounded-2xl border border-[#13305c] bg-[linear-gradient(140deg,#071733_0%,#0c2144_50%,#13356d_100%)] p-6 text-sm text-[#d8e6ff] shadow-[0_10px_30px_rgba(6,20,47,0.25)]">
         {catalogLoading ? <p>{t('loading.catalog')}</p> : null}
-        {autoStarting && !error ? (
-          <p className="text-[#9ec6ff]">{t('actions.redirecting')}</p>
-        ) : null}
-        {checkoutCancelled && !autoStarting ? (
+        {checkoutCancelled ? (
           <p className="text-amber-200">{t('checkout.cancelled')}</p>
         ) : null}
         {error ? <p className="mt-2 text-rose-300">{error}</p> : null}

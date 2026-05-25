@@ -62,9 +62,9 @@ export const authPagesMessages: TranslationMessages = {
     'register.fields.companyName': 'Company or organization name',
     'register.fields.jobTitle': 'Job title (optional)',
     'register.fields.department': 'Department (optional)',
-    'register.fields.companyIndustry': 'Company industry',
-    'register.fields.companySize': 'Company size',
-    'register.fields.companyRegion': 'Company region',
+    'register.fields.companyIndustry': 'Company industry (optional)',
+    'register.fields.companySize': 'Company size (optional)',
+    'register.fields.companyRegion': 'Company region (optional)',
     'register.passwordPolicyHint':
       'Min 12 chars, with uppercase, lowercase, number, special character, and no spaces.',
 
@@ -161,9 +161,9 @@ export const authPagesMessages: TranslationMessages = {
     'register.fields.companyName': 'Název firmy nebo organizace',
     'register.fields.jobTitle': 'Pozice (volitelné)',
     'register.fields.department': 'Oddělení (volitelné)',
-    'register.fields.companyIndustry': 'Odvětví firmy',
-    'register.fields.companySize': 'Velikost firmy',
-    'register.fields.companyRegion': 'Region firmy',
+    'register.fields.companyIndustry': 'Odvětví firmy (volitelné)',
+    'register.fields.companySize': 'Velikost firmy (volitelné)',
+    'register.fields.companyRegion': 'Region firmy (volitelné)',
     'register.passwordPolicyHint':
       'Min. 12 znaků, velké/malé písmeno, číslo, speciální znak a bez mezer.',
 

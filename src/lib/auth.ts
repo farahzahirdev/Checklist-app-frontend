@@ -108,9 +108,9 @@ export type RegisterPayload = {
   email: string;
   password: string;
   company_name: string;
-  company_industry: string;
-  company_size: string;
-  company_region: string;
+  company_industry?: string;
+  company_size?: string;
+  company_region?: string;
   full_name?: string;
   username?: string;
   job_title?: string;
@@ -215,6 +215,18 @@ export function getUserDisplayName(user: AuthUser) {
   }
 
   return user.email.split('@')[0] ?? user.email;
+}
+
+/** Compact navbar label, e.g. "Lukáš V." from "Lukáš Novák". */
+export function getUserShortDisplayName(user: AuthUser): string {
+  const fullName = getUserDisplayName(user);
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) {
+    return fullName;
+  }
+  const first = parts[0];
+  const lastInitial = parts[parts.length - 1].charAt(0).toUpperCase();
+  return `${first} ${lastInitial}.`;
 }
 
 /** Navbar display name for admin layout when /auth/me may omit full_name. */

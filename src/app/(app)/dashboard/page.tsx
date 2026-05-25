@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
+import { buildPaymentHref, hasPostSignupPaymentPrompt } from '@/lib/checkout-intent';
 import {
   getCustomerDashboardEnhanced,
   getCustomerDashboardSummary,
@@ -15,6 +18,7 @@ import { translate, useLocale } from '@/lib/i18n';
 import { customerDashboardMessages } from '@/locales/customer-dashboard';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { locale } = useLocale();
   const t = (key: string) => translate(customerDashboardMessages, locale, key);
   const [summary, setSummary] = useState<CustomerDashboardSummary | null>(null);
@@ -59,6 +63,11 @@ export default function DashboardPage() {
   useEffect(() => {
     void loadDashboard();
   }, []);
+
+  useEffect(() => {
+    if (!hasPostSignupPaymentPrompt()) return;
+    router.replace(buildPaymentHref() as Route);
+  }, [router]);
 
   return (
     <section className="space-y-6">

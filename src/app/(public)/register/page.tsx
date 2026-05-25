@@ -6,16 +6,22 @@ import type { Route } from 'next';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { translate, useLocale } from '@/lib/i18n';
-import { getRoleHomePath, getRoleKey, persistAccessToken, registerAccount, startMfaSetup, verifyMfaCode } from '@/lib/auth';
+import {
+  ACCESS_TOKEN_STORAGE_KEY,
+  getCurrentUser,
+  getRoleHomePath,
+  getRoleKey,
+  persistAccessToken,
+  registerAccount,
+  startMfaSetup,
+  verifyMfaCode,
+} from '@/lib/auth';
+import { hasCookieConsent } from '@/lib/cookie-consent';
 import authBackground from '@/assets/cybersecurity-background.jpg';
 import { authPagesMessages } from '@/locales/auth-pages';
 import { useCMSPage } from '@/hooks/useCMSPage';
 import { PageRenderer } from '@/components/cms/PageRenderer';
-import {
-  appendChecklistIdParam,
-  buildPaymentHref,
-  setCheckoutIntent,
-} from '@/lib/checkout-intent';
+import { appendChecklistIdParam, markPostSignupPaymentPrompt, setCheckoutIntent } from '@/lib/checkout-intent';
 
 function getPasswordPolicyError(password: string): string | null {
   if (password.length < 12) return 'errors.passwordMin';
@@ -40,6 +46,15 @@ function RegisterPageContent() {
     const raw = searchParams.get('checklist_id');
     return raw ? raw.trim() : '';
   }, [searchParams]);
+  function enterAppAfterSignupMfa() {
+    markPostSignupPaymentPrompt();
+    if (!hasCookieConsent()) {
+      router.replace(`/cookies?returnTo=${encodeURIComponent('/dashboard')}` as Route);
+      return;
+    }
+    router.replace('/dashboard' as Route);
+  }
+  const mfaSetupStep = searchParams.get('step') === 'mfa';
 
   useEffect(() => {
     if (checklistIdFromQuery) {
@@ -47,7 +62,6 @@ function RegisterPageContent() {
     }
   }, [checklistIdFromQuery]);
 
-  const customerDestination = buildPaymentHref(checklistIdFromQuery);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -65,6 +79,44 @@ function RegisterPageContent() {
   const [step, setStep] = useState<'credentials' | 'customer-mfa-verify' | 'customer-mfa-setup'>('credentials');
   const [loading, setLoading] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function resumeIncompleteMfa() {
+      const token = window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+      if (!token) return;
+
+      try {
+        const me = await getCurrentUser();
+        if (cancelled) return;
+
+        const role = getRoleKey(me.user.role);
+        if (role !== 'customer') return;
+
+        if (me.mfa_enabled) {
+          if (mfaSetupStep) {
+            enterAppAfterSignupMfa();
+          }
+          return;
+        }
+
+        if (!me.mfa_required) return;
+
+        setStep('customer-mfa-setup');
+        await loadMfaSetup();
+      } catch {
+        // Stay on page; user can sign in again if the session is invalid.
+      }
+    }
+
+    void resumeIncompleteMfa();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mfaSetupStep, router]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -94,21 +146,6 @@ function RegisterPageContent() {
         toast.error(t('errors.companyNameRequired'));
         return;
       }
-      const trimmedIndustry = companyIndustry.trim();
-      const trimmedSize = companySize.trim();
-      const trimmedRegion = companyRegion.trim();
-      if (!trimmedIndustry) {
-        toast.error(t('errors.companyIndustryRequired'));
-        return;
-      }
-      if (!trimmedSize) {
-        toast.error(t('errors.companySizeRequired'));
-        return;
-      }
-      if (!trimmedRegion) {
-        toast.error(t('errors.companyRegionRequired'));
-        return;
-      }
       const passwordPolicyError = getPasswordPolicyError(normalizedPassword);
       if (passwordPolicyError) {
         toast.error(t(passwordPolicyError));
@@ -122,12 +159,11 @@ function RegisterPageContent() {
         company_name: trimmedCompany,
         job_title: normalizeOptionalField(jobTitle),
         department: normalizeOptionalField(department),
-        company_industry: trimmedIndustry,
-        company_size: trimmedSize,
-        company_region: trimmedRegion,
+        company_industry: normalizeOptionalField(companyIndustry),
+        company_size: normalizeOptionalField(companySize),
+        company_region: normalizeOptionalField(companyRegion),
       });
       const role = getRoleKey(data.user.role);
-      const destination = role === 'customer' ? customerDestination : getRoleHomePath(data.user.role);
 
       if (role === 'admin' || role === 'auditor') {
         if (!data.access_token) {
@@ -136,7 +172,7 @@ function RegisterPageContent() {
         }
         persistAccessToken(data.access_token);
         toast.success(t('success.accountCreated'));
-        router.push(destination as Route);
+        router.push(getRoleHomePath(data.user.role) as Route);
         router.refresh();
         return;
       }
@@ -147,8 +183,13 @@ function RegisterPageContent() {
       }
       persistAccessToken(data.access_token);
       toast.success(t('success.accountCreated'));
-      router.push(destination as Route);
-      router.refresh();
+      if (data.mfa_required && !data.mfa_enabled) {
+        setStep('customer-mfa-setup');
+        toast.info(t('login.mfa.setupToast'));
+        await loadMfaSetup();
+        return;
+      }
+      enterAppAfterSignupMfa();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.registrationFailed'));
     } finally {
@@ -183,16 +224,13 @@ function RegisterPageContent() {
         return;
       }
       persistAccessToken(data.access_token);
-      toast.success(t('success.mfaVerified'));
+      toast.success(t('success.mfaSetupCompleted'));
       const role = getRoleKey(data.user.role);
-      const destination = role === 'customer' ? customerDestination : getRoleHomePath(data.user.role);
       if (role === 'customer') {
-        router.push(destination as Route);
-        router.refresh();
-      } else {
-        router.push(destination as Route);
-        router.refresh();
+        enterAppAfterSignupMfa();
+        return;
       }
+      router.replace(getRoleHomePath(data.user.role) as Route);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.mfaVerifyFailed'));
     } finally {
@@ -300,7 +338,6 @@ function RegisterPageContent() {
                 <input
                   type="text"
                   name="company_industry"
-                  required
                   value={companyIndustry}
                   onChange={(e) => setCompanyIndustry(e.target.value)}
                   className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
@@ -311,7 +348,6 @@ function RegisterPageContent() {
                 <input
                   type="text"
                   name="company_size"
-                  required
                   value={companySize}
                   onChange={(e) => setCompanySize(e.target.value)}
                   className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"
@@ -322,7 +358,6 @@ function RegisterPageContent() {
                 <input
                   type="text"
                   name="company_region"
-                  required
                   value={companyRegion}
                   onChange={(e) => setCompanyRegion(e.target.value)}
                   className="w-full rounded-lg border border-[#345793] bg-[#0d1d3a] px-3 py-2 text-[#f0f5ff] outline-none ring-[#1f7bff]/45 focus:ring-2"

@@ -20,11 +20,7 @@ import {
   verifyMfaCode,
 } from '@/lib/auth';
 import { getCustomerPostLoginDestination } from '@/lib/customer-post-login';
-import {
-  appendChecklistIdParam,
-  buildPaymentHref,
-  setCheckoutIntent,
-} from '@/lib/checkout-intent';
+import { appendChecklistIdParam, setCheckoutIntent } from '@/lib/checkout-intent';
 import authBackground from '@/assets/cybersecurity-background.jpg';
 import { authPagesMessages } from '@/locales/auth-pages';
 
@@ -44,7 +40,6 @@ function LoginPageContent() {
     }
   }, [checklistIdFromQuery]);
 
-  const customerDestination = buildPaymentHref(checklistIdFromQuery);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -65,13 +60,17 @@ function LoginPageContent() {
         const me = await getCurrentUser();
         if (cancelled) return;
         const role = getRoleKey(me.user.role);
-        // If a checkout intent was carried into /login (visitor clicked an
-        // audit card while still logged in), respect it for customers.
-        if (role === 'customer' && checklistIdFromQuery) {
-          router.replace(customerDestination as Route);
-        } else {
-          router.replace(getRoleHomePath(me.user.role) as Route);
+        if (role === 'customer' && me.mfa_required && !me.mfa_enabled) {
+          setStep('customer-mfa-setup');
+          toast.info(t('login.mfa.setupToast'));
+          await loadMfaSetup();
+          return;
         }
+        if (role === 'customer') {
+          await redirectCustomerAfterAuth(me.user.id);
+          return;
+        }
+        router.replace(getRoleHomePath(me.user.role) as Route);
         router.refresh();
       } catch {
         // Keep user on login if token is stale/invalid.
@@ -83,7 +82,7 @@ function LoginPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [router, checklistIdFromQuery, customerDestination]);
+  }, [router]);
 
   async function redirectCustomerAfterAuth(userId: string) {
     const destination = await getCustomerPostLoginDestination(userId);
@@ -114,7 +113,6 @@ function LoginPageContent() {
       const data = await loginAccount(payload);
 
       const role = getRoleKey(data.user.role);
-      const destination = role === 'customer' ? customerDestination : getRoleHomePath(data.user.role);
       if (role === 'admin' || role === 'auditor') {
         if (!data.access_token) {
           toast.error(t('errors.signInNoToken'));
@@ -122,7 +120,7 @@ function LoginPageContent() {
         }
         persistAccessToken(data.access_token);
         toast.success(t('success.signedIn'));
-        router.push(destination as Route);
+        router.push(getRoleHomePath(data.user.role) as Route);
         router.refresh();
         return;
       }
@@ -158,9 +156,6 @@ function LoginPageContent() {
       toast.success(t('success.signedIn'));
       if (role === 'customer') {
         await redirectCustomerAfterAuth(data.user.id);
-      } else {
-        router.push(destination as Route);
-        router.refresh();
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('errors.signInFailed'));

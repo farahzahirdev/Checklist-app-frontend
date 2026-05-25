@@ -193,20 +193,68 @@ type PurchasedChecklistItem =
       access_windows_granted?: number;
     };
 
-export async function listPurchasedChecklistIds() {
+export type PurchasedChecklist = {
+  checklist_id: string;
+  checklist_title: string | null;
+  total_payments: number;
+  total_amount: number;
+  last_payment_date: string | null;
+  access_windows_granted: number;
+};
+
+export type ActiveAccessWindow = {
+  access_window_id: string;
+  payment_id: string;
+  checklist_id: string;
+  checklist_title: string;
+  start_date: string;
+  end_date: string;
+  days_remaining: number;
+  days_total: number;
+  access_percentage: number;
+};
+
+function normalizePurchasedChecklistItem(item: PurchasedChecklistItem): PurchasedChecklist | null {
+  if (typeof item === 'string') {
+    const id = item.trim();
+    if (!id) return null;
+    return {
+      checklist_id: id,
+      checklist_title: null,
+      total_payments: 0,
+      total_amount: 0,
+      last_payment_date: null,
+      access_windows_granted: 0,
+    };
+  }
+  if (!item || typeof item !== 'object' || typeof item.checklist_id !== 'string' || !item.checklist_id.trim()) {
+    return null;
+  }
+  return {
+    checklist_id: item.checklist_id,
+    checklist_title: typeof item.checklist_title === 'string' ? item.checklist_title : null,
+    total_payments: typeof item.total_payments === 'number' ? item.total_payments : 0,
+    total_amount: typeof item.total_amount === 'number' ? item.total_amount : 0,
+    last_payment_date: typeof item.last_payment_date === 'string' ? item.last_payment_date : null,
+    access_windows_granted: typeof item.access_windows_granted === 'number' ? item.access_windows_granted : 0,
+  };
+}
+
+export async function listPurchasedChecklists() {
   const response = await apiGetWithAuth<PurchasedChecklistItem[]>('/customer/payments/checklists/purchased');
   if (!Array.isArray(response)) return [];
   return response
-    .map((item) => {
-      if (typeof item === 'string') return item;
-      if (item && typeof item === 'object' && typeof item.checklist_id === 'string') return item.checklist_id;
-      return '';
-    })
-    .filter((id): id is string => Boolean(id));
+    .map((item) => normalizePurchasedChecklistItem(item))
+    .filter((item): item is PurchasedChecklist => Boolean(item));
+}
+
+export async function listPurchasedChecklistIds() {
+  const items = await listPurchasedChecklists();
+  return items.map((item) => item.checklist_id);
 }
 
 export async function getActiveAccessWindows() {
-  return apiGetWithAuth<string[]>('/customer/payments/access/active');
+  return apiGetWithAuth<ActiveAccessWindow[]>('/customer/payments/access/active');
 }
 
 export async function getUpcomingAccessExpirations() {

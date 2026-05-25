@@ -2,9 +2,23 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CustomerUserMenu } from '@/components/customer-user-menu';
+import {
+  ACCESS_TOKEN_STORAGE_KEY,
+  AUTH_STATE_CHANGED_EVENT,
+  getCurrentUser,
+  getRoleKey,
+  getUserDisplayName,
+  getUserShortDisplayName,
+} from '@/lib/auth';
 import { translate, useLocale } from '@/lib/i18n';
 import { siteHeaderMessages } from '@/locales/site-header';
+
+type CustomerSession = {
+  displayName: string;
+  shortName: string;
+};
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -23,8 +37,47 @@ export function SiteHeader() {
 
   const [langOpenDesktop, setLangOpenDesktop] = useState(false);
   const [langOpenMobile, setLangOpenMobile] = useState(false);
+  const [customerSession, setCustomerSession] = useState<CustomerSession | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const desktopLangRef = useRef<HTMLDivElement | null>(null);
   const mobileLangRef = useRef<HTMLDivElement | null>(null);
+
+  const loadCustomerSession = useCallback(async () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const token = window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+    if (!token) {
+      setCustomerSession(null);
+      setAuthChecked(true);
+      return;
+    }
+    try {
+      const me = await getCurrentUser();
+      if (getRoleKey(me.user.role) === 'customer') {
+        setCustomerSession({
+          displayName: getUserDisplayName(me.user),
+          shortName: getUserShortDisplayName(me.user),
+        });
+      } else {
+        setCustomerSession(null);
+      }
+    } catch {
+      setCustomerSession(null);
+    } finally {
+      setAuthChecked(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadCustomerSession();
+    const onAuthStateChanged = () => {
+      setAuthChecked(false);
+      void loadCustomerSession();
+    };
+    window.addEventListener(AUTH_STATE_CHANGED_EVENT, onAuthStateChanged);
+    return () => window.removeEventListener(AUTH_STATE_CHANGED_EVENT, onAuthStateChanged);
+  }, [loadCustomerSession]);
 
   useEffect(() => {
     function handleDocPointerDown(event: PointerEvent) {
@@ -133,18 +186,29 @@ export function SiteHeader() {
               </div>
             ) : null}
           </div>
-          <Link
-            href="/login"
-            className="rounded-lg border border-[#345793] px-4 py-2 text-sm font-medium text-[#e8f0ff] hover:bg-[#1f7bff]/20"
-          >
-            {t('auth.login')}
-          </Link>
-          <Link
-            href="/products"
-            className="rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-4 py-2 text-sm font-medium text-[#f5f8ff] hover:bg-[#2e87ff]"
-          >
-            {t('auth.getAccess')}
-          </Link>
+          {authChecked && customerSession ? (
+            <CustomerUserMenu
+              displayName={customerSession.displayName}
+              shortName={customerSession.shortName}
+            />
+          ) : authChecked ? (
+            <>
+              <Link
+                href="/login"
+                className="rounded-lg border border-[#345793] px-4 py-2 text-sm font-medium text-[#e8f0ff] hover:bg-[#1f7bff]/20"
+              >
+                {t('auth.login')}
+              </Link>
+              <Link
+                href="/products"
+                className="rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-4 py-2 text-sm font-medium text-[#f5f8ff] hover:bg-[#2e87ff]"
+              >
+                {t('auth.getAccess')}
+              </Link>
+            </>
+          ) : (
+            <span className="inline-block h-10 w-[148px]" aria-hidden="true" />
+          )}
         </div>
 
         <button
@@ -230,21 +294,32 @@ export function SiteHeader() {
                 ) : null}
               </div>
             </div>
-            <div className="mt-2 flex gap-2">
-              <Link
-                href="/login"
-                className="flex-1 rounded-lg border border-[#345793] px-4 py-2 text-center text-[#e8f0ff] hover:bg-[#1f7bff]/20"
-                onClick={() => setMobileOpen(false)}
-              >
-                {t('auth.login')}
-              </Link>
-              <Link
-                href="/products"
-                className="flex-1 rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-4 py-2 text-center text-[#f5f8ff] hover:bg-[#2e87ff]"
-                onClick={() => setMobileOpen(false)}
-              >
-                {t('auth.getAccess')}
-              </Link>
+            <div className="mt-2">
+              {authChecked && customerSession ? (
+                <CustomerUserMenu
+                  displayName={customerSession.displayName}
+                  shortName={customerSession.shortName}
+                  onNavigate={() => setMobileOpen(false)}
+                  className="w-full"
+                />
+              ) : authChecked ? (
+                <div className="flex gap-2">
+                  <Link
+                    href="/login"
+                    className="flex-1 rounded-lg border border-[#345793] px-4 py-2 text-center text-[#e8f0ff] hover:bg-[#1f7bff]/20"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {t('auth.login')}
+                  </Link>
+                  <Link
+                    href="/products"
+                    className="flex-1 rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-4 py-2 text-center text-[#f5f8ff] hover:bg-[#2e87ff]"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {t('auth.getAccess')}
+                  </Link>
+                </div>
+              ) : null}
             </div>
           </div>
         </nav>

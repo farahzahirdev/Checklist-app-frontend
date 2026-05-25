@@ -31,8 +31,9 @@ export async function getCustomerPostLoginDestination(userId: string) {
       return '/payment/success';
     }
   } catch {
-    // Fallback to payment selection page when the payment state cannot be resolved.
+    // Fall through to dashboard when payment state cannot be resolved.
   }
 
-  return buildPaymentHref(intent);
+  // Purchases are optional after sign-up; customers can open Purchase from the app menu.
+  return '/dashboard';
 }

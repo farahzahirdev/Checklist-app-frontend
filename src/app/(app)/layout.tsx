@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { LogoutButton } from '@/components/logout-button';
+import { CustomerUserMenu } from '@/components/customer-user-menu';
 import { CustomerLanguageSwitcher } from '@/components/customer-language-switcher';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerLayoutMessages } from '@/locales/customer-layout';
@@ -16,6 +17,7 @@ import {
   clearRoleSwitchSession,
   getCurrentUser,
   getUserDisplayName,
+  getUserShortDisplayName,
   getRoleKey,
   isRoleSwitchSessionActive,
   restoreOriginalAccessToken,
@@ -35,6 +37,7 @@ export default function AppLayout({
   const [authReady, setAuthReady] = useState(false);
   const [role, setRole] = useState<UserRoleKey | ''>('');
   const [displayName, setDisplayName] = useState('User');
+  const [shortDisplayName, setShortDisplayName] = useState('User');
   const [roleSwitchActive, setRoleSwitchActive] = useState(false);
   const [returningToAdmin, setReturningToAdmin] = useState(false);
   const [mfaRequired, setMfaRequired] = useState(false);
@@ -46,6 +49,11 @@ export default function AppLayout({
   const dashboardActive = pathname === '/dashboard';
   const assessmentActive = pathname?.startsWith('/assessment') ?? false;
   const accessActive = pathname?.startsWith('/access') ?? false;
+  const isFullBleedWorkspacePage =
+    pathname === '/profile' ||
+    pathname === '/my-audits' ||
+    pathname === '/my-drp' ||
+    pathname === '/my-backup-plans';
   const profileActive = pathname?.startsWith('/profile') ?? false;
   const supportActive = pathname?.startsWith('/support') ?? false;
   const purchaseActive = isPaymentPath;
@@ -68,20 +76,29 @@ export default function AppLayout({
     if (currentPath.startsWith('/reports')) {
       return currentRole === 'customer';
     }
-    // Customer onboarding gate: until MFA is enabled, allow only the payment onboarding flow.
+    // Customer onboarding gate: MFA must be enabled before app routes (including purchase).
     if (currentRole === 'customer' && mfaRequired && !mfaEnabled) {
-      return currentPath.startsWith('/payment');
-    }
-    if (currentPath.startsWith('/assessment')) {
-      return currentRole === 'customer';
-    }
-    if (currentPath.startsWith('/access')) {
-      return currentRole === 'customer';
+      return false;
     }
     if (currentPath.startsWith('/payment')) {
       return currentRole === 'customer';
     }
     if (currentPath.startsWith('/payments')) {
+      return currentRole === 'customer';
+    }
+    if (currentPath.startsWith('/assessment')) {
+      return currentRole === 'customer';
+    }
+    if (currentPath.startsWith('/my-audits')) {
+      return currentRole === 'customer';
+    }
+    if (currentPath.startsWith('/my-drp')) {
+      return currentRole === 'customer';
+    }
+    if (currentPath.startsWith('/my-backup-plans')) {
+      return currentRole === 'customer';
+    }
+    if (currentPath.startsWith('/access')) {
       return currentRole === 'customer';
     }
     if (currentPath.startsWith('/profile')) {
@@ -123,6 +140,7 @@ export default function AppLayout({
         });
         setRole(getRoleKey(response.user.role));
         setDisplayName(getUserDisplayName(response.user));
+        setShortDisplayName(getUserShortDisplayName(response.user));
         setRoleSwitchActive(roleSwitchActiveValue);
         setMfaRequired(Boolean(response.mfa_required));
         setMfaEnabled(Boolean(response.mfa_enabled));
@@ -177,10 +195,7 @@ export default function AppLayout({
     if (!authReady) return;
     if (!pathname) return;
     if (!needsCustomerMfa) return;
-    // Ensure customer cannot land on protected routes without completing MFA.
-    if (!pathname.startsWith('/payment')) {
-      router.replace('/payment');
-    }
+    router.replace('/register' as Route);
   }, [authReady, needsCustomerMfa, pathname, router]);
 
   useEffect(() => {
@@ -306,7 +321,11 @@ export default function AppLayout({
               </nav>
             </aside>
             <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
-              <header className="flex items-center justify-between border-b border-[#dde6f5] bg-[linear-gradient(120deg,#071733,#0c2144_45%,#13356d)] px-5 py-5">
+              <header
+                className={`flex items-center justify-between bg-[linear-gradient(120deg,#071733,#0c2144_45%,#13356d)] px-5 py-5 ${
+                  isFullBleedWorkspacePage ? '' : 'border-b border-[#dde6f5]'
+                }`}
+              >
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -324,18 +343,18 @@ export default function AppLayout({
                   <div className="hidden lg:block">
                     <CustomerLanguageSwitcher />
                   </div>
-                  <Link
-                    href={'/profile' as Route}
-                    className="inline-flex items-center gap-2 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-medium text-[#dce8ff] hover:bg-[#223657]"
-                  >
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#d6e4ff] text-[#274b84]">
-                      {displayName.charAt(0).toUpperCase() || 'U'}
-                    </span>
-                    {displayName}
-                  </Link>
+                  <CustomerUserMenu displayName={displayName} shortName={shortDisplayName} />
                 </div>
               </header>
-              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 md:p-5">{children}</div>
+              <div
+                className={
+                  isFullBleedWorkspacePage
+                    ? 'min-h-0 min-w-0 flex-1 overflow-y-auto'
+                    : 'min-h-0 min-w-0 flex-1 overflow-y-auto p-4 md:p-5'
+                }
+              >
+                {children}
+              </div>
             </div>
           </div>
         </main>

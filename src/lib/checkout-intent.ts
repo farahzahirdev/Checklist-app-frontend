@@ -53,6 +53,48 @@ export function buildPaymentHref(checklistId?: string | null): string {
   return `/payment?checklist_id=${encodeURIComponent(candidate)}`;
 }
 
+/** Set after signup MFA so dashboard can route into the app, then optional /payment. */
+export const POST_SIGNUP_PAYMENT_PROMPT_KEY = 'checklist_post_signup_payment_prompt';
+
+export function markPostSignupPaymentPrompt(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(POST_SIGNUP_PAYMENT_PROMPT_KEY, '1');
+  } catch {
+    // ignore
+  }
+}
+
+export function hasPostSignupPaymentPrompt(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return sessionStorage.getItem(POST_SIGNUP_PAYMENT_PROMPT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function clearPostSignupPaymentPrompt(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.removeItem(POST_SIGNUP_PAYMENT_PROMPT_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+/** Skip link only for generic signup — not when a product/checklist was already chosen. */
+export function shouldOfferPostSignupPurchaseSkip(checklistIdFromUrl?: string | null): boolean {
+  if (!hasPostSignupPaymentPrompt()) return false;
+  if (isValidChecklistId(checklistIdFromUrl)) return false;
+  if (getCheckoutIntent()) return false;
+  return true;
+}
+
+export function hasCheckoutIntentFromProducts(): boolean {
+  return isValidChecklistId(getCheckoutIntent());
+}
+
 /**
  * Appends an existing `checklist_id` query param (if any) to a destination
  * URL like "/register" or "/login". Used by the auth pages to preserve

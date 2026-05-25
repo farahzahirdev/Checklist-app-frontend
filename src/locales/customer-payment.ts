@@ -23,6 +23,8 @@ export const customerPaymentMessages: TranslationMessages = {
     'actions.choosePlan': 'Choose plan',
     'actions.proceed': 'Proceed to checkout',
     'actions.redirecting': 'Redirecting...',
+    'actions.skipToSite': 'Continue to the site without purchasing',
+    'actions.skipToMfaSetup': 'Skip purchase and continue to MFA setup',
     'empty.noneAvailable': 'No purchasable checklists are currently available.',
   },
   cs: {
@@ -47,6 +49,8 @@ export const customerPaymentMessages: TranslationMessages = {
     'actions.choosePlan': 'Vybrat plán',
     'actions.proceed': 'Pokračovat k platbě',
     'actions.redirecting': 'Přesměrovávám...',
+    'actions.skipToSite': 'Pokračovat na web bez nákupu',
+    'actions.skipToMfaSetup': 'Přeskočit nákup a pokračovat na nastavení MFA',
     'empty.noneAvailable': 'Aktuálně nejsou k dispozici žádné checklisty k nákupu.',
   },
 };
