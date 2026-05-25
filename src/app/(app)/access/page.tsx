@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { listCustomerAssessments, type CustomerAssessmentListItem } from '@/lib/customer-assessments';
-import { getCustomerReports, type CustomerReportSummary } from '@/lib/reports';
+import { getCustomerAssessmentsDashboard, listCustomerAssessments, type CustomerAssessmentListItem } from '@/lib/customer-assessments';
 import { startAssessment } from '@/lib/assessment';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerAccessMessages } from '@/locales/customer-access';
@@ -38,10 +37,8 @@ export default function AccessPage() {
   const [activeCount, setActiveCount] = useState(0);
   const [readyToStartCount, setReadyToStartCount] = useState(0);
   const [inProgressCount, setInProgressCount] = useState(0);
+  const [publishedReportsCount, setPublishedReportsCount] = useState(0);
   const [assessments, setAssessments] = useState<CustomerAssessmentListItem[]>([]);
-  const [reports, setReports] = useState<CustomerReportSummary[]>([]);
-
-  const reportByAssessmentId = useMemo(() => new Map(reports.map((report) => [report.assessment_id, report])), [reports]);
 
   const loadPage = useCallback(async () => {
     setLoading(true);
@@ -77,18 +74,18 @@ export default function AccessPage() {
         listCustomerAssessments({ status: ['not_started', 'in_progress'], limit: 1 }).catch(() => ({ total: 0, assessments: [] })),
         listCustomerAssessments({ status: ['not_started'], limit: 1 }).catch(() => ({ total: 0, assessments: [] })),
         listCustomerAssessments({ status: ['in_progress'], limit: 1 }).catch(() => ({ total: 0, assessments: [] })),
-        getCustomerReports().catch(() => []),
+        getCustomerAssessmentsDashboard().catch(() => null),
       ]);
 
       setActiveCount(activeResponse.total ?? 0);
       setReadyToStartCount(readyResponse.total ?? 0);
       setInProgressCount(inProgressResponse.total ?? 0);
-      setReports(reportResponse);
+      setPublishedReportsCount(reportResponse?.summary?.reports_available ?? 0);
     } catch {
       setActiveCount(0);
       setReadyToStartCount(0);
       setInProgressCount(0);
-      setReports([]);
+      setPublishedReportsCount(0);
     }
   }, []);
 
@@ -120,11 +117,6 @@ export default function AccessPage() {
   }, [statusFilter, debouncedSearch]);
 
   const filtered = assessments;
-
-  const publishedReportsCount = useMemo(
-    () => reports.filter((report) => report.status === 'published').length,
-    [reports],
-  );
 
   const recentActivity = useMemo(
     () =>
@@ -240,13 +232,7 @@ export default function AccessPage() {
             <div className="space-y-4">
               {filtered.map((item) => {
                 const completion = clampPercent(item.completion_percent);
-                const report = reportByAssessmentId.get(item.id);
-                const reportId =
-                  report?.status === 'published'
-                    ? report.id
-                    : item.report_status === 'published' && item.report_id
-                    ? item.report_id
-                    : null;
+                const reportId = item.report_status === 'published' && item.report_id ? item.report_id : null;
                 const canViewPerformance = item.status === 'submitted' || item.status === 'closed';
 
                 return (

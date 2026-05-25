@@ -479,7 +479,7 @@ export function getCustomerReportsPage(params?: {
 }
 
 export function getCustomerReports() {
-  return getCustomerReportsPage({ skip: 0, limit: 200, sort_by: 'final_pdf_published_at', sort_order: 'desc' }).then(
+  return getCustomerReportsPage({ skip: 0, limit: 100, sort_by: 'final_pdf_published_at', sort_order: 'desc' }).then(
     (data) => data.reports,
   );
 }
