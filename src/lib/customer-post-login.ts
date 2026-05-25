@@ -18,13 +18,10 @@ export async function getCustomerPostLoginDestination(userId: string) {
 
       if (paymentState.checklist) {
         try {
-          const active = await getCurrentAssessment(paymentState.checklist.id);
-          if (active.status !== 'not_started') {
-            return '/dashboard';
-          }
-          return `/access?checklist_id=${encodeURIComponent(paymentState.checklist.id)}`;
+          await getCurrentAssessment(paymentState.checklist.id);
+          return '/dashboard';
         } catch {
-          return `/access?checklist_id=${encodeURIComponent(paymentState.checklist.id)}`;
+          return '/dashboard';
         }
       }
 
