@@ -86,11 +86,8 @@ export default function DashboardPage() {
         <div className="rounded-lg border border-[#f2dfad] bg-[#fff9ea] px-3 py-3 text-sm text-[#835f12]">
           {t('permission.blocked')}
           <div className="mt-2 flex gap-2">
-            <Link href="/assessment" className="rounded-md border border-[#e4d2a0] px-2 py-1 text-xs hover:bg-[#fff2ce]">
-              {t('permission.goAssessment')}
-            </Link>
             <Link href="/access" className="rounded-md border border-[#e4d2a0] px-2 py-1 text-xs hover:bg-[#fff2ce]">
-              {t('permission.goAccess')}
+              {t('permission.goAuditChecklist')}
             </Link>
           </div>
         </div>
