@@ -14,6 +14,64 @@ type OptionalConsent = Omit<CookieConsentPreferences, 'necessary'>;
 
 const itemClass = 'rounded-xl border border-[#dbe4f4] bg-[#f8fbff] px-3 py-2.5';
 
+const consentCheckboxClass =
+  'h-4 w-4 shrink-0 cursor-pointer rounded border border-[#9db2d6] bg-white text-[#2563eb] accent-[#2563eb] [color-scheme:light] focus:ring-2 focus:ring-[#2563eb]/30 focus:ring-offset-0';
+
+const consentCheckboxLockedClass =
+  'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border border-[#9db2d6] bg-white';
+
+function ConsentCheckbox({
+  checked,
+  disabled,
+  onChange,
+  id,
+}: {
+  checked: boolean;
+  disabled?: boolean;
+  onChange?: (next: boolean) => void;
+  id?: string;
+}) {
+  if (disabled) {
+    return (
+      <span className="relative inline-flex shrink-0">
+        <input
+          id={id}
+          type="checkbox"
+          checked={checked}
+          disabled
+          readOnly
+          tabIndex={-1}
+          aria-disabled="true"
+          className="sr-only"
+        />
+        <span className={consentCheckboxLockedClass} aria-hidden="true">
+          {checked ? (
+            <svg viewBox="0 0 16 16" className="h-3 w-3 text-[#2563eb]" fill="none">
+              <path
+                d="M3.5 8.2 6.4 11 12.5 5"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          ) : null}
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <input
+      id={id}
+      type="checkbox"
+      checked={checked}
+      onChange={(e) => onChange?.(e.target.checked)}
+      className={consentCheckboxClass}
+    />
+  );
+}
+
 const popupCopy = {
   en: {
     title: 'Cookie preferences',
@@ -123,14 +181,10 @@ function ConsentToggle({
           <p className="text-[13px] font-semibold text-[#1f2d45]">{label}</p>
           <p className="mt-1 text-[12px] leading-5 text-[#607594]">{description}</p>
         </div>
-        <label className="inline-flex shrink-0 items-center gap-2 text-[12px] text-[#4a5f7d]">
-          <input
-            type="checkbox"
-            checked={checked}
-            disabled={disabled}
-            onChange={(e) => onChange?.(e.target.checked)}
-            className="h-4 w-4 accent-[#a9c3eb]"
-          />
+        <label
+          className={`inline-flex shrink-0 items-center gap-2 text-[12px] text-[#4a5f7d] ${disabled ? 'cursor-default' : 'cursor-pointer'}`}
+        >
+          <ConsentCheckbox checked={checked} disabled={disabled} onChange={onChange} />
           {checked ? stateLabel.allowed : stateLabel.blocked}
         </label>
       </div>

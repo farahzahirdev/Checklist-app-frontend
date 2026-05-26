@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Route } from 'next';
-import { LogoutButton } from '@/components/logout-button';
 import { CustomerProfileCompletionPrompt } from '@/components/customer-profile-completion-prompt';
 import { CustomerUserMenu } from '@/components/customer-user-menu';
 import { CustomerLanguageSwitcher } from '@/components/customer-language-switcher';
@@ -54,7 +53,6 @@ export default function AppLayout({
     pathname === '/my-audits' ||
     pathname === '/my-drp' ||
     pathname === '/my-backup-plans';
-  const profileActive = pathname?.startsWith('/profile') ?? false;
   const supportActive = pathname?.startsWith('/support') ?? false;
   const purchaseActive = isPaymentPath;
   const paymentsActive = isPaymentsPath;
@@ -290,18 +288,9 @@ export default function AppLayout({
                 >
                   {t('nav.payments')}
                 </Link>
-                <Link
-                  href={'/profile' as Route}
-                  className={`flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
-                    profileActive ? 'bg-[#163a72] text-white' : 'text-[#b8cae7] hover:bg-[#10284f] hover:text-white'
-                  }`}
-                >
-                  {t('nav.profile')}
-                </Link>
                 <div className="mt-2 lg:hidden">
                   <CustomerLanguageSwitcher fullWidth />
                 </div>
-                <LogoutButton />
                 {roleSwitchActive ? (
                   <button
                     type="button"
