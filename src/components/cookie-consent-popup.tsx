@@ -129,7 +129,7 @@ function ConsentToggle({
             checked={checked}
             disabled={disabled}
             onChange={(e) => onChange?.(e.target.checked)}
-            className="h-4 w-4 accent-[#2f4f83]"
+            className="h-4 w-4 accent-[#a9c3eb]"
           />
           {checked ? stateLabel.allowed : stateLabel.blocked}
         </label>
