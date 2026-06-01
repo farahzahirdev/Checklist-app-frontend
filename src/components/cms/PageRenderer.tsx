@@ -1463,10 +1463,11 @@ function BundlesSectionRenderer({ data }: { data: Record<string, any> }) {
 }
 
 function WhyChooseSectionRenderer({ data }: { data: Record<string, any> }) {
+  const whyTitle = typeof data.title === 'string' ? data.title : '';
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-6 md:py-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
       <article className="rounded-2xl border border-[#d7deeb] bg-[#f4f7fc] p-5 transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md md:p-6">
-        {data.title && <h3 className="text-3xl font-semibold text-[#1f2741]">{data.title}</h3>}
+        {whyTitle ? <h3 className="text-3xl font-semibold text-[#1f2741]" dangerouslySetInnerHTML={{ __html: whyTitle }} /> : null}
         <ul className="mt-4 space-y-2.5 text-base leading-7 text-[#4f6385]">
           {(data.points || []).map((point: string, index: number) => (
             <li key={index} className="flex items-center gap-2.5">
@@ -1475,7 +1476,7 @@ function WhyChooseSectionRenderer({ data }: { data: Record<string, any> }) {
                   <path d="m4.2 8.1 2.2 2.2 5.2-5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
                 </svg>
               </span>
-              {point}
+              {typeof point === 'string' ? <span dangerouslySetInnerHTML={{ __html: point }} /> : point}
             </li>
           ))}
         </ul>

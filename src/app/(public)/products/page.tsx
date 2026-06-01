@@ -725,12 +725,15 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
 
         {whyTitle || whySubtitle || whyPoints.length > 0 ? (
           <article className="rounded-2xl border border-[#d7deeb] bg-[#f4f7fc] p-5 transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md md:p-6">
-            {whyTitle ? <h3 className="text-3xl font-semibold text-[#1f2741]">{whyTitle}</h3> : null}
+            {whyTitle ? <h3 className="text-3xl font-semibold text-[#1f2741]" dangerouslySetInnerHTML={{ __html: whyTitle }} /> : null}
             {whySubtitle ? <p className="mt-2 text-sm text-[#5e7293]">{whySubtitle}</p> : null}
             {whyPoints.length > 0 ? (
               <ul className="mt-4 grid gap-2.5 text-base leading-7 text-[#4f6385] md:grid-cols-2">
                 {whyPoints.map((point: string, index: number) => (
-                  <li key={`${point}-${index}`} className="flex items-center gap-2.5"><CheckBadgeIcon />{point}</li>
+                  <li key={`${point}-${index}`} className="flex items-center gap-2.5">
+                    <CheckBadgeIcon />
+                    <span dangerouslySetInnerHTML={{ __html: point }} />
+                  </li>
                 ))}
               </ul>
             ) : null}
