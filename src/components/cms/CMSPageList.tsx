@@ -38,6 +38,7 @@ import {
   ADMIN_PAGE_HERO_HEADER_CLASS,
   ADMIN_PAGE_HERO_TITLE_CLASS,
 } from "@/app/(app)/admin/admin-page-title";
+import { TipTapRichTextEditor } from "@/components/cms/TipTapRichTextEditor";
 
 interface PageListItem {
   id: string;
@@ -84,6 +85,13 @@ function sectionTypeLabel(type: string, t: (key: string) => string): string {
   const out = t(key);
   if (out !== key) return out;
   return type.replace(/-/g, " ").replace(/_/g, " ");
+}
+
+/** Determine if a field should use rich text editor based on field name */
+function shouldUseRichEditor(path: string): boolean {
+  const fieldName = path.split('.').pop() || '';
+  const richTextFields = ['content', 'answer', 'description', 'subtitle'];
+  return richTextFields.includes(fieldName);
 }
 
 function pairKey(order: number, type: string) {
@@ -269,7 +277,39 @@ export function CMSPageList() {
       ...Object.keys(editCs),
       ...Object.keys(editEn),
     ]);
-    return [...paths].sort((a, b) => a.localeCompare(b));
+    return [...paths].sort((a, b) => {
+      // Define field priority pairs (lower priority field should come first)
+      const fieldPriority: Record<string, number> = {
+        'question': 1,
+        'answer': 2,
+        'title': 1,
+        'subtitle': 2,
+        'content': 3,
+        'description': 2,
+        'kicker': 0,
+        'text': 2,
+        'url': 3,
+      };
+      
+      // Extract the field name from the path (last part after the last dot)
+      const aField = a.split('.').pop() || '';
+      const bField = b.split('.').pop() || '';
+      
+      const aPriority = fieldPriority[aField] ?? 999;
+      const bPriority = fieldPriority[bField] ?? 999;
+      
+      // If both have defined priorities, sort by priority
+      if (aPriority !== 999 && bPriority !== 999) {
+        if (aPriority !== bPriority) return aPriority - bPriority;
+      }
+      
+      // If one has a defined priority, it comes first
+      if (aPriority !== 999) return -1;
+      if (bPriority !== 999) return 1;
+      
+      // Otherwise, use alphabetical sort
+      return a.localeCompare(b);
+    });
   }, [editCs, editEn]);
 
   const filteredPages = useMemo(
@@ -632,27 +672,42 @@ export function CMSPageList() {
                                   </div>
                                   <div className="space-y-3 rounded-lg border border-[#dbe4f4] bg-white p-3">
                                     {translationPaths.map((path) => (
-                                      <label
+                                      <div
                                         key={`cs-${key}-${path}`}
-                                        className="block space-y-1"
+                                        className="space-y-1"
                                       >
                                         <span className="font-mono text-[11px] text-[#425f8f]">
                                           {path}
                                         </span>
-                                        <textarea
-                                          value={editCs[path] ?? ""}
-                                          onChange={(e) =>
-                                            setEditCs((prev) => ({
-                                              ...prev,
-                                              [path]: e.target.value,
-                                            }))
-                                          }
-                                          rows={2}
-                                          className="w-full min-h-[44px] resize-y rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#1f2d45] outline-none focus:border-[#7ea6e7]"
-                                          disabled={!pair.cs}
-                                          aria-label={`${t("editor.lang.cs")} ${path}`}
-                                        />
-                                      </label>
+                                        {shouldUseRichEditor(path) ? (
+                                          <TipTapRichTextEditor
+                                            value={editCs[path] ?? ""}
+                                            onChange={(value) =>
+                                              setEditCs((prev) => ({
+                                                ...prev,
+                                                [path]: value,
+                                              }))
+                                            }
+                                            placeholder=""
+                                            className="text-sm"
+                                            t={t}
+                                          />
+                                        ) : (
+                                          <textarea
+                                            value={editCs[path] ?? ""}
+                                            onChange={(e) =>
+                                              setEditCs((prev) => ({
+                                                ...prev,
+                                                [path]: e.target.value,
+                                              }))
+                                            }
+                                            rows={2}
+                                            className="w-full min-h-[44px] resize-y rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#1f2d45] outline-none focus:border-[#7ea6e7]"
+                                            disabled={!pair.cs}
+                                            aria-label={`${t("editor.lang.cs")} ${path}`}
+                                          />
+                                        )}
+                                      </div>
                                     ))}
                                   </div>
                                 </div>
@@ -663,27 +718,42 @@ export function CMSPageList() {
                                   </div>
                                   <div className="space-y-3 rounded-lg border border-[#dbe4f4] bg-white p-3">
                                     {translationPaths.map((path) => (
-                                      <label
+                                      <div
                                         key={`en-${key}-${path}`}
-                                        className="block space-y-1"
+                                        className="space-y-1"
                                       >
                                         <span className="font-mono text-[11px] text-[#425f8f]">
                                           {path}
                                         </span>
-                                        <textarea
-                                          value={editEn[path] ?? ""}
-                                          onChange={(e) =>
-                                            setEditEn((prev) => ({
-                                              ...prev,
-                                              [path]: e.target.value,
-                                            }))
-                                          }
-                                          rows={2}
-                                          className="w-full min-h-[44px] resize-y rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#1f2d45] outline-none focus:border-[#7ea6e7]"
-                                          disabled={!pair.en}
-                                          aria-label={`${t("editor.lang.en")} ${path}`}
-                                        />
-                                      </label>
+                                        {shouldUseRichEditor(path) ? (
+                                          <TipTapRichTextEditor
+                                            value={editEn[path] ?? ""}
+                                            onChange={(value) =>
+                                              setEditEn((prev) => ({
+                                                ...prev,
+                                                [path]: value,
+                                              }))
+                                            }
+                                            placeholder=""
+                                            className="text-sm"
+                                            t={t}
+                                          />
+                                        ) : (
+                                          <textarea
+                                            value={editEn[path] ?? ""}
+                                            onChange={(e) =>
+                                              setEditEn((prev) => ({
+                                                ...prev,
+                                                [path]: e.target.value,
+                                              }))
+                                            }
+                                            rows={2}
+                                            className="w-full min-h-[44px] resize-y rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#1f2d45] outline-none focus:border-[#7ea6e7]"
+                                            disabled={!pair.en}
+                                            aria-label={`${t("editor.lang.en")} ${path}`}
+                                          />
+                                        )}
+                                      </div>
                                     ))}
                                   </div>
                                 </div>
