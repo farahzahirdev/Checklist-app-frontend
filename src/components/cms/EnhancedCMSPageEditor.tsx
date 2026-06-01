@@ -242,6 +242,10 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
           subtitle: '',
           buttons: [],
         };
+      case 'legal':
+        return {
+          content: '',
+        };
       default:
         return {};
     }
@@ -388,6 +392,23 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
                 </button>
               ))}
             </div>
+          </div>
+        );
+
+      case 'legal':
+        return (
+          <div className="rounded-lg border bg-white p-6">
+            <h3 className="mb-3 text-lg font-semibold text-[#1f2d45]">
+              {t('editor.contentType.legal')}
+            </h3>
+            {data.content ? (
+              <div
+                className="prose prose-lg max-w-none text-black"
+                dangerouslySetInnerHTML={{ __html: data.content }}
+              />
+            ) : (
+              <p className="text-sm text-[#607594]">{t('sectionEditor.legal.previewEmpty')}</p>
+            )}
           </div>
         );
 

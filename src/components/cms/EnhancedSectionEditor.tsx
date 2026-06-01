@@ -439,6 +439,22 @@ function SectionDataEditor({
         </div>
       );
 
+    case 'legal':
+      return (
+        <div className="space-y-4">
+          <div>
+            <label className={cmsLabelClass}>{t('sectionEditor.legal.content')}</label>
+            <RichTextEditor
+              value={data.content || ''}
+              onChange={(value) => updateField('content', value)}
+              placeholder={t('sectionEditor.legal.contentPh')}
+              className="min-h-[320px]"
+              t={t}
+            />
+          </div>
+        </div>
+      );
+
     default:
       return (
         <div>
@@ -744,6 +760,23 @@ function SectionPreview({
               </button>
             ))}
           </div>
+        </div>
+      );
+
+    case 'legal':
+      return (
+        <div className="rounded-lg border bg-white p-6">
+          <h3 className="mb-3 text-lg font-semibold text-[#1f2d45]">
+            {t('sectionEditor.legal.previewTitle')}
+          </h3>
+          {data.content ? (
+            <div
+              className="prose prose-sm max-w-none text-black"
+              dangerouslySetInnerHTML={{ __html: data.content }}
+            />
+          ) : (
+            <p className="text-sm text-[#607594]">{t('sectionEditor.legal.previewEmpty')}</p>
+          )}
         </div>
       );
 

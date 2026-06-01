@@ -201,6 +201,10 @@ export const adminCmsMessages: TranslationMessages = {
     'sectionEditor.cta.primary': 'Primary',
     'sectionEditor.cta.secondary': 'Secondary',
     'sectionEditor.cta.addButton': '+ Add button',
+    'sectionEditor.legal.content': 'Legal document content',
+    'sectionEditor.legal.contentPh': 'Write the policy or terms content here using rich text / HTML',
+    'sectionEditor.legal.previewTitle': 'Legal document preview',
+    'sectionEditor.legal.previewEmpty': 'No legal content yet. Add the document text above.',
   },
   cs: {
     'list.heroEyebrow': 'Obsah',
@@ -402,5 +406,9 @@ export const adminCmsMessages: TranslationMessages = {
     'sectionEditor.cta.primary': 'Primární',
     'sectionEditor.cta.secondary': 'Sekundární',
     'sectionEditor.cta.addButton': '+ Přidat tlačítko',
+    'sectionEditor.legal.content': 'Obsah právního dokumentu',
+    'sectionEditor.legal.contentPh': 'Zde napište obsah zásad nebo obchodních podmínek ve formátovaném textu / HTML',
+    'sectionEditor.legal.previewTitle': 'Náhled právního dokumentu',
+    'sectionEditor.legal.previewEmpty': 'Zatím žádný obsah. Zadejte text dokumentu výše.',
   },
 };
