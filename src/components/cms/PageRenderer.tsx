@@ -1160,6 +1160,18 @@ function StandardSectionRenderer({ data }: { data: Record<string, any> }) {
 
 // Enhanced section renderers for new section types
 
+function sanitizeInlineHtml(input?: string | null) {
+  const raw = String(input ?? '').trim();
+  if (!raw) return '';
+
+  // Lightweight guardrails for CMS-authored rich text used on public pages.
+  return raw
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
+    .replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, '')
+    .replace(/\shref\s*=\s*(['"])\s*javascript:[\s\S]*?\1/gi, '');
+}
+
 function CardsSectionRenderer({ data }: { data: Record<string, any> }) {
   return (
     <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:px-8 md:py-12 lg:max-w-5xl lg:px-10 xl:max-w-6xl 2xl:max-w-[90rem]">
@@ -1204,7 +1216,10 @@ function CardsSectionRenderer({ data }: { data: Record<string, any> }) {
               <div>
                 <h3 className="text-2xl font-semibold text-[#1f2741] md:text-3xl">{card.title}</h3>
                 {card.content && (
-                  <p className="mt-2 whitespace-pre-line text-sm leading-7 text-[#55627e] md:text-[15px] md:leading-relaxed">{card.content}</p>
+                  <div
+                    className="mt-2 text-sm leading-7 text-[#55627e] md:text-[15px] md:leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: sanitizeInlineHtml(card.content) }}
+                  />
                 )}
                 {card.points && (
                   <ul className="mt-3 space-y-2.5 text-sm leading-snug text-[#445675] md:text-[15px] md:leading-relaxed">
