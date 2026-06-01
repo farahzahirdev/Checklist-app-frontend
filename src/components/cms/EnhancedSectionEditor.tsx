@@ -8,6 +8,7 @@ import { Trash2, ChevronDown, ChevronUp, Eye, Edit3, Save, X } from 'lucide-reac
 import { translate, useLocale } from '@/lib/i18n';
 import { adminCmsMessages } from '@/locales/admin-cms';
 import { cmsBtnGhostClass, cmsBtnPrimaryClass, cmsHintClass, cmsInputClass, cmsJsonTextareaClass, cmsLabelClass, cmsTextareaClass } from '@/components/cms/cms-editor-styles';
+import { TipTapRichTextEditor } from '@/components/cms/TipTapRichTextEditor';
 
 interface SectionEditorProps {
   section: PageSection;
@@ -16,117 +17,7 @@ interface SectionEditorProps {
 
 type CmsT = (key: string, values?: Record<string, string>) => string;
 
-// Rich text editor component
-function RichTextEditor({
-  value,
-  onChange,
-  placeholder = '',
-  className = '',
-  t,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  className?: string;
-  t: CmsT;
-}) {
-  const [isHtmlMode, setIsHtmlMode] = useState(false);
 
-  return (
-    <div className={`overflow-hidden rounded-xl border border-[#dbe4f4] [color-scheme:light] ${className}`}>
-      <div className="flex items-center justify-between border-b border-[#eef2fa] bg-[#f7f9fe] px-3 py-2">
-        <span className="text-sm font-medium text-[#243555]">{t('sectionEditor.richText.toolbar')}</span>
-        <button
-          type="button"
-          onClick={() => setIsHtmlMode(!isHtmlMode)}
-          className="rounded-lg border border-[#d4dced] bg-white px-2 py-1 text-xs font-semibold text-[#425f8f] hover:bg-[#edf4ff]"
-        >
-          {isHtmlMode ? t('sectionEditor.richText.visual') : t('sectionEditor.richText.html')}
-        </button>
-      </div>
-      
-      {isHtmlMode ? (
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          rows={6}
-          className={`${cmsTextareaClass} rounded-none rounded-b-xl border-0 border-t border-[#eef2fa] font-mono`}
-        />
-      ) : (
-        <div className="min-h-[150px]">
-          <div className="flex gap-1 border-b border-[#eef2fa] bg-[#f9fbff] p-2">
-            <button
-              type="button"
-              onClick={() => onChange(value + '<strong>Bold</strong>')}
-              className="rounded border border-[#d4dced] px-2 py-1 text-xs font-bold hover:bg-white"
-              title={t('sectionEditor.richText.title.bold')}
-            >
-              B
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange(value + '<em>Italic</em>')}
-              className="rounded border border-[#d4dced] px-2 py-1 text-xs italic hover:bg-white"
-              title={t('sectionEditor.richText.title.italic')}
-            >
-              I
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange(value + '<u>Underline</u>')}
-              className="rounded border border-[#d4dced] px-2 py-1 text-xs underline hover:bg-white"
-              title={t('sectionEditor.richText.title.underline')}
-            >
-              U
-            </button>
-            <div className="h-4 w-px bg-[#dbe4f4]" />
-            <button
-              type="button"
-              onClick={() => onChange(value + '<h2>Heading</h2>')}
-              className="rounded border border-[#d4dced] px-2 py-1 text-xs hover:bg-white"
-              title={t('sectionEditor.richText.title.h2')}
-            >
-              H2
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange(value + '<p>Paragraph</p>')}
-              className="rounded border border-[#d4dced] px-2 py-1 text-xs hover:bg-white"
-              title={t('sectionEditor.richText.title.p')}
-            >
-              P
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange(value + '<ul><li>List item</li></ul>')}
-              className="rounded border border-[#d4dced] px-2 py-1 text-xs hover:bg-white"
-              title={t('sectionEditor.richText.title.list')}
-            >
-              •
-            </button>
-            <div className="h-4 w-px bg-[#dbe4f4]" />
-            <button
-              type="button"
-              onClick={() => onChange(value + '<a href="#">Link</a>')}
-              className="rounded border border-[#d4dced] px-2 py-1 text-xs hover:bg-white"
-              title={t('sectionEditor.richText.title.link')}
-            >
-              🔗
-            </button>
-          </div>
-          <textarea
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            rows={8}
-            className={`${cmsTextareaClass} rounded-none rounded-b-xl border-0 border-t border-[#eef2fa] resize-none`}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
 
 // Section type-specific editors
 function SectionDataEditor({
@@ -209,7 +100,7 @@ function SectionDataEditor({
           </div>
           <div>
             <label className={cmsLabelClass}>{t('sectionEditor.hero.description')}</label>
-            <RichTextEditor
+            <TipTapRichTextEditor
               value={data.description || ''}
               onChange={(value) => updateField('description', value)}
               placeholder={t('sectionEditor.hero.descriptionPh')}
@@ -258,7 +149,7 @@ function SectionDataEditor({
                       className={cmsInputClass}
                       placeholder={t('sectionEditor.cards.cardTitlePh')}
                     />
-                    <RichTextEditor
+                    <TipTapRichTextEditor
                       value={card.content || ''}
                       onChange={(value) => updateNestedArrayField('cards', index, 'content', value)}
                       placeholder={t('sectionEditor.cards.cardContentPh')}
@@ -346,7 +237,7 @@ function SectionDataEditor({
                       className={cmsInputClass}
                       placeholder={t('sectionEditor.faq.questionPh')}
                     />
-                    <RichTextEditor
+                    <TipTapRichTextEditor
                       value={qa.answer || ''}
                       onChange={(value) => updateNestedArrayField('questions', index, 'answer', value)}
                       placeholder={t('sectionEditor.faq.answerPh')}
@@ -382,7 +273,7 @@ function SectionDataEditor({
           </div>
           <div>
             <label className={cmsLabelClass}>{t('sectionEditor.cta.subtitle')}</label>
-            <RichTextEditor
+            <TipTapRichTextEditor
               value={data.subtitle || ''}
               onChange={(value) => updateField('subtitle', value)}
               placeholder={t('sectionEditor.cta.subtitlePh')}
@@ -444,7 +335,7 @@ function SectionDataEditor({
         <div className="space-y-4">
           <div>
             <label className={cmsLabelClass}>{t('sectionEditor.legal.content')}</label>
-            <RichTextEditor
+            <TipTapRichTextEditor
               value={data.content || ''}
               onChange={(value) => updateField('content', value)}
               placeholder={t('sectionEditor.legal.contentPh')}
