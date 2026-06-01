@@ -1322,7 +1322,7 @@ function TrustSectionRenderer({ data }: { data: Record<string, any> }) {
 function HowItWorksSectionRenderer({ data }: { data: Record<string, any> }) {
   return (
     <section className="mx-auto max-w-7xl space-y-4 px-4 py-10 sm:px-6 md:px-6 md:py-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
-      <article className="rounded-2xl border border-[#d7e7de] bg-[#edf7f0] p-5 md:p-6">
+      <article className="rounded-2xl border border-[#d7deeb] bg-[#f4f7fc] p-5 md:p-6">
         <div className="grid gap-3 md:grid-cols-[1.1fr_3fr]">
           <div>
             {data.title && <h3 className="text-3xl font-semibold text-[#1a2440]">{data.title}</h3>}
@@ -1330,7 +1330,7 @@ function HowItWorksSectionRenderer({ data }: { data: Record<string, any> }) {
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {(data.steps || []).map((step: any, index: number) => (
-              <div key={index} className="rounded-xl border border-[#d2e6da] bg-white/70 p-4">
+              <div key={index} className="rounded-xl border border-[#dbe5f4] bg-white p-4">
                 <p className="text-sm font-semibold text-[#1f355d]">{step.title}</p>
                 <p className="mt-1 text-xs text-[#5e7293]">{step.body}</p>
               </div>
@@ -1384,7 +1384,7 @@ function DocumentationGridRenderer({ data }: { data: Record<string, any> }) {
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-base font-semibold text-[#1f2741]">{doc.name}</h2>
               {doc.badge && (
-                <span className="rounded-full bg-[#dbf8e9] px-2 py-0.5 text-[10px] font-semibold text-[#2f9c65]">
+                <span className="rounded-full bg-[#eff6ff] px-2 py-0.5 text-[10px] font-semibold text-[#1d4ed8]">
                   {doc.badge}
                 </span>
               )}
@@ -1394,7 +1394,7 @@ function DocumentationGridRenderer({ data }: { data: Record<string, any> }) {
               <ul className="mt-3 space-y-1.5 text-xs text-[#5f7394]">
                 {doc.points.map((point: string, i: number) => (
                   <li key={i} className="flex items-center gap-2">
-                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#ddf5e8] text-[#2f9c65]">
+                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#dbeafe] text-[#2563eb]">
                       <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" aria-hidden="true">
                         <path d="m4.2 8.1 2.2 2.2 5.2-5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
                       </svg>
@@ -1439,7 +1439,7 @@ function BundlesSectionRenderer({ data }: { data: Record<string, any> }) {
               )}
               <p className="mt-2 font-semibold text-[#1f355d]">{bundle.title}</p>
               <p className="mt-1 text-sm text-[#5e7293]">{bundle.subtitle}</p>
-              {bundle.save && <p className="mt-2 text-xs font-semibold text-[#2f9c65]">{bundle.save}</p>}
+              {bundle.save && <p className="mt-2 text-xs font-semibold text-[#2563eb]">{bundle.save}</p>}
               <p className="mt-auto pt-3 text-3xl font-bold text-[#1f355d]">{bundle.price}</p>
               {bundle.originalPrice && (
                 <p className="mt-1 text-xs text-[#7e8fa9] line-through">{bundle.originalPrice}</p>
@@ -1465,12 +1465,12 @@ function BundlesSectionRenderer({ data }: { data: Record<string, any> }) {
 function WhyChooseSectionRenderer({ data }: { data: Record<string, any> }) {
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-6 md:py-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
-      <article className="rounded-2xl border border-[#d7e7de] bg-[#edf7f0] p-5 transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md md:p-6">
-        {data.title && <h3 className="text-3xl font-semibold text-[#1f3a31]">{data.title}</h3>}
-        <ul className="mt-4 space-y-2.5 text-base leading-7 text-[#2f7f57]">
+      <article className="rounded-2xl border border-[#d7deeb] bg-[#f4f7fc] p-5 transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md md:p-6">
+        {data.title && <h3 className="text-3xl font-semibold text-[#1f2741]">{data.title}</h3>}
+        <ul className="mt-4 space-y-2.5 text-base leading-7 text-[#4f6385]">
           {(data.points || []).map((point: string, index: number) => (
             <li key={index} className="flex items-center gap-2.5">
-              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#ddf5e8] text-[#2f9c65]">
+              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#dbeafe] text-[#2563eb]">
                 <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" aria-hidden="true">
                   <path d="m4.2 8.1 2.2 2.2 5.2-5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
                 </svg>
