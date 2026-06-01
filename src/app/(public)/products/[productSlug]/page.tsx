@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { PublicFooter } from '@/components/public-footer';
 import { AuditIcon, AUDIT_ICON_THEMES, pickAuditIconKind } from '@/components/products/audit-icon';
 import { translate, useLocale } from '@/lib/i18n';
@@ -255,9 +256,8 @@ export default function ProductDetailPage() {
     if (!resolved || resolved.kind !== 'audit') return false;
     if (resolved.publicProductStatus === 'coming_soon') return false;
     if (isPublicProductPriceUnset(audit?.pricing)) return false;
-    if (authState.kind === 'customer' && (profileCompletionLoading || profileCompletionPercent !== 100)) return false;
     return (audit?.pricing?.amount_cents ?? 0) > 0;
-  }, [resolved, audit?.pricing, authState, profileCompletionLoading, profileCompletionPercent]);
+  }, [resolved, audit?.pricing]);
 
   const requiresCompletedProfileForPurchase =
     authState.kind === 'customer' && !profileCompletionLoading && profileCompletionPercent !== 100;
@@ -311,6 +311,11 @@ export default function ProductDetailPage() {
 
   function onBuyAudit() {
     if (!audit || !canPurchaseAudit) return;
+    if (requiresCompletedProfileForPurchase) {
+      toast.error(t('detail.completeProfileFirst'));
+      router.push('/profile');
+      return;
+    }
     setCheckoutIntent(audit.id);
     if (authState.kind === 'customer') {
       router.push(buildPaymentHref(audit.id) as Route);
@@ -587,24 +592,19 @@ export default function ProductDetailPage() {
               ) : null}
 
               {audit ? (
-                canPurchaseAudit ? (
-                  <button
-                    type="button"
-                    onClick={onBuyAudit}
-                    className="mt-4 flex w-full items-center justify-center rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2e87ff]"
-                  >
-                    {t('detail.buy')}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    disabled
-                    aria-disabled="true"
-                    className="mt-4 flex w-full cursor-not-allowed items-center justify-center rounded-lg border border-[#d7deeb] bg-[#f3f5fb] px-3 py-2 text-sm font-semibold text-[#9aa6bd]"
-                  >
-                    {t('detail.buy')}
-                  </button>
-                )
+                <button
+                  type="button"
+                  onClick={onBuyAudit}
+                  disabled={!canPurchaseAudit}
+                  aria-disabled={!canPurchaseAudit}
+                  className={`mt-4 flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                    canPurchaseAudit
+                      ? 'border border-[#1f7bff] bg-[#1f7bff] text-white hover:bg-[#2e87ff]'
+                      : 'cursor-not-allowed border border-[#d7deeb] bg-[#f3f5fb] text-[#9aa6bd]'
+                  }`}
+                >
+                  {t('detail.buy')}
+                </button>
               ) : (
                 <button
                   type="button"
@@ -627,19 +627,13 @@ export default function ProductDetailPage() {
                 </a>
               ) : null}
 
-              {!audit || !canPurchaseAudit ? (
+              {!audit || (!canPurchaseAudit && !requiresCompletedProfileForPurchase) ? (
                 <Link
                   href="/contact"
                   className="mt-2 flex w-full items-center justify-center rounded-lg border border-[#d7deeb] bg-white px-3 py-2 text-sm font-semibold text-[#1f355d] transition-colors hover:bg-[#f3f7ff]"
                 >
                   {t('detail.contactSales')}
                 </Link>
-              ) : null}
-
-              {requiresCompletedProfileForPurchase ? (
-                <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
-                  {t('detail.completeProfileFirst')}
-                </p>
               ) : null}
             </div>
 

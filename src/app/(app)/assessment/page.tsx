@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
 import { listPurchasedChecklistIds } from '@/lib/customer-payments';
@@ -334,6 +334,7 @@ export default function AssessmentPage() {
   const { locale } = useLocale();
   const t = (key: string, values?: Record<string, string>) =>
     translate(customerAssessmentMessages, locale, key, values);
+  const router = useRouter();
   const searchParams = useSearchParams();
   const questionPanelTopRef = useRef<HTMLDivElement | null>(null);
   const evidenceInputRef = useRef<HTMLInputElement | null>(null);
@@ -561,6 +562,7 @@ export default function AssessmentPage() {
     if (!canPurchaseNewChecklist) {
       event.preventDefault();
       toast.error(locale === 'cs' ? 'Nejprve prosím dokončete svůj profil.' : 'Please complete your profile first.');
+      router.push('/profile');
     }
   }
 

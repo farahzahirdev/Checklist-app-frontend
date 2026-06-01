@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Route } from 'next';
+import { toast } from 'sonner';
 import { getCurrentUser } from '@/lib/auth';
 import { getCustomerProfileCompletion } from '@/lib/customer-profile';
 import { createStripeCheckoutSession } from '@/lib/payments';
@@ -36,6 +37,7 @@ function formatCheckoutError(err: unknown, t: (key: string) => string): string {
 
 export default function PaymentPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { locale } = useLocale();
   const t = (key: string) => translate(customerPaymentMessages, locale, key);
   const [loading, setLoading] = useState(false);
@@ -50,9 +52,12 @@ export default function PaymentPage() {
   const checkoutCancelled = searchParams.get('checkout') === 'cancelled';
   const canCheckout = !profileCompletionLoading && profileCompletionPercent === 100;
 
-  async function beginCheckout(explicitChecklistId?: string) {
+  async function beginCheckout(explicitChecklistId?: string, options?: { redirectToProfileOnIncomplete?: boolean }) {
     if (!canCheckout) {
-      setError(t('errors.completeProfileFirst'));
+      if (options?.redirectToProfileOnIncomplete) {
+        toast.error(t('errors.completeProfileFirst'));
+        router.push('/profile');
+      }
       return;
     }
     const checklistId = (explicitChecklistId ?? selectedChecklistId).trim();
@@ -177,9 +182,6 @@ export default function PaymentPage() {
           <p className="text-amber-200">{t('checkout.cancelled')}</p>
         ) : null}
         {error ? <p className="mt-2 text-rose-300">{error}</p> : null}
-        {!profileCompletionLoading && !canCheckout ? (
-          <p className="mt-2 text-amber-200">{t('errors.completeProfileFirst')}</p>
-        ) : null}
         {!catalogLoading ? (
           <div className="mt-4 flex flex-col gap-3">
             {checklists.length ? (
@@ -247,9 +249,9 @@ export default function PaymentPage() {
                                 onClick={(event) => {
                                   event.preventDefault();
                                   event.stopPropagation();
-                                  void beginCheckout();
+                                  void beginCheckout(undefined, { redirectToProfileOnIncomplete: true });
                                 }}
-                                disabled={loading || !canCheckout}
+                                disabled={loading}
                                 className="w-full rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-white/15 disabled:opacity-60"
                               >
                                 {loading ? t('actions.redirecting') : t('actions.proceed')}
