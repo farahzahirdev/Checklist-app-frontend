@@ -612,6 +612,16 @@ function SectionRenderer({ section }: { section: PageSection }) {
       return <LegalSectionRenderer data={data} />;
     case 'standard':
       return <StandardSectionRenderer data={data} />;
+    case 'product-hero':
+      return <ProductHeroSectionRenderer data={data} />;
+    case 'product-cta':
+      return <ProductCTASectionRenderer data={data} />;
+    case 'main-benefit':
+      return <MainBenefitSectionRenderer data={data} />;
+    case 'what-you-get':
+      return <WhatYouGetSectionRenderer data={data} />;
+    case 'who-its-for':
+      return <WhoItsForSectionRenderer data={data} />;
     default:
       return <div className="p-4 text-gray-500">Unknown section type: {section.section_type}</div>;
   }
@@ -1405,6 +1415,196 @@ function WhyChooseSectionRenderer({ data }: { data: Record<string, any> }) {
           ))}
         </ul>
       </article>
+    </section>
+  );
+}
+
+// Product Detail Page Section Renderers
+function ProductHeroSectionRenderer({ data }: { data: Record<string, any> }) {
+  const statusBadge = data.product_status === 'coming_soon' ? 'Coming Soon' : 'Available';
+  const statusColor = data.product_status === 'coming_soon' ? 'bg-[#fef3c7] text-[#92400e]' : 'bg-[#dcfce7] text-[#166534]';
+
+  return (
+    <section className="px-4 py-8 md:py-12">
+      <div className="mx-auto max-w-6xl space-y-8">
+        <div>
+          {statusBadge && (
+            <span className={`inline-block rounded-full px-3 py-1 text-sm font-medium ${statusColor}`}>
+              {statusBadge}
+            </span>
+          )}
+          {data.product_title && (
+            <h1 className="mt-4 text-4xl font-bold leading-tight text-[#1f2741] md:text-5xl">
+              {data.product_title}
+            </h1>
+          )}
+          {data.tagline && (
+            <p className="mt-4 max-w-2xl text-xl text-[#55627e]">{data.tagline}</p>
+          )}
+          {data.short_description && (
+            <p className="mt-4 max-w-2xl text-lg text-[#445675]">{data.short_description}</p>
+          )}
+        </div>
+
+        {data.main_benefits && data.main_benefits.length > 0 && (
+          <div className="rounded-2xl border border-[#d7deeb] bg-[#f7f9ff] p-6 md:p-8">
+            <h2 className="text-2xl font-semibold text-[#1f2741]">Main Benefits</h2>
+            <ul className="mt-4 space-y-3">
+              {data.main_benefits.map((benefit: string, index: number) => (
+                <li key={index} className="flex items-start gap-3">
+                  <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2f7dff]">
+                    <svg viewBox="0 0 16 16" className="h-4 w-4 text-white" fill="none" aria-hidden="true">
+                      <path d="m4.2 8.1 2.2 2.2 5.2-5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
+                    </svg>
+                  </span>
+                  <span className="text-[#445675]">{benefit}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {data.features && data.features.length > 0 && (
+          <div>
+            <h2 className="text-2xl font-semibold text-[#1f2741]">Key Features</h2>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {data.features.map((feature: any, index: number) => (
+                <article key={index} className="rounded-lg border border-[#d7deeb] bg-white p-4 md:p-6">
+                  <h3 className="font-semibold text-[#1f2741]">{feature.title}</h3>
+                  <p className="mt-2 text-sm text-[#55627e]">{feature.description}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ProductCTASectionRenderer({ data }: { data: Record<string, any> }) {
+  return (
+    <section className="bg-[#04091633] px-4 py-10 md:py-14">
+      <div className="mx-auto max-w-4xl space-y-6 text-center">
+        {data.cta_headline && (
+          <h2 className="text-3xl font-bold text-[#1f2741] md:text-4xl">
+            {data.cta_headline}
+          </h2>
+        )}
+        {data.cta_subheadline && (
+          <p className="text-lg text-[#55627e]">{data.cta_subheadline}</p>
+        )}
+        <div className="flex flex-wrap justify-center gap-4 pt-4">
+          {data.primary_cta_text && data.primary_cta_url && (
+            <a
+              href={data.primary_cta_url}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#1f7bff] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#1d4ed8]"
+            >
+              {data.primary_cta_text}
+            </a>
+          )}
+          {data.secondary_cta_text && data.secondary_cta_url && (
+            <a
+              href={data.secondary_cta_url}
+              className="inline-flex items-center gap-2 rounded-lg border border-[#2563eb] bg-[#eff6ff] px-6 py-3 font-semibold text-[#2563eb] transition-colors hover:bg-[#dbeafe]"
+            >
+              {data.secondary_cta_text}
+            </a>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MainBenefitSectionRenderer({ data }: { data: Record<string, any> }) {
+  return (
+    <section className="bg-[#04091610] px-4 py-10 md:py-12">
+      <div className="mx-auto max-w-3xl text-center">
+        {data.kicker && (
+          <p className="text-sm font-medium uppercase tracking-[0.24em] text-[#2f7dff]">
+            {data.kicker}
+          </p>
+        )}
+        {data.title && (
+          <h2 className="mt-4 text-3xl font-bold text-[#1f2741] md:text-4xl">
+            {data.title}
+          </h2>
+        )}
+        {data.body && (
+          <p className="mt-4 text-lg text-[#55627e]">{data.body}</p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function WhatYouGetSectionRenderer({ data }: { data: Record<string, any> }) {
+  return (
+    <section className="px-4 py-10 md:py-14">
+      <div className="mx-auto max-w-6xl">
+        {data.title && (
+          <h2 className="text-3xl font-bold text-[#1f2741] md:text-4xl">
+            {data.title}
+          </h2>
+        )}
+        {data.subtitle && (
+          <p className="mt-2 text-lg text-[#55627e]">{data.subtitle}</p>
+        )}
+        
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
+          {(data.cards || []).map((card: any, index: number) => {
+            const toneClasses = resourceToneClasses(card.tone);
+            return (
+              <article key={index} className={`rounded-xl border p-6 md:p-8 ${toneClasses}`}>
+                <h3 className="text-xl font-semibold">{card.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed">{card.body}</p>
+                {card.points && (
+                  <ul className="mt-4 space-y-2">
+                    {card.points.map((point: string, i: number) => (
+                      <li key={i} className="text-sm flex items-start gap-2">
+                        <span className="font-bold">•</span>
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function WhoItsForSectionRenderer({ data }: { data: Record<string, any> }) {
+  return (
+    <section className="px-4 py-10 md:py-14">
+      <div className="mx-auto max-w-6xl">
+        {data.title && (
+          <h2 className="text-3xl font-bold text-[#1f2741] md:text-4xl">
+            {data.title}
+          </h2>
+        )}
+        {data.subtitle && (
+          <p className="mt-2 text-lg text-[#55627e]">{data.subtitle}</p>
+        )}
+        
+        <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {(data.items || []).map((item: any, index: number) => (
+            <article key={index} className="rounded-xl border border-[#d7deeb] bg-white p-6">
+              {item.icon && (
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#eef2ff] text-[#2f7dff]">
+                  {resourcesIcon(item.icon, 'h-6 w-6')}
+                </div>
+              )}
+              <h3 className="font-semibold text-[#1f2741]">{item.title}</h3>
+              <p className="mt-2 text-sm text-[#55627e]">{item.body}</p>
+            </article>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
