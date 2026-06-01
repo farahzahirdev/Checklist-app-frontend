@@ -87,6 +87,25 @@ function getCmsSectionData(page: PageDetail | null, sectionType: string): Record
   return page?.sections.find((section) => section.section_type === sectionType)?.data ?? {};
 }
 
+function hasCmsSection(page: PageDetail | null, sectionType: string): boolean {
+  return Boolean(page?.sections.some((section) => section.section_type === sectionType));
+}
+
+function normalizeCmsListText(input: any): string {
+  if (typeof input === 'string') return input.trim();
+  if (input && typeof input === 'object') {
+    if (typeof input.text === 'string') return input.text.trim();
+    if (typeof input.title === 'string') return input.title.trim();
+    if (typeof input.label === 'string') return input.label.trim();
+  }
+  return '';
+}
+
+function cmsText(sectionExists: boolean, cmsValue: any, fallbackValue: string): string {
+  if (!sectionExists) return fallbackValue;
+  return typeof cmsValue === 'string' ? cmsValue : '';
+}
+
 function mapApiCategoryNameToDocFilter(name: string | null | undefined): CatalogDocumentationCategory {
   const n = (name ?? '').trim();
   if (DOC_FILTER_NAMES.has(n)) return n as CatalogDocumentationCategory;
@@ -261,14 +280,22 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
   const cmsBundles = getCmsSectionData(cmsPage ?? null, 'bundles');
   const cmsWhyChoose = getCmsSectionData(cmsPage ?? null, 'why-choose');
   const cmsCta = getCmsSectionData(cmsPage ?? null, 'cta');
+  const hasHeroSection = hasCmsSection(cmsPage ?? null, 'hero');
+  const hasHowItWorksSection = hasCmsSection(cmsPage ?? null, 'how-it-works');
+  const hasDocumentationGridSection = hasCmsSection(cmsPage ?? null, 'documentation-grid');
+  const hasBundlesSection = hasCmsSection(cmsPage ?? null, 'bundles');
+  const hasWhyChooseSection = hasCmsSection(cmsPage ?? null, 'why-choose');
+  const hasCtaSection = hasCmsSection(cmsPage ?? null, 'cta');
 
-  const heroTitleLine1 = cmsHero.title_line1 || cmsHero.title || t('hero.title.line1');
-  const heroTitleLine2 = cmsHero.title_line2 || t('hero.title.line2');
-  const heroAccent = cmsHero.accent || t('hero.title.accent');
-  const heroKicker = cmsHero.kicker || t('hero.kicker');
-  const heroSubtitle = cmsHero.description || cmsHero.subtitle || t('hero.subtitle');
-  const heroActionCards = Array.isArray(cmsHero.quick_links) && cmsHero.quick_links.length
-    ? cmsHero.quick_links
+  const heroTitleLine1 = hasHeroSection
+    ? cmsText(hasHeroSection, cmsHero.title_line1 || cmsHero.title, '')
+    : t('hero.title.line1');
+  const heroTitleLine2 = cmsText(hasHeroSection, cmsHero.title_line2, t('hero.title.line2'));
+  const heroAccent = cmsText(hasHeroSection, cmsHero.accent, t('hero.title.accent'));
+  const heroKicker = cmsText(hasHeroSection, cmsHero.kicker, t('hero.kicker'));
+  const heroSubtitle = cmsText(hasHeroSection, cmsHero.description || cmsHero.subtitle, t('hero.subtitle'));
+  const heroActionCards = hasHeroSection
+    ? (Array.isArray(cmsHero.quick_links) ? cmsHero.quick_links : [])
     : [
         { title: t('hero.cat.audits.title'), subtitle: t('hero.cat.audits.subtitle'), url: '#audits-checklists', icon: 'shield' },
         { title: t('hero.cat.docs.title'), subtitle: t('hero.cat.docs.subtitle'), url: '#documentation', icon: 'document' },
@@ -282,10 +309,10 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
     ? heroMockup.documents
     : null;
 
-  const howTitle = cmsHowItWorks.title || t('how.title');
-  const howSubtitle = cmsHowItWorks.subtitle || t('how.subtitle');
-  const howSteps = Array.isArray(cmsHowItWorks.steps) && cmsHowItWorks.steps.length
-    ? cmsHowItWorks.steps
+  const howTitle = cmsText(hasHowItWorksSection, cmsHowItWorks.title, t('how.title'));
+  const howSubtitle = cmsText(hasHowItWorksSection, cmsHowItWorks.subtitle, t('how.subtitle'));
+  const howSteps = hasHowItWorksSection
+    ? (Array.isArray(cmsHowItWorks.steps) ? cmsHowItWorks.steps : [])
     : [
         { title: t('how.step1.title'), body: t('how.step1.body') },
         { title: t('how.step2.title'), body: t('how.step2.body') },
@@ -293,22 +320,36 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
         { title: t('how.step4.title'), body: t('how.step4.body') },
       ];
 
-  const auditsTitle = cmsDocumentationGrid.audits_title || t('audits.title');
-  const auditsSubtitle = cmsDocumentationGrid.audits_subtitle || t('audits.subtitle');
-  const documentationTitle =
-    cmsDocumentationGrid.documentation_title || cmsDocumentationGrid.title || t('documentation.title');
-  const documentationSubtitle =
-    cmsDocumentationGrid.documentation_subtitle || cmsDocumentationGrid.subtitle || t('documentation.subtitle');
-  const plansTitle = cmsBundles.title || t('plans.title');
-  const plansSubtitle = cmsBundles.subtitle || t('plans.subtitle');
-  const whyTitle = cmsWhyChoose.title || t('why.title');
-  const whyPoints = Array.isArray(cmsWhyChoose.points) && cmsWhyChoose.points.length
-    ? cmsWhyChoose.points
+  const auditsTitle = cmsText(hasDocumentationGridSection, cmsDocumentationGrid.audits_title, t('audits.title'));
+  const auditsSubtitle = cmsText(hasDocumentationGridSection, cmsDocumentationGrid.audits_subtitle, t('audits.subtitle'));
+  const documentationTitle = cmsText(
+    hasDocumentationGridSection,
+    cmsDocumentationGrid.documentation_title || cmsDocumentationGrid.title,
+    t('documentation.title'),
+  );
+  const documentationSubtitle = cmsText(
+    hasDocumentationGridSection,
+    cmsDocumentationGrid.documentation_subtitle || cmsDocumentationGrid.subtitle,
+    t('documentation.subtitle'),
+  );
+  const plansTitle = cmsText(hasBundlesSection, cmsBundles.title, t('plans.title'));
+  const plansSubtitle = cmsText(hasBundlesSection, cmsBundles.subtitle, t('plans.subtitle'));
+  const whyTitle = hasWhyChooseSection
+    ? (typeof cmsWhyChoose.title === 'string' ? cmsWhyChoose.title : '')
+    : t('why.title');
+  const whySubtitle = hasWhyChooseSection
+    ? (typeof cmsWhyChoose.subtitle === 'string' ? cmsWhyChoose.subtitle : '')
+    : '';
+  const cmsWhyPoints = Array.isArray(cmsWhyChoose.points)
+    ? cmsWhyChoose.points.map((point: any) => normalizeCmsListText(point)).filter(Boolean)
+    : [];
+  const whyPoints = hasWhyChooseSection
+    ? cmsWhyPoints
     : [t('why.0'), t('why.1'), t('why.2'), t('why.3'), t('why.4')];
-  const ctaTitle = cmsCta.title || t('cta.title');
-  const ctaSubtitle = cmsCta.subtitle || t('cta.subtitle');
-  const ctaButtons = Array.isArray(cmsCta.buttons) && cmsCta.buttons.length
-    ? cmsCta.buttons
+  const ctaTitle = cmsText(hasCtaSection, cmsCta.title, t('cta.title'));
+  const ctaSubtitle = cmsText(hasCtaSection, cmsCta.subtitle, t('cta.subtitle'));
+  const ctaButtons = hasCtaSection
+    ? (Array.isArray(cmsCta.buttons) ? cmsCta.buttons : [])
     : [
         { text: t('cta.viewDetails'), url: '/products/audit-readiness-checklist' },
         { text: t('cta.createAccount'), url: '/register' },
@@ -682,14 +723,19 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
           </div>
         </section>
 
-        <article className="rounded-2xl border border-[#d7deeb] bg-[#f4f7fc] p-5 transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md md:p-6">
-          <h3 className="text-3xl font-semibold text-[#1f2741]">{whyTitle}</h3>
-          <ul className="mt-4 grid gap-2.5 text-base leading-7 text-[#4f6385] md:grid-cols-2">
-            {whyPoints.map((point: any, index: number) => (
-              <li key={`${point}-${index}`} className="flex items-center gap-2.5"><CheckBadgeIcon />{point}</li>
-            ))}
-          </ul>
-        </article>
+        {whyTitle || whySubtitle || whyPoints.length > 0 ? (
+          <article className="rounded-2xl border border-[#d7deeb] bg-[#f4f7fc] p-5 transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md md:p-6">
+            {whyTitle ? <h3 className="text-3xl font-semibold text-[#1f2741]">{whyTitle}</h3> : null}
+            {whySubtitle ? <p className="mt-2 text-sm text-[#5e7293]">{whySubtitle}</p> : null}
+            {whyPoints.length > 0 ? (
+              <ul className="mt-4 grid gap-2.5 text-base leading-7 text-[#4f6385] md:grid-cols-2">
+                {whyPoints.map((point: string, index: number) => (
+                  <li key={`${point}-${index}`} className="flex items-center gap-2.5"><CheckBadgeIcon />{point}</li>
+                ))}
+              </ul>
+            ) : null}
+          </article>
+        ) : null}
 
         <article className="mt-8 rounded-2xl border border-[#264579] bg-[linear-gradient(120deg,#091229,#0b1a39_48%,#0e2348)] px-5 py-6 text-white motion-safe:animate-fade-in-up motion-safe:delay-150 sm:px-8 md:px-10 md:py-7">
           <div className="flex flex-wrap items-center justify-between gap-6">
