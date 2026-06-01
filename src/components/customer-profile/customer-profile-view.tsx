@@ -577,7 +577,7 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
             </button>
           </div>
 
-          <div className="relative z-10 mt-8 mb-[-2.75rem] grid w-full gap-3 sm:mb-[-3.25rem] sm:grid-cols-2 xl:grid-cols-4">
+          <div className="relative z-[1] mt-8 mb-[-2.75rem] grid w-full gap-3 sm:mb-[-3.25rem] sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               icon={
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">

@@ -18,6 +18,7 @@ import { siteHeaderMessages } from '@/locales/site-header';
 type CustomerSession = {
   displayName: string;
   shortName: string;
+  role: 'customer' | 'admin' | 'auditor';
 };
 
 export function SiteHeader() {
@@ -54,10 +55,12 @@ export function SiteHeader() {
     }
     try {
       const me = await getCurrentUser();
-      if (getRoleKey(me.user.role) === 'customer') {
+      const role = getRoleKey(me.user.role);
+      if (role === 'customer' || role === 'admin' || role === 'auditor') {
         setCustomerSession({
           displayName: getUserDisplayName(me.user),
           shortName: getUserShortDisplayName(me.user),
+          role,
         });
       } else {
         setCustomerSession(null);
@@ -103,8 +106,14 @@ export function SiteHeader() {
     return null;
   }
 
+  const dashboardHref = customerSession
+    ? customerSession.role === 'customer'
+      ? '/dashboard'
+      : '/admin'
+    : null;
+
   return (
-    <header className="relative z-50 border-b border-[#284776] bg-[#050b1a]/95 backdrop-blur">
+    <header className="relative z-50 border-b border-[#1f3f73] bg-[linear-gradient(120deg,#071733,#0c2144_45%,#13356d)] backdrop-blur">
       <div className="mx-auto flex w-full max-w-7xl items-center px-4 py-4 sm:px-6 md:px-6 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <Link href="/" className="flex items-center gap-3">
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#2f5ba6] bg-[#0b1d3f]">
@@ -141,7 +150,7 @@ export function SiteHeader() {
               aria-label={t('lang.label')}
               aria-haspopup="listbox"
               aria-expanded={langOpenDesktop}
-              className="inline-flex min-w-[132px] items-center justify-between gap-3 rounded-lg border border-[#345793] bg-[#0b1d3f]/40 px-3 py-2 text-sm font-medium text-[#e8f0ff] hover:bg-[#1f7bff]/15"
+              className="inline-flex min-w-[132px] items-center justify-between gap-3 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-medium text-[#e8f0ff] hover:bg-[#223657]"
             >
               <span className="truncate">{localeLabel}</span>
               <svg
@@ -187,10 +196,22 @@ export function SiteHeader() {
             ) : null}
           </div>
           {authChecked && customerSession ? (
-            <CustomerUserMenu
-              displayName={customerSession.displayName}
-              shortName={customerSession.shortName}
-            />
+            <>
+              {dashboardHref ? (
+                <Link
+                  href={dashboardHref}
+                  className="rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-4 py-2 text-sm font-medium text-[#f5f8ff] hover:bg-[#2e87ff]"
+                >
+                  {t('auth.dashboard')}
+                </Link>
+              ) : null}
+              {customerSession.role === 'customer' ? (
+                <CustomerUserMenu
+                  displayName={customerSession.displayName}
+                  shortName={customerSession.shortName}
+                />
+              ) : null}
+            </>
           ) : authChecked ? (
             <>
               <Link
@@ -296,12 +317,25 @@ export function SiteHeader() {
             </div>
             <div className="mt-2">
               {authChecked && customerSession ? (
-                <CustomerUserMenu
-                  displayName={customerSession.displayName}
-                  shortName={customerSession.shortName}
-                  onNavigate={() => setMobileOpen(false)}
-                  className="w-full"
-                />
+                <div className="flex flex-col gap-2">
+                  {dashboardHref ? (
+                    <Link
+                      href={dashboardHref}
+                      className="rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-4 py-2 text-center text-[#f5f8ff] hover:bg-[#2e87ff]"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      {t('auth.dashboard')}
+                    </Link>
+                  ) : null}
+                  {customerSession.role === 'customer' ? (
+                    <CustomerUserMenu
+                      displayName={customerSession.displayName}
+                      shortName={customerSession.shortName}
+                      onNavigate={() => setMobileOpen(false)}
+                      className="w-full"
+                    />
+                  ) : null}
+                </div>
               ) : authChecked ? (
                 <div className="flex gap-2">
                   <Link

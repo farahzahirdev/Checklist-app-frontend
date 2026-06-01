@@ -317,7 +317,7 @@ export default function AppLayout({
             ) : null}
             <div className="flex min-w-0 flex-col">
               <header
-                className={`sticky top-0 z-10 flex items-center gap-3 bg-[linear-gradient(120deg,#071733,#0c2144_45%,#13356d)] px-5 py-4 ${
+                className={`sticky top-0 z-40 flex items-center gap-3 bg-[linear-gradient(120deg,#071733,#0c2144_45%,#13356d)] px-5 py-4 ${
                   isFullBleedWorkspacePage ? '' : 'border-b border-[#dde6f5]'
                 }`}
               >
