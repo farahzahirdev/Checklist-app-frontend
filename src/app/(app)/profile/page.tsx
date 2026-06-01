@@ -435,6 +435,7 @@ export default function CustomerProfilePage() {
     setSavingNotifications(true);
     try {
       const updated = await updateCustomerProfile({
+        preferred_language: preferredLanguage,
         notifications_enabled: notificationPrefs.notifications_enabled,
         reports_alert: notificationPrefs.reports_alert,
         payment_success_alert: notificationPrefs.payment_success_alert,
@@ -442,6 +443,8 @@ export default function CustomerProfilePage() {
         assessment_started_alert: notificationPrefs.assessment_started_alert,
       });
       setProfile(updated);
+      setPreferredLanguage(updated.preferred_language ?? 'en');
+      setLocale(updated.preferred_language ?? 'en');
       setNotificationPrefs(profileToNotificationPrefs(updated));
 
       const completion = await getCustomerProfileCompletion().catch(() => null);

@@ -1110,6 +1110,20 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
                   <p className="text-sm text-[#64748b]">{t('section.notificationsSubtitle')}</p>
                 </div>
               </div>
+              <div className="mt-6 rounded-xl border border-[#e2e8f4] bg-[#f8fafc] p-4">
+                <label className="block space-y-1.5 text-sm">
+                  <span className="font-semibold text-[#0f172a]">{t('notifications.language')}</span>
+                  <span className="block text-xs text-[#64748b]">{t('notifications.languageDesc')}</span>
+                  <select
+                    value={preferredLanguage}
+                    onChange={(e) => setPreferredLanguage(e.target.value as 'en' | 'cs')}
+                    className={inputClass}
+                  >
+                    <option value="en">{t('language.en')}</option>
+                    <option value="cs">{t('language.cs')}</option>
+                  </select>
+                </label>
+              </div>
               <ul className="mt-6 divide-y divide-[#e2e8f4]">
                 {(
                   [

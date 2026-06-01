@@ -197,6 +197,12 @@ export function SiteHeader() {
           </div>
           {authChecked && customerSession ? (
             <>
+              {customerSession.role === 'customer' ? (
+                <CustomerUserMenu
+                  displayName={customerSession.displayName}
+                  shortName={customerSession.shortName}
+                />
+              ) : null}
               {dashboardHref ? (
                 <Link
                   href={dashboardHref}
@@ -204,12 +210,6 @@ export function SiteHeader() {
                 >
                   {t('auth.dashboard')}
                 </Link>
-              ) : null}
-              {customerSession.role === 'customer' ? (
-                <CustomerUserMenu
-                  displayName={customerSession.displayName}
-                  shortName={customerSession.shortName}
-                />
               ) : null}
             </>
           ) : authChecked ? (
@@ -318,6 +318,14 @@ export function SiteHeader() {
             <div className="mt-2">
               {authChecked && customerSession ? (
                 <div className="flex flex-col gap-2">
+                  {customerSession.role === 'customer' ? (
+                    <CustomerUserMenu
+                      displayName={customerSession.displayName}
+                      shortName={customerSession.shortName}
+                      onNavigate={() => setMobileOpen(false)}
+                      className="w-full"
+                    />
+                  ) : null}
                   {dashboardHref ? (
                     <Link
                       href={dashboardHref}
@@ -326,14 +334,6 @@ export function SiteHeader() {
                     >
                       {t('auth.dashboard')}
                     </Link>
-                  ) : null}
-                  {customerSession.role === 'customer' ? (
-                    <CustomerUserMenu
-                      displayName={customerSession.displayName}
-                      shortName={customerSession.shortName}
-                      onNavigate={() => setMobileOpen(false)}
-                      className="w-full"
-                    />
                   ) : null}
                 </div>
               ) : authChecked ? (

@@ -36,6 +36,9 @@ export function CustomerMarketingNav({ className = '', variant = 'sidebar' }: Cu
       <Link href="/contact" className={linkClass('/contact')}>
         {t('nav.contact')}
       </Link>
+      <Link href="/faq" className={linkClass('/faq')}>
+        {t('nav.faq')}
+      </Link>
     </nav>
   );
 }
