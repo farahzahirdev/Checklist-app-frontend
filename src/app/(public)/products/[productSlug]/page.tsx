@@ -295,7 +295,7 @@ export default function ProductDetailPage() {
   return (
     <main className="flex min-h-screen flex-col overflow-x-hidden bg-[#f3f5fb]">
       <section className="border-b border-[#12315b]" style={heroStyle}>
-        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-10 sm:px-6 md:px-6 md:py-12">
+        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-10 sm:px-6 md:px-6 md:py-12 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
           <Link
             href="/products"
             className="inline-flex w-fit items-center gap-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#9ac3ff] hover:text-white"
@@ -446,7 +446,7 @@ export default function ProductDetailPage() {
 
       <div className="flex-1">
       {!loading && !notFound ? (
-        <section className="mx-auto grid max-w-6xl gap-6 px-4 py-10 sm:px-6 md:px-6 lg:grid-cols-[1.6fr_1fr]">
+        <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 md:px-6 lg:max-w-6xl lg:grid-cols-[1.6fr_1fr] xl:max-w-7xl 2xl:max-w-[90rem]">
           <article className="space-y-6 rounded-2xl border border-[#d7deeb] bg-white p-6 shadow-sm">
             <div>
               <h2 className="text-xl font-semibold text-[#1f2741]">{t('detail.aboutTitle')}</h2>
@@ -615,7 +615,7 @@ export default function ProductDetailPage() {
       ) : null}
 
       {!loading && notFound ? (
-        <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
           <Link
             href="/products"
             className="inline-flex items-center gap-1 rounded-lg border border-[#1f7bff] bg-[#1f7bff]/10 px-3 py-2 text-sm font-semibold text-[#1f7bff] hover:bg-[#1f7bff]/20"

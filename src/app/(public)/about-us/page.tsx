@@ -58,7 +58,7 @@ function HomePageContent() {
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
       <section style={heroStyle}>
-        <div className="mx-auto grid min-h-[400px] w-full max-w-6xl items-start gap-5 px-4 py-6 text-white sm:min-h-[420px] sm:px-6 sm:py-8 md:gap-7 md:px-8 md:py-10 lg:min-h-[440px] lg:max-w-5xl lg:grid-cols-2 lg:items-center lg:gap-8 lg:px-10 lg:py-10 xl:max-w-6xl 2xl:max-w-[90rem]">
+        <div className="mx-auto grid min-h-[400px] w-full max-w-7xl items-start gap-5 px-4 py-6 text-white sm:min-h-[420px] sm:px-6 sm:py-8 md:gap-7 md:px-6 md:py-10 lg:min-h-[440px] lg:max-w-6xl lg:grid-cols-2 lg:items-center lg:gap-8 lg:py-10 xl:max-w-7xl 2xl:max-w-[90rem]">
           <div className="space-y-4">
             <p className="public-eyebrow text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">{t('hero.kicker')}</p>
             <h1 className="public-hero-title max-w-xl motion-safe:animate-fade-in-up motion-safe:delay-100">
@@ -166,7 +166,7 @@ function HomePageContent() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:px-8 md:py-12 lg:max-w-5xl lg:px-10 xl:max-w-6xl 2xl:max-w-[90rem]">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-6 md:py-12 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <div className="grid gap-4 lg:grid-cols-2">
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
             <div className="flex items-start gap-4">
@@ -290,7 +290,7 @@ function HomePageContent() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-14 sm:px-6 md:px-8 md:pb-16 lg:max-w-5xl lg:px-10 xl:max-w-6xl 2xl:max-w-[90rem]">
+      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 md:px-6 md:pb-16 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
         <h3 className="text-center text-3xl font-semibold text-[#202743] motion-safe:animate-fade-in-up md:text-4xl">{t('trust.title')}</h3>
         <p className="mt-2 text-center text-base text-[#6f7893] motion-safe:animate-fade-in-up motion-safe:delay-75 md:text-lg">
           {t('trust.subtitle')}

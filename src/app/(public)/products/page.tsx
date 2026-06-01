@@ -323,8 +323,8 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
 
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
-      <section className="px-4 py-8 text-white md:py-10" style={heroStyle}>
-        <div className="mx-auto grid min-h-[400px] w-full max-w-6xl items-start gap-5 sm:min-h-[420px] md:gap-7 lg:min-h-[440px] lg:max-w-5xl lg:grid-cols-2 lg:items-center lg:gap-8 xl:max-w-6xl 2xl:max-w-[90rem]">
+      <section className="px-4 py-8 text-white sm:px-6 md:px-6 md:py-10" style={heroStyle}>
+        <div className="mx-auto grid min-h-[400px] w-full max-w-7xl items-start gap-5 sm:min-h-[420px] md:gap-7 lg:min-h-[440px] lg:max-w-6xl lg:grid-cols-2 lg:items-center lg:gap-8 xl:max-w-7xl 2xl:max-w-[90rem]">
           <div className="space-y-4">
             <p className="text-sm font-medium uppercase tracking-[0.24em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">
               {heroKicker}
