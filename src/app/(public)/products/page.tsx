@@ -682,24 +682,34 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
           </ul>
         </article>
 
-        <article className="rounded-2xl border border-[#17489b] bg-[linear-gradient(90deg,#0b2f73,#0e3f9d)] p-5 text-white transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:hover:shadow-[0_18px_34px_rgba(17,62,148,0.28)] md:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h3 className="text-3xl font-semibold">{ctaTitle}</h3>
-              <p className="mt-1 text-sm text-[#d2e2ff]">{ctaSubtitle}</p>
+        <article className="mt-8 rounded-2xl border border-[#264579] bg-[linear-gradient(120deg,#091229,#0b1a39_48%,#0e2348)] px-5 py-6 text-white motion-safe:animate-fade-in-up motion-safe:delay-150 sm:px-8 md:px-10 md:py-7">
+          <div className="flex flex-wrap items-center justify-between gap-6">
+            <div className="flex min-w-0 items-center gap-5">
+              <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[#3a7ce2] bg-[#102a57] text-[#77aefc]">
+                <svg viewBox="0 0 24 24" className="h-9 w-9" fill="none" aria-hidden="true">
+                  <path d="M12 2 4 5v6c0 5.3 3.4 9.6 8 11 4.6-1.4 8-5.7 8-11V5l-8-3Z" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-2xl font-semibold md:text-4xl">{ctaTitle}</h3>
+                <p className="mt-1 text-sm text-[#c7d8f8] md:text-base">{ctaSubtitle}</p>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="ml-auto flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               {ctaButtons.map((button: any, index: number) => (
                 <a
                   key={`${button.text}-${index}`}
                   href={button.url}
-                  className={`rounded-xl border px-5 py-2.5 font-semibold transition-colors duration-200 active:scale-[0.98] motion-safe:active:transition-transform ${
+                  className={`inline-flex min-w-[180px] items-center justify-center gap-2 whitespace-nowrap rounded-xl px-6 py-3 text-base font-semibold transition-colors duration-200 active:scale-[0.98] motion-safe:active:transition-transform md:text-lg ${
                     index === 0
-                      ? 'border-white/35 bg-white text-[#123e8b] hover:bg-[#e9f1ff]'
-                      : 'border-[#1f7bff] bg-[#1f7bff] text-white hover:bg-[#2e87ff]'
+                      ? 'border border-[#1f7bff] bg-[#1f7bff] text-white hover:bg-[#2e87ff]'
+                      : 'border border-[#456298] text-[#e5eeff] hover:bg-[#173160]'
                   }`}
                 >
                   {button.text}
+                  <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" aria-hidden="true">
+                    <path d="M4 10h10m0 0-4-4m4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 </a>
               ))}
             </div>
