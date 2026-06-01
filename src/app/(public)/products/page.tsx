@@ -286,10 +286,12 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
         { title: t('how.step4.title'), body: t('how.step4.body') },
       ];
 
-  const auditsTitle = cmsDocumentationGrid.title || t('audits.title');
-  const auditsSubtitle = cmsDocumentationGrid.subtitle || t('audits.subtitle');
-  const documentationTitle = cmsDocumentationGrid.title || t('documentation.title');
-  const documentationSubtitle = cmsDocumentationGrid.subtitle || t('documentation.subtitle');
+  const auditsTitle = cmsDocumentationGrid.audits_title || t('audits.title');
+  const auditsSubtitle = cmsDocumentationGrid.audits_subtitle || t('audits.subtitle');
+  const documentationTitle =
+    cmsDocumentationGrid.documentation_title || cmsDocumentationGrid.title || t('documentation.title');
+  const documentationSubtitle =
+    cmsDocumentationGrid.documentation_subtitle || cmsDocumentationGrid.subtitle || t('documentation.subtitle');
   const plansTitle = cmsBundles.title || t('plans.title');
   const plansSubtitle = cmsBundles.subtitle || t('plans.subtitle');
   const whyTitle = cmsWhyChoose.title || t('why.title');
