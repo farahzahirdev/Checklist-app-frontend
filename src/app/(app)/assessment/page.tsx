@@ -23,6 +23,7 @@ import {
 } from '@/lib/assessment';
 import { isAllowedEvidenceFileSize, isAllowedEvidenceMimeType, getEvidenceFileSizeErrorMessage, EVIDENCE_MAX_FILE_SIZE_MB } from '@/lib/upload-rules';
 import SecureUploadProgress from '@/components/secure-upload-progress';
+import { formatPreciseAccessCountdown, getAccessCountdownInfo, useAccessCountdownNow } from '@/lib/access-countdown';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerAssessmentMessages } from '@/locales/customer-assessment';
 
@@ -376,6 +377,7 @@ export default function AssessmentPage() {
   const [previewErrorsByMediaId, setPreviewErrorsByMediaId] = useState<Record<string, string>>({});
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [isSubmittedChecklist, setIsSubmittedChecklist] = useState(false);
+  const countdownNowMs = useAccessCountdownNow(Boolean(assessmentDetail?.expires_at));
   const isSubmittedReadOnly = isSubmittedChecklist;
   const activeQuestionIdRef = useRef(activeQuestionId);
   const selectedSectionIdRef = useRef(selectedSectionId);
@@ -723,13 +725,15 @@ export default function AssessmentPage() {
     return `${fmt(assessmentDetail.started_at)} – ${fmt(assessmentDetail.expires_at)}`;
   }, [assessmentDetail?.expires_at, assessmentDetail?.started_at, locale]);
 
-  const accessDaysRemaining = useMemo(() => {
-    if (!assessmentDetail?.expires_at) return null;
-    const expires = new Date(assessmentDetail.expires_at);
-    if (Number.isNaN(expires.getTime())) return null;
-    const diffMs = expires.getTime() - Date.now();
-    return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-  }, [assessmentDetail?.expires_at]);
+  const accessCountdown = useMemo(
+    () => formatPreciseAccessCountdown(assessmentDetail?.expires_at, locale, countdownNowMs),
+    [assessmentDetail?.expires_at, locale, countdownNowMs],
+  );
+
+  const accessCountdownExpired = useMemo(() => {
+    const info = getAccessCountdownInfo(assessmentDetail?.expires_at, countdownNowMs);
+    return info ? info.expired : false;
+  }, [assessmentDetail?.expires_at, countdownNowMs]);
 
   useEffect(() => {
     setIsWhyThisMattersOpen(false);
@@ -1222,12 +1226,8 @@ export default function AssessmentPage() {
               <div className="text-sm text-[#1f2d45]">
                 <p className="text-xs font-medium text-[#607594]">{t('progress.accessWindow')}</p>
                 <p className="mt-0.5 font-semibold">{accessWindowLabel}</p>
-                <p className={`mt-0.5 text-xs font-medium ${accessDaysRemaining === 0 ? 'text-[#b45309]' : 'text-[#15803d]'}`}>
-                  {accessDaysRemaining === null
-                    ? '—'
-                    : accessDaysRemaining === 0
-                      ? t('progress.expired')
-                      : t('progress.daysRemaining', { days: String(accessDaysRemaining) })}
+                <p className={`mt-0.5 text-xs font-medium ${accessCountdownExpired ? 'text-[#b45309]' : 'text-[#15803d]'}`}>
+                  {accessCountdown ?? '—'}
                 </p>
               </div>
               <Link

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { hasAccessTimeRemaining, useAccessCountdownNow } from '@/lib/access-countdown';
 import { listPublishedCustomerChecklists } from '@/lib/checklist-api';
 import { getCustomerAssessmentsDashboard, listCustomerAssessments } from '@/lib/customer-assessments';
 import { getActiveAccessWindows, listPurchasedChecklists } from '@/lib/customer-payments';
@@ -21,12 +22,12 @@ function resolveCardStatusForStats(row: MyAuditRow): 'ready' | 'inProgress' | 'c
   return 'ready';
 }
 
-function computeStats(rows: MyAuditRow[], reportsFromDashboard: number): MyAuditsStats {
+function computeStats(rows: MyAuditRow[], reportsFromDashboard: number, nowMs: number): MyAuditsStats {
   const readyToStart = rows.filter((row) => resolveCardStatusForStats(row) === 'ready').length;
   const inProgress = rows.filter((row) => resolveCardStatusForStats(row) === 'inProgress').length;
   const activeAudits = rows.filter((row) => {
     const status = resolveCardStatusForStats(row);
-    return status === 'inProgress' || (row.access && row.access.days_remaining > 0);
+    return status === 'inProgress' || hasAccessTimeRemaining(row.access?.end_date, nowMs);
   }).length;
   const publishedReports =
     reportsFromDashboard > 0
@@ -43,6 +44,7 @@ export default function MyAuditsPage() {
   const [error, setError] = useState('');
   const [rows, setRows] = useState<MyAuditRow[]>([]);
   const [reportsCount, setReportsCount] = useState(0);
+  const countdownNowMs = useAccessCountdownNow(rows.length > 0);
 
   const loadAudits = useCallback(async () => {
     setLoading(true);
@@ -85,7 +87,7 @@ export default function MyAuditsPage() {
     void loadAudits();
   }, [loadAudits]);
 
-  const stats = useMemo(() => computeStats(rows, reportsCount), [rows, reportsCount]);
+  const stats = useMemo(() => computeStats(rows, reportsCount, countdownNowMs), [rows, reportsCount, countdownNowMs]);
   const recentActivity = useMemo(
     () => buildRecentActivity(rows, locale, (key) => translate(customerMyAuditsMessages, locale, key)),
     [rows, locale],
@@ -98,6 +100,7 @@ export default function MyAuditsPage() {
       loading={loading}
       error={error}
       rows={rows}
+      countdownNowMs={countdownNowMs}
       stats={stats}
       recentActivity={recentActivity}
     />

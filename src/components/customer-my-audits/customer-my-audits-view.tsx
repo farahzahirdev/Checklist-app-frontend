@@ -19,6 +19,7 @@ import type { CustomerAssessmentListItem } from '@/lib/customer-assessments';
 import type { ActiveAccessWindow, PurchasedChecklist } from '@/lib/customer-payments';
 import type { CustomerChecklist } from '@/lib/checklist-api';
 import { buildAuditProductHref } from '@/lib/products-catalog';
+import { formatPreciseAccessCountdown, hasAccessTimeRemaining } from '@/lib/access-countdown';
 
 const PAGE_SIZE = 6;
 const cardClass = workspaceCardClass;
@@ -398,11 +399,21 @@ export type CustomerMyAuditsViewProps = {
   loading: boolean;
   error: string;
   rows: MyAuditRow[];
+  countdownNowMs: number;
   stats: MyAuditsStats;
   recentActivity: RecentActivityItem[];
 };
 
-export function CustomerMyAuditsView({ t, locale, loading, error, rows, stats, recentActivity }: CustomerMyAuditsViewProps) {
+export function CustomerMyAuditsView({
+  t,
+  locale,
+  loading,
+  error,
+  rows,
+  countdownNowMs,
+  stats,
+  recentActivity,
+}: CustomerMyAuditsViewProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [page, setPage] = useState(1);
@@ -612,6 +623,8 @@ export function CustomerMyAuditsView({ t, locale, loading, error, rows, stats, r
                     row.access && row.access.start_date && row.access.end_date
                       ? `${formatDate(row.access.start_date, locale)} – ${formatDate(row.access.end_date, locale)}`
                       : '—';
+                  const accessCountdown = formatPreciseAccessCountdown(row.access?.end_date, locale, countdownNowMs);
+                  const accessActive = hasAccessTimeRemaining(row.access?.end_date, countdownNowMs);
 
                   return (
                     <li key={row.checklistId} className={`${cardClass} overflow-hidden`}>
@@ -674,9 +687,9 @@ export function CustomerMyAuditsView({ t, locale, loading, error, rows, stats, r
                               <div className="min-w-0">
                                 <p className="text-xs text-[#64748b]">{t('card.accessWindow')}</p>
                                 <p className="break-words font-semibold text-[#0f172a]">{accessRange}</p>
-                                {row.access && row.access.days_remaining > 0 ? (
+                                {row.access && accessActive ? (
                                   <p className="text-xs font-semibold text-[#16a34a]">
-                                    {t('card.accessDays').replace('{days}', String(row.access.days_remaining))}
+                                    {accessCountdown ?? t('card.accessExpired')}
                                   </p>
                                 ) : (
                                   <p className="text-xs font-semibold text-[#94a3b8]">{t('card.accessExpired')}</p>

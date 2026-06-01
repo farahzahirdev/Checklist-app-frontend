@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { formatPreciseAccessCountdown, useAccessCountdownNow } from '@/lib/access-countdown';
 import {
   getCustomerDashboardEnhanced,
   getCustomerDashboardSummary,
@@ -25,6 +26,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [permissionBlocked, setPermissionBlocked] = useState(false);
+  const countdownNowMs = useAccessCountdownNow(Boolean(enhanced?.expiring_soon?.length));
 
   const reportByAssessmentId = new Map(reports.map((report) => [report.assessment_id, report]));
 
@@ -242,7 +244,7 @@ export default function DashboardPage() {
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-[#1f2d45]">{item.checklist_title}</p>
                     <p className="truncate text-xs text-[#a05a12]">
-                      {t('labels.daysLeft').replace('{days}', String(item.days_until_expiry ?? 0))} • {item.completion_percent}% {t('labels.complete')}
+                      {formatPreciseAccessCountdown(item.expires_at, locale, countdownNowMs) ?? '—'} • {item.completion_percent}% {t('labels.complete')}
                     </p>
                   </div>
                   <Link
