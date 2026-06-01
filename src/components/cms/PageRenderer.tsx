@@ -633,6 +633,41 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
   const heroImage = data.background_image && !data.background_image.startsWith('/assets/')
     ? data.background_image
     : heroBackground.src;
+  const titleLine1 = data.title_line1 || data.title || '';
+  const titleLine2 = data.title_line2 || '';
+  const quickLinks = Array.isArray(data.quick_links) ? data.quick_links : [];
+
+  function renderQuickLinkIcon(icon: string | undefined) {
+    switch ((icon || '').toLowerCase()) {
+      case 'shield':
+        return (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+            <path d="M12 3l8 4v5c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V7l8-4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        );
+      case 'document':
+        return (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+            <path d="M8 4h8l2 2v14H6V6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            <path d="M9 4v3h6V4M9 12h6M9 16h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        );
+      case 'stack':
+        return (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+            <path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            <path d="M8 10h8M8 14h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        );
+      default:
+        return (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.8" />
+          </svg>
+        );
+    }
+  }
 
   // Contact-page hero: render form + direct contact card when form data is provided.
   if (data.form && data.directContact) {
@@ -735,15 +770,26 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
               {data.kicker}
             </p>
           )}
-          {data.title && (
+          {titleLine1 && (
             <h1 className="max-w-xl text-4xl font-semibold leading-tight md:text-5xl">
-              {data.title}
-              {data.accent && (
+              {titleLine1}
+              {titleLine2 ? (
+                <>
+                  <br />
+                  {titleLine2}
+                  {data.accent && (
+                    <>
+                      {' '}
+                      <span className="text-[#2f7dff]">{data.accent}</span>
+                    </>
+                  )}
+                </>
+              ) : data.accent ? (
                 <>
                   {' '}
                   <span className="text-[#2f7dff]">{data.accent}</span>
                 </>
-              )}
+              ) : null}
             </h1>
           )}
           {data.subtitle && <p className="max-w-xl text-lg text-[#d4e2f6] md:text-xl">{data.subtitle}</p>}
@@ -751,6 +797,25 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
             <p className={`max-w-xl text-[#d4e2f6] ${data.subtitle ? 'text-sm leading-7 md:text-base' : 'text-lg md:text-xl'}`}>
               {data.description}
             </p>
+          )}
+          {quickLinks.length > 0 && (
+            <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap">
+              {quickLinks.map((link: any, index: number) => (
+                <a
+                  key={index}
+                  href={publicMarketingButtonHref(link)}
+                  className="group inline-flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-3 py-2.5 text-left transition-colors hover:bg-[#143264] sm:min-w-[200px] sm:flex-initial"
+                >
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
+                    {renderQuickLinkIcon(link.icon)}
+                  </span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="text-sm font-semibold text-white">{link.title}</span>
+                    {link.subtitle ? <span className="text-xs text-[#a9c0e6]">{link.subtitle}</span> : null}
+                  </span>
+                </a>
+              ))}
+            </div>
           )}
           {(data.buttons || data.button_text) && (
             <div className="flex flex-wrap gap-3 pt-2">

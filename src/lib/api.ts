@@ -80,8 +80,21 @@ function messageFromApiDetail(detail: unknown): string | null {
 }
 
 function errorMessageFromResponse(status: number, raw: string): string {
+  if (status === 413) {
+    return 'Request is too large. Please reduce the file size and try again.';
+  }
+  if (status === 500) {
+    return 'Failed to complete request. Please try again later.';
+  }
+  if (status === 502 || status === 503) {
+    return 'Service is temporarily unavailable. Please try again later.';
+  }
+  if (status === 504) {
+    return 'The server took too long to respond. Please try again later.';
+  }
+
   if (!raw) {
-    return `Request failed with status ${status}`;
+    return 'Failed to complete request. Please try again later.';
   }
   try {
     const data = JSON.parse(raw) as { detail?: unknown };
@@ -93,6 +106,14 @@ function errorMessageFromResponse(status: number, raw: string): string {
     // fall through
   }
   return `Request failed with status ${status}: ${raw}`;
+}
+
+async function fetchWithFriendlyError(input: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch {
+    throw new Error('Failed to complete request. Please try again later.');
+  }
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
@@ -134,7 +155,7 @@ function buildHeaders(auth?: ApiAuth, options?: { includeJsonContentType?: boole
 }
 
 export async function apiGetWithAuth<T>(path: string, auth?: ApiAuth): Promise<T> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  const response = await fetchWithFriendlyError(`${getApiBaseUrl()}${path}`, {
     headers: buildHeaders(auth),
     cache: 'no-store',
   });
@@ -150,7 +171,7 @@ export async function apiGetWithAuth<T>(path: string, auth?: ApiAuth): Promise<T
 
 /** Authenticated GET returning a binary body (e.g. PDF). Omits JSON Content-Type. */
 export async function apiGetBlobWithAuth(path: string, auth?: ApiAuth): Promise<Blob> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  const response = await fetchWithFriendlyError(`${getApiBaseUrl()}${path}`, {
     headers: buildHeaders(auth, { includeJsonContentType: false }),
     cache: 'no-store',
   });
@@ -168,7 +189,7 @@ export async function apiPost<TResponse, TPayload>(
   payload: TPayload,
   auth?: ApiAuth,
 ): Promise<TResponse> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  const response = await fetchWithFriendlyError(`${getApiBaseUrl()}${path}`, {
     method: 'POST',
     headers: buildHeaders(auth),
     body: JSON.stringify(payload),
@@ -189,7 +210,7 @@ export async function apiPostFormData<TResponse>(
   payload: FormData,
   auth?: ApiAuth,
 ): Promise<TResponse> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  const response = await fetchWithFriendlyError(`${getApiBaseUrl()}${path}`, {
     method: 'POST',
     headers: buildHeaders(auth, { includeJsonContentType: false }),
     body: payload,
@@ -210,7 +231,7 @@ export async function apiPostEmpty<TResponse>(path: string): Promise<TResponse> 
 }
 
 export async function apiPostEmptyWithAuth<TResponse>(path: string, auth?: ApiAuth): Promise<TResponse> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  const response = await fetchWithFriendlyError(`${getApiBaseUrl()}${path}`, {
     method: 'POST',
     headers: buildHeaders(auth),
     cache: 'no-store',
@@ -230,7 +251,7 @@ export async function apiPut<TResponse, TPayload>(
   payload: TPayload,
   auth?: ApiAuth,
 ): Promise<TResponse> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  const response = await fetchWithFriendlyError(`${getApiBaseUrl()}${path}`, {
     method: 'PUT',
     headers: buildHeaders(auth),
     body: JSON.stringify(payload),
@@ -251,7 +272,7 @@ export async function apiPatch<TResponse, TPayload>(
   payload: TPayload,
   auth?: ApiAuth,
 ): Promise<TResponse> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  const response = await fetchWithFriendlyError(`${getApiBaseUrl()}${path}`, {
     method: 'PATCH',
     headers: buildHeaders(auth),
     body: JSON.stringify(payload),
@@ -268,7 +289,7 @@ export async function apiPatch<TResponse, TPayload>(
 }
 
 export async function apiDelete<TResponse>(path: string, auth?: ApiAuth): Promise<TResponse> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  const response = await fetchWithFriendlyError(`${getApiBaseUrl()}${path}`, {
     method: 'DELETE',
     headers: buildHeaders(auth),
     cache: 'no-store',

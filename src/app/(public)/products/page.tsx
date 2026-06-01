@@ -7,8 +7,8 @@ import { PublicFooter } from '@/components/public-footer';
 import heroBackground from '@/assets/cybersecurity-background-59ognpsy7izka4l9.png';
 import { translate, useLocale } from '@/lib/i18n';
 import { productsMessages } from '@/locales/products';
+import type { PageDetail } from '@/lib/api/cms-api';
 import { useCMSPage } from '@/hooks/useCMSPage';
-import { PageRenderer } from '@/components/cms/PageRenderer';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
 import {
   flattenPublicProducts,
@@ -83,6 +83,10 @@ function priceLabels(t: (key: string) => string) {
   return { free: t('audits.price.free'), comingSoon: t('detail.status.comingSoon') };
 }
 
+function getCmsSectionData(page: PageDetail | null, sectionType: string): Record<string, any> {
+  return page?.sections.find((section) => section.section_type === sectionType)?.data ?? {};
+}
+
 function mapApiCategoryNameToDocFilter(name: string | null | undefined): CatalogDocumentationCategory {
   const n = (name ?? '').trim();
   if (DOC_FILTER_NAMES.has(n)) return n as CatalogDocumentationCategory;
@@ -104,7 +108,7 @@ function productStatusSortRank(status: PublicProductStatus): number {
   return 2;
 }
 
-function ProductsPageContent() {
+function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) {
   const { locale } = useLocale();
   const t = (key: string, values?: Record<string, string>) => translate(productsMessages, locale, key, values);
   const [activeCategory, setActiveCategory] = useState<DocumentationCategory>('All');
@@ -251,6 +255,56 @@ function ProductsPageContent() {
     return t('filters.response');
   };
 
+  const cmsHero = getCmsSectionData(cmsPage ?? null, 'hero');
+  const cmsHowItWorks = getCmsSectionData(cmsPage ?? null, 'how-it-works');
+  const cmsDocumentationGrid = getCmsSectionData(cmsPage ?? null, 'documentation-grid');
+  const cmsBundles = getCmsSectionData(cmsPage ?? null, 'bundles');
+  const cmsWhyChoose = getCmsSectionData(cmsPage ?? null, 'why-choose');
+  const cmsCta = getCmsSectionData(cmsPage ?? null, 'cta');
+
+  const heroTitleLine1 = cmsHero.title_line1 || cmsHero.title || t('hero.title.line1');
+  const heroTitleLine2 = cmsHero.title_line2 || t('hero.title.line2');
+  const heroAccent = cmsHero.accent || t('hero.title.accent');
+  const heroKicker = cmsHero.kicker || t('hero.kicker');
+  const heroSubtitle = cmsHero.subtitle || t('hero.subtitle');
+  const heroActionCards = Array.isArray(cmsHero.quick_links) && cmsHero.quick_links.length
+    ? cmsHero.quick_links
+    : [
+        { title: t('hero.cat.audits.title'), subtitle: t('hero.cat.audits.subtitle'), url: '#audits-checklists', icon: 'shield' },
+        { title: t('hero.cat.docs.title'), subtitle: t('hero.cat.docs.subtitle'), url: '#documentation', icon: 'document' },
+        { title: t('hero.cat.plans.title'), subtitle: t('hero.cat.plans.subtitle'), url: '#plans', icon: 'stack' },
+      ];
+
+  const howTitle = cmsHowItWorks.title || t('how.title');
+  const howSubtitle = cmsHowItWorks.subtitle || t('how.subtitle');
+  const howSteps = Array.isArray(cmsHowItWorks.steps) && cmsHowItWorks.steps.length
+    ? cmsHowItWorks.steps
+    : [
+        { title: t('how.step1.title'), body: t('how.step1.body') },
+        { title: t('how.step2.title'), body: t('how.step2.body') },
+        { title: t('how.step3.title'), body: t('how.step3.body') },
+        { title: t('how.step4.title'), body: t('how.step4.body') },
+      ];
+
+  const auditsTitle = cmsDocumentationGrid.title || t('audits.title');
+  const auditsSubtitle = cmsDocumentationGrid.subtitle || t('audits.subtitle');
+  const documentationTitle = cmsDocumentationGrid.title || t('documentation.title');
+  const documentationSubtitle = cmsDocumentationGrid.subtitle || t('documentation.subtitle');
+  const plansTitle = cmsBundles.title || t('plans.title');
+  const plansSubtitle = cmsBundles.subtitle || t('plans.subtitle');
+  const whyTitle = cmsWhyChoose.title || t('why.title');
+  const whyPoints = Array.isArray(cmsWhyChoose.points) && cmsWhyChoose.points.length
+    ? cmsWhyChoose.points
+    : [t('why.0'), t('why.1'), t('why.2'), t('why.3'), t('why.4')];
+  const ctaTitle = cmsCta.title || t('cta.title');
+  const ctaSubtitle = cmsCta.subtitle || t('cta.subtitle');
+  const ctaButtons = Array.isArray(cmsCta.buttons) && cmsCta.buttons.length
+    ? cmsCta.buttons
+    : [
+        { text: t('cta.viewDetails'), url: '/products/audit-readiness-checklist' },
+        { text: t('cta.createAccount'), url: '/register' },
+      ];
+
   const heroStyle = {
     backgroundImage: `linear-gradient(rgba(4, 9, 22, 0.56), rgba(4, 9, 22, 0.72)), url(${heroBackground.src})`,
     backgroundSize: 'cover',
@@ -264,62 +318,47 @@ function ProductsPageContent() {
         <div className="mx-auto grid min-h-[400px] w-full max-w-6xl items-start gap-5 sm:min-h-[420px] md:gap-7 lg:min-h-[440px] lg:max-w-5xl lg:grid-cols-2 lg:items-center lg:gap-8 xl:max-w-6xl 2xl:max-w-[90rem]">
           <div className="space-y-4">
             <p className="text-sm font-medium uppercase tracking-[0.24em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">
-              {t('hero.kicker')}
+              {heroKicker}
             </p>
             <h1 className="max-w-xl text-4xl font-semibold leading-tight motion-safe:animate-fade-in-up motion-safe:delay-100 md:text-5xl">
-              {t('hero.title.line1')}
+              {heroTitleLine1}
               <br />
-              {t('hero.title.line2')} <span className="text-[#2f7dff]">{t('hero.title.accent')}</span>
+              {heroTitleLine2} <span className="text-[#2f7dff]">{heroAccent}</span>
             </h1>
             <p className="max-w-xl text-lg text-[#d4e2f6] motion-safe:animate-fade-in-up motion-safe:delay-200 md:text-xl">
-              {t('hero.subtitle')}
+              {heroSubtitle}
             </p>
             <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap">
-              <Link
-                href="#audits-checklists"
-                className="group inline-flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-3 py-2.5 text-left transition-colors hover:bg-[#143264] sm:min-w-[200px] sm:flex-initial"
-              >
-                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
-                    <path d="M12 3l8 4v5c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V7l8-4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                    <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-                <span className="flex min-w-0 flex-col">
-                  <span className="text-sm font-semibold text-white">{t('hero.cat.audits.title')}</span>
-                  <span className="text-xs text-[#a9c0e6]">{t('hero.cat.audits.subtitle')}</span>
-                </span>
-              </Link>
-              <Link
-                href="#documentation"
-                className="group inline-flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-3 py-2.5 text-left transition-colors hover:bg-[#143264] sm:min-w-[200px] sm:flex-initial"
-              >
-                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
-                    <path d="M8 4h8l2 2v14H6V6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                    <path d="M9 4v3h6V4M9 12h6M9 16h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  </svg>
-                </span>
-                <span className="flex min-w-0 flex-col">
-                  <span className="text-sm font-semibold text-white">{t('hero.cat.docs.title')}</span>
-                  <span className="text-xs text-[#a9c0e6]">{t('hero.cat.docs.subtitle')}</span>
-                </span>
-              </Link>
-              <Link
-                href="#plans"
-                className="group inline-flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-3 py-2.5 text-left transition-colors hover:bg-[#143264] sm:min-w-[200px] sm:flex-initial"
-              >
-                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
-                    <path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                    <path d="M8 10h8M8 14h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  </svg>
-                </span>
-                <span className="flex min-w-0 flex-col">
-                  <span className="text-sm font-semibold text-white">{t('hero.cat.plans.title')}</span>
-                  <span className="text-xs text-[#a9c0e6]">{t('hero.cat.plans.subtitle')}</span>
-                </span>
-              </Link>
+              {heroActionCards.map((card, index) => (
+                <a
+                  key={`${card.title}-${index}`}
+                  href={card.url}
+                  className="group inline-flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-3 py-2.5 text-left transition-colors hover:bg-[#143264] sm:min-w-[200px] sm:flex-initial"
+                >
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
+                    {card.icon === 'document' ? (
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+                        <path d="M8 4h8l2 2v14H6V6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                        <path d="M9 4v3h6V4M9 12h6M9 16h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      </svg>
+                    ) : card.icon === 'stack' ? (
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+                        <path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                        <path d="M8 10h8M8 14h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+                        <path d="M12 3l8 4v5c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V7l8-4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                        <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="text-sm font-semibold text-white">{card.title}</span>
+                    <span className="text-xs text-[#a9c0e6]">{card.subtitle}</span>
+                  </span>
+                </a>
+              ))}
             </div>
           </div>
 
@@ -359,34 +398,24 @@ function ProductsPageContent() {
         <article className="rounded-2xl border border-[#d7e7de] bg-[#edf7f0] p-5 md:p-6">
           <div className="grid gap-3 md:grid-cols-[1.1fr_3fr]">
             <div>
-              <h3 className="text-3xl font-semibold text-[#1a2440]">{t('how.title')}</h3>
-              <p className="mt-2 text-sm text-[#5e7293]">{t('how.subtitle')}</p>
+              <h3 className="text-3xl font-semibold text-[#1a2440]">{howTitle}</h3>
+              <p className="mt-2 text-sm text-[#5e7293]">{howSubtitle}</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-xl border border-[#d2e6da] bg-white/70 p-4">
-                <p className="text-sm font-semibold text-[#1f355d]">{t('how.step1.title')}</p>
-                <p className="mt-1 text-xs text-[#5e7293]">{t('how.step1.body')}</p>
-              </div>
-              <div className="rounded-xl border border-[#d2e6da] bg-white/70 p-4">
-                <p className="text-sm font-semibold text-[#1f355d]">{t('how.step2.title')}</p>
-                <p className="mt-1 text-xs text-[#5e7293]">{t('how.step2.body')}</p>
-              </div>
-              <div className="rounded-xl border border-[#d2e6da] bg-white/70 p-4">
-                <p className="text-sm font-semibold text-[#1f355d]">{t('how.step3.title')}</p>
-                <p className="mt-1 text-xs text-[#5e7293]">{t('how.step3.body')}</p>
-              </div>
-              <div className="rounded-xl border border-[#d2e6da] bg-white/70 p-4">
-                <p className="text-sm font-semibold text-[#1f355d]">{t('how.step4.title')}</p>
-                <p className="mt-1 text-xs text-[#5e7293]">{t('how.step4.body')}</p>
-              </div>
+              {howSteps.map((step: any, index: number) => (
+                <div key={`${step.title}-${index}`} className="rounded-xl border border-[#d2e6da] bg-white/70 p-4">
+                  <p className="text-sm font-semibold text-[#1f355d]">{step.title}</p>
+                  <p className="mt-1 text-xs text-[#5e7293]">{step.body}</p>
+                </div>
+              ))}
             </div>
           </div>
         </article>
 
         <section id="audits-checklists" className="space-y-4 scroll-mt-24">
           <div>
-            <h3 className="text-4xl font-semibold text-[#1a2440]">{t('audits.title')}</h3>
-            <p className="mt-2 max-w-3xl text-base text-[#5e7293]">{t('audits.subtitle')}</p>
+            <h3 className="text-4xl font-semibold text-[#1a2440]">{auditsTitle}</h3>
+            <p className="mt-2 max-w-3xl text-base text-[#5e7293]">{auditsSubtitle}</p>
           </div>
 
           {auditsLoading ? (
@@ -463,8 +492,8 @@ function ProductsPageContent() {
 
         <section id="documentation" className="space-y-4 scroll-mt-24">
           <div>
-            <h3 className="text-4xl font-semibold text-[#1a2440]">{t('documentation.title')}</h3>
-            <p className="mt-2 max-w-3xl text-base text-[#5e7293]">{t('documentation.subtitle')}</p>
+            <h3 className="text-4xl font-semibold text-[#1a2440]">{documentationTitle}</h3>
+            <p className="mt-2 max-w-3xl text-base text-[#5e7293]">{documentationSubtitle}</p>
             {apiDocSections.length === 0 ? (
               <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Documentation categories">
                 {DOCUMENT_CATEGORIES.map((chip) => {
@@ -552,8 +581,8 @@ function ProductsPageContent() {
 
         <section id="plans" className="space-y-4 scroll-mt-24">
           <div>
-            <h3 className="text-4xl font-semibold text-[#1a2440]">{t('plans.title')}</h3>
-            <p className="mt-2 max-w-3xl text-base text-[#5e7293]">{t('plans.subtitle')}</p>
+            <h3 className="text-4xl font-semibold text-[#1a2440]">{plansTitle}</h3>
+            <p className="mt-2 max-w-3xl text-base text-[#5e7293]">{plansSubtitle}</p>
           </div>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {BUILDER_PRODUCTS.map((builder) => {
@@ -643,35 +672,34 @@ function ProductsPageContent() {
         </section>
 
         <article className="rounded-2xl border border-[#d7e7de] bg-[#edf7f0] p-5 transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md md:p-6">
-          <h3 className="text-3xl font-semibold text-[#1f3a31]">{t('why.title')}</h3>
+          <h3 className="text-3xl font-semibold text-[#1f3a31]">{whyTitle}</h3>
           <ul className="mt-4 grid gap-2.5 text-base leading-7 text-[#2f7f57] md:grid-cols-2">
-            <li className="flex items-center gap-2.5"><CheckBadgeIcon />{t('why.0')}</li>
-            <li className="flex items-center gap-2.5"><CheckBadgeIcon />{t('why.1')}</li>
-            <li className="flex items-center gap-2.5"><CheckBadgeIcon />{t('why.2')}</li>
-            <li className="flex items-center gap-2.5"><CheckBadgeIcon />{t('why.3')}</li>
-            <li className="flex items-center gap-2.5"><CheckBadgeIcon />{t('why.4')}</li>
+            {whyPoints.map((point: any, index: number) => (
+              <li key={`${point}-${index}`} className="flex items-center gap-2.5"><CheckBadgeIcon />{point}</li>
+            ))}
           </ul>
         </article>
 
         <article className="rounded-2xl border border-[#17489b] bg-[linear-gradient(90deg,#0b2f73,#0e3f9d)] p-5 text-white transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:hover:shadow-[0_18px_34px_rgba(17,62,148,0.28)] md:p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h3 className="text-3xl font-semibold">{t('cta.title')}</h3>
-              <p className="mt-1 text-sm text-[#d2e2ff]">{t('cta.subtitle')}</p>
+              <h3 className="text-3xl font-semibold">{ctaTitle}</h3>
+              <p className="mt-1 text-sm text-[#d2e2ff]">{ctaSubtitle}</p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link
-                href="/products/audit-readiness-checklist"
-                className="rounded-xl border border-white/35 bg-white px-5 py-2.5 font-semibold text-[#123e8b] transition-colors duration-200 hover:bg-[#e9f1ff] active:scale-[0.98] motion-safe:active:transition-transform"
-              >
-                {t('cta.viewDetails')}
-              </Link>
-              <Link
-                href="/register"
-                className="rounded-xl border border-[#1f7bff] bg-[#1f7bff] px-5 py-2.5 font-semibold text-white transition-colors duration-200 hover:bg-[#2e87ff] active:scale-[0.98] motion-safe:active:transition-transform"
-              >
-                {t('cta.createAccount')}
-              </Link>
+              {ctaButtons.map((button: any, index: number) => (
+                <a
+                  key={`${button.text}-${index}`}
+                  href={button.url}
+                  className={`rounded-xl border px-5 py-2.5 font-semibold transition-colors duration-200 active:scale-[0.98] motion-safe:active:transition-transform ${
+                    index === 0
+                      ? 'border-white/35 bg-white text-[#123e8b] hover:bg-[#e9f1ff]'
+                      : 'border-[#1f7bff] bg-[#1f7bff] text-white hover:bg-[#2e87ff]'
+                  }`}
+                >
+                  {button.text}
+                </a>
+              ))}
             </div>
           </div>
         </article>
@@ -694,8 +722,7 @@ function ProductsPageWithCMS() {
     );
   }
 
-  // Footer: PageRenderer appends it for CMS pages; ProductsPageContent includes it for fallback.
-  return <PageRenderer page={page} fallback={<ProductsPageContent />} />;
+  return <ProductsPageContent cmsPage={page} />;
 }
 
 export default ProductsPageWithCMS;

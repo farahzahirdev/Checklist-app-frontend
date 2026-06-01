@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
 import { listPurchasedChecklistIds } from '@/lib/customer-payments';
 import { listCustomerAssessments } from '@/lib/customer-assessments';
+import { getCustomerProfileCompletion } from '@/lib/customer-profile';
 import {
   getCurrentAssessment,
   getAssessmentAnswers,
@@ -341,6 +342,8 @@ export default function AssessmentPage() {
   const [availableChecklists, setAvailableChecklists] = useState<CustomerChecklist[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [purchasedChecklistIds, setPurchasedChecklistIds] = useState<string[]>([]);
+  const [profileCompletionPercent, setProfileCompletionPercent] = useState<number | null>(null);
+  const [profileCompletionLoading, setProfileCompletionLoading] = useState(true);
   const [assessmentId, setAssessmentId] = useState('');
   const [assessmentDetail, setAssessmentDetail] = useState<AssessmentCurrentDetailResponse | null>(null);
   const [selectedSectionId, setSelectedSectionId] = useState('');
@@ -490,6 +493,29 @@ export default function AssessmentPage() {
   }, [effectiveChecklistId]);
 
   useEffect(() => {
+    let mounted = true;
+
+    async function loadProfileCompletion() {
+      setProfileCompletionLoading(true);
+      try {
+        const completion = await getCustomerProfileCompletion();
+        if (!mounted) return;
+        setProfileCompletionPercent(completion.completion_percent);
+      } catch {
+        if (!mounted) return;
+        setProfileCompletionPercent(null);
+      } finally {
+        if (mounted) setProfileCompletionLoading(false);
+      }
+    }
+
+    void loadProfileCompletion();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
       const raw = window.localStorage.getItem('checklist_purchased_ids');
@@ -526,6 +552,15 @@ export default function AssessmentPage() {
     const ids = new Set(purchasedChecklistIds);
     return availableChecklists.filter((item) => ids.has(item.id));
   }, [availableChecklists, purchasedChecklistIds]);
+
+  const canPurchaseNewChecklist = !profileCompletionLoading && profileCompletionPercent === 100;
+
+  function handlePurchaseNewChecklistClick(event: MouseEvent<HTMLAnchorElement>) {
+    if (!canPurchaseNewChecklist) {
+      event.preventDefault();
+      toast.error(locale === 'cs' ? 'Nejprve prosím dokončete svůj profil.' : 'Please complete your profile first.');
+    }
+  }
 
   const checklistSelectOptions = useMemo(() => {
     const base = purchasedOnlyChecklists.map((item) => ({
@@ -1383,6 +1418,7 @@ export default function AssessmentPage() {
                   </Link>
                   <Link
                     href="/payment"
+                    onClick={handlePurchaseNewChecklistClick}
                     className="inline-flex items-center rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
                   >
                     Purchase new checklist
