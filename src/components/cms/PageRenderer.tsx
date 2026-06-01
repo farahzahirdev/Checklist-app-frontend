@@ -238,7 +238,7 @@ function ResourcesPublicPageRenderer({ page }: { page: PageDetail }) {
               </div>
 
               <p className="public-hero-subtitle max-w-2xl text-[#4f6282] motion-safe:animate-fade-in-up motion-safe:delay-150">
-                {hero.subtitle}
+                <span dangerouslySetInnerHTML={{ __html: hero.subtitle }} />
               </p>
 
               <div className="flex flex-wrap gap-3 motion-safe:animate-fade-in-up motion-safe:delay-200">
@@ -688,7 +688,7 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
             <div className="space-y-3">
               {data.kicker && <p className="public-eyebrow text-[#4d7fd3]">{data.kicker}</p>}
               {data.title && <h1 className="public-hero-title text-[#1a2440]">{data.title}</h1>}
-              {data.subtitle && <p className="public-hero-subtitle max-w-lg text-[#334768]">{data.subtitle}</p>}
+              {data.subtitle && <p className="public-hero-subtitle max-w-lg text-[#334768]"><span dangerouslySetInnerHTML={{ __html: data.subtitle }} /></p>}
             </div>
 
             <form className="max-w-xl space-y-4 rounded-2xl border border-[#d7deeb] bg-white p-5 shadow-sm sm:p-6">
@@ -792,10 +792,10 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
               ) : null}
             </h1>
           )}
-          {data.subtitle && <p className="max-w-xl text-lg text-[#d4e2f6] md:text-xl">{data.subtitle}</p>}
+          {data.subtitle && <p className="max-w-xl text-lg text-[#d4e2f6] md:text-xl"><span dangerouslySetInnerHTML={{ __html: data.subtitle }} /></p>}
           {data.description && (
             <p className={`max-w-xl text-[#d4e2f6] ${data.subtitle ? 'text-sm leading-7 md:text-base' : 'text-lg md:text-xl'}`}>
-              {data.description}
+              <span dangerouslySetInnerHTML={{ __html: data.description }} />
             </p>
           )}
           {quickLinks.length > 0 && (
@@ -1031,7 +1031,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
       >
         <div className="min-h-0 overflow-hidden">
           <div className="border-t border-gray-100 px-5 pb-4">
-            <p className="pt-4 leading-relaxed text-gray-600">{answer}</p>
+            <p className="pt-4 leading-relaxed text-gray-600"><span dangerouslySetInnerHTML={{ __html: answer }} /></p>
           </div>
         </div>
       </div>
@@ -1051,7 +1051,7 @@ function UseCasesSectionRenderer({ data }: { data: Record<string, any> }) {
             <div key={idx} className="text-center">
               {item.icon && <div className="text-4xl mb-4">{item.icon}</div>}
               <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
-              <p className="text-gray-600">{item.description}</p>
+              <p className="text-gray-600"><span dangerouslySetInnerHTML={{ __html: item.description }} /></p>
             </div>
           ))}
         </div>
@@ -1077,7 +1077,7 @@ function StepsSectionRenderer({ data }: { data: Record<string, any> }) {
               </div>
               <div>
                 <h3 className="text-lg font-semibold">{item.title}</h3>
-                <p className="text-gray-600">{item.description}</p>
+                <p className="text-gray-600"><span dangerouslySetInnerHTML={{ __html: item.description }} /></p>
               </div>
             </div>
           ))}
@@ -1326,7 +1326,7 @@ function TrustSectionRenderer({ data }: { data: Record<string, any> }) {
               </span>
             )}
             <h4 className="mt-3 text-xl font-semibold text-[#1f2741] md:text-2xl">{card.title}</h4>
-            <p className="mt-2 text-sm leading-6 text-[#55627e] md:text-[15px] md:leading-relaxed">{card.content}</p>
+            <p className="mt-2 text-sm leading-6 text-[#55627e] md:text-[15px] md:leading-relaxed"><span dangerouslySetInnerHTML={{ __html: card.content }} /></p>
           </article>
         ))}
       </div>
@@ -1523,7 +1523,7 @@ function ProductHeroSectionRenderer({ data }: { data: Record<string, any> }) {
             <p className="mt-4 max-w-2xl text-xl text-[#55627e]">{data.tagline}</p>
           )}
           {data.short_description && (
-            <p className="mt-4 max-w-2xl text-lg text-[#445675]">{data.short_description}</p>
+            <p className="mt-4 max-w-2xl text-lg text-[#445675]"><span dangerouslySetInnerHTML={{ __html: data.short_description }} /></p>
           )}
         </div>
 
@@ -1552,7 +1552,7 @@ function ProductHeroSectionRenderer({ data }: { data: Record<string, any> }) {
               {data.features.map((feature: any, index: number) => (
                 <article key={index} className="rounded-lg border border-[#d7deeb] bg-white p-4 md:p-6">
                   <h3 className="font-semibold text-[#1f2741]">{feature.title}</h3>
-                  <p className="mt-2 text-sm text-[#55627e]">{feature.description}</p>
+                  <p className="mt-2 text-sm text-[#55627e]"><span dangerouslySetInnerHTML={{ __html: feature.description }} /></p>
                 </article>
               ))}
             </div>
