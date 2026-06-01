@@ -94,6 +94,85 @@ function normalizeAnswerOptionLabel(value: string) {
   return value;
 }
 
+const DEFAULT_ANSWER_TEXT_BY_SCORE: Record<number, string> = {
+  4: 'Yes',
+  3: 'Partially',
+  2: 'No',
+  1: "Don't know",
+};
+
+/** Short answer name (Yes, Partially, …) without the points suffix. */
+function customerAnswerDisplayLabel(value: string, score?: number) {
+  let text = value.trim();
+  text = text
+    .replace(/\s*\/\s*\d+\s*points?\s*/gi, ' ')
+    .replace(/\s*\(\s*\d+\s*points?\s*\)/gi, '')
+    .replace(/\s*–\s*\d+\s*points?\s*/gi, ' ')
+    .replace(/\s*-\s*\d+\s*points?\s*/gi, ' ')
+    .replace(/^\s*(yes|partially|no|don't know|dont know)\s*\/\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!text && score && DEFAULT_ANSWER_TEXT_BY_SCORE[score]) {
+    return DEFAULT_ANSWER_TEXT_BY_SCORE[score];
+  }
+  if (/^\d+$/.test(text)) {
+    const parsed = Number.parseInt(text, 10);
+    if (DEFAULT_ANSWER_TEXT_BY_SCORE[parsed]) {
+      return DEFAULT_ANSWER_TEXT_BY_SCORE[parsed];
+    }
+  }
+  const normalized = normalizeAnswerOptionLabel(text);
+  if (/^(Yes|Partially|No|Don't know)$/i.test(normalized)) {
+    return normalized;
+  }
+  return text || (score ? DEFAULT_ANSWER_TEXT_BY_SCORE[score] ?? '' : '');
+}
+
+/** Title line shown on each option card, e.g. "Yes / 4 points". */
+function formatAnswerOptionTitle(rawLabel: string, score: number) {
+  const trimmed = rawLabel.trim();
+  if (/\d+\s*points?/i.test(trimmed)) {
+    return trimmed.replace(/\s+/g, ' ').trim();
+  }
+  const name = customerAnswerDisplayLabel(trimmed, score);
+  const pointsPart = score === 1 ? '1 point' : `${score} points`;
+  return `${name} / ${pointsPart}`;
+}
+
+function parseAnswerScore(value: string | number | undefined | null): number {
+  const numeric = typeof value === 'number' ? value : Number.parseInt(String(value ?? '').trim(), 10);
+  if (numeric >= 1 && numeric <= 4) return numeric;
+  const normalized = normalizeAnswerValue(String(value ?? ''));
+  if (normalized === '4') return 4;
+  if (normalized === '3') return 3;
+  if (normalized === '2') return 2;
+  if (normalized === '1') return 1;
+  return 1;
+}
+
+function answerOptionScoreStyles(score: number, selected: boolean) {
+  const palettes: Record<number, { idle: string; selected: string }> = {
+    4: {
+      idle: 'border-[#86efac] bg-[#dcfce7] text-[#14532d] hover:bg-[#bbf7d0]',
+      selected: 'border-[#16a34a] bg-[#22c55e] text-white shadow-sm ring-2 ring-[#16a34a]/35',
+    },
+    3: {
+      idle: 'border-[#bef264] bg-[#ecfccb] text-[#3f6212] hover:bg-[#d9f99d]',
+      selected: 'border-[#65a30d] bg-[#84cc16] text-white shadow-sm ring-2 ring-[#65a30d]/35',
+    },
+    2: {
+      idle: 'border-[#fdba74] bg-[#ffedd5] text-[#9a3412] hover:bg-[#fed7aa]',
+      selected: 'border-[#ea580c] bg-[#f97316] text-white shadow-sm ring-2 ring-[#ea580c]/35',
+    },
+    1: {
+      idle: 'border-[#fca5a5] bg-[#fee2e2] text-[#991b1b] hover:bg-[#fecaca]',
+      selected: 'border-[#dc2626] bg-[#ef4444] text-white shadow-sm ring-2 ring-[#dc2626]/35',
+    },
+  };
+  const palette = palettes[score] ?? palettes[1];
+  return `rounded-lg border px-3 py-3 text-left relative transition-colors ${selected ? palette.selected : palette.idle}`;
+}
+
 function normalizeAnswerValue(value?: string | null) {
   const v = (value ?? '').trim().toLowerCase();
   if (v === '4' || v === '3' || v === '2' || v === '1') return v;
@@ -190,7 +269,6 @@ export default function AssessmentPage() {
   const checklistIdFromQuery = searchParams.get('checklist_id') ?? '';
   const assessmentIdFromQuery = searchParams.get('assessment_id') ?? '';
   const questionIdFromQuery = searchParams.get('question_id') ?? '';
-  const performanceViewFromQuery = searchParams.get('view') === 'performance';
   const [availableChecklists, setAvailableChecklists] = useState<CustomerChecklist[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [purchasedChecklistIds, setPurchasedChecklistIds] = useState<string[]>([]);
@@ -226,7 +304,7 @@ export default function AssessmentPage() {
   const [previewErrorsByMediaId, setPreviewErrorsByMediaId] = useState<Record<string, string>>({});
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [isSubmittedChecklist, setIsSubmittedChecklist] = useState(false);
-  const isViewOnlyFromReport = isSubmittedChecklist && (Boolean(questionIdFromQuery) || performanceViewFromQuery);
+  const isSubmittedReadOnly = isSubmittedChecklist;
   const activeQuestionIdRef = useRef(activeQuestionId);
   const selectedSectionIdRef = useRef(selectedSectionId);
   const skipLocaleRefetchRef = useRef(true);
@@ -505,24 +583,49 @@ export default function AssessmentPage() {
   const answerOptionsForActive = useMemo(() => {
     const options = activeQuestion?.answer_options ?? [];
     if (options.length) {
-      return options.map((option, index) => ({
-        key: String(index + 1),
-        value: String(
-          typeof option.score === 'number' && Number.isFinite(option.score) ? option.score : Math.max(1, 4 - index),
-        ),
-        label: normalizeAnswerOptionLabel(option.label ?? option.choice_code ?? `Option ${index + 1}`),
-        description: option.description ?? '',
-      }));
+      return options.map((option, index) => {
+        const score =
+          typeof option.score === 'number' && Number.isFinite(option.score) ? option.score : Math.max(1, 4 - index);
+        const rawLabel = option.label ?? option.choice_code ?? `Option ${index + 1}`;
+        const description = (option.description ?? '').trim();
+        return {
+          key: String(index + 1),
+          value: String(score),
+          score,
+          label: formatAnswerOptionTitle(rawLabel, score),
+          description,
+        };
+      });
     }
     return [
-      { key: '4', value: '4', label: 'Yes', description: 'Fully implemented' },
-      { key: '3', value: '3', label: 'Partially', description: 'Some exceptions' },
-      { key: '2', value: '2', label: 'No', description: 'Not implemented' },
-      { key: '1', value: '1', label: "Don't know", description: 'Not sure' },
+      { key: '4', value: '4', score: 4, label: 'Yes / 4 points', description: '' },
+      { key: '3', value: '3', score: 3, label: 'Partially / 3 points', description: '' },
+      { key: '2', value: '2', score: 2, label: 'No / 2 points', description: '' },
+      { key: '1', value: '1', score: 1, label: "Don't know / 1 point", description: '' },
     ];
   }, [activeQuestion?.answer_options]);
 
   const whyThisMattersText = (activeQuestion?.how_it_works || activeQuestion?.explanation || '').trim();
+
+  const answeredQuestionCount = useMemo(() => {
+    return allQuestions.filter((question) => Boolean(normalizeAnswerValue(answers[question.id]?.answer))).length;
+  }, [allQuestions, answers]);
+
+  const accessWindowLabel = useMemo(() => {
+    if (!assessmentDetail?.started_at || !assessmentDetail?.expires_at) return '—';
+    const localeTag = locale === 'cs' ? 'cs-CZ' : 'en-GB';
+    const fmt = (value: string) =>
+      new Date(value).toLocaleDateString(localeTag, { day: 'numeric', month: 'short', year: 'numeric' });
+    return `${fmt(assessmentDetail.started_at)} – ${fmt(assessmentDetail.expires_at)}`;
+  }, [assessmentDetail?.expires_at, assessmentDetail?.started_at, locale]);
+
+  const accessDaysRemaining = useMemo(() => {
+    if (!assessmentDetail?.expires_at) return null;
+    const expires = new Date(assessmentDetail.expires_at);
+    if (Number.isNaN(expires.getTime())) return null;
+    const diffMs = expires.getTime() - Date.now();
+    return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  }, [assessmentDetail?.expires_at]);
 
   useEffect(() => {
     setIsWhyThisMattersOpen(false);
@@ -981,7 +1084,61 @@ export default function AssessmentPage() {
   }
 
   return (
-    <section className="space-y-4 bg-[#f4f6fa]">
+    <div className="w-full bg-[#eef2f7]">
+      {assessmentDetail ? (
+        <div className="w-full px-4 pt-5 sm:px-6 md:px-8 lg:px-10">
+          <div className="rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.08)] sm:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-sm font-semibold text-[#1f2d45]">{t('progress.regime')}</span>
+                <span
+                  className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                    assessmentDetail.status === 'submitted'
+                      ? 'bg-[#dcfce7] text-[#15803d]'
+                      : 'bg-[#dcfce7] text-[#15803d]'
+                  }`}
+                >
+                  {assessmentDetail.status === 'submitted' ? t('progress.status.submitted') : t('progress.status.inProgress')}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1 lg:max-w-md">
+                <div className="flex items-center justify-between text-xs font-medium text-[#607594]">
+                  <span>{t('progress.overall')}</span>
+                  <span className="text-[#1f2d45]">
+                    {assessmentDetail.completion_percent}% ({answeredQuestionCount} / {allQuestions.length || 0})
+                  </span>
+                </div>
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[#e2e8f4]">
+                  <div
+                    className="h-full rounded-full bg-[#2f7dff] transition-[width] duration-300"
+                    style={{ width: `${Math.min(100, Math.max(0, assessmentDetail.completion_percent))}%` }}
+                  />
+                </div>
+              </div>
+              <div className="text-sm text-[#1f2d45]">
+                <p className="text-xs font-medium text-[#607594]">{t('progress.accessWindow')}</p>
+                <p className="mt-0.5 font-semibold">{accessWindowLabel}</p>
+                <p className={`mt-0.5 text-xs font-medium ${accessDaysRemaining === 0 ? 'text-[#b45309]' : 'text-[#15803d]'}`}>
+                  {accessDaysRemaining === null
+                    ? '—'
+                    : accessDaysRemaining === 0
+                      ? t('progress.expired')
+                      : t('progress.daysRemaining', { days: String(accessDaysRemaining) })}
+                </p>
+              </div>
+              <Link
+                href="/my-audits"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#243555] hover:bg-[#f6f9ff]"
+              >
+                {t('progress.overview')}
+                <span aria-hidden="true">↗</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+    <section className="w-full space-y-4 px-4 py-6 sm:px-6 md:px-8 lg:px-10">
       <div className="rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_1px_3px_rgba(18,32,61,0.08)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div>
@@ -1018,8 +1175,8 @@ export default function AssessmentPage() {
 
       {initialLoading ? <p className="text-sm text-[#607594]">Loading assessment details...</p> : null}
 
-      <section className={isSubmittedChecklist && !isViewOnlyFromReport ? 'grid gap-4' : 'grid gap-4 lg:grid-cols-[280px_1fr]'}>
-        {!isSubmittedChecklist || isViewOnlyFromReport ? (
+      <section className="grid gap-4 lg:grid-cols-[280px_1fr]">
+        {assessmentDetail ? (
         <aside className="w-full min-w-0 max-w-[calc(100vw-2rem)] rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_1px_3px_rgba(18,32,61,0.08)] sm:max-w-none">
           <h3 className="text-[22px] font-semibold text-[#1f2d45]">{t('sections.title')}</h3>
           <ul className="mt-3 space-y-2 text-sm">
@@ -1139,12 +1296,8 @@ export default function AssessmentPage() {
         <div className="w-full min-w-0">
           <div ref={questionPanelTopRef} />
           <article className="w-full min-w-0 max-w-[calc(100vw-2rem)] rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_1px_3px_rgba(18,32,61,0.08)] sm:max-w-none sm:p-5">
-            {selectedSectionId && questionsInActiveSection.length === 0 ? (
-              <div className="mt-3 rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] px-3 py-3 text-sm text-[#607594]">
-                No questions for this section yet. Select another section from the left panel.
-              </div>
-            ) : isSubmittedChecklist && !isViewOnlyFromReport ? (
-              <div className="mt-3 rounded-lg border border-[#d8e7d8] bg-[#f1f8f1] px-3 py-3 text-sm text-[#2f5c38]">
+            {isSubmittedChecklist ? (
+              <div className="mb-4 rounded-lg border border-[#d8e7d8] bg-[#f1f8f1] px-3 py-3 text-sm text-[#2f5c38]">
                 <p>This assessment is submitted and cannot be submitted again.</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Link
@@ -1166,6 +1319,11 @@ export default function AssessmentPage() {
                     Purchase new checklist
                   </Link>
                 </div>
+              </div>
+            ) : null}
+            {selectedSectionId && questionsInActiveSection.length === 0 ? (
+              <div className="mt-3 rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] px-3 py-3 text-sm text-[#607594]">
+                No questions for this section yet. Select another section from the left panel.
               </div>
             ) : activeQuestion ? (
               <>
@@ -1314,14 +1472,33 @@ export default function AssessmentPage() {
               <p className="mt-3 text-sm text-[#607594]">{t('empty.noQuestions')}</p>
             )}
 
-            {activeQuestion && isViewOnlyFromReport ? (
+            {activeQuestion && isSubmittedReadOnly ? (
               <div className="mt-4 rounded-lg border border-[#d8e7d8] bg-[#f7fbf7] p-4">
                 <p className="text-sm font-semibold text-[#1f2d45]">Your submitted answer</p>
-                <p className="mt-2 text-sm text-[#2a3d5f]">
-                  {normalizeAnswerOptionLabel(
-                    activeAnswer?.answer || activeQuestion.customer_answer || '—',
-                  )}
-                </p>
+                {(() => {
+                  const submittedValue = activeAnswer?.answer || activeQuestion.customer_answer || '';
+                  const submittedScore = parseAnswerScore(submittedValue);
+                  const matchedOption = answerOptionsForActive.find((option) => option.value === submittedValue);
+                  const matchedRaw =
+                    activeQuestion.answer_options?.find((o) => String(o.score) === submittedValue)?.label ?? '';
+                  const displayLabel =
+                    matchedOption?.label ||
+                    formatAnswerOptionTitle(
+                      matchedRaw || normalizeAnswerOptionLabel(submittedValue || '—'),
+                      submittedScore,
+                    );
+                  const displayDescription = matchedOption?.description?.trim();
+                  return (
+                    <div
+                      className={`mt-2 inline-block max-w-full rounded-lg border px-3 py-2 text-sm ${answerOptionScoreStyles(submittedScore, true)}`}
+                    >
+                      <p className="font-semibold leading-snug">{displayLabel}</p>
+                      {displayDescription ? (
+                        <p className="mt-1.5 text-xs font-normal leading-relaxed text-white/90">{displayDescription}</p>
+                      ) : null}
+                    </div>
+                  );
+                })()}
                 {(activeAnswer?.note_text || activeQuestion.user_note) ? (
                   <p className="mt-3 text-sm text-[#607594]">
                     <span className="font-semibold text-[#1f2d45]">Note: </span>
@@ -1332,12 +1509,14 @@ export default function AssessmentPage() {
               </div>
             ) : null}
 
-            {activeQuestion && !isSubmittedChecklist && !isViewOnlyFromReport ? (
+            {activeQuestion && !isSubmittedReadOnly ? (
               <>
                 <div className="mt-4 space-y-3">
                   <p className="text-sm font-semibold text-[#1f2d45]">Your answer</p>
                   <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4 text-sm">
-                    {answerOptionsForActive.map((option) => (
+                    {answerOptionsForActive.map((option) => {
+                      const isSelected = activeAnswer?.answer === option.value;
+                      return (
                       <button
                         key={option.key}
                         type="button"
@@ -1354,22 +1533,28 @@ export default function AssessmentPage() {
                           // Auto-save the answer to backend
                           void handleAutoSaveAnswer(option.value);
                         }}
-                        className={`rounded-lg border px-3 py-3 text-left relative ${
-                          activeAnswer?.answer === option.value
-                            ? 'border-[#95c9a0] bg-[#eff8f0] text-[#2f5c38]'
-                            : 'border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f6f9ff]'
-                        }`}
+                        className={`${answerOptionScoreStyles(option.score, isSelected)} w-full`}
                         disabled={autoSaving[activeQuestion.id] || false}
+                        aria-pressed={isSelected}
                       >
-                        <p className="font-semibold">{option.label}</p>
-                        {option.description ? <p className="text-xs opacity-80">{option.description}</p> : null}
+                        <p className="text-sm font-semibold leading-snug">{option.label}</p>
+                        {option.description ? (
+                          <p
+                            className={`mt-1.5 text-xs font-normal leading-relaxed ${
+                              isSelected ? 'text-white/90' : 'text-inherit opacity-90'
+                            }`}
+                          >
+                            {option.description}
+                          </p>
+                        ) : null}
                         {autoSaving[activeQuestion.id] && (
                           <div className="absolute top-1 right-1">
-                            <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
+                            <div className="h-2 w-2 rounded-full bg-white/90 animate-pulse"></div>
                           </div>
                         )}
                       </button>
-                    ))}
+                    );
+                    })}
                   </div>
 
                   {isNoteEnabledForActiveQuestion ? (
@@ -1596,5 +1781,6 @@ export default function AssessmentPage() {
         );
       })()}
     </section>
+    </div>
   );
 }

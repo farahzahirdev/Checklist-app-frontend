@@ -1,7 +1,22 @@
 'use client';
 
 import Link from 'next/link';
+import type { Route } from 'next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { CustomerAuditWorkspaceHero, WorkspaceSummaryStatCard } from '@/components/customer-my-audits/customer-audit-workspace-hero';
+import {
+  workspaceActivityCard,
+  workspaceCardClass,
+  workspaceGhostBtn,
+  workspaceInputClass,
+  workspaceOutlineBtn,
+  workspacePageClass,
+  workspacePaginationBtn,
+  workspacePrimaryBtn,
+  workspaceQuickStepCard,
+  workspaceSelectClass,
+  workspaceTagClass,
+} from '@/components/customer-my-audits/customer-audit-workspace-theme';
 import { getCustomerAssessmentsDashboard, listCustomerAssessments, type CustomerAssessmentListItem } from '@/lib/customer-assessments';
 import { startAssessment } from '@/lib/assessment';
 import { translate, useLocale } from '@/lib/i18n';
@@ -11,10 +26,15 @@ type StatusFilter = 'all' | 'not_started' | 'in_progress' | 'submitted' | 'close
 const PAGE_SIZE = 12;
 
 function statusBadgeClass(status: string) {
-  if (status === 'in_progress') return 'border-[#bfdbfe] bg-[#eff6ff] text-[#1e40af]';
-  if (status === 'not_started') return 'border-[#bbf7d0] bg-[#f0fdf4] text-[#166534]';
-  if (status === 'submitted' || status === 'closed') return 'border-[#dbe4f4] bg-[#f7f9fe] text-[#475569]';
-  return 'border-[#fde68a] bg-[#fffbeb] text-[#92400e]';
+  if (status === 'in_progress' || status === 'not_started') return 'bg-[#dbeafe] text-[#1d4ed8]';
+  if (status === 'submitted' || status === 'closed') return 'bg-[#dcfce7] text-[#15803d]';
+  return 'bg-[#fef3c7] text-[#b45309]';
+}
+
+function progressBarClass(completion: number) {
+  if (completion >= 100) return 'bg-[#22c55e]';
+  if (completion > 0) return 'bg-[#0066ff]';
+  return 'bg-[#e2e8f0]';
 }
 
 function clampPercent(value: number) {
@@ -209,85 +229,118 @@ export default function AccessPage() {
   }
 
   return (
-    <section className="space-y-6 text-[#1f2d45]">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-[#6c83a8]">{t('title.kicker')}</p>
-          <h1 className="text-3xl font-semibold text-[#1f2d45]">{t('title')}</h1>
-          <p className="mt-1 text-sm text-[#607594]">{t('title.subtitle')}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => void handleRefreshClick()}
-          className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff]"
-        >
-          {t('actions.refresh')}
-        </button>
-      </header>
+    <div className={workspacePageClass}>
+      <CustomerAuditWorkspaceHero
+        kicker={t('title.kicker')}
+        title={t('title')}
+        subtitle={t('title.subtitle')}
+        stats={
+          <>
+            <WorkspaceSummaryStatCard
+              icon={
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                  <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" stroke="currentColor" strokeWidth="1.8" />
+                  <rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+              }
+              label={t('stats.activeAudits')}
+              value={String(activeCount)}
+              hint={t('stats.activeSub')}
+            />
+            <WorkspaceSummaryStatCard
+              icon={
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                  <path d="M8 5v14l11-7L8 5Z" fill="currentColor" />
+                </svg>
+              }
+              label={t('stats.readyToStart')}
+              value={String(readyToStartCount)}
+              hint={t('stats.readySub')}
+            />
+            <WorkspaceSummaryStatCard
+              icon={
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                  <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M12 8v4l2 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              }
+              label={t('stats.inProgress')}
+              value={String(inProgressCount)}
+              hint={t('stats.progressSub')}
+            />
+            <WorkspaceSummaryStatCard
+              icon={
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                  <path d="M6 4h12v16H6z" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M9 8h6M9 12h6M9 16h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              }
+              label={t('stats.publishedReports')}
+              value={String(publishedReportsCount)}
+              hint={t('stats.reportSub')}
+            />
+          </>
+        }
+      />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-          <div className="text-sm font-semibold text-[#243555]">{t('stats.activeAudits')}</div>
-          <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{activeCount}</div>
-          <div className="text-xs text-[#607594]">{t('stats.activeSub')}</div>
-        </article>
-        <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-          <div className="text-sm font-semibold text-[#243555]">{t('stats.readyToStart')}</div>
-          <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{readyToStartCount}</div>
-          <div className="text-xs text-[#607594]">{t('stats.readySub')}</div>
-        </article>
-        <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-          <div className="text-sm font-semibold text-[#243555]">{t('stats.inProgress')}</div>
-          <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{inProgressCount}</div>
-          <div className="text-xs text-[#607594]">{t('stats.progressSub')}</div>
-        </article>
-        <article className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-          <div className="text-sm font-semibold text-[#243555]">{t('stats.publishedReports')}</div>
-          <div className="mt-1 text-3xl font-bold text-[#1f2d45]">{publishedReportsCount}</div>
-          <div className="text-xs text-[#607594]">{t('stats.reportSub')}</div>
-        </article>
-      </div>
+      <div className="w-full px-5 sm:px-6 lg:px-8 xl:px-10">
+        {error ? (
+          <p className="mt-6 rounded-xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm text-[#be123c]">{error}</p>
+        ) : null}
 
-      <div className="grid gap-8 xl:grid-cols-[1fr_280px]">
-        <div>
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-bold">{t('section.auditListTitle')}</h2>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                }}
-                placeholder={t('filters.searchPlaceholder')}
-                className="w-[220px] rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#1f2d45] placeholder:text-[#7a8fab] outline-none focus:border-[#2f4f83]"
-              />
-              <select
-                value={statusFilter}
-                onChange={(event) => {
-                  setStatusFilter(event.target.value as StatusFilter);
-                  setPage(1);
-                }}
-                className="rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#1f2d45] outline-none focus:border-[#2f4f83]"
-              >
-                <option value="all">{t('filters.all')}</option>
-                <option value="not_started">{t('filters.notStarted')}</option>
-                <option value="in_progress">{t('filters.inProgress')}</option>
-                <option value="submitted">{t('filters.submitted')}</option>
-                <option value="closed">{t('filters.closed')}</option>
-                <option value="expired">{t('filters.expired')}</option>
-              </select>
+        <div className="grid w-full min-w-0 gap-6 pb-8 pt-12 sm:pt-14 xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="min-w-0 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-xl font-bold text-[#0f172a]">{t('section.auditListTitle')}</h2>
+              <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                <label className="relative min-w-0 flex-1 sm:w-56">
+                  <span className="sr-only">{t('filters.searchPlaceholder')}</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                  <input
+                    value={search}
+                    onChange={(event) => {
+                      setSearch(event.target.value);
+                      setPage(1);
+                    }}
+                    placeholder={t('filters.searchPlaceholder')}
+                    className={workspaceInputClass}
+                  />
+                </label>
+                <select
+                  value={statusFilter}
+                  onChange={(event) => {
+                    setStatusFilter(event.target.value as StatusFilter);
+                    setPage(1);
+                  }}
+                  className={workspaceSelectClass}
+                >
+                  <option value="all">{t('filters.all')}</option>
+                  <option value="not_started">{t('filters.notStarted')}</option>
+                  <option value="in_progress">{t('filters.inProgress')}</option>
+                  <option value="submitted">{t('filters.submitted')}</option>
+                  <option value="closed">{t('filters.closed')}</option>
+                  <option value="expired">{t('filters.expired')}</option>
+                </select>
+                <button type="button" onClick={() => void handleRefreshClick()} className={workspaceGhostBtn}>
+                  {t('actions.refresh')}
+                </button>
+              </div>
             </div>
-          </div>
-
-          {error ? <p className="mb-3 rounded-lg border border-[#f0c7cf] bg-[#fff2f4] px-3 py-2 text-sm text-[#b63d51]">{error}</p> : null}
 
           {loading ? (
-            <p className="rounded-xl border border-[#dbe4f4] bg-white px-4 py-3 text-sm text-[#607594] shadow-sm">{t('loading')}</p>
+            <p className={`${workspaceCardClass} px-4 py-3 text-sm text-[#64748b]`}>{t('loading')}</p>
           ) : filtered.length === 0 ? (
-            <p className="rounded-xl border border-[#dbe4f4] bg-white px-4 py-3 text-sm text-[#607594] shadow-sm">{t('empty')}</p>
+            <p className={`${workspaceCardClass} px-4 py-3 text-sm text-[#64748b]`}>{t('empty')}</p>
           ) : (
-            <div className="space-y-4">
+            <ul className="space-y-4">
               {filtered.map((item) => {
                 const completion = clampPercent(item.completion_percent);
                 const reportId = item.report_status === 'published' && item.report_id ? item.report_id : null;
@@ -301,32 +354,33 @@ export default function AccessPage() {
                 const fallbackLastUpdated = formatDateTime(item.last_activity, locale);
 
                 return (
-                  <article key={item.id} className="grid gap-5 rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm lg:grid-cols-[1fr_230px]">
+                  <li key={item.id} className={`${workspaceCardClass} overflow-hidden`}>
+                    <div className="grid gap-5 px-5 py-5 lg:grid-cols-[1fr_230px] sm:px-6">
                     <div className="space-y-4">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-base font-bold text-[#1f2d45]">{item.checklist_title}</h3>
-                        <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusBadgeClass(item.status)}`}>
+                        <h3 className="text-lg font-bold text-[#0f172a]">{item.checklist_title}</h3>
+                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusBadgeClass(item.status)}`}>
                           {t(`status.${item.status}`)}
                         </span>
                       </div>
-                      <div className="flex flex-wrap gap-2 text-[11px] text-[#607594]">
-                        <span className="rounded-md border border-[#dbe4f4] bg-[#f7f9fe] px-2 py-1">{item.checklist_type_code}</span>
-                        <span className="rounded-md border border-[#dbe4f4] bg-[#f7f9fe] px-2 py-1">{item.checklist_version}</span>
+                      <div className="flex flex-wrap gap-2">
+                        <span className={workspaceTagClass}>{item.checklist_type_code}</span>
+                        <span className={workspaceTagClass}>{item.checklist_version}</span>
                       </div>
-                      <div>
-                        <div className="mb-1 flex items-center justify-between text-xs text-[#607594]">
-                          <span>{t('labels.progress')}</span>
-                          <span className="font-semibold text-[#1f2d45]">{completion}%</span>
+                      <div className="max-w-md">
+                        <div className="mb-1 flex items-center justify-between text-sm">
+                          <span className="font-medium text-[#334155]">{t('labels.progress')}</span>
+                          <span className="font-bold text-[#0f172a]">{completion}%</span>
                         </div>
-                        <div className="h-2 rounded-full bg-[#e4ebf7]">
+                        <div className="h-2 overflow-hidden rounded-full bg-[#e2e8f0]">
                           <div
-                            className={`h-2 rounded-full ${completion >= 100 ? 'bg-[linear-gradient(90deg,#1f9d63,#35c58a)]' : 'bg-[linear-gradient(90deg,#2f4f83,#5c7fb8)]'}`}
+                            className={`h-full rounded-full transition-all ${progressBarClass(completion)}`}
                             style={{ width: `${completion}%` }}
                           />
                         </div>
                       </div>
                       {item.status === 'in_progress' ? (
-                        <div className="space-y-1 text-xs text-[#607594]">
+                        <div className="space-y-1 text-xs text-[#64748b]">
                           <p>
                             {t('labels.lastChanged')}: {lastChanged ?? fallbackLastUpdated ?? t('labels.na')}
                           </p>
@@ -337,7 +391,7 @@ export default function AccessPage() {
                       ) : null}
 
                       {(item.status === 'submitted' || item.status === 'closed') ? (
-                        <div className="space-y-1 text-xs text-[#607594]">
+                        <div className="space-y-1 text-xs text-[#64748b]">
                           <p>
                             {t('labels.completedOn')}: {completedOn ?? t('labels.na')}
                           </p>
@@ -352,13 +406,13 @@ export default function AccessPage() {
                       ) : null}
 
                       {item.status === 'not_started' ? (
-                        <div className="text-xs text-[#607594]">
+                        <div className="text-xs text-[#64748b]">
                           {t('labels.purchasedOn')}: {purchasedOn ?? accessWindowStart ?? t('labels.na')}
                         </div>
                       ) : null}
 
                       {item.status === 'expired' ? (
-                        <div className="text-xs text-[#607594]">
+                        <div className="text-xs text-[#64748b]">
                           {t('labels.lastUpdated')}: {fallbackLastUpdated ?? t('labels.na')}
                         </div>
                       ) : null}
@@ -369,14 +423,14 @@ export default function AccessPage() {
                           type="button"
                           onClick={() => void handleStart(item)}
                           disabled={startingId === item.id}
-                          className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
+                          className={workspacePrimaryBtn}
                         >
                           {startingId === item.id ? t('actions.processing') : t('actions.startAudit')}
                         </button>
                       ) : (
                         <Link
                           href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
-                          className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-center text-sm font-semibold text-white hover:bg-[#223657]"
+                          className={workspacePrimaryBtn}
                         >
                           {t('actions.continueAudit')}
                         </Link>
@@ -385,127 +439,117 @@ export default function AccessPage() {
                       {canViewPerformance ? (
                         <Link
                           href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&view=performance`}
-                          className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-center text-sm font-medium text-[#4c607d] hover:border-[#2f4f83] hover:bg-[#edf3ff]"
+                          className={workspaceOutlineBtn}
                         >
                           {t('actions.viewPerformance')}
                         </Link>
                       ) : null}
 
                       {reportId ? (
-                        <Link
-                          href={`/reports/${reportId}` as any}
-                          className="rounded-lg border border-[#8ac8a7] bg-[#ecfbf3] px-3 py-2 text-center text-sm font-medium text-[#1f7a4f] hover:bg-[#dff7ea]"
-                        >
+                        <Link href={`/reports/${reportId}` as Route} className={workspacePrimaryBtn}>
                           {t('actions.viewReport')}
                         </Link>
                       ) : null}
 
                       <Link
                         href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
-                        className="rounded-lg border border-[#d4dced] bg-transparent px-3 py-2 text-center text-sm font-medium text-[#607594] hover:border-[#2f4f83] hover:bg-[#f7f9fe]"
+                        className={workspaceOutlineBtn}
                       >
                         {t('actions.viewDetails')}
                       </Link>
                     </div>
-                  </article>
+                    </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#607594]">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-sm text-[#64748b]">
             <span>{t('pagination.showing', { from: String(rangeFrom), to: String(rangeTo), total: String(totalAssessments) })}</span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                 disabled={page <= 1 || loading}
-                className="rounded-md border border-[#d4dced] px-3 py-1.5 text-[#4c607d] hover:border-[#2f4f83] hover:bg-[#f7f9fe] disabled:cursor-not-allowed disabled:opacity-50"
+                className={workspacePaginationBtn}
               >
                 {t('pagination.prev')}
               </button>
-              <span>{t('pagination.page', { page: String(page), totalPages: String(totalPages) })}</span>
+              <span className="min-w-[2rem] text-center font-semibold text-[#0f172a]">
+                {t('pagination.page', { page: String(page), totalPages: String(totalPages) })}
+              </span>
               <button
                 type="button"
                 onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
                 disabled={page >= totalPages || loading}
-                className="rounded-md border border-[#d4dced] px-3 py-1.5 text-[#4c607d] hover:border-[#2f4f83] hover:bg-[#f7f9fe] disabled:cursor-not-allowed disabled:opacity-50"
+                className={workspacePaginationBtn}
               >
                 {t('pagination.next')}
               </button>
-              <button
-                type="button"
-                onClick={() => void handleRefreshClick()}
-                className="rounded-md border border-[#d4dced] px-3 py-1.5 text-[#4c607d] hover:border-[#2f4f83] hover:bg-[#f7f9fe]"
-              >
-                {t('actions.refresh')}
-              </button>
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm md:grid-cols-2 xl:grid-cols-4">
-            <div>
-              <div className="text-sm font-semibold text-[#243555]">{t('quick.purchaseTitle')}</div>
-              <p className="mt-1 text-xs text-[#607594]">{t('quick.purchaseDesc')}</p>
-              <Link href="/payment" className="mt-2 inline-block text-xs font-semibold text-[#2f4f83] hover:underline">
-                {t('quick.open')}
-              </Link>
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-[#243555]">{t('quick.uploadTitle')}</div>
-              <p className="mt-1 text-xs text-[#607594]">{t('quick.uploadDesc')}</p>
-              <Link href="/assessment" className="mt-2 inline-block text-xs font-semibold text-[#2f4f83] hover:underline">
-                {t('quick.open')}
-              </Link>
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-[#243555]">{t('quick.reportsTitle')}</div>
-              <p className="mt-1 text-xs text-[#607594]">{t('quick.reportsDesc')}</p>
-              <Link href="/reports" className="mt-2 inline-block text-xs font-semibold text-[#2f4f83] hover:underline">
-                {t('quick.open')}
-              </Link>
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-[#243555]">{t('quick.helpTitle')}</div>
-              <p className="mt-1 text-xs text-[#607594]">{t('quick.helpDesc')}</p>
-              <Link href="/support" className="mt-2 inline-block text-xs font-semibold text-[#2f4f83] hover:underline">
-                {t('quick.open')}
-              </Link>
-            </div>
+          <div className="grid gap-3 pt-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Link href="/payment" className={workspaceQuickStepCard}>
+              <p className="text-sm font-bold text-[#0f172a]">{t('quick.purchaseTitle')}</p>
+              <p className="mt-1 flex-1 text-xs leading-relaxed text-[#64748b]">
+                {t('quick.purchaseDesc')} <span className="font-semibold text-[#0066ff]">&gt;</span>
+              </p>
+            </Link>
+            <Link href="/assessment" className={workspaceQuickStepCard}>
+              <p className="text-sm font-bold text-[#0f172a]">{t('quick.uploadTitle')}</p>
+              <p className="mt-1 flex-1 text-xs leading-relaxed text-[#64748b]">
+                {t('quick.uploadDesc')} <span className="font-semibold text-[#0066ff]">&gt;</span>
+              </p>
+            </Link>
+            <Link href="/reports" className={workspaceQuickStepCard}>
+              <p className="text-sm font-bold text-[#0f172a]">{t('quick.reportsTitle')}</p>
+              <p className="mt-1 flex-1 text-xs leading-relaxed text-[#64748b]">
+                {t('quick.reportsDesc')} <span className="font-semibold text-[#0066ff]">&gt;</span>
+              </p>
+            </Link>
+            <Link href="/support" className={workspaceQuickStepCard}>
+              <p className="text-sm font-bold text-[#0f172a]">{t('quick.helpTitle')}</p>
+              <p className="mt-1 flex-1 text-xs leading-relaxed text-[#64748b]">
+                {t('quick.helpDesc')} <span className="font-semibold text-[#0066ff]">&gt;</span>
+              </p>
+            </Link>
           </div>
-        </div>
+          </div>
 
-        <aside className="space-y-5">
-          <div className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-            <h3 className="text-sm font-bold text-[#243555]">{t('workflow.title')}</h3>
-            <p className="mt-1 text-xs text-[#607594]">{t('workflow.subtitle')}</p>
-            <ol className="mt-4 space-y-3 text-xs text-[#607594]">
-              <li><span className="font-semibold text-[#1f2d45]">1.</span> {t('workflow.step1')}</li>
-              <li><span className="font-semibold text-[#1f2d45]">2.</span> {t('workflow.step2')}</li>
-              <li><span className="font-semibold text-[#1f2d45]">3.</span> {t('workflow.step3')}</li>
-              <li><span className="font-semibold text-[#1f2d45]">4.</span> {t('workflow.step4')}</li>
-              <li><span className="font-semibold text-[#1f2d45]">5.</span> {t('workflow.step5')}</li>
+        <aside className="min-w-0 space-y-4 xl:sticky xl:top-4 xl:self-start">
+          <div className={`${workspaceCardClass} p-5 sm:p-6`}>
+            <h3 className="text-base font-bold text-[#0f172a]">{t('workflow.title')}</h3>
+            <p className="mt-1 text-xs text-[#64748b]">{t('workflow.subtitle')}</p>
+            <ol className="mt-4 space-y-3 text-xs text-[#64748b]">
+              <li><span className="font-semibold text-[#0f172a]">1.</span> {t('workflow.step1')}</li>
+              <li><span className="font-semibold text-[#0f172a]">2.</span> {t('workflow.step2')}</li>
+              <li><span className="font-semibold text-[#0f172a]">3.</span> {t('workflow.step3')}</li>
+              <li><span className="font-semibold text-[#0f172a]">4.</span> {t('workflow.step4')}</li>
+              <li><span className="font-semibold text-[#0f172a]">5.</span> {t('workflow.step5')}</li>
             </ol>
           </div>
 
-          <div className="rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-sm">
-            <h3 className="text-sm font-bold text-[#243555]">{t('activity.title')}</h3>
+          <div className={`${workspaceCardClass} p-5 sm:p-6`}>
+            <h3 className="text-base font-bold text-[#0f172a]">{t('activity.title')}</h3>
             <div className="mt-3 space-y-3">
               {recentActivity.length ? (
                 recentActivity.map((activity) => (
-                  <div key={activity.id} className="rounded-lg border border-[#dbe4f4] bg-[#f7f9fe] px-3 py-2">
-                    <p className="text-xs font-semibold text-[#1f2d45]">{activity.title}</p>
-                    <p className="text-[11px] text-[#607594]">{t(`status.${activity.status}`)}</p>
-                    <p className="text-[11px] text-[#7a8fab]">{activity.time}</p>
+                  <div key={activity.id} className={workspaceActivityCard}>
+                    <p className="text-xs font-semibold text-[#0f172a]">{activity.title}</p>
+                    <p className="text-[11px] text-[#64748b]">{t(`status.${activity.status}`)}</p>
+                    <p className="text-[11px] text-[#94a3b8]">{activity.time}</p>
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-[#607594]">{t('activity.empty')}</p>
+                <p className="text-xs text-[#64748b]">{t('activity.empty')}</p>
               )}
             </div>
           </div>
         </aside>
+        </div>
       </div>
-    </section>
+    </div>
   );
 }

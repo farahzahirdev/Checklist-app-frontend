@@ -6,8 +6,10 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { CustomerProfileCompletionPrompt } from '@/components/customer-profile-completion-prompt';
+import { CustomerMarketingNav } from '@/components/customer-marketing-nav';
 import { CustomerUserMenu } from '@/components/customer-user-menu';
 import { CustomerLanguageSwitcher } from '@/components/customer-language-switcher';
+import { PublicFooter } from '@/components/public-footer';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerLayoutMessages } from '@/locales/customer-layout';
 import {
@@ -48,15 +50,19 @@ export default function AppLayout({
   const isPaymentsPath = pathname?.startsWith('/payments') ?? false;
   const dashboardActive = pathname === '/dashboard';
   const auditActive = (pathname?.startsWith('/assessment') ?? false) || (pathname?.startsWith('/access') ?? false);
+  const isAssessmentPath = pathname?.startsWith('/assessment') ?? false;
   const isFullBleedWorkspacePage =
     pathname === '/profile' ||
     pathname === '/my-audits' ||
+    pathname === '/access' ||
     pathname === '/my-drp' ||
-    pathname === '/my-backup-plans';
+    pathname === '/my-backup-plans' ||
+    isAssessmentPath;
   const supportActive = pathname?.startsWith('/support') ?? false;
   const purchaseActive = isPaymentPath;
   const paymentsActive = isPaymentsPath;
   const isCustomerShell = role === 'customer';
+  const showCustomerSidebar = isCustomerShell;
   const needsCustomerMfa = isCustomerShell && mfaRequired && !mfaEnabled;
 
   function canAccessPath(currentRole: UserRoleKey, currentPath: string): boolean {
@@ -224,18 +230,21 @@ export default function AppLayout({
           {authReady ? <CustomerProfileCompletionPrompt /> : null}
         </main>
       ) : isCustomerShell ? (
-        <main className="relative h-screen w-full overflow-hidden bg-[#f4f6fb] text-[#182843]">
-          {mobileMenuOpen ? (
+        <main className="relative min-h-screen w-full bg-[#f4f6fb] text-[#182843]">
+          {showCustomerSidebar && mobileMenuOpen ? (
             <button
               type="button"
               aria-label={t('actions.closeSidebarOverlay')}
               onClick={() => setMobileMenuOpen(false)}
-              className="absolute inset-0 z-20 bg-[#06142f]/45 lg:hidden"
+              className="fixed inset-0 z-20 bg-[#06142f]/45 lg:hidden"
             />
           ) : null}
-          <div className="grid h-full min-h-0 lg:grid-cols-[250px_1fr]">
+          <div
+            className={`grid w-full items-start ${showCustomerSidebar ? 'lg:grid-cols-[250px_1fr]' : 'grid-cols-1'}`}
+          >
+            {showCustomerSidebar ? (
             <aside
-              className={`absolute inset-y-0 left-0 z-30 h-full w-[250px] border-r border-[#13305c] bg-[linear-gradient(180deg,#06142f,#071a39)] px-4 py-5 text-[#d8e6ff] transition-transform duration-200 lg:static lg:w-auto lg:translate-x-0 ${
+              className={`fixed inset-y-0 left-0 z-30 flex h-screen w-[250px] flex-col overflow-y-auto border-r border-[#13305c] bg-[linear-gradient(180deg,#06142f,#071a39)] px-4 py-5 text-[#d8e6ff] transition-transform duration-200 lg:sticky lg:top-0 lg:z-auto lg:max-h-[100dvh] lg:w-auto lg:translate-x-0 ${
                 mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
               }`}
             >
@@ -288,6 +297,9 @@ export default function AppLayout({
                 >
                   {t('nav.payments')}
                 </Link>
+                <div className="mt-4 border-t border-[#1f3f73] pt-4 lg:hidden">
+                  <CustomerMarketingNav className="flex flex-col gap-1.5 text-[15px]" />
+                </div>
                 <div className="mt-2 lg:hidden">
                   <CustomerLanguageSwitcher fullWidth />
                 </div>
@@ -302,41 +314,58 @@ export default function AppLayout({
                 ) : null}
               </nav>
             </aside>
-            <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+            ) : null}
+            <div className="flex min-w-0 flex-col">
               <header
-                className={`flex items-center justify-between bg-[linear-gradient(120deg,#071733,#0c2144_45%,#13356d)] px-5 py-5 ${
+                className={`sticky top-0 z-10 flex items-center gap-3 bg-[linear-gradient(120deg,#071733,#0c2144_45%,#13356d)] px-5 py-4 ${
                   isFullBleedWorkspacePage ? '' : 'border-b border-[#dde6f5]'
                 }`}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  {showCustomerSidebar ? (
                   <button
                     type="button"
                     aria-label={t('actions.openSidebar')}
                     onClick={() => setMobileMenuOpen((prev) => !prev)}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#2d4f83] bg-[#182843] text-[#dce8ff] hover:bg-[#223657] lg:hidden"
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#2d4f83] bg-[#182843] text-[#dce8ff] hover:bg-[#223657] lg:hidden"
                   >
                     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
                       <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     </svg>
                   </button>
-                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#9dc5ff]">{t('header.workspace')}</p>
+                  ) : (
+                  <Link href="/dashboard" className="flex shrink-0 items-center gap-2 text-white">
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#102f63] text-[#5ea2ff]">
+                      <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" aria-hidden="true">
+                        <path d="M12 2 4 5v6c0 5.3 3.4 9.6 8 11 4.6-1.4 8-5.7 8-11V5l-8-3Z" stroke="currentColor" strokeWidth="1.8" />
+                      </svg>
+                    </span>
+                    <span className="text-lg font-semibold">{t('brand.name')}</span>
+                  </Link>
+                  )}
+                  {!isAssessmentPath ? (
+                    <p className="hidden text-sm font-semibold uppercase tracking-[0.18em] text-[#9dc5ff] sm:block">
+                      {t('header.workspace')}
+                    </p>
+                  ) : null}
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="hidden flex-1 justify-center lg:flex">
+                  <CustomerMarketingNav
+                    variant="header"
+                    className="flex flex-wrap items-center gap-6 text-sm font-medium"
+                  />
+                </div>
+                <div className="flex flex-1 items-center justify-end gap-3">
                   <div className="hidden lg:block">
                     <CustomerLanguageSwitcher />
                   </div>
                   <CustomerUserMenu displayName={displayName} shortName={shortDisplayName} />
                 </div>
               </header>
-              <div
-                className={
-                  isFullBleedWorkspacePage
-                    ? 'min-h-0 min-w-0 flex-1 overflow-y-auto'
-                    : 'min-h-0 min-w-0 flex-1 overflow-y-auto p-4 md:p-5'
-                }
-              >
+              <div className={isFullBleedWorkspacePage ? 'min-w-0' : 'min-w-0 p-4 md:p-5'}>
                 {children}
               </div>
+              <PublicFooter variant="customer" />
               {authReady && isCustomerShell ? <CustomerProfileCompletionPrompt /> : null}
             </div>
           </div>

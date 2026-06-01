@@ -252,7 +252,7 @@ function ProductsPageContent() {
   };
 
   const heroStyle = {
-    backgroundImage: `radial-gradient(circle at 20% 20%, rgba(16, 55, 114, 0.62) 0%, rgba(7, 22, 47, 0.72) 45%, rgba(4, 16, 34, 0.78) 100%), url(${heroBackground.src})`,
+    backgroundImage: `linear-gradient(rgba(4, 9, 22, 0.56), rgba(4, 9, 22, 0.72)), url(${heroBackground.src})`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
@@ -260,137 +260,96 @@ function ProductsPageContent() {
 
   return (
     <main className="overflow-x-hidden bg-[#f3f5fb]">
-      <section className="relative overflow-hidden border-b border-[#12315b]" style={heroStyle}>
-        <div className="pointer-events-none absolute inset-0 opacity-35">
-          <div className="absolute -left-24 top-12 h-72 w-72 rounded-full bg-[#2262d9]/40 blur-3xl" />
-          <div className="absolute right-24 top-6 h-72 w-72 rounded-full bg-[#143f8f]/40 blur-3xl" />
-        </div>
-        <div className="relative mx-auto grid min-h-[520px] max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 md:px-6 md:py-12 lg:max-w-6xl lg:grid-cols-[1.05fr_0.95fr] xl:max-w-7xl 2xl:max-w-[90rem]">
-          <div>
-            <p className="inline-flex rounded-full border border-[#255da8] bg-[#12366c] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#9ac3ff] motion-safe:animate-fade-in motion-safe:delay-75">
+      <section className="px-4 py-8 text-white md:py-10" style={heroStyle}>
+        <div className="mx-auto grid min-h-[400px] w-full max-w-6xl items-start gap-5 sm:min-h-[420px] md:gap-7 lg:min-h-[440px] lg:max-w-5xl lg:grid-cols-2 lg:items-center lg:gap-8 xl:max-w-6xl 2xl:max-w-[90rem]">
+          <div className="space-y-4">
+            <p className="text-sm font-medium uppercase tracking-[0.24em] text-[#5ea2ff] motion-safe:animate-fade-in motion-safe:delay-75">
               {t('hero.kicker')}
             </p>
-            <h1 className="public-hero-title mt-4 text-white motion-safe:animate-fade-in-up motion-safe:delay-100">
+            <h1 className="max-w-xl text-4xl font-semibold leading-tight motion-safe:animate-fade-in-up motion-safe:delay-100 md:text-5xl">
               {t('hero.title.line1')}
               <br />
-              {t('hero.title.line2')} <span className="text-[#3f8bff]">{t('hero.title.accent')}</span>
+              {t('hero.title.line2')} <span className="text-[#2f7dff]">{t('hero.title.accent')}</span>
             </h1>
-            <p className="public-hero-subtitle mt-4 max-w-xl text-[#c7d8f8] motion-safe:animate-fade-in-up motion-safe:delay-200">
+            <p className="max-w-xl text-lg text-[#d4e2f6] motion-safe:animate-fade-in-up motion-safe:delay-200 md:text-xl">
               {t('hero.subtitle')}
             </p>
-            <div className="mt-6 flex flex-wrap gap-3 motion-safe:animate-fade-in-up motion-safe:delay-250">
+            <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap">
               <Link
                 href="#audits-checklists"
-                className="group inline-flex min-w-[220px] items-center gap-3 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-4 py-3 text-left transition-colors hover:bg-[#143264]"
+                className="group inline-flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-3 py-2.5 text-left transition-colors hover:bg-[#143264] sm:min-w-[200px] sm:flex-initial"
               >
-                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
                     <path d="M12 3l8 4v5c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V7l8-4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
                     <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>
-                <span className="flex flex-col">
+                <span className="flex min-w-0 flex-col">
                   <span className="text-sm font-semibold text-white">{t('hero.cat.audits.title')}</span>
                   <span className="text-xs text-[#a9c0e6]">{t('hero.cat.audits.subtitle')}</span>
                 </span>
               </Link>
               <Link
                 href="#documentation"
-                className="group inline-flex min-w-[220px] items-center gap-3 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-4 py-3 text-left transition-colors hover:bg-[#143264]"
+                className="group inline-flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-3 py-2.5 text-left transition-colors hover:bg-[#143264] sm:min-w-[200px] sm:flex-initial"
               >
-                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
                     <path d="M8 4h8l2 2v14H6V6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
                     <path d="M9 4v3h6V4M9 12h6M9 16h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   </svg>
                 </span>
-                <span className="flex flex-col">
+                <span className="flex min-w-0 flex-col">
                   <span className="text-sm font-semibold text-white">{t('hero.cat.docs.title')}</span>
                   <span className="text-xs text-[#a9c0e6]">{t('hero.cat.docs.subtitle')}</span>
                 </span>
               </Link>
               <Link
                 href="#plans"
-                className="group inline-flex min-w-[220px] items-center gap-3 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-4 py-3 text-left transition-colors hover:bg-[#143264]"
+                className="group inline-flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 px-3 py-2.5 text-left transition-colors hover:bg-[#143264] sm:min-w-[200px] sm:flex-initial"
               >
-                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1f3a6d] text-[#9ac3ff]">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
                     <path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
                     <path d="M8 10h8M8 14h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   </svg>
                 </span>
-                <span className="flex flex-col">
+                <span className="flex min-w-0 flex-col">
                   <span className="text-sm font-semibold text-white">{t('hero.cat.plans.title')}</span>
                   <span className="text-xs text-[#a9c0e6]">{t('hero.cat.plans.subtitle')}</span>
                 </span>
               </Link>
             </div>
-            <div className="mt-7 grid gap-3 motion-safe:animate-fade-in-up motion-safe:delay-300 sm:grid-cols-3">
-              <article className="rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 p-4 transition-colors duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5">
-                <p className="text-sm font-semibold text-white">{t('hero.highlight1.title')}</p>
-                <p className="mt-1 text-xs text-[#a9c0e6]">{t('hero.highlight1.body')}</p>
-              </article>
-              <article className="rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 p-4 transition-colors duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5">
-                <p className="text-sm font-semibold text-white">{t('hero.highlight2.title')}</p>
-                <p className="mt-1 text-xs text-[#a9c0e6]">{t('hero.highlight2.body')}</p>
-              </article>
-              <article className="rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 p-4 transition-colors duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5">
-                <p className="text-sm font-semibold text-white">{t('hero.highlight3.title')}</p>
-                <p className="mt-1 text-xs text-[#a9c0e6]">{t('hero.highlight3.body')}</p>
-              </article>
-            </div>
           </div>
 
-          <div className="relative motion-safe:animate-fade-in-right motion-safe:delay-200">
-            <div className="overflow-hidden rounded-2xl border border-[#2f4f86] bg-[#f8fbff] shadow-[0_20px_50px_rgba(0,0,0,0.45)] transition-shadow duration-500 ease-out motion-safe:hover:shadow-[0_24px_60px_rgba(0,0,0,0.42)]">
-              <div className="grid md:grid-cols-[175px_1fr]">
-                <aside className="min-h-[340px] bg-[#091d3f] p-4 text-[#d7e6ff]">
-                  <p className="mb-4 text-sm font-semibold uppercase tracking-[0.15em]">{t('mock.brand')}</p>
-                  <ul className="space-y-2.5 text-sm">
-                    <li className="rounded-md px-2 py-1.5 text-[#a8bedf]">{t('mock.nav.dashboard')}</li>
-                    <li className="rounded-md bg-[#163f7d] px-2 py-1.5">{t('mock.nav.checklist')}</li>
-                    <li className="rounded-md px-2 py-1.5 text-[#a8bedf]">{t('mock.nav.evidence')}</li>
-                    <li className="rounded-md px-2 py-1.5 text-[#a8bedf]">{t('mock.nav.reports')}</li>
-                    <li className="rounded-md px-2 py-1.5 text-[#a8bedf]">{t('mock.nav.settings')}</li>
+          <div className="relative mx-auto w-full max-w-[620px] lg:max-w-[640px] lg:justify-self-end motion-safe:animate-fade-in-right motion-safe:delay-150">
+            <div className="overflow-hidden rounded-2xl border border-[#325a99]/80 bg-[#edf1f9] text-[#152948] shadow-[0_24px_70px_rgba(0,0,0,0.55)] transition-shadow duration-500 ease-out motion-safe:hover:shadow-[0_28px_80px_rgba(0,0,0,0.5)]">
+              <div className="grid md:grid-cols-[180px_1fr]">
+                <aside className="h-full bg-[#0b1a39] p-2.5 text-[#dce8ff]">
+                  <p className="mb-2 text-sm font-semibold">{t('mock.brand')}</p>
+                  <ul className="space-y-1.5 text-xs">
+                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{t('mock.nav.dashboard')}</li>
+                    <li className="rounded-md bg-[#17376d] px-2 py-1.5">{t('mock.nav.checklist')}</li>
+                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{t('mock.nav.evidence')}</li>
+                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{t('mock.nav.reports')}</li>
+                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{t('mock.nav.settings')}</li>
                   </ul>
                 </aside>
-                <div className="p-5 text-[#1f3253]">
-                  <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#4e6c96]">{t('mock.library')}</p>
-                  <div className="mt-3 space-y-2.5">
+                <div className="p-3 text-[#1f3253]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#4e6c96]">{t('mock.library')}</p>
+                  <div className="mt-2 space-y-1.5">
                     {(auditGridItems.length > 0
                       ? auditGridItems.slice(0, 4).map((item) => item.checklist.title)
                       : displayDocSections.slice(0, 4).map((doc) => doc.name)
                     ).map((name) => (
-                      <div key={name} className="rounded-lg border border-[#e2e8f4] bg-white p-3 text-base">
+                      <div key={name} className="rounded-lg border border-[#e2e8f4] bg-white p-2.5 text-sm">
                         {name}
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="absolute -bottom-6 -right-4 hidden w-56 rounded-2xl border border-[#d7e2f5] bg-white p-4 shadow-[0_16px_30px_rgba(0,0,0,0.2)] sm:block">
-              <p className="text-sm font-semibold text-[#2a3e63]">{t('doc.mobileDevice.name')}</p>
-              <ul className="mt-2 space-y-1 text-xs text-[#4c5f80]">
-                <li>{t('docPoint.pdf.policyDocument')}</li>
-                <li>{t('docPoint.pdf.userGuidelines')}</li>
-                <li>{t('docPoint.pdf.adminGuidelines')}</li>
-              </ul>
-              <p className="mt-3 text-lg font-bold text-[#1f355d]">€149</p>
-              <Link
-                href={
-                  (auditGridItems[0]?.slug
-                    ? `/products/${encodeURIComponent(auditGridItems[0].slug)}`
-                    : auditGridItems[0]
-                      ? buildAuditProductHref(auditGridItems[0].checklist.id)
-                      : displayDocSections[0]
-                        ? `/products/${displayDocSections[0].slug}`
-                        : '/products') as Route
-                }
-                className="mt-2 flex w-full items-center justify-center rounded-lg bg-[#1f7bff] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2e87ff]"
-              >
-                {t('cta.viewDetails')}
-              </Link>
             </div>
           </div>
         </div>

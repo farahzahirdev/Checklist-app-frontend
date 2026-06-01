@@ -705,93 +705,7 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
     );
   }
   
-  // Check if this is a products-style hero (with highlights and radial gradient)
-  const isProductsHero = data.highlights && data.highlights.length > 0;
-  
-  if (isProductsHero) {
-    const backgroundImage = `radial-gradient(circle at 20% 20%, rgba(16, 55, 114, 0.62) 0%, rgba(7, 22, 47, 0.72) 45%, rgba(4, 16, 34, 0.78) 100%), url(${heroImage})`;
-    
-    return (
-      <section className="relative overflow-hidden border-b border-[#12315b]" style={{
-        backgroundImage,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      }}>
-        <div className="pointer-events-none absolute inset-0 opacity-35">
-          <div className="absolute -left-24 top-12 h-72 w-72 rounded-full bg-[#2262d9]/40 blur-3xl"></div>
-          <div className="absolute right-24 top-6 h-72 w-72 rounded-full bg-[#143f8f]/40 blur-3xl"></div>
-        </div>
-        <div className="relative mx-auto grid min-h-[520px] max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 md:px-6 md:py-12 lg:max-w-6xl lg:grid-cols-[1.05fr_0.95fr] xl:max-w-7xl 2xl:max-w-[90rem]">
-          <div>
-            {data.kicker && (
-              <p className="inline-flex rounded-full border border-[#255da8] bg-[#12366c] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#9ac3ff] motion-safe:animate-fade-in motion-safe:delay-75">
-                {data.kicker}
-              </p>
-            )}
-            {data.title && (
-              <h1 className="public-hero-title mt-4 text-white motion-safe:animate-fade-in-up motion-safe:delay-100">
-                {data.title}
-                {data.accent && (
-                  <>
-                    <br />
-                    <span className="text-[#3f8bff]">{data.accent}</span>
-                  </>
-                )}
-              </h1>
-            )}
-            {data.description && (
-              <p className="public-hero-subtitle mt-4 max-w-xl text-[#c7d8f8] motion-safe:animate-fade-in-up motion-safe:delay-200">
-                {data.description}
-              </p>
-            )}
-            {data.highlights && data.highlights.length > 0 && (
-              <div className="mt-7 grid gap-3 motion-safe:animate-fade-in-up motion-safe:delay-300 sm:grid-cols-3">
-                {data.highlights.map((highlight: any, index: number) => (
-                  <article key={index} className="rounded-xl border border-[#2c4f84] bg-[#0d2246]/80 p-4 transition-colors duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5">
-                    <p className="text-sm font-semibold text-white">{highlight.title}</p>
-                    <p className="mt-1 text-xs text-[#a9c0e6]">{highlight.body}</p>
-                  </article>
-                ))}
-              </div>
-            )}
-          </div>
-          {data.mockup && (
-            <div className="relative motion-safe:animate-fade-in-right motion-safe:delay-200">
-              <div className="overflow-hidden rounded-2xl border border-[#2f4f86] bg-[#f8fbff] shadow-[0_20px_50px_rgba(0,0,0,0.45)] transition-shadow duration-500 ease-out motion-safe:hover:shadow-[0_24px_60px_rgba(0,0,0,0.42)]">
-                <div className="grid md:grid-cols-[175px_1fr]">
-                  <aside className="min-h-[340px] bg-[#091d3f] p-4 text-[#d7e6ff]">
-                    <p className="mb-4 text-sm font-semibold uppercase tracking-[0.15em]">{data.mockup.brand || 'AuditReady'}</p>
-                    <ul className="space-y-2.5 text-sm">
-                      {data.mockup.nav && Object.values(data.mockup.nav).map((item: any, index: number) => (
-                        <li key={index} className={`rounded-md px-2 py-1.5 ${index === 1 ? 'bg-[#163f7d]' : 'text-[#a8bedf]'}`}>
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </aside>
-                  <div className="p-5 text-[#1f3253]">
-                    {data.mockup.library && (
-                      <>
-                        <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#4e6c96]">{data.mockup.library}</p>
-                        <div className="mt-3 space-y-2.5">
-                          {data.mockup.documents && data.mockup.documents.map((doc: string, index: number) => (
-                            <div key={index} className="rounded-lg border border-[#e2e8f4] bg-white p-3 text-base">{doc}</div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-    );
-  }
-  
-  // Default home-style hero
+  // Default home-style hero (also used for products CMS heroes)
   const backgroundImage = `linear-gradient(rgba(4, 9, 22, 0.56), rgba(4, 9, 22, 0.72)), url(${heroImage})`;
 
   return (
@@ -811,9 +725,23 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
               {data.kicker}
             </p>
           )}
-          {data.title && <h1 className="max-w-xl text-4xl font-semibold leading-tight md:text-5xl">{data.title}</h1>}
+          {data.title && (
+            <h1 className="max-w-xl text-4xl font-semibold leading-tight md:text-5xl">
+              {data.title}
+              {data.accent && (
+                <>
+                  {' '}
+                  <span className="text-[#2f7dff]">{data.accent}</span>
+                </>
+              )}
+            </h1>
+          )}
           {data.subtitle && <p className="max-w-xl text-lg text-[#d4e2f6] md:text-xl">{data.subtitle}</p>}
-          {data.description && <p className="max-w-xl text-sm leading-7 text-[#d4e2f6] md:text-base">{data.description}</p>}
+          {data.description && (
+            <p className={`max-w-xl text-[#d4e2f6] ${data.subtitle ? 'text-sm leading-7 md:text-base' : 'text-lg md:text-xl'}`}>
+              {data.description}
+            </p>
+          )}
           {(data.buttons || data.button_text) && (
             <div className="flex flex-wrap gap-3 pt-2">
               {Array.isArray(data.buttons)
@@ -850,13 +778,26 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
                   <p className="mb-2 text-sm font-semibold">{data.mockup.brand || 'AuditReady'}</p>
                   <ul className="space-y-1.5 text-xs">
                     {(data.mockup.nav ? Object.values(data.mockup.nav) : ['Dashboard', 'Checklists', 'Reports', 'Settings']).map((item: any, index: number) => (
-                      <li key={index} className={`rounded-md px-2 py-1.5 ${index === 0 ? 'bg-[#17376d]' : 'text-[#a0b4d5]'}`}>
+                      <li key={index} className={`rounded-md px-2 py-1.5 ${index === (data.mockup.documents ? 1 : 0) ? 'bg-[#17376d]' : 'text-[#a0b4d5]'}`}>
                         {item}
                       </li>
                     ))}
                   </ul>
                 </aside>
                 <div className="p-3">
+                  {data.mockup.library && data.mockup.documents ? (
+                    <>
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#4e6c96]">{data.mockup.library}</p>
+                      <div className="mt-2 space-y-1.5">
+                        {data.mockup.documents.map((doc: string, index: number) => (
+                          <div key={index} className="rounded-lg border border-[#e2e8f4] bg-white p-2.5 text-sm">
+                            {doc}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                  <>
                   <div className="mb-2 rounded-xl bg-white p-2.5">
                     <p className="text-sm font-semibold text-[#1a2c4f]">{data.mockup.dashboard?.title || 'Dashboard'}</p>
                     <div className="mt-2 grid grid-cols-3 gap-2">
@@ -917,6 +858,8 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
                       </div>
                     </div>
                   </div>
+                  </>
+                  )}
                 </div>
               </div>
             </div>

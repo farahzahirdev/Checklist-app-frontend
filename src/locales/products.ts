@@ -3,9 +3,9 @@ import type { TranslationMessages } from '@/lib/i18n';
 export const productsMessages: TranslationMessages = {
   en: {
     'hero.kicker': 'Product catalog',
-    'hero.title.line1': 'Audits, documentation,',
-    'hero.title.line2': 'and plans in one place.',
-    'hero.title.accent': 'Products',
+    'hero.title.line1': 'Close the gaps.',
+    'hero.title.line2': 'Save time.',
+    'hero.title.accent': 'Audit-Ready',
     'hero.subtitle':
       'Browse individual products—online audits and checklists, documentation packs, and continuity plans. Open any card for details, pricing, brochure, and purchase.',
     'hero.highlight1.title': 'Audit-ready',
@@ -162,9 +162,9 @@ export const productsMessages: TranslationMessages = {
   },
   cs: {
     'hero.kicker': 'Katalog produktů',
-    'hero.title.line1': 'Audity, dokumentace',
-    'hero.title.line2': 'a plány na jednom místě.',
-    'hero.title.accent': 'Produkty',
+    'hero.title.line1': 'Zacelte mezery.',
+    'hero.title.line2': 'Ušetřete čas.',
+    'hero.title.accent': 'Audit-Ready',
     'hero.subtitle':
       'Prohlédněte jednotlivé produkty—online audity a checklisty, dokumentační balíčky a plány kontinuity. U každé karty najdete detail, cenu, brožuru a nákup.',
     'hero.highlight1.title': 'Audit-ready',
