@@ -18,6 +18,7 @@ import {
   type PublicProductDetail,
 } from '@/lib/public-products';
 import { getCurrentUser, getRoleKey } from '@/lib/auth';
+import { getCustomerProfileCompletion } from '@/lib/customer-profile';
 import { buildPaymentHref, setCheckoutIntent } from '@/lib/checkout-intent';
 import {
   findBuilderProductBySlug,
@@ -109,6 +110,8 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [authState, setAuthState] = useState<AuthState>({ kind: 'unknown' });
+  const [profileCompletionPercent, setProfileCompletionPercent] = useState<number | null>(null);
+  const [profileCompletionLoading, setProfileCompletionLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -218,6 +221,31 @@ export default function ProductDetailPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (authState.kind !== 'customer') {
+      setProfileCompletionPercent(null);
+      setProfileCompletionLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setProfileCompletionLoading(true);
+    getCustomerProfileCompletion()
+      .then((completion) => {
+        if (!cancelled) setProfileCompletionPercent(completion.completion_percent);
+      })
+      .catch(() => {
+        if (!cancelled) setProfileCompletionPercent(null);
+      })
+      .finally(() => {
+        if (!cancelled) setProfileCompletionLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authState]);
+
   const audit = resolved?.kind === 'audit' ? resolved.checklist : null;
   const priceLabels = useMemo(
     () => ({ free: t('audits.price.free'), comingSoon: t('detail.status.comingSoon') }),
@@ -227,8 +255,12 @@ export default function ProductDetailPage() {
     if (!resolved || resolved.kind !== 'audit') return false;
     if (resolved.publicProductStatus === 'coming_soon') return false;
     if (isPublicProductPriceUnset(audit?.pricing)) return false;
+    if (authState.kind === 'customer' && (profileCompletionLoading || profileCompletionPercent !== 100)) return false;
     return (audit?.pricing?.amount_cents ?? 0) > 0;
-  }, [resolved, audit?.pricing]);
+  }, [resolved, audit?.pricing, authState, profileCompletionLoading, profileCompletionPercent]);
+
+  const requiresCompletedProfileForPurchase =
+    authState.kind === 'customer' && !profileCompletionLoading && profileCompletionPercent !== 100;
 
   const brochureLinkHref = useMemo(() => {
     if (resolved?.kind === 'audit') return absolutePublicAssetUrl(resolved.brochurePdfUrl);
@@ -602,6 +634,12 @@ export default function ProductDetailPage() {
                 >
                   {t('detail.contactSales')}
                 </Link>
+              ) : null}
+
+              {requiresCompletedProfileForPurchase ? (
+                <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+                  {t('detail.completeProfileFirst')}
+                </p>
               ) : null}
             </div>
 

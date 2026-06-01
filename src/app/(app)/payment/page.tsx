@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { Route } from 'next';
 import { getCurrentUser } from '@/lib/auth';
+import { getCustomerProfileCompletion } from '@/lib/customer-profile';
 import { createStripeCheckoutSession } from '@/lib/payments';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
 import { translate, useLocale } from '@/lib/i18n';
@@ -43,10 +44,17 @@ export default function PaymentPage() {
   const [checklists, setChecklists] = useState<CustomerChecklist[]>([]);
   const [selectedChecklistId, setSelectedChecklistId] = useState('');
   const [showOnboardingSkip, setShowOnboardingSkip] = useState(false);
+  const [profileCompletionPercent, setProfileCompletionPercent] = useState<number | null>(null);
+  const [profileCompletionLoading, setProfileCompletionLoading] = useState(true);
   const autoCheckoutAttemptedRef = useRef(false);
   const checkoutCancelled = searchParams.get('checkout') === 'cancelled';
+  const canCheckout = !profileCompletionLoading && profileCompletionPercent === 100;
 
   async function beginCheckout(explicitChecklistId?: string) {
+    if (!canCheckout) {
+      setError(t('errors.completeProfileFirst'));
+      return;
+    }
     const checklistId = (explicitChecklistId ?? selectedChecklistId).trim();
     if (!checklistId) {
       setError(t('errors.selectChecklist'));
@@ -77,9 +85,13 @@ export default function PaymentPage() {
 
     async function loadCatalogAndStatus() {
       try {
-        const catalog = await listPublishedCustomerChecklists({ sortBy: 'updated_at', sortOrder: 'desc', limit: 100 });
+        const [catalog, completion] = await Promise.all([
+          listPublishedCustomerChecklists({ sortBy: 'updated_at', sortOrder: 'desc', limit: 100 }),
+          getCustomerProfileCompletion().catch(() => null),
+        ]);
         if (!mounted) return;
         setChecklists(catalog);
+        setProfileCompletionPercent(completion?.completion_percent ?? null);
 
         // Preselect the checklist the visitor picked on /products, if any.
         // The id can come from the current URL (?checklist_id=...) or, as a
@@ -128,6 +140,7 @@ export default function PaymentPage() {
       } finally {
         if (mounted) {
           setCatalogLoading(false);
+          setProfileCompletionLoading(false);
         }
       }
     }
@@ -164,6 +177,9 @@ export default function PaymentPage() {
           <p className="text-amber-200">{t('checkout.cancelled')}</p>
         ) : null}
         {error ? <p className="mt-2 text-rose-300">{error}</p> : null}
+        {!profileCompletionLoading && !canCheckout ? (
+          <p className="mt-2 text-amber-200">{t('errors.completeProfileFirst')}</p>
+        ) : null}
         {!catalogLoading ? (
           <div className="mt-4 flex flex-col gap-3">
             {checklists.length ? (
@@ -233,7 +249,7 @@ export default function PaymentPage() {
                                   event.stopPropagation();
                                   void beginCheckout();
                                 }}
-                                disabled={loading}
+                                disabled={loading || !canCheckout}
                                 className="w-full rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-white/15 disabled:opacity-60"
                               >
                                 {loading ? t('actions.redirecting') : t('actions.proceed')}
