@@ -99,6 +99,14 @@ export const authPagesMessages: TranslationMessages = {
     'success.accountCreated': 'Account created successfully.',
     'success.mfaVerified': 'MFA verified successfully.',
     'success.mfaSetupCompleted': 'MFA setup completed.',
+
+    'verify_email.title': 'Verify Your Email',
+    'verify_email.verifying': 'Verifying your email...',
+    'verify_email.success': 'Email verified successfully!',
+    'verify_email.error': 'Email verification failed. The link may have expired.',
+    'verify_email.redirecting': 'Redirecting to your account...',
+    'verify_email.redirect_login': 'Redirecting to login...',
+    'verify_email.missing_token': 'Verification token is missing. Please check your email link.',
   },
   cs: {
     'common.account': 'Účet',
@@ -198,6 +206,13 @@ export const authPagesMessages: TranslationMessages = {
     'success.accountCreated': 'Účet byl úspěšně vytvořen.',
     'success.mfaVerified': 'MFA bylo úspěšně ověřeno.',
     'success.mfaSetupCompleted': 'Nastavení MFA bylo dokončeno.',
+
+    'verify_email.title': 'Ověřit svůj e-mail',
+    'verify_email.verifying': 'Ověřuji váš e-mail...',
+    'verify_email.success': 'E-mail byl úspěšně ověřen!',
+    'verify_email.error': 'Ověření e-mailu se nezdařilo. Odkaz mohl vypršet.',
+    'verify_email.redirecting': 'Přesměrování na váš účet...',
+    'verify_email.redirect_login': 'Přesměrování na přihlášení...',
+    'verify_email.missing_token': 'Chybí token pro ověření. Prosím zkontrolujte odkaz v e-mailu.',
   },
 };
-
