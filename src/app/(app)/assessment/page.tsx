@@ -173,11 +173,10 @@ function answerLabelSuffixJunk(rawLabel: string, score: number) {
   return junk.length >= 2 ? junk : '';
 }
 
-/** Title line shown on each option card, e.g. "Yes / 4 points". */
+/** Title line shown on each option card, e.g. "Yes". */
 function formatAnswerOptionTitle(rawLabel: string, score: number) {
   const name = score === 1 ? "Don't know" : customerAnswerDisplayLabel(rawLabel, score);
-  const pointsPart = score === 1 ? '1 point' : `${score} points`;
-  return `${name} / ${pointsPart}`;
+  return name;
 }
 
 /** Guidance line only — strip label fragments and duplicate choice text from descriptions. */
