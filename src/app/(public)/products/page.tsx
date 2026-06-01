@@ -266,7 +266,7 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
   const heroTitleLine2 = cmsHero.title_line2 || t('hero.title.line2');
   const heroAccent = cmsHero.accent || t('hero.title.accent');
   const heroKicker = cmsHero.kicker || t('hero.kicker');
-  const heroSubtitle = cmsHero.subtitle || t('hero.subtitle');
+  const heroSubtitle = cmsHero.description || cmsHero.subtitle || t('hero.subtitle');
   const heroActionCards = Array.isArray(cmsHero.quick_links) && cmsHero.quick_links.length
     ? cmsHero.quick_links
     : [
@@ -274,6 +274,13 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
         { title: t('hero.cat.docs.title'), subtitle: t('hero.cat.docs.subtitle'), url: '#documentation', icon: 'document' },
         { title: t('hero.cat.plans.title'), subtitle: t('hero.cat.plans.subtitle'), url: '#plans', icon: 'stack' },
       ];
+  const heroMockup = cmsHero.mockup || {};
+  const heroMockupBrand = heroMockup.brand || t('mock.brand');
+  const heroMockupLibrary = heroMockup.library || t('mock.library');
+  const heroMockupNav = heroMockup.nav || {};
+  const heroMockupDocuments = Array.isArray(heroMockup.documents) && heroMockup.documents.length
+    ? heroMockup.documents
+    : null;
 
   const howTitle = cmsHowItWorks.title || t('how.title');
   const howSubtitle = cmsHowItWorks.subtitle || t('how.subtitle');
@@ -368,22 +375,24 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
             <div className="overflow-hidden rounded-2xl border border-[#325a99]/80 bg-[#edf1f9] text-[#152948] shadow-[0_24px_70px_rgba(0,0,0,0.55)] transition-shadow duration-500 ease-out motion-safe:hover:shadow-[0_28px_80px_rgba(0,0,0,0.5)]">
               <div className="grid md:grid-cols-[180px_1fr]">
                 <aside className="h-full bg-[#0b1a39] p-2.5 text-[#dce8ff]">
-                  <p className="mb-2 text-sm font-semibold">{t('mock.brand')}</p>
+                  <p className="mb-2 text-sm font-semibold">{heroMockupBrand}</p>
                   <ul className="space-y-1.5 text-xs">
-                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{t('mock.nav.dashboard')}</li>
-                    <li className="rounded-md bg-[#17376d] px-2 py-1.5">{t('mock.nav.checklist')}</li>
-                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{t('mock.nav.evidence')}</li>
-                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{t('mock.nav.reports')}</li>
-                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{t('mock.nav.settings')}</li>
+                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{heroMockupNav.dashboard || t('mock.nav.dashboard')}</li>
+                    <li className="rounded-md bg-[#17376d] px-2 py-1.5">{heroMockupNav.checklist || t('mock.nav.checklist')}</li>
+                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{heroMockupNav.evidence || t('mock.nav.evidence')}</li>
+                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{heroMockupNav.reports || t('mock.nav.reports')}</li>
+                    <li className="rounded-md px-2 py-1.5 text-[#a0b4d5]">{heroMockupNav.settings || t('mock.nav.settings')}</li>
                   </ul>
                 </aside>
                 <div className="p-3 text-[#1f3253]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#4e6c96]">{t('mock.library')}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#4e6c96]">{heroMockupLibrary}</p>
                   <div className="mt-2 space-y-1.5">
-                    {(auditGridItems.length > 0
-                      ? auditGridItems.slice(0, 4).map((item) => item.checklist.title)
-                      : displayDocSections.slice(0, 4).map((doc) => doc.name)
-                    ).map((name) => (
+                    {(heroMockupDocuments
+                      ? heroMockupDocuments.slice(0, 4)
+                      : auditGridItems.length > 0
+                        ? auditGridItems.slice(0, 4).map((item) => item.checklist.title)
+                        : displayDocSections.slice(0, 4).map((doc) => doc.name)
+                    ).map((name: string) => (
                       <div key={name} className="rounded-lg border border-[#e2e8f4] bg-white p-2.5 text-sm">
                         {name}
                       </div>
