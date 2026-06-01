@@ -206,7 +206,7 @@ export function SiteHeader() {
               {dashboardHref ? (
                 <Link
                   href={dashboardHref}
-                  className="rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-4 py-2 text-sm font-medium text-[#f5f8ff] hover:bg-[#2e87ff]"
+                  className="rounded-lg border border-[#2f7dff] bg-[#2f7dff] px-4 py-2 text-sm font-medium text-[#f5f8ff] hover:bg-[#3b8bff]"
                 >
                   {t('auth.dashboard')}
                 </Link>
@@ -329,7 +329,7 @@ export function SiteHeader() {
                   {dashboardHref ? (
                     <Link
                       href={dashboardHref}
-                      className="rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-4 py-2 text-center text-[#f5f8ff] hover:bg-[#2e87ff]"
+                      className="rounded-lg border border-[#2f7dff] bg-[#2f7dff] px-4 py-2 text-center text-[#f5f8ff] hover:bg-[#3b8bff]"
                       onClick={() => setMobileOpen(false)}
                     >
                       {t('auth.dashboard')}
