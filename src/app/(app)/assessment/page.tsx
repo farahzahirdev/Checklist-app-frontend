@@ -90,7 +90,17 @@ function normalizeAnswerOptionLabel(value: string) {
   if (v === 'yes') return 'Yes';
   if (v === 'partial' || v === 'partially') return 'Partially';
   if (v === 'no') return 'No';
-  if (v === 'na' || v === "don't know" || v === 'dont know' || v === 'dont_know') return "Don't know";
+  if (
+    v === 'na' ||
+    v === "don't know" ||
+    v === 'dont know' ||
+    v === 'dont_know' ||
+    v === 'do not know' ||
+    v === 'not applicable' ||
+    v === 'unknown'
+  ) {
+    return "Don't know";
+  }
   return value;
 }
 
@@ -101,17 +111,38 @@ const DEFAULT_ANSWER_TEXT_BY_SCORE: Record<number, string> = {
   1: "Don't know",
 };
 
-/** Short answer name (Yes, Partially, …) without the points suffix. */
-function customerAnswerDisplayLabel(value: string, score?: number) {
-  let text = value.trim();
-  text = text
+function stripPointsSuffix(text: string) {
+  return text
     .replace(/\s*\/\s*\d+\s*points?\s*/gi, ' ')
     .replace(/\s*\(\s*\d+\s*points?\s*\)/gi, '')
     .replace(/\s*–\s*\d+\s*points?\s*/gi, ' ')
     .replace(/\s*-\s*\d+\s*points?\s*/gi, ' ')
-    .replace(/^\s*(yes|partially|no|don't know|dont know)\s*\/\s*/i, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/** Match standard choice name at start of label (longer phrases before `no` to avoid false matches). */
+const ANSWER_LEADING_CHOICE_RE =
+  /^(don't know|dont know|dont_know|do not know|yes|partially|partial|no)\b/i;
+
+/** Short answer name (Yes, Partially, …) without points or admin suffix text. */
+function customerAnswerDisplayLabel(value: string, score?: number) {
+  let text = stripPointsSuffix(value.trim());
+  if (score === 1) {
+    const lower = text.toLowerCase();
+    if (
+      /^(don'?t\s*know|dont\s*know|dont_know|do\s+not\s+know|n\/?a|not\s+applicable|unknown)\b/.test(
+        lower,
+      )
+    ) {
+      return "Don't know";
+    }
+    return DEFAULT_ANSWER_TEXT_BY_SCORE[1];
+  }
+  const leadingChoice = text.match(ANSWER_LEADING_CHOICE_RE);
+  if (leadingChoice) {
+    return normalizeAnswerOptionLabel(leadingChoice[1]);
+  }
   if (!text && score && DEFAULT_ANSWER_TEXT_BY_SCORE[score]) {
     return DEFAULT_ANSWER_TEXT_BY_SCORE[score];
   }
@@ -125,18 +156,56 @@ function customerAnswerDisplayLabel(value: string, score?: number) {
   if (/^(Yes|Partially|No|Don't know)$/i.test(normalized)) {
     return normalized;
   }
-  return text || (score ? DEFAULT_ANSWER_TEXT_BY_SCORE[score] ?? '' : '');
+  if (score && DEFAULT_ANSWER_TEXT_BY_SCORE[score]) {
+    return DEFAULT_ANSWER_TEXT_BY_SCORE[score];
+  }
+  return text;
+}
+
+/** Extra text accidentally stored on admin labels (e.g. "Smoke testing 2" on "Yes Smoke testing 2"). */
+function answerLabelSuffixJunk(rawLabel: string, score: number) {
+  const withoutPoints = stripPointsSuffix(rawLabel.trim());
+  const canonical = customerAnswerDisplayLabel(rawLabel, score);
+  if (!withoutPoints || !canonical) return '';
+  const junk = withoutPoints.replace(new RegExp(`^${canonical}\\s*`, 'i'), '').trim();
+  return junk.length >= 2 ? junk : '';
 }
 
 /** Title line shown on each option card, e.g. "Yes / 4 points". */
 function formatAnswerOptionTitle(rawLabel: string, score: number) {
-  const trimmed = rawLabel.trim();
-  if (/\d+\s*points?/i.test(trimmed)) {
-    return trimmed.replace(/\s+/g, ' ').trim();
-  }
-  const name = customerAnswerDisplayLabel(trimmed, score);
+  const name = score === 1 ? "Don't know" : customerAnswerDisplayLabel(rawLabel, score);
   const pointsPart = score === 1 ? '1 point' : `${score} points`;
   return `${name} / ${pointsPart}`;
+}
+
+/** Guidance line only — strip label fragments and duplicate choice text from descriptions. */
+function cleanAnswerOptionDescription(description: string, rawLabel: string, score: number) {
+  let text = description.trim();
+  if (!text) return '';
+
+  const raw = rawLabel.trim();
+  if (raw && text.includes(raw)) {
+    text = text.replace(raw, ' ').trim();
+  }
+
+  const withoutPoints = stripPointsSuffix(raw);
+  if (withoutPoints && text.includes(withoutPoints)) {
+    text = text.replace(withoutPoints, ' ').trim();
+  }
+
+  const junk = answerLabelSuffixJunk(rawLabel, score);
+  if (junk) {
+    const escaped = junk.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    text = text.replace(new RegExp(`\\s*${escaped}\\s*`, 'gi'), ' ').trim();
+    text = text.replace(new RegExp(`[\\s.,;]*${escaped}\\s*$`, 'i'), '').trim();
+  }
+
+  const canonical = customerAnswerDisplayLabel(rawLabel, score);
+  if (text.toLowerCase() === canonical.toLowerCase()) {
+    return '';
+  }
+
+  return text.replace(/\s+/g, ' ').trim();
 }
 
 function parseAnswerScore(value: string | number | undefined | null): number {
@@ -587,7 +656,7 @@ export default function AssessmentPage() {
         const score =
           typeof option.score === 'number' && Number.isFinite(option.score) ? option.score : Math.max(1, 4 - index);
         const rawLabel = option.label ?? option.choice_code ?? `Option ${index + 1}`;
-        const description = (option.description ?? '').trim();
+        const description = cleanAnswerOptionDescription(option.description ?? '', rawLabel, score);
         return {
           key: String(index + 1),
           value: String(score),
