@@ -15,6 +15,15 @@ import {
   Search,
   ChevronDown,
   ChevronRight,
+  Star,
+  Grid3x3,
+  Megaphone,
+  Shield,
+  LayoutTemplate,
+  LayoutList,
+  Layout,
+  CheckCircle2,
+  Circle,
 } from "lucide-react";
 import {
   getAllPages,
@@ -39,6 +48,7 @@ import {
   ADMIN_PAGE_HERO_TITLE_CLASS,
 } from "@/app/(app)/admin/admin-page-title";
 import { TipTapRichTextEditor } from "@/components/cms/TipTapRichTextEditor";
+import { CMSPreviewPane } from '@/components/cms/CMSPreviewPane';
 
 interface PageListItem {
   id: string;
@@ -85,6 +95,154 @@ function sectionTypeLabel(type: string, t: (key: string) => string): string {
   const out = t(key);
   if (out !== key) return out;
   return type.replace(/-/g, " ").replace(/_/g, " ");
+}
+
+/** Get section category badge configuration */
+function getSectionCategoryBadge(category: string) {
+  switch (category) {
+    case 'header':
+      return {
+        label: 'Header',
+        bgColor: 'bg-[#dbeafe]',
+        textColor: 'text-[#1d4ed8]',
+        borderColor: 'border-[#bfdbfe]',
+      };
+    case 'footer':
+      return {
+        label: 'Footer',
+        bgColor: 'bg-[#fce7f3]',
+        textColor: 'text-[#9d174d]',
+        borderColor: 'border-[#fbcfe8]',
+      };
+    case 'body':
+    default:
+      return {
+        label: 'Body',
+        bgColor: 'bg-[#d1fae5]',
+        textColor: 'text-[#065f46]',
+        borderColor: 'border-[#a7f3d0]',
+      };
+  }
+}
+
+/** Get section type-specific icon and color */
+function getSectionTypeIcon(sectionType: string) {
+  switch (sectionType) {
+    case 'hero':
+    case 'product-hero':
+      return {
+        bgColor: 'bg-[#ede9fe]',
+        textColor: 'text-[#7c3aed]',
+        icon: Star
+      };
+    case 'cards':
+      return {
+        bgColor: 'bg-[#d1fae5]',
+        textColor: 'text-[#065f46]',
+        icon: Grid3x3
+      };
+    case 'cta':
+    case 'product_cta':
+      return {
+        bgColor: 'bg-[#fef3c7]',
+        textColor: 'text-[#92400e]',
+        icon: Megaphone
+      };
+    case 'trust':
+      return {
+        bgColor: 'bg-[#e0f2fe]',
+        textColor: 'text-[#0369a1]',
+        icon: Shield
+      };
+    case 'footer':
+      return {
+        bgColor: 'bg-[#fce7f3]',
+        textColor: 'text-[#9d174d]',
+        icon: LayoutList
+      };
+    default:
+      return {
+        bgColor: 'bg-[#dbeafe]',
+        textColor: 'text-[#1d4ed8]',
+        icon: LayoutTemplate
+      };
+  }
+}
+
+/** Get display hint for a section type */
+function getSectionDisplayHint(sectionType: string, t: (key: string) => string): string {
+  const hints: Record<string, string> = {
+    hero: t('sectionDisplayHint.hero') || 'This section renders as the full-width hero banner at the very top of the homepage. The title displays at ~40px on desktop.',
+    product_hero: t('sectionDisplayHint.productHero') || 'Product hero banner with title, description, and call-to-action.',
+    cards: t('sectionDisplayHint.cards') || 'Feature cards displayed below the hero section with icons, titles, and descriptions.',
+    faq: t('sectionDisplayHint.faq') || 'Frequently asked questions accordion with expandable answers.',
+    cta: t('sectionDisplayHint.cta') || 'Call-to-action banner with heading and button links.',
+    trust: t('sectionDisplayHint.trust') || 'Trust badges and certification logos for social proof.',
+    footer: t('sectionDisplayHint.footer') || 'Page footer with navigation links, copyright text, and social icons.',
+  };
+  
+  return hints[sectionType] || t('sectionDisplayHint.default') || 'This section appears on the page based on its type and content.';
+}
+
+/** Get typography label for a field based on field name and section type */
+function getFieldTypographyLabel(fieldName: string, sectionType: string): { label: string; color: string } {
+  const fieldLower = fieldName.toLowerCase();
+  
+  // Hero section typography
+  if (sectionType === 'hero' || sectionType === 'product_hero') {
+    if (fieldLower.includes('title') || fieldLower.includes('headline')) {
+      return { label: 'H1 · ~40px desktop', color: 'bg-[#ede9fe] text-[#6d28d9]' };
+    }
+    if (fieldLower.includes('subtitle') || fieldLower.includes('description')) {
+      return { label: 'body text · rich text', color: 'bg-[#ede9fe] text-[#6d28d9]' };
+    }
+    if (fieldLower.includes('kicker')) {
+      return { label: 'label · small', color: 'bg-[#ede9fe] text-[#6d28d9]' };
+    }
+  }
+  
+  // Cards section typography
+  if (sectionType === 'cards') {
+    if (fieldLower.includes('title')) {
+      return { label: 'H3 · ~18px', color: 'bg-[#d1fae5] text-[#065f46]' };
+    }
+    if (fieldLower.includes('content') || fieldLower.includes('description')) {
+      return { label: 'body text · small', color: 'bg-[#d1fae5] text-[#065f46]' };
+    }
+  }
+  
+  // FAQ section typography
+  if (sectionType === 'faq') {
+    if (fieldLower.includes('question')) {
+      return { label: 'H3 · ~18px', color: 'bg-[#d1fae5] text-[#065f46]' };
+    }
+    if (fieldLower.includes('answer')) {
+      return { label: 'body text · rich text', color: 'bg-[#d1fae5] text-[#065f46]' };
+    }
+  }
+  
+  // CTA section typography
+  if (sectionType === 'cta') {
+    if (fieldLower.includes('title')) {
+      return { label: 'H2 · ~24px', color: 'bg-[#fef3c7] text-[#92400e]' };
+    }
+    if (fieldLower.includes('button') || fieldLower.includes('text')) {
+      return { label: 'button text', color: 'bg-[#fef3c7] text-[#92400e]' };
+    }
+  }
+  
+  // Default typography labels
+  if (fieldLower.includes('title')) {
+    return { label: 'heading', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
+  }
+  if (fieldLower.includes('content') || fieldLower.includes('description') || fieldLower.includes('answer')) {
+    return { label: 'body text · rich text', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
+  }
+  if (fieldLower.includes('link') || fieldLower.includes('url')) {
+    return { label: 'link text', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
+  }
+  
+  return { label: 'text', color: 'bg-[#d1fae5] text-[#065f46]' };
 }
 
 /** Determine if a field should use rich text editor based on field name */
@@ -644,6 +802,14 @@ export function CMSPageList() {
                               aria-hidden
                             />
                           )}
+                          {/* Section type icon */}
+                          <div className={`h-7 w-7 rounded-md flex items-center justify-center shrink-0 ${getSectionTypeIcon(pair.type).bgColor} ${getSectionTypeIcon(pair.type).textColor}`}>
+                            {React.createElement(getSectionTypeIcon(pair.type).icon, { className: "h-4 w-4" })}
+                          </div>
+                          {/* Section category badge */}
+                          <span className={`text-xs px-2 py-1 rounded-full border ${getSectionCategoryBadge(pair.cs?.section_category || pair.en?.section_category || 'body').bgColor} ${getSectionCategoryBadge(pair.cs?.section_category || pair.en?.section_category || 'body').textColor} ${getSectionCategoryBadge(pair.cs?.section_category || pair.en?.section_category || 'body').borderColor}`}>
+                            {getSectionCategoryBadge(pair.cs?.section_category || pair.en?.section_category || 'body').label}
+                          </span>
                           <span className="min-w-0 flex-1">
                             {sectionTypeLabel(pair.type, t)}
                           </span>
@@ -653,12 +819,35 @@ export function CMSPageList() {
                             role="tabpanel"
                             className="rounded-xl border border-[#7ea6e7] bg-[#f5f8ff] p-4 sm:p-5"
                           >
+                            {/* Contextual hint banner */}
+                            <div className="mb-4 flex items-start gap-3 rounded-lg border border-[#ddd6fe] bg-[#ede9fe] px-4 py-3">
+                              <Layout className="h-5 w-5 text-[#5b21b6] shrink-0 mt-0.5" />
+                              <p className="text-sm text-[#5b21b6]">
+                                <span className="font-semibold">{t('sectionDisplayHint.title') || 'Where this appears:'}</span> {getSectionDisplayHint(pair.type, t)}
+                              </p>
+                            </div>
+                            
                             <h3 className="text-lg font-semibold text-[#1f2d45]">
                               {sectionTypeLabel(pair.type, t)}
                             </h3>
                             <p className="mt-1 text-sm text-[#607594]">
                               {t("translationList.sectionStringsTitle")}
                             </p>
+                            
+                            {/* Section publish status and edit button */}
+                            <div className="mt-4 mb-4 flex items-center justify-between rounded-lg border border-[#d1fae5] bg-[#f0fdf4] px-4 py-2">
+                              <div className="flex items-center gap-2 text-xs text-[#065f46]">
+                                <CheckCircle2 className="w-4 h-4" />
+                                <span>{t('section.published')} · Updated {new Date().toLocaleDateString()}</span>
+                              </div>
+                              <button
+                                type="button"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#d4dced] bg-white text-xs font-medium text-[#3e69b0] hover:bg-[#edf4ff] transition-colors"
+                              >
+                                <Edit className="w-3 h-3" />
+                                {t('section.edit')}
+                              </button>
+                            </div>
                             {translationPaths.length === 0 ? (
                               <p className="mt-4 text-sm text-[#607594]">
                                 {t("translationList.noStringFields")}
@@ -676,9 +865,15 @@ export function CMSPageList() {
                                         key={`cs-${key}-${path}`}
                                         className="space-y-1"
                                       >
-                                        <span className="font-mono text-[11px] text-[#425f8f]">
-                                          {path}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-mono text-[11px] text-[#425f8f]">
+                                            {path}
+                                          </span>
+                                          {/* Typography label badge */}
+                                          <span className={`text-xs px-2 py-0.5 rounded-full ${getFieldTypographyLabel(path.split('.').pop() || '', pair.type).color}`}>
+                                            {getFieldTypographyLabel(path.split('.').pop() || '', pair.type).label}
+                                          </span>
+                                        </div>
                                         {shouldUseRichEditor(path) ? (
                                           <TipTapRichTextEditor
                                             value={editCs[path] ?? ""}
@@ -722,9 +917,15 @@ export function CMSPageList() {
                                         key={`en-${key}-${path}`}
                                         className="space-y-1"
                                       >
-                                        <span className="font-mono text-[11px] text-[#425f8f]">
-                                          {path}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-mono text-[11px] text-[#425f8f]">
+                                            {path}
+                                          </span>
+                                          {/* Typography label badge */}
+                                          <span className={`text-xs px-2 py-0.5 rounded-full ${getFieldTypographyLabel(path.split('.').pop() || '', pair.type).color}`}>
+                                            {getFieldTypographyLabel(path.split('.').pop() || '', pair.type).label}
+                                          </span>
+                                        </div>
                                         {shouldUseRichEditor(path) ? (
                                           <TipTapRichTextEditor
                                             value={editEn[path] ?? ""}
@@ -934,6 +1135,9 @@ export function CMSPageList() {
             })}
           </div>
         )}
+      
+      {/* Preview pane - collapsible */}
+      <CMSPreviewPane page={detailCs || detailEn} contentChanges={{ ...editCs, ...editEn }} />
       </div>
     </div>
   );

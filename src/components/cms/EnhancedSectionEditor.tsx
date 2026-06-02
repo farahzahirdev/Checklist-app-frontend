@@ -107,6 +107,42 @@ function SectionDataEditor({
               t={t}
             />
           </div>
+          <div>
+            <label className={cmsLabelClass}>{t('sectionEditor.hero.backgroundImage')}</label>
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={data.background_image || ''}
+                onChange={(e) => updateField('background_image', e.target.value)}
+                className={cmsInputClass}
+                placeholder={t('sectionEditor.hero.backgroundImagePh')}
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#d4dced] bg-white text-xs font-medium text-[#3e69b0] hover:bg-[#edf4ff] transition-colors"
+                >
+                  <span>{t('sectionEditor.hero.uploadImage')}</span>
+                </button>
+                {data.background_image && (
+                  <div className="relative h-20 w-40 rounded-lg overflow-hidden border border-[#dbe4f4]">
+                    <img
+                      src={data.background_image}
+                      alt="Background preview"
+                      className="object-cover w-full h-full"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => updateField('background_image', '')}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded p-1 hover:bg-red-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       );
 

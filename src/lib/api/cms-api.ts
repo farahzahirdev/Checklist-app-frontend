@@ -6,6 +6,7 @@ export interface PageSection {
   id: string;
   page_id: string;
   section_type: string;
+  section_category: 'header' | 'body' | 'footer';
   order: number;
   data?: Record<string, any>;
   created_at: string;
@@ -218,6 +219,7 @@ export async function createSection(
   data: {
     page_id: string;
     section_type: string;
+    section_category?: 'header' | 'body' | 'footer';
     order: number;
     data?: Record<string, any>;
   }
@@ -243,6 +245,7 @@ export async function updateSection(
   sectionId: string,
   data: {
     section_type?: string;
+    section_category?: 'header' | 'body' | 'footer';
     order?: number;
     data?: Record<string, any>;
   }
