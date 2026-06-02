@@ -14,6 +14,12 @@ interface CMSPreviewPaneProps {
 
 type DeviceType = 'desktop' | 'tablet' | 'mobile';
 
+interface Feature {
+  index: number;
+  title?: string;
+  description?: string;
+}
+
 export function CMSPreviewPane({ page, contentChanges = {}, className = '' }: CMSPreviewPaneProps) {
   const { locale } = useLocale();
   const t = (key: string, values?: Record<string, string>) => translate(adminCmsMessages, locale, key, values);
@@ -117,12 +123,12 @@ export function CMSPreviewPane({ page, contentChanges = {}, className = '' }: CM
               height: '100%',
             }}
           >
-            {/* Preview Content - Simplified mock */}
+            {/* Preview Content - Real data */}
             <div className="h-full overflow-y-auto">
               {page ? (
                 <div className="min-h-full">
                   {/* Navigation */}
-                  <div className="bg-[#0d1f3c] px-4 py-2 flex items-center justify-between">
+                  <div className="bg-[#0d1f3c] px-4 py-2 flex items-center justify-between sticky top-0 z-10">
                     <span className="text-white text-xs font-medium">{page.title}</span>
                     <div className="flex gap-4">
                       <span className="text-white/70 text-xs">{t('preview.home')}</span>
@@ -130,36 +136,118 @@ export function CMSPreviewPane({ page, contentChanges = {}, className = '' }: CM
                     </div>
                   </div>
 
-                  {/* Hero Section */}
-                  <div className="bg-gradient-to-br from-[#0d1f3c] to-[#1a3a6e] px-6 py-8 text-center">
-                    {page.sections?.find(s => s.section_type === 'hero')?.data?.title && (
-                      <h1 className="text-white text-xl font-semibold mb-2">
-                        {page.sections.find(s => s.section_type === 'hero')?.data?.title}
-                      </h1>
-                    )}
-                    {page.sections?.find(s => s.section_type === 'hero')?.data?.subtitle && (
-                      <p className="text-white/80 text-xs mb-4">
-                        {page.sections.find(s => s.section_type === 'hero')?.data?.subtitle}
-                      </p>
-                    )}
-                    <button className="bg-[#3b82f6] text-white text-xs px-4 py-2 rounded">
-                      {t('preview.getStarted')}
-                    </button>
-                  </div>
-
-                  {/* Cards Section */}
-                  <div className="p-4 grid grid-cols-2 gap-3">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-3">
-                        <div className="font-semibold text-[#1e293b] text-xs mb-1">
-                          {t('preview.cardTitle', { num: String(i) })}
+                  {/* Render sections in order */}
+                  {page.sections?.sort((a, b) => a.order - b.order).map((section) => {
+                    const sectionData = { ...section.data, ...contentChanges };
+                    
+                    // Hero Section
+                    if (section.section_type === 'hero' || section.section_type === 'product-hero') {
+                      return (
+                        <div key={section.id} className="bg-gradient-to-br from-[#0d1f3c] to-[#1a3a6e] px-6 py-8 text-center">
+                          {sectionData.title && (
+                            <h1 className="text-white text-xl font-semibold mb-2" dangerouslySetInnerHTML={{ __html: sectionData.title }} />
+                          )}
+                          {sectionData.subtitle && (
+                            <p className="text-white/80 text-xs mb-4" dangerouslySetInnerHTML={{ __html: sectionData.subtitle }} />
+                          )}
+                          {sectionData.description && (
+                            <p className="text-white/70 text-xs mb-4" dangerouslySetInnerHTML={{ __html: sectionData.description }} />
+                          )}
+                          <button className="bg-[#3b82f6] text-white text-xs px-4 py-2 rounded">
+                            {sectionData.button_text || t('preview.getStarted')}
+                          </button>
                         </div>
-                        <div className="text-[#64748b] text-xs">
-                          {t('preview.cardDescription')}
+                      );
+                    }
+                    
+                    // Cards Section
+                    if (section.section_type === 'cards') {
+                      const features: Feature[] = [];
+                      // Extract features from data
+                      Object.keys(sectionData).forEach(key => {
+                        if (key.startsWith('features.') && key.includes('.title')) {
+                          const index = key.split('.')[1];
+                          features.push({
+                            index: parseInt(index),
+                            title: sectionData[`features.${index}.title`],
+                            description: sectionData[`features.${index}.description`]
+                          });
+                        }
+                      });
+                      
+                      return (
+                        <div key={section.id} className="p-4 grid grid-cols-2 gap-3">
+                          {features.sort((a, b) => a.index - b.index).map((feature) => (
+                            <div key={feature.index} className="bg-[#f8fafc] border border-[#e2e8f0] rounded-lg p-3">
+                              {feature.title && (
+                                <div className="font-semibold text-[#1e293b] text-xs mb-1" dangerouslySetInnerHTML={{ __html: feature.title }} />
+                              )}
+                              {feature.description && (
+                                <div className="text-[#64748b] text-xs" dangerouslySetInnerHTML={{ __html: feature.description }} />
+                              )}
+                            </div>
+                          ))}
                         </div>
+                      );
+                    }
+                    
+                    // Text/Content Section
+                    if (section.section_type === 'text' || section.section_type === 'content') {
+                      return (
+                        <div key={section.id} className="p-6">
+                          {sectionData.title && (
+                            <h2 className="text-lg font-semibold text-[#1e293b] mb-2" dangerouslySetInnerHTML={{ __html: sectionData.title }} />
+                          )}
+                          {sectionData.content && (
+                            <div className="text-[#64748b] text-sm" dangerouslySetInnerHTML={{ __html: sectionData.content }} />
+                          )}
+                        </div>
+                      );
+                    }
+                    
+                    // CTA Section
+                    if (section.section_type === 'cta') {
+                      return (
+                        <div key={section.id} className="bg-[#f0f9ff] px-6 py-4 text-center">
+                          {sectionData.title && (
+                            <h2 className="text-base font-semibold text-[#0369a1] mb-2" dangerouslySetInnerHTML={{ __html: sectionData.title }} />
+                          )}
+                          {sectionData.description && (
+                            <p className="text-sm text-[#0c4a6e] mb-3" dangerouslySetInnerHTML={{ __html: sectionData.description }} />
+                          )}
+                          <button className="bg-[#0369a1] text-white text-xs px-4 py-2 rounded">
+                            {sectionData.button_text || t('preview.learnMore')}
+                          </button>
+                        </div>
+                      );
+                    }
+                    
+                    // Footer Section
+                    if (section.section_type === 'footer') {
+                      return (
+                        <div key={section.id} className="bg-[#0d1f3c] px-4 py-3 text-center">
+                          {sectionData.content && (
+                            <span className="text-white/60 text-xs" dangerouslySetInnerHTML={{ __html: sectionData.content }} />
+                          )}
+                          <span className="text-white/60 text-xs">
+                            © 2026 AuditReady · {t('preview.privacy')} · {t('preview.terms')}
+                          </span>
+                        </div>
+                      );
+                    }
+                    
+                    // Default section rendering
+                    return (
+                      <div key={section.id} className="p-4">
+                        {sectionData.title && (
+                          <h2 className="text-base font-semibold text-[#1e293b] mb-2" dangerouslySetInnerHTML={{ __html: sectionData.title }} />
+                        )}
+                        {sectionData.content && (
+                          <div className="text-[#64748b] text-sm" dangerouslySetInnerHTML={{ __html: sectionData.content }} />
+                        )}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
 
                   {/* Footer */}
                   <div className="bg-[#0d1f3c] px-4 py-3 text-center">

@@ -184,65 +184,183 @@ function getSectionDisplayHint(sectionType: string, t: (key: string) => string):
   return hints[sectionType] || t('sectionDisplayHint.default') || 'This section appears on the page based on its type and content.';
 }
 
+/** Get human-readable label for a field path */
+function getFieldLabel(path: string): string {
+  const segments = path.split('.');
+  const fieldName = segments.pop() || '';
+  const fieldLower = fieldName.toLowerCase();
+
+  // Handle numeric indices for arrays (e.g., features.0.title -> Feature 1: Title)
+  const numericIndex = segments.find(s => /^\d+$/.test(s));
+  const parentPath = segments.join('.');
+
+  // Field name mappings
+  const fieldNames: Record<string, string> = {
+    'title': 'Title',
+    'subtitle': 'Subtitle',
+    'description': 'Description',
+    'content': 'Content',
+    'text': 'Text',
+    'question': 'Question',
+    'answer': 'Answer',
+    'kicker': 'Kicker',
+    'tagline': 'Tagline',
+    'button_text': 'Button Text',
+    'url': 'Link',
+    'background_image': 'Background Image',
+    'icon': 'Icon',
+    'link_text': 'Link Text',
+    'link_url': 'Link URL',
+    'how_it_works_title': 'How It Works Title',
+    'how_it_works_description': 'How It Works Description',
+    'product_title': 'Product Title',
+    'short_description': 'Short Description',
+    'main_benefits': 'Main Benefits',
+    'product_status': 'Product Status',
+  };
+
+  const readableName = fieldNames[fieldName] || fieldName;
+
+  // Add numeric index if present (convert 0-based to 1-based)
+  if (numericIndex) {
+    const index = parseInt(numericIndex, 10) + 1;
+    // Map parent paths to readable names
+    const parentNames: Record<string, string> = {
+      'features': 'Feature',
+      'benefits': 'Benefit',
+      'steps': 'Step',
+      'items': 'Item',
+      'main_benefits': 'Benefit',
+    };
+    const parentName = parentNames[parentPath] || 'Item';
+    return `${parentName} ${index}: ${readableName}`;
+  }
+
+  // Handle special parent paths
+  if (parentPath === 'main_benefits' && segments.length === 1 && /^\d+$/.test(segments[0])) {
+    const index = parseInt(segments[0], 10) + 1;
+    return `Benefit ${index}`;
+  }
+
+  return readableName;
+}
+
 /** Get typography label for a field based on field name and section type */
 function getFieldTypographyLabel(fieldName: string, sectionType: string): { label: string; color: string } {
   const fieldLower = fieldName.toLowerCase();
-  
+
   // Hero section typography
   if (sectionType === 'hero' || sectionType === 'product_hero') {
-    if (fieldLower.includes('title') || fieldLower.includes('headline')) {
-      return { label: 'H1 · ~40px desktop', color: 'bg-[#ede9fe] text-[#6d28d9]' };
+    if (fieldLower.includes('title') || fieldLower.includes('headline') || fieldLower.includes('product_title')) {
+      return { label: 'Large Heading', color: 'bg-[#ede9fe] text-[#6d28d9]' };
     }
-    if (fieldLower.includes('subtitle') || fieldLower.includes('description')) {
-      return { label: 'body text · rich text', color: 'bg-[#ede9fe] text-[#6d28d9]' };
+    if (fieldLower.includes('subtitle')) {
+      return { label: 'Medium Heading', color: 'bg-[#ede9fe] text-[#6d28d9]' };
+    }
+    if (fieldLower.includes('tagline')) {
+      return { label: 'Tagline', color: 'bg-[#d1fae5] text-[#065f46]' };
+    }
+    if (fieldLower.includes('short_description')) {
+      return { label: 'Short Text', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
+    }
+    if (fieldLower.includes('description') || fieldLower.includes('how_it_works_description')) {
+      return { label: 'Rich Text', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
+    }
+    if (fieldLower.includes('button')) {
+      return { label: 'Button Text', color: 'bg-[#d1fae5] text-[#065f46]' };
     }
     if (fieldLower.includes('kicker')) {
-      return { label: 'label · small', color: 'bg-[#ede9fe] text-[#6d28d9]' };
+      return { label: 'Label', color: 'bg-[#ede9fe] text-[#6d28d9]' };
     }
   }
-  
+
   // Cards section typography
   if (sectionType === 'cards') {
     if (fieldLower.includes('title')) {
-      return { label: 'H3 · ~18px', color: 'bg-[#d1fae5] text-[#065f46]' };
+      return { label: 'Card Title', color: 'bg-[#d1fae5] text-[#065f46]' };
     }
-    if (fieldLower.includes('content') || fieldLower.includes('description')) {
-      return { label: 'body text · small', color: 'bg-[#d1fae5] text-[#065f46]' };
+    if (fieldLower.includes('description')) {
+      return { label: 'Rich Text', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
     }
   }
-  
+
   // FAQ section typography
   if (sectionType === 'faq') {
     if (fieldLower.includes('question')) {
-      return { label: 'H3 · ~18px', color: 'bg-[#d1fae5] text-[#065f46]' };
+      return { label: 'Question', color: 'bg-[#fef3c7] text-[#92400e]' };
     }
     if (fieldLower.includes('answer')) {
-      return { label: 'body text · rich text', color: 'bg-[#d1fae5] text-[#065f46]' };
+      return { label: 'Rich Text', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
     }
   }
-  
+
   // CTA section typography
   if (sectionType === 'cta') {
     if (fieldLower.includes('title')) {
-      return { label: 'H2 · ~24px', color: 'bg-[#fef3c7] text-[#92400e]' };
+      return { label: 'Heading', color: 'bg-[#ede9fe] text-[#6d28d9]' };
     }
-    if (fieldLower.includes('button') || fieldLower.includes('text')) {
-      return { label: 'button text', color: 'bg-[#fef3c7] text-[#92400e]' };
+    if (fieldLower.includes('description')) {
+      return { label: 'Rich Text', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
+    }
+    if (fieldLower.includes('button')) {
+      return { label: 'Button Text', color: 'bg-[#d1fae5] text-[#065f46]' };
     }
   }
-  
-  // Default typography labels
+
+  // Trust section typography
+  if (sectionType === 'trust') {
+    if (fieldLower.includes('title')) {
+      return { label: 'Heading', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
+    }
+  }
+
+  // Footer section typography
+  if (sectionType === 'footer') {
+    if (fieldLower.includes('content')) {
+      return { label: 'Footer Text', color: 'bg-[#fce7f3] text-[#9d174d]' };
+    }
+  }
+
+  // Product catalog section
+  if (sectionType === 'product_catalog' || sectionType === 'product-hero') {
+    if (fieldLower.includes('title') || fieldLower.includes('product_title')) {
+      return { label: 'Product Title', color: 'bg-[#ede9fe] text-[#6d28d9]' };
+    }
+    if (fieldLower.includes('short_description')) {
+      return { label: 'Short Description', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
+    }
+    if (fieldLower.includes('tagline')) {
+      return { label: 'Tagline', color: 'bg-[#d1fae5] text-[#065f46]' };
+    }
+    if (fieldLower.includes('main_benefits')) {
+      return { label: 'Benefit', color: 'bg-[#d1fae5] text-[#065f46]' };
+    }
+    if (fieldLower.includes('how_it_works_title')) {
+      return { label: 'Section Heading', color: 'bg-[#ede9fe] text-[#6d28d9]' };
+    }
+    if (fieldLower.includes('how_it_works_description')) {
+      return { label: 'Rich Text', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
+    }
+    if (fieldLower.includes('product_status')) {
+      return { label: 'Status', color: 'bg-[#fce7f3] text-[#9d174d]' };
+    }
+  }
+
+  // Default typography
   if (fieldLower.includes('title')) {
-    return { label: 'heading', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
+    return { label: 'Heading', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
   }
   if (fieldLower.includes('content') || fieldLower.includes('description') || fieldLower.includes('answer')) {
-    return { label: 'body text · rich text', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
+    return { label: 'Rich Text', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
+  }
+  if (fieldLower.includes('text')) {
+    return { label: 'Text', color: 'bg-[#d1fae5] text-[#065f46]' };
   }
   if (fieldLower.includes('link') || fieldLower.includes('url')) {
-    return { label: 'link text', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
+    return { label: 'Link', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
   }
-  
-  return { label: 'text', color: 'bg-[#d1fae5] text-[#065f46]' };
+
+  return { label: 'Text', color: 'bg-[#d1fae5] text-[#065f46]' };
 }
 
 /** Determine if a field should use rich text editor based on field name */
@@ -465,8 +583,34 @@ export function CMSPageList() {
       if (aPriority !== 999) return -1;
       if (bPriority !== 999) return 1;
       
-      // Otherwise, use alphabetical sort
-      return a.localeCompare(b);
+      // Extract the path segments for numeric comparison
+      const aSegments = a.split('.');
+      const bSegments = b.split('.');
+      
+      // Compare segment by segment
+      for (let i = 0; i < Math.min(aSegments.length, bSegments.length); i++) {
+        const aSeg = aSegments[i];
+        const bSeg = bSegments[i];
+        
+        // If both are numeric, compare as numbers
+        const aNum = parseInt(aSeg, 10);
+        const bNum = parseInt(bSeg, 10);
+        
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          if (aNum !== bNum) return aNum - bNum;
+        } else if (!isNaN(aNum)) {
+          return -1; // numbers come before strings
+        } else if (!isNaN(bNum)) {
+          return 1; // strings come after numbers
+        } else {
+          // Both are strings, compare alphabetically
+          const strCompare = aSeg.localeCompare(bSeg);
+          if (strCompare !== 0) return strCompare;
+        }
+      }
+      
+      // If all segments are equal up to the min length, shorter path comes first
+      return aSegments.length - bSegments.length;
     });
   }, [editCs, editEn]);
 
@@ -691,7 +835,7 @@ export function CMSPageList() {
     <div className="relative w-full min-w-0 text-[#182843]">
       <h2 className="sr-only">{t("translationList.srOnly")}</h2>
 
-      <div className="sticky top-0 z-10 -mx-4 space-y-3 bg-transparent px-4 pb-4 pt-1 md:-mx-5 md:px-5">
+      <div className="-mx-4 space-y-3 bg-transparent px-4 pb-4 pt-1 md:-mx-5 md:px-5">
         <header className={ADMIN_PAGE_HERO_HEADER_CLASS}>
           <p className={ADMIN_PAGE_HERO_EYEBROW_CLASS}>
             {t("list.heroEyebrow")}
@@ -716,7 +860,7 @@ export function CMSPageList() {
         </header>
 
         <nav
-          className="flex w-full gap-1 overflow-x-auto rounded-2xl border border-[#e2e8f5] bg-white px-2 py-2 shadow-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="sticky top-0 z-10 flex w-full gap-1 overflow-x-auto rounded-2xl border border-[#e2e8f5] bg-white px-2 py-2 shadow-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label={t("translationList.filterPage")}
         >
           {loading ? (
@@ -867,7 +1011,7 @@ export function CMSPageList() {
                                       >
                                         <div className="flex items-center gap-2">
                                           <span className="font-mono text-[11px] text-[#425f8f]">
-                                            {path}
+                                            {getFieldLabel(path)}
                                           </span>
                                           {/* Typography label badge */}
                                           <span className={`text-xs px-2 py-0.5 rounded-full ${getFieldTypographyLabel(path.split('.').pop() || '', pair.type).color}`}>
@@ -919,7 +1063,7 @@ export function CMSPageList() {
                                       >
                                         <div className="flex items-center gap-2">
                                           <span className="font-mono text-[11px] text-[#425f8f]">
-                                            {path}
+                                            {getFieldLabel(path)}
                                           </span>
                                           {/* Typography label badge */}
                                           <span className={`text-xs px-2 py-0.5 rounded-full ${getFieldTypographyLabel(path.split('.').pop() || '', pair.type).color}`}>
