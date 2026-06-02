@@ -436,6 +436,8 @@ export function CMSPageList() {
   const [draftCsTitle, setDraftCsTitle] = useState("");
   const [draftEnTitle, setDraftEnTitle] = useState("");
   const [savingTitles, setSavingTitles] = useState(false);
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewLanguage, setPreviewLanguage] = useState<'cs' | 'en'>('en');
   const sectionRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const loadPages = useCallback(async () => {
@@ -860,7 +862,7 @@ export function CMSPageList() {
         </header>
 
         <nav
-          className="sticky top-0 z-10 flex w-full gap-1 overflow-x-auto rounded-2xl border border-[#e2e8f5] bg-white px-2 py-2 shadow-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="sticky top-[73px] z-10 flex w-full gap-1 overflow-x-auto rounded-2xl border border-[#e2e8f5] bg-white px-2 py-2 shadow-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label={t("translationList.filterPage")}
         >
           {loading ? (
@@ -891,22 +893,34 @@ export function CMSPageList() {
         </nav>
       </div>
 
-      <div className="w-full py-6">
-        {slugFilter ? (
-          <div className="mb-8">
-            {pageDetailLoading ? (
-              <p className="rounded-xl border border-dashed border-[#cfd8ea] bg-[#f9fbff] px-4 py-3 text-sm text-[#607594]">
-                {t("translationList.loadingSections")}
-              </p>
-            ) : sectionPairs.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-[#cfd8ea] bg-[#f9fbff] px-4 py-3 text-sm text-[#607594]">
-                {t("editor.sections.none")}
-              </p>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-[#607594]">
-                  {t("editor.sections.heading")}
+      <div className="flex gap-6 py-6">
+        {/* Main Content Area */}
+        <div className="flex-1 min-w-0">
+          {slugFilter ? (
+            <div className="mb-8">
+              {pageDetailLoading ? (
+                <p className="rounded-xl border border-dashed border-[#cfd8ea] bg-[#f9fbff] px-4 py-3 text-sm text-[#607594]">
+                  {t("translationList.loadingSections")}
                 </p>
+              ) : sectionPairs.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-[#cfd8ea] bg-[#f9fbff] px-4 py-3 text-sm text-[#607594]">
+                  {t("editor.sections.none")}
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-[#607594]">
+                      {t("editor.sections.heading")}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewVisible(true)}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#0d6e3f] bg-[#0d6e3f] text-white hover:bg-[#0a5a32] transition-colors text-sm"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>Live Preview</span>
+                    </button>
+                  </div>
                 <div className="flex w-full flex-col gap-3">
                   {sectionPairs.map(([key, pair]) => {
                     const expanded = expandedSectionKey === key;
@@ -1279,9 +1293,60 @@ export function CMSPageList() {
             })}
           </div>
         )}
-      
-      {/* Preview pane - collapsible */}
-      <CMSPreviewPane page={detailCs || detailEn} contentChanges={{ ...editCs, ...editEn }} />
+        </div>
+
+        {/* Preview Sidebar */}
+        {previewVisible && (
+          <div className="w-[400px] flex-shrink-0 border-l border-[#e5e7eb] bg-[#f9fafb]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#e5e7eb] bg-white">
+              <div className="flex items-center gap-2">
+                <Eye className="w-4 h-4 text-[#6b7280]" />
+                <span className="text-sm font-medium text-[#6b7280]">Live Preview</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Language Switcher */}
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewLanguage('en')}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                      previewLanguage === 'en'
+                        ? 'bg-[#1a56a0] text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    EN
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewLanguage('cs')}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                      previewLanguage === 'cs'
+                        ? 'bg-[#1a56a0] text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    CZ
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewVisible(false)}
+                  className="p-2 rounded-md hover:bg-[#f3f4f6] text-[#6b7280] transition-colors"
+                >
+                  <EyeOff className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="h-[calc(100vh-200px)] overflow-y-auto">
+              <CMSPreviewPane 
+                page={previewLanguage === 'cs' ? detailCs : detailEn} 
+                contentChanges={previewLanguage === 'cs' ? editCs : editEn}
+                className="border-0 shadow-none bg-transparent"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

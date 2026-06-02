@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Monitor, Tablet, Smartphone, Eye, EyeOff, Info } from 'lucide-react';
+import React, { useState } from 'react';
+import { Monitor, Tablet, Smartphone } from 'lucide-react';
 import { translate, useLocale } from '@/lib/i18n';
 import { adminCmsMessages } from '@/locales/admin-cms';
 import { PageDetail } from '@/lib/api/cms-api';
@@ -24,7 +24,6 @@ export function CMSPreviewPane({ page, contentChanges = {}, className = '' }: CM
   const { locale } = useLocale();
   const t = (key: string, values?: Record<string, string>) => translate(adminCmsMessages, locale, key, values);
   const [device, setDevice] = useState<DeviceType>('desktop');
-  const [isVisible, setIsVisible] = useState(false);
 
   const deviceWidths: Record<DeviceType, string> = {
     desktop: '100%',
@@ -36,91 +35,54 @@ export function CMSPreviewPane({ page, contentChanges = {}, className = '' }: CM
     setDevice(newDevice);
   };
 
-  const toggleVisibility = () => {
-    setIsVisible(!isVisible);
-  };
-
-  if (!isVisible) {
-    return (
-      <button
-        type="button"
-        onClick={toggleVisibility}
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg border border-[#0d6e3f] bg-[#0d6e3f] text-white hover:bg-[#0a5a32] transition-colors shadow-sm ${className}`}
-      >
-        <Eye className="w-4 h-4" />
-        <span className="text-sm font-medium">{t('preview.showPreview')}</span>
-      </button>
-    );
-  }
-
   return (
-    <div className={`flex flex-col border-l border-[#e5e7eb] bg-[#f9fafb] ${className}`}>
-      {/* Preview Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#e5e7eb] bg-white">
-        <div className="flex items-center gap-2">
-          <Eye className="w-4 h-4 text-[#6b7280]" />
-          <span className="text-sm font-medium text-[#6b7280]">{t('preview.livePreview')}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Device Toggle Buttons */}
-          <div className="flex gap-1">
-            <button
-              type="button"
-              onClick={() => handleDeviceChange('desktop')}
-              title={t('preview.desktop')}
-              className={`p-2 rounded-md border transition-colors ${
-                device === 'desktop'
-                  ? 'bg-[#1a56a0] text-white border-[#1a56a0]'
-                  : 'bg-white text-[#6b7280] border-[#e5e7eb] hover:border-[#1a56a0]'
-              }`}
-            >
-              <Monitor className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDeviceChange('tablet')}
-              title={t('preview.tablet')}
-              className={`p-2 rounded-md border transition-colors ${
-                device === 'tablet'
-                  ? 'bg-[#1a56a0] text-white border-[#1a56a0]'
-                  : 'bg-white text-[#6b7280] border-[#e5e7eb] hover:border-[#1a56a0]'
-              }`}
-            >
-              <Tablet className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDeviceChange('mobile')}
-              title={t('preview.mobile')}
-              className={`p-2 rounded-md border transition-colors ${
-                device === 'mobile'
-                  ? 'bg-[#1a56a0] text-white border-[#1a56a0]'
-                  : 'bg-white text-[#6b7280] border-[#e5e7eb] hover:border-[#1a56a0]'
-              }`}
-            >
-              <Smartphone className="w-4 h-4" />
-            </button>
-          </div>
-          <button
-            type="button"
-            onClick={toggleVisibility}
-            className="p-2 rounded-md hover:bg-[#f3f4f6] text-[#6b7280] transition-colors"
-            title={t('preview.hidePreview')}
-          >
-            <EyeOff className="w-4 h-4" />
-          </button>
-        </div>
+    <div className={`flex flex-col ${className}`}>
+      {/* Device Toggle */}
+      <div className="flex items-center justify-center gap-2 px-4 py-2 border-b border-[#e5e7eb] bg-white">
+        <button
+          type="button"
+          onClick={() => handleDeviceChange('desktop')}
+          className={`p-2 rounded-md border transition-colors ${
+            device === 'desktop'
+              ? 'bg-[#1a56a0] text-white border-[#1a56a0]'
+              : 'bg-white text-[#6b7280] border-[#e5e7eb] hover:border-[#1a56a0]'
+          }`}
+        >
+          <Monitor className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => handleDeviceChange('tablet')}
+          className={`p-2 rounded-md border transition-colors ${
+            device === 'tablet'
+              ? 'bg-[#1a56a0] text-white border-[#1a56a0]'
+              : 'bg-white text-[#6b7280] border-[#e5e7eb] hover:border-[#1a56a0]'
+          }`}
+        >
+          <Tablet className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => handleDeviceChange('mobile')}
+          className={`p-2 rounded-md border transition-colors ${
+            device === 'mobile'
+              ? 'bg-[#1a56a0] text-white border-[#1a56a0]'
+              : 'bg-white text-[#6b7280] border-[#e5e7eb] hover:border-[#1a56a0]'
+          }`}
+        >
+          <Smartphone className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Preview Frame */}
-      <div className="flex-1 overflow-hidden p-6 bg-[#e8eaed]">
+      <div className="flex-1 overflow-hidden p-4 bg-[#e8eaed]">
         <div className="flex justify-center h-full">
           <div
             className="bg-white rounded-lg overflow-hidden shadow-xl transition-all duration-300 border border-gray-200"
             style={{
               width: deviceWidths[device],
               maxWidth: '100%',
-              height: '500px',
+              height: '600px',
             }}
           >
             {/* Preview Content - Real data */}
@@ -306,14 +268,6 @@ export function CMSPreviewPane({ page, contentChanges = {}, className = '' }: CM
               )}
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Preview Footer */}
-      <div className="px-4 py-2 border-t border-[#e5e7eb] bg-white text-center">
-        <div className="flex items-center justify-center gap-2 text-xs text-[#9ca3af]">
-          <Info className="w-3 h-3" />
-          <span>{t('preview.typingNotice')}</span>
         </div>
       </div>
     </div>
