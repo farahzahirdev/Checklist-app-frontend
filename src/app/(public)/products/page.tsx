@@ -376,7 +376,7 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
               {heroTitleLine2} <span className="text-[#2f7dff]">{heroAccent}</span>
             </h1>
             <p className="max-w-xl text-lg text-[#d4e2f6] motion-safe:animate-fade-in-up motion-safe:delay-200 md:text-xl">
-              {heroSubtitle}
+              <span dangerouslySetInnerHTML={{ __html: heroSubtitle }} />
             </p>
             <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap">
               {heroActionCards.map((card, index) => (
@@ -405,7 +405,7 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
                   </span>
                   <span className="flex min-w-0 flex-col">
                     <span className="text-sm font-semibold text-white">{card.title}</span>
-                    <span className="text-xs text-[#a9c0e6]">{card.subtitle}</span>
+                    <span className="text-xs text-[#a9c0e6]"><span dangerouslySetInnerHTML={{ __html: card.subtitle }} /></span>
                   </span>
                 </a>
               ))}
@@ -451,13 +451,13 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
           <div className="grid gap-3 md:grid-cols-[1.1fr_3fr]">
             <div>
               <h3 className="text-3xl font-semibold text-[#1a2440]">{howTitle}</h3>
-              <p className="mt-2 text-sm text-[#5e7293]">{howSubtitle}</p>
+              <p className="mt-2 text-sm text-[#5e7293]"><span dangerouslySetInnerHTML={{ __html: howSubtitle }} /></p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {howSteps.map((step: any, index: number) => (
                 <div key={`${step.title}-${index}`} className="rounded-xl border border-[#dbe5f4] bg-white p-4">
                   <p className="text-sm font-semibold text-[#1f355d]">{step.title}</p>
-                  <p className="mt-1 text-xs text-[#5e7293]">{step.body}</p>
+                  <p className="mt-1 text-xs text-[#5e7293]"><span dangerouslySetInnerHTML={{ __html: step.body }} /></p>
                 </div>
               ))}
             </div>
@@ -467,7 +467,7 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
         <section id="audits-checklists" className="space-y-4 scroll-mt-24">
           <div>
             <h3 className="text-4xl font-semibold text-[#1a2440]">{auditsTitle}</h3>
-            <p className="mt-2 max-w-3xl text-base text-[#5e7293]">{auditsSubtitle}</p>
+            <p className="mt-2 max-w-3xl text-base text-[#5e7293]"><span dangerouslySetInnerHTML={{ __html: auditsSubtitle }} /></p>
           </div>
 
           {auditsLoading ? (
@@ -545,7 +545,7 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
         <section id="documentation" className="space-y-4 scroll-mt-24">
           <div>
             <h3 className="text-4xl font-semibold text-[#1a2440]">{documentationTitle}</h3>
-            <p className="mt-2 max-w-3xl text-base text-[#5e7293]">{documentationSubtitle}</p>
+            <p className="mt-2 max-w-3xl text-base text-[#5e7293]"><span dangerouslySetInnerHTML={{ __html: documentationSubtitle }} /></p>
             {apiDocSections.length === 0 ? (
               <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Documentation categories">
                 {DOCUMENT_CATEGORIES.map((chip) => {
@@ -634,7 +634,7 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
         <section id="plans" className="space-y-4 scroll-mt-24">
           <div>
             <h3 className="text-4xl font-semibold text-[#1a2440]">{plansTitle}</h3>
-            <p className="mt-2 max-w-3xl text-base text-[#5e7293]">{plansSubtitle}</p>
+            <p className="mt-2 max-w-3xl text-base text-[#5e7293]"><span dangerouslySetInnerHTML={{ __html: plansSubtitle }} /></p>
           </div>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {BUILDER_PRODUCTS.map((builder) => {
@@ -750,7 +750,7 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
               </span>
               <div className="min-w-0">
                 <h3 className="text-2xl font-semibold md:text-4xl">{ctaTitle}</h3>
-                <p className="mt-1 text-sm text-[#c7d8f8] md:text-base">{ctaSubtitle}</p>
+                <p className="mt-1 text-sm text-[#c7d8f8] md:text-base"><span dangerouslySetInnerHTML={{ __html: ctaSubtitle }} /></p>
               </div>
             </div>
             <div className="ml-auto flex w-full flex-col gap-3 sm:w-auto sm:flex-row">

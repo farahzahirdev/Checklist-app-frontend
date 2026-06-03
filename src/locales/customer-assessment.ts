@@ -31,6 +31,12 @@ export const customerAssessmentMessages: TranslationMessages = {
     'evidence.optional': '(optional)',
     'evidence.hint': 'PDF, PNG, or JPEG. Maximum file size: {maxMb} MB.',
     'evidence.uploading': 'Uploading…',
+    'errors.alreadySubmitted': 'This assessment is already submitted and cannot be started again.',
+    'errors.alreadySubmittedPayment': 'This checklist was already submitted with your current payment. Open Access to start a new cycle after purchase.',
+    'errors.submitFailed': 'Failed to submit assessment.',
+    'messages.cannotSubmitAgain': 'This assessment is submitted and cannot be submitted again.',
+    'messages.submittedAnswer': 'Your submitted answer',
+    'messages.cannotChangeAnswers': 'This assessment is submitted. Answers cannot be changed.',
   },
   cs: {
     'hero.kicker': 'Auditní prostředí',
@@ -62,6 +68,12 @@ export const customerAssessmentMessages: TranslationMessages = {
     'evidence.optional': '(volitelné)',
     'evidence.hint': 'PDF, PNG nebo JPEG. Maximální velikost souboru: {maxMb} MB.',
     'evidence.uploading': 'Nahrávám…',
+    'errors.alreadySubmitted': 'Toto hodnocení bylo již odesláno a nelze jej spustit znovu.',
+    'errors.alreadySubmittedPayment': 'Tento checklist byl již odeslán s vaší aktuální platbou. Otevřete Access pro spuštění nového cyklu po nákupu.',
+    'errors.submitFailed': 'Nepodařilo se odeslat hodnocení.',
+    'messages.cannotSubmitAgain': 'Toto hodnocení je odesláno a nelze jej odeslat znovu.',
+    'messages.submittedAnswer': 'Vaše odeslaná odpověď',
+    'messages.cannotChangeAnswers': 'Toto hodnocení je odesláno. Odpovědi nelze změnit.',
   },
 };
 

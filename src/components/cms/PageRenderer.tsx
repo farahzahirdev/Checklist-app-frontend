@@ -266,7 +266,7 @@ function ResourcesPublicPageRenderer({ page }: { page: PageDetail }) {
                     <span className="mt-1 text-[#2f7dff]">{resourcesIcon(item.icon || 'shield', 'h-5 w-5')}</span>
                     <div>
                       <p className="text-lg font-semibold">{item.title}</p>
-                      <p className="text-sm text-[#627796]">{item.body}</p>
+                      <p className="text-sm text-[#627796]"><span dangerouslySetInnerHTML={{ __html: item.body }} /></p>
                     </div>
                   </div>
                 ))}
@@ -374,7 +374,7 @@ function ResourcesPublicPageRenderer({ page }: { page: PageDetail }) {
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
             <p className="text-xl font-semibold text-[#334a72]">{mainBenefit.kicker}</p>
             <h2 className="mt-3 text-4xl font-semibold leading-tight text-[#1a2440]">{mainBenefit.title}</h2>
-            <p className="mt-4 text-xl leading-8 text-[#556b8c]">{mainBenefit.body}</p>
+            <p className="mt-4 text-xl leading-8 text-[#556b8c]"><span dangerouslySetInnerHTML={{ __html: mainBenefit.body }} /></p>
           </article>
 
           <article className="rounded-2xl border border-[#d7deeb] bg-white p-6 transition-shadow duration-300 ease-out motion-safe:animate-fade-in-up motion-safe:delay-150 motion-safe:transition-transform motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-lg md:p-8">
@@ -389,7 +389,7 @@ function ResourcesPublicPageRenderer({ page }: { page: PageDetail }) {
                     {resourcesIcon(item.icon || 'target', 'h-6 w-6')}
                   </span>
                   <h3 className="mt-3 text-xl font-semibold text-[#233553]">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#5d7292]">{item.body}</p>
+                  <p className="mt-2 text-sm leading-6 text-[#5d7292]"><span dangerouslySetInnerHTML={{ __html: item.body }} /></p>
                 </div>
               ))}
             </div>
@@ -443,7 +443,7 @@ function ResourcesPublicPageRenderer({ page }: { page: PageDetail }) {
                   <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#2f7dff] text-sm text-white">{index + 1}</span>
                   {step.title}
                 </p>
-                <p className="mt-2 text-base leading-7 text-[#5a7091]">{step.body}</p>
+                <p className="mt-2 text-base leading-7 text-[#5a7091]"><span dangerouslySetInnerHTML={{ __html: step.body }} /></p>
               </article>
             ))}
           </div>
@@ -465,7 +465,7 @@ function ResourcesPublicPageRenderer({ page }: { page: PageDetail }) {
                   {resourcesIcon(item.icon || 'users', 'h-6 w-6')}
                 </span>
                 <h3 className="mt-3 text-2xl font-semibold text-[#253b61]">{item.title}</h3>
-                <p className="mt-2 text-base leading-7 text-[#5f7292]">{item.body}</p>
+                <p className="mt-2 text-base leading-7 text-[#5f7292]"><span dangerouslySetInnerHTML={{ __html: item.body }} /></p>
               </article>
             ))}
           </div>
@@ -490,7 +490,7 @@ function ResourcesPublicPageRenderer({ page }: { page: PageDetail }) {
                     {resourcesIcon(iconName, 'h-6 w-6')}
                   </span>
                   <h3 className="mt-3 text-2xl font-semibold text-[#1f355d]">{card.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#5e7293]">{card.body}</p>
+                  <p className="mt-2 text-sm leading-6 text-[#5e7293]"><span dangerouslySetInnerHTML={{ __html: card.body }} /></p>
                   <ul className="mt-4 space-y-1.5 text-sm text-[#4e6283]">
                     {(card.points || []).map((point: string) => (
                       <li key={point}>{point}</li>
@@ -963,7 +963,7 @@ function ProductSectionRenderer({ data }: { data: Record<string, any> }) {
                 />
               )}
               <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
-              <p className="text-gray-600 mb-4">{product.description}</p>
+              <p className="text-gray-600 mb-4"><span dangerouslySetInnerHTML={{ __html: product.description }} /></p>
               {product.price && (
                 <p className="text-2xl font-bold text-blue-600 mb-4">{product.price}</p>
               )}
@@ -989,7 +989,7 @@ function FAQSectionRenderer({ data }: { data: Record<string, any> }) {
         {(data.title || data.subtitle) && (
           <div className="mb-8 text-center">
             {data.title && <h2 className="public-section-title text-gray-700">{data.title}</h2>}
-            {data.subtitle && <p className="mt-2 text-sm text-gray-500">{data.subtitle}</p>}
+            {data.subtitle && <p className="mt-2 text-sm text-gray-500"><span dangerouslySetInnerHTML={{ __html: data.subtitle }} /></p>}
           </div>
         )}
         <div className="space-y-4">
@@ -1253,7 +1253,7 @@ function CTASectionRenderer({ data }: { data: Record<string, any> }) {
             </span>
             <div className="min-w-0">
               {data.title && <p className="text-2xl font-semibold md:text-4xl">{data.title}</p>}
-              {data.subtitle && <p className="mt-1 text-sm text-[#c7d8f8] md:text-base">{data.subtitle}</p>}
+              {data.subtitle && <p className="mt-1 text-sm text-[#c7d8f8] md:text-base"><span dangerouslySetInnerHTML={{ __html: data.subtitle }} /></p>}
             </div>
           </div>
           <div className="ml-auto flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
@@ -1290,7 +1290,7 @@ function TrustSectionRenderer({ data }: { data: Record<string, any> }) {
       )}
       {data.subtitle && (
         <p className="mt-2 text-center text-base text-[#6f7893] motion-safe:animate-fade-in-up motion-safe:delay-75 md:text-lg">
-          {data.subtitle}
+          <span dangerouslySetInnerHTML={{ __html: data.subtitle }} />
         </p>
       )}
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -1341,13 +1341,13 @@ function HowItWorksSectionRenderer({ data }: { data: Record<string, any> }) {
         <div className="grid gap-3 md:grid-cols-[1.1fr_3fr]">
           <div>
             {data.title && <h3 className="text-3xl font-semibold text-[#1a2440]">{data.title}</h3>}
-            {data.subtitle && <p className="mt-2 text-sm text-[#5e7293]">{data.subtitle}</p>}
+            {data.subtitle && <p className="mt-2 text-sm text-[#5e7293]"><span dangerouslySetInnerHTML={{ __html: data.subtitle }} /></p>}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {(data.steps || []).map((step: any, index: number) => (
               <div key={index} className="rounded-xl border border-[#dbe5f4] bg-white p-4">
                 <p className="text-sm font-semibold text-[#1f355d]">{step.title}</p>
-                <p className="mt-1 text-xs text-[#5e7293]">{step.body}</p>
+                <p className="mt-1 text-xs text-[#5e7293]"><span dangerouslySetInnerHTML={{ __html: step.body }} /></p>
               </div>
             ))}
           </div>
@@ -1369,7 +1369,7 @@ function DocumentationGridRenderer({ data }: { data: Record<string, any> }) {
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-6 md:py-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
       <div>
         {data.title && <h3 className="text-4xl font-semibold text-[#1a2440]">{data.title}</h3>}
-        {data.subtitle && <p className="mt-2 text-base text-[#5e7293]">{data.subtitle}</p>}
+        {data.subtitle && <p className="mt-2 text-base text-[#5e7293]"><span dangerouslySetInnerHTML={{ __html: data.subtitle }} /></p>}
         {data.categories && (
           <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Documentation categories">
             {data.categories.map((category: string) => (
@@ -1438,7 +1438,7 @@ function BundlesSectionRenderer({ data }: { data: Record<string, any> }) {
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-6 md:py-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
       <article className="rounded-2xl border border-[#d7deeb] bg-[#eef2fa] p-5 transition-shadow duration-300 ease-out motion-safe:transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md md:p-6">
         {data.title && <h3 className="text-3xl font-semibold text-[#1a2440]">{data.title}</h3>}
-        {data.subtitle && <p className="mt-2 text-sm text-[#5e7293]">{data.subtitle}</p>}
+        {data.subtitle && <p className="mt-2 text-sm text-[#5e7293]"><span dangerouslySetInnerHTML={{ __html: data.subtitle }} /></p>}
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {(data.bundles || []).map((bundle: any, index: number) => (
             <div
@@ -1613,7 +1613,7 @@ function MainBenefitSectionRenderer({ data }: { data: Record<string, any> }) {
           </h2>
         )}
         {data.body && (
-          <p className="mt-4 text-lg text-[#55627e]">{data.body}</p>
+          <p className="mt-4 text-lg text-[#55627e]"><span dangerouslySetInnerHTML={{ __html: data.body }} /></p>
         )}
       </div>
     </section>
@@ -1630,7 +1630,7 @@ function WhatYouGetSectionRenderer({ data }: { data: Record<string, any> }) {
           </h2>
         )}
         {data.subtitle && (
-          <p className="mt-2 text-lg text-[#55627e]">{data.subtitle}</p>
+          <p className="mt-2 text-lg text-[#55627e]"><span dangerouslySetInnerHTML={{ __html: data.subtitle }} /></p>
         )}
         
         <div className="mt-8 grid gap-6 md:grid-cols-2">
@@ -1639,7 +1639,7 @@ function WhatYouGetSectionRenderer({ data }: { data: Record<string, any> }) {
             return (
               <article key={index} className={`rounded-xl border p-6 md:p-8 ${toneClasses}`}>
                 <h3 className="text-xl font-semibold">{card.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed">{card.body}</p>
+                <p className="mt-2 text-sm leading-relaxed"><span dangerouslySetInnerHTML={{ __html: card.body }} /></p>
                 {card.points && (
                   <ul className="mt-4 space-y-2">
                     {card.points.map((point: string, i: number) => (
@@ -1669,7 +1669,7 @@ function WhoItsForSectionRenderer({ data }: { data: Record<string, any> }) {
           </h2>
         )}
         {data.subtitle && (
-          <p className="mt-2 text-lg text-[#55627e]">{data.subtitle}</p>
+          <p className="mt-2 text-lg text-[#55627e]"><span dangerouslySetInnerHTML={{ __html: data.subtitle }} /></p>
         )}
         
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -1681,7 +1681,7 @@ function WhoItsForSectionRenderer({ data }: { data: Record<string, any> }) {
                 </div>
               )}
               <h3 className="font-semibold text-[#1f2741]">{item.title}</h3>
-              <p className="mt-2 text-sm text-[#55627e]">{item.body}</p>
+              <p className="mt-2 text-sm text-[#55627e]"><span dangerouslySetInnerHTML={{ __html: item.body }} /></p>
             </article>
           ))}
         </div>

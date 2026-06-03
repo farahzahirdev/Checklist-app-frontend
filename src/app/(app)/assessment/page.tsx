@@ -815,7 +815,7 @@ export default function AssessmentPage() {
               detail = await getAssessmentDetailById(submittedForChecklist.id);
             } else {
               setIsSubmittedChecklist(true);
-              throw new Error('This assessment is already submitted and cannot be started again.');
+              throw new Error(t('errors.alreadySubmitted'));
             }
           } else {
             await startAssessment({ checklist_id: checklistIdFromQuery });
@@ -911,7 +911,7 @@ export default function AssessmentPage() {
         setIsSubmittedChecklist(true);
         setAssessmentDetail(null);
         setMessage('');
-        setError('This checklist was already submitted with your current payment. Open Access to start a new cycle after purchase.');
+        setError(t('errors.alreadySubmittedPayment'));
         return;
       }
       if (errorMessage.includes('already submitted')) {
@@ -1116,7 +1116,7 @@ export default function AssessmentPage() {
       toast.success(t('toasts.submitted'));
       await loadAssessmentDetail({ suppressNotFoundError: true });
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to submit assessment.';
+      const errorMessage = err instanceof Error ? err.message : t('errors.submitFailed');
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -1433,7 +1433,7 @@ export default function AssessmentPage() {
           <article className="w-full min-w-0 max-w-[calc(100vw-2rem)] rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_1px_3px_rgba(18,32,61,0.08)] sm:max-w-none sm:p-5">
             {isSubmittedChecklist ? (
               <div className="mb-4 rounded-lg border border-[#d8e7d8] bg-[#f1f8f1] px-3 py-3 text-sm text-[#2f5c38]">
-                <p>This assessment is submitted and cannot be submitted again.</p>
+                <p>{t('messages.cannotSubmitAgain')}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Link
                     href="/access"
@@ -1610,7 +1610,7 @@ export default function AssessmentPage() {
 
             {activeQuestion && isSubmittedReadOnly ? (
               <div className="mt-4 rounded-lg border border-[#d8e7d8] bg-[#f7fbf7] p-4">
-                <p className="text-sm font-semibold text-[#1f2d45]">Your submitted answer</p>
+                <p className="text-sm font-semibold text-[#1f2d45]">{t('messages.submittedAnswer')}</p>
                 {(() => {
                   const submittedValue = activeAnswer?.answer || activeQuestion.customer_answer || '';
                   const submittedScore = parseAnswerScore(submittedValue);
@@ -1641,7 +1641,7 @@ export default function AssessmentPage() {
                     {activeAnswer?.note_text || activeQuestion.user_note}
                   </p>
                 ) : null}
-                <p className="mt-3 text-xs text-[#607594]">This assessment is submitted. Answers cannot be changed.</p>
+                <p className="mt-3 text-xs text-[#607594]">{t('messages.cannotChangeAnswers')}</p>
               </div>
             ) : null}
 
