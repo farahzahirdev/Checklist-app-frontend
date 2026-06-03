@@ -240,7 +240,7 @@ export default function AppLayout({
             />
           ) : null}
           <div
-            className={`grid w-full items-start ${showCustomerSidebar ? 'lg:grid-cols-[250px_1fr]' : 'grid-cols-1'}`}
+            className={`grid min-h-dvh w-full ${showCustomerSidebar ? 'lg:grid-cols-[250px_1fr]' : 'grid-cols-1'}`}
           >
             {showCustomerSidebar ? (
             <aside
@@ -315,7 +315,7 @@ export default function AppLayout({
               </nav>
             </aside>
             ) : null}
-            <div className="flex min-w-0 flex-col">
+            <div className="flex min-h-dvh min-w-0 flex-col">
               <header
                 className={`sticky top-0 z-40 flex items-center gap-3 bg-[linear-gradient(120deg,#071733,#0c2144_45%,#13356d)] px-5 py-4 ${
                   isFullBleedWorkspacePage ? '' : 'border-b border-[#dde6f5]'
@@ -362,7 +362,7 @@ export default function AppLayout({
                   <CustomerUserMenu displayName={displayName} shortName={shortDisplayName} />
                 </div>
               </header>
-              <div className={isFullBleedWorkspacePage ? 'min-w-0' : 'min-w-0 p-4 md:p-5'}>
+              <div className={`flex-1 ${isFullBleedWorkspacePage ? 'min-w-0' : 'min-w-0 p-4 md:p-5'}`}>
                 {children}
               </div>
               <PublicFooter variant="customer" />

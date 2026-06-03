@@ -5,10 +5,10 @@ export const workspaceCardClass =
   'rounded-2xl border border-[#e2e8f0] bg-white shadow-[0_4px_24px_rgba(15,23,42,0.06)]';
 
 export const workspacePrimaryBtn =
-  'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0066ff] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0052cc] disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#2d4f83] bg-[linear-gradient(180deg,#182843_0%,#223657_100%)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:border-[#3a6299] hover:bg-[#223657] disabled:cursor-not-allowed disabled:opacity-60';
 
 export const workspaceOutlineBtn =
-  'inline-flex w-full items-center justify-center rounded-xl border border-[#cbd5e1] bg-white px-4 py-2.5 text-sm font-semibold text-[#0066ff] transition-colors hover:border-[#94a3b8] hover:bg-[#f8fafc]';
+  'inline-flex w-full items-center justify-center rounded-xl border border-[#2d4f83] bg-[linear-gradient(180deg,#f7faff_0%,#eef4ff_100%)] px-4 py-2.5 text-sm font-semibold text-[#2f4f83] transition-colors hover:border-[#3a6299] hover:bg-[#e2ecff]';
 
 export const workspaceGhostBtn =
   'inline-flex items-center justify-center rounded-xl border border-[#e2e8f0] bg-white px-4 py-2.5 text-sm font-semibold text-[#334155] transition-colors hover:bg-[#f8fafc]';

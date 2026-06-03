@@ -1193,7 +1193,7 @@ export default function AssessmentPage() {
   }
 
   return (
-    <div className="w-full bg-[#eef2f7]">
+    <div className="min-h-full w-full bg-[#eef2f7]">
       {assessmentDetail ? (
         <div className="w-full px-4 pt-5 sm:px-6 md:px-8 lg:px-10">
           <div className="rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.08)] sm:p-5">
