@@ -38,39 +38,39 @@ export function CMSPreviewPane({ page, contentChanges = {}, className = '' }: CM
   return (
     <div className={`flex flex-col ${className}`}>
       {/* Device Toggle */}
-      <div className="flex items-center justify-center gap-2 px-4 py-2 border-b border-[#e5e7eb] bg-white">
+      <div className="flex items-center justify-center gap-1 px-3 py-1.5 border-b border-[#e5e7eb] bg-white">
         <button
           type="button"
           onClick={() => handleDeviceChange('desktop')}
-          className={`p-2 rounded-md border transition-colors ${
+          className={`p-1 rounded-sm border transition-colors ${
             device === 'desktop'
               ? 'bg-[#1a56a0] text-white border-[#1a56a0]'
               : 'bg-white text-[#6b7280] border-[#e5e7eb] hover:border-[#1a56a0]'
           }`}
         >
-          <Monitor className="w-4 h-4" />
+          <Monitor className="w-3 h-3" />
         </button>
         <button
           type="button"
           onClick={() => handleDeviceChange('tablet')}
-          className={`p-2 rounded-md border transition-colors ${
+          className={`p-1 rounded-sm border transition-colors ${
             device === 'tablet'
               ? 'bg-[#1a56a0] text-white border-[#1a56a0]'
               : 'bg-white text-[#6b7280] border-[#e5e7eb] hover:border-[#1a56a0]'
           }`}
         >
-          <Tablet className="w-4 h-4" />
+          <Tablet className="w-3 h-3" />
         </button>
         <button
           type="button"
           onClick={() => handleDeviceChange('mobile')}
-          className={`p-2 rounded-md border transition-colors ${
+          className={`p-1 rounded-sm border transition-colors ${
             device === 'mobile'
               ? 'bg-[#1a56a0] text-white border-[#1a56a0]'
               : 'bg-white text-[#6b7280] border-[#e5e7eb] hover:border-[#1a56a0]'
           }`}
         >
-          <Smartphone className="w-4 h-4" />
+          <Smartphone className="w-3 h-3" />
         </button>
       </div>
 
