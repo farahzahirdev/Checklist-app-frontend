@@ -281,7 +281,7 @@ export default function PaymentsPage() {
                   type="checkbox"
                   checked={activeAccessOnly}
                   onChange={(e) => setActiveAccessOnly(e.target.checked)}
-                  className="h-4 w-4 rounded border-[#b7c7e6]"
+                  className="h-4 w-4 rounded border-[#b7c7e6] bg-white"
                 />
                 {t('filters.activeOnly')}
               </label>
