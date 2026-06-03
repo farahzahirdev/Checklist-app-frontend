@@ -22,6 +22,7 @@ import {
   type AssessmentDetailQuestion,
 } from '@/lib/assessment';
 import { isAllowedEvidenceFileSize, isAllowedEvidenceMimeType, getEvidenceFileSizeErrorMessage, EVIDENCE_MAX_FILE_SIZE_MB } from '@/lib/upload-rules';
+import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
 import SecureUploadProgress from '@/components/secure-upload-progress';
 import { formatPreciseAccessCountdown, getAccessCountdownInfo, useAccessCountdownNow } from '@/lib/access-countdown';
 import { translate, useLocale } from '@/lib/i18n';
@@ -585,6 +586,29 @@ export default function AssessmentPage() {
       : 'Current checklist';
     return [{ id: effectiveChecklistId, label: currentLabel }, ...base];
   }, [assessmentDetail?.checklist_title, effectiveChecklistId, purchasedOnlyChecklists]);
+
+  const breadcrumbPageLabel = useMemo(() => {
+    const titleFromDetail = assessmentDetail?.checklist_title?.trim();
+    if (titleFromDetail) return titleFromDetail;
+
+    const catalogMatch = purchasedOnlyChecklists.find((item) => item.id === effectiveChecklistId);
+    if (catalogMatch?.title?.trim()) return catalogMatch.title.trim();
+
+    const option = checklistSelectOptions.find((item) => item.id === effectiveChecklistId);
+    if (option?.label) {
+      const withoutVersion = option.label.replace(/\s*\([^)]*\)\s*$/, '').trim();
+      return withoutVersion || option.label;
+    }
+
+    return t('breadcrumb.assessment');
+  }, [
+    assessmentDetail?.checklist_title,
+    effectiveChecklistId,
+    purchasedOnlyChecklists,
+    checklistSelectOptions,
+    locale,
+  ]);
+
   const isNoteEnabledForActiveQuestion = useMemo(() => {
     if (!activeQuestion) {
       return false;
@@ -1244,6 +1268,12 @@ export default function AssessmentPage() {
       ) : null}
 
     <section className="w-full space-y-4 px-4 py-6 sm:px-6 md:px-8 lg:px-10">
+      <AdminBreadcrumbs
+        items={[
+          { label: t('breadcrumb.myAudits'), href: '/my-audits' },
+          { label: breadcrumbPageLabel },
+        ]}
+      />
       <div className="rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_1px_3px_rgba(18,32,61,0.08)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div>
