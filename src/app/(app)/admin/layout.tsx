@@ -45,6 +45,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     ? navItems.filter((item) => auditorNavHrefs.has(item.href))
     : navItems;
   const isChecklistPanelRoute = /^\/admin\/checklists\/[^/]+\/?$/.test(pathname);
+  const isCmsPreviewFrame = pathname === '/admin/cms/preview-frame';
 
   useEffect(() => {
     if (!roleLoaded) return;
@@ -138,7 +139,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   // 2) Keep checklist management as top priority domain in admin nav.
   return (
     <section className="relative h-screen w-full overflow-hidden bg-[#f4f6fb] text-[#182843]">
-      {isChecklistPanelRoute ? (
+      {isChecklistPanelRoute || isCmsPreviewFrame ? (
         <div className="h-full w-full overflow-hidden">
           <AdminAccessProvider isReadOnly={isReadOnly}>
             <div className="h-full w-full">{children}</div>
@@ -146,7 +147,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </div>
       ) : null}
 
-      {!isChecklistPanelRoute ? (
+      {!isChecklistPanelRoute && !isCmsPreviewFrame ? (
         <>
       {mobileNavOpen ? (
         <button

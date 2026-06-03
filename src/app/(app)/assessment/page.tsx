@@ -1256,7 +1256,7 @@ export default function AssessmentPage() {
                 </p>
               </div>
               <Link
-                href="/my-audits"
+                href="/access"
                 className="inline-flex items-center gap-1.5 rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#243555] hover:bg-[#f6f9ff]"
               >
                 {t('progress.overview')}
@@ -1270,7 +1270,7 @@ export default function AssessmentPage() {
     <section className="w-full space-y-4 px-4 py-6 sm:px-6 md:px-8 lg:px-10">
       <AdminBreadcrumbs
         items={[
-          { label: t('breadcrumb.myAudits'), href: '/my-audits' },
+          { label: t('breadcrumb.myAudits'), href: '/access' },
           { label: breadcrumbPageLabel },
         ]}
       />

@@ -41,7 +41,7 @@ const MENU_LINKS: MenuLink[] = [
     ),
   },
   {
-    href: '/my-audits',
+    href: '/access',
     labelKey: 'menu.myAudits',
     icon: (
       <svg viewBox="0 0 90 90" className="h-[18px] w-[18px]" fill="none" aria-hidden="true">

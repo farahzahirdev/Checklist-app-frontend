@@ -1,4 +1,4 @@
-/** Shared visual tokens for customer audit workspace pages (/my-audits, /access). */
+/** Shared visual tokens for customer audit workspace page (/access). */
 export const workspacePageClass = 'min-h-full w-full bg-[#eef2f7]';
 
 export const workspaceCardClass =

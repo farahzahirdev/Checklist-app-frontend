@@ -439,6 +439,80 @@ export function CMSPageList() {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewLanguage, setPreviewLanguage] = useState<'cs' | 'en'>('en');
   const sectionRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const previewPanelRef = useRef<HTMLDivElement>(null);
+  const [previewPanelHeight, setPreviewPanelHeight] = useState<number | undefined>(undefined);
+
+  // On large screens the preview is a sticky side panel that lives inside the
+  // admin content scroll area, *below* the page tabs. Until `sticky` engages it
+  // sits low in the flow, so a fixed viewport-based height pushes its bottom off
+  // screen and forces a whole-page scroll. Instead we size the panel live from
+  // its current top to the visible bottom of the scroll area (updated on
+  // scroll/resize), so its bottom always stays in view and only the preview
+  // scrolls internally.
+  useLayoutEffect(() => {
+    if (!previewVisible) {
+      setPreviewPanelHeight(undefined);
+      return;
+    }
+
+    const BOTTOM_GAP = 16;
+
+    const getScrollParent = (el: HTMLElement | null): HTMLElement | null => {
+      let node = el?.parentElement ?? null;
+      while (node && node !== document.body) {
+        const overflowY = getComputedStyle(node).overflowY;
+        if (overflowY === 'auto' || overflowY === 'scroll') return node;
+        node = node.parentElement;
+      }
+      return null;
+    };
+
+    const isLargeViewport = () =>
+      typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches;
+
+    const scrollParent = getScrollParent(previewPanelRef.current);
+
+    let frame = 0;
+    const compute = () => {
+      frame = 0;
+      const panel = previewPanelRef.current;
+      if (!panel || !isLargeViewport()) {
+        setPreviewPanelHeight(undefined);
+        return;
+      }
+      // Visible bottom of the scroll viewport (fallback to window).
+      const visibleBottom = scrollParent
+        ? scrollParent.getBoundingClientRect().bottom
+        : window.innerHeight;
+      // The panel's top in viewport coords is independent of its own height
+      // (sticky offset or flow position), so there's no feedback loop.
+      const top = panel.getBoundingClientRect().top;
+      const available = visibleBottom - top - BOTTOM_GAP;
+      setPreviewPanelHeight(Math.max(320, Math.floor(available)));
+    };
+
+    const schedule = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(compute);
+    };
+
+    compute();
+
+    const ro = new ResizeObserver(schedule);
+    if (scrollParent) {
+      ro.observe(scrollParent);
+      scrollParent.addEventListener('scroll', schedule, { passive: true });
+    }
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      ro.disconnect();
+      if (scrollParent) scrollParent.removeEventListener('scroll', schedule);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+    };
+  }, [previewVisible]);
 
   const loadPages = useCallback(async () => {
     try {
@@ -893,9 +967,9 @@ export function CMSPageList() {
         </nav>
       </div>
 
-      <div className="flex gap-6 py-6">
+      <div className="flex flex-col gap-6 py-4 lg:flex-row lg:py-6">
         {/* Main Content Area */}
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           {slugFilter ? (
             <div className="mb-8">
               {pageDetailLoading ? (
@@ -1295,10 +1369,14 @@ export function CMSPageList() {
         )}
         </div>
 
-        {/* Preview Sidebar */}
+        {/* Preview Sidebar — full-screen overlay on small viewports; sticky panel with its own scroll on lg+ */}
         {previewVisible && (
-          <div className="w-[400px] flex-shrink-0 border-l border-[#e5e7eb] bg-[#f9fafb]">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#e5e7eb] bg-white">
+          <div
+            ref={previewPanelRef}
+            style={previewPanelHeight ? { height: `${previewPanelHeight}px` } : undefined}
+            className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-[#f9fafb] lg:sticky lg:top-4 lg:z-0 lg:w-[400px] lg:max-w-[min(400px,100%)] lg:flex-shrink-0 lg:self-start lg:border-l lg:border-[#e5e7eb]"
+          >
+            <div className="flex shrink-0 items-center justify-between border-b border-[#e5e7eb] bg-white px-4 py-3">
               <div className="flex items-center gap-2">
                 <Eye className="w-4 h-4 text-[#6b7280]" />
                 <span className="text-sm font-medium text-[#6b7280]">Live Preview</span>
@@ -1338,11 +1416,11 @@ export function CMSPageList() {
                 </button>
               </div>
             </div>
-            <div className="h-[calc(100vh-200px)] overflow-y-auto">
-              <CMSPreviewPane 
-                page={previewLanguage === 'cs' ? detailCs : detailEn} 
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <CMSPreviewPane
+                page={previewLanguage === 'cs' ? detailCs : detailEn}
                 contentChanges={previewLanguage === 'cs' ? editCs : editEn}
-                className="border-0 shadow-none bg-transparent"
+                className="h-full min-h-0 border-0 bg-transparent shadow-none"
               />
             </div>
           </div>

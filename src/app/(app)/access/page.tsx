@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import type { Route } from 'next';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CustomerAuditWorkspaceHero, WorkspaceSummaryStatCard } from '@/components/customer-my-audits/customer-audit-workspace-hero';
 import {
   workspaceActivityCard,
   workspaceCardClass,
+  workspaceFilterBtn,
   workspaceGhostBtn,
   workspaceInputClass,
   workspaceOutlineBtn,
@@ -14,16 +15,26 @@ import {
   workspacePaginationBtn,
   workspacePrimaryBtn,
   workspaceQuickStepCard,
-  workspaceSelectClass,
   workspaceTagClass,
 } from '@/components/customer-my-audits/customer-audit-workspace-theme';
+import { formatPreciseAccessCountdown, hasAccessTimeRemaining, useAccessCountdownNow } from '@/lib/access-countdown';
 import { getCustomerAssessmentsDashboard, listCustomerAssessments, type CustomerAssessmentListItem } from '@/lib/customer-assessments';
+import { getActiveAccessWindows, type ActiveAccessWindow } from '@/lib/customer-payments';
 import { startAssessment } from '@/lib/assessment';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerAccessMessages } from '@/locales/customer-access';
 
 type StatusFilter = 'all' | 'not_started' | 'in_progress' | 'submitted' | 'closed' | 'expired';
 const PAGE_SIZE = 12;
+
+const STATUS_FILTER_OPTIONS: { value: StatusFilter; labelKey: string }[] = [
+  { value: 'all', labelKey: 'filters.all' },
+  { value: 'not_started', labelKey: 'filters.notStarted' },
+  { value: 'in_progress', labelKey: 'filters.inProgress' },
+  { value: 'submitted', labelKey: 'filters.submitted' },
+  { value: 'closed', labelKey: 'filters.closed' },
+  { value: 'expired', labelKey: 'filters.expired' },
+];
 
 function statusBadgeClass(status: string) {
   if (status === 'in_progress' || status === 'not_started') return 'bg-[#dbeafe] text-[#1d4ed8]';
@@ -43,48 +54,22 @@ function clampPercent(value: number) {
 }
 
 function formatDate(value: string | null | undefined, locale: 'en' | 'cs') {
-  if (!value) return null;
+  if (!value) return '—';
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
+  if (Number.isNaN(date.getTime())) return '—';
   return date.toLocaleDateString(locale === 'cs' ? 'cs-CZ' : 'en-GB', {
-    year: 'numeric',
-    month: 'short',
     day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   });
 }
 
-function formatDateTime(value: string | null | undefined, locale: 'en' | 'cs') {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleString(locale === 'cs' ? 'cs-CZ' : 'en-GB');
-}
-
-function formatLastChanged(value: string | null | undefined, locale: 'en' | 'cs') {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-
-  const now = new Date();
-  const isSameDay =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
-
-  if (!isSameDay) {
-    return date.toLocaleString(locale === 'cs' ? 'cs-CZ' : 'en-GB');
-  }
-
-  const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.max(0, Math.floor(diffMs / (1000 * 60)));
-  const rtf = new Intl.RelativeTimeFormat(locale === 'cs' ? 'cs-CZ' : 'en', { numeric: 'auto' });
-
-  if (diffMinutes < 60) {
-    return rtf.format(-diffMinutes, 'minute');
-  }
-
-  const diffHours = Math.floor(diffMinutes / 60);
-  return rtf.format(-diffHours, 'hour');
+function ArrowRightIcon() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" aria-hidden="true">
+      <path d="M5 10h10M11 6l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
 
 export default function AccessPage() {
@@ -105,6 +90,8 @@ export default function AccessPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [statusFiltersOpen, setStatusFiltersOpen] = useState(false);
+  const statusFiltersRef = useRef<HTMLDivElement | null>(null);
   const [page, setPage] = useState(1);
   const [totalAssessments, setTotalAssessments] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
@@ -112,6 +99,8 @@ export default function AccessPage() {
   const [inProgressCount, setInProgressCount] = useState(0);
   const [publishedReportsCount, setPublishedReportsCount] = useState(0);
   const [assessments, setAssessments] = useState<CustomerAssessmentListItem[]>([]);
+  const [accessByChecklist, setAccessByChecklist] = useState<Map<string, ActiveAccessWindow>>(new Map());
+  const countdownNowMs = useAccessCountdownNow(assessments.length > 0);
 
   const loadPage = useCallback(async () => {
     setLoading(true);
@@ -143,24 +132,46 @@ export default function AccessPage() {
 
   const loadMeta = useCallback(async () => {
     try {
-      const [activeResponse, readyResponse, inProgressResponse, reportResponse] = await Promise.all([
+      const [activeResponse, readyResponse, inProgressResponse, reportResponse, accessWindows] = await Promise.all([
         listCustomerAssessments({ status: ['not_started', 'in_progress'], limit: 1 }).catch(() => ({ total: 0, assessments: [] })),
         listCustomerAssessments({ status: ['not_started'], limit: 1 }).catch(() => ({ total: 0, assessments: [] })),
         listCustomerAssessments({ status: ['in_progress'], limit: 1 }).catch(() => ({ total: 0, assessments: [] })),
         getCustomerAssessmentsDashboard().catch(() => null),
+        getActiveAccessWindows().catch(() => []),
       ]);
 
       setActiveCount(activeResponse.total ?? 0);
       setReadyToStartCount(readyResponse.total ?? 0);
       setInProgressCount(inProgressResponse.total ?? 0);
       setPublishedReportsCount(reportResponse?.summary?.reports_available ?? 0);
+      setAccessByChecklist(new Map(accessWindows.map((item) => [item.checklist_id, item])));
     } catch {
       setActiveCount(0);
       setReadyToStartCount(0);
       setInProgressCount(0);
       setPublishedReportsCount(0);
+      setAccessByChecklist(new Map());
     }
   }, []);
+
+  const statusFilterLabel = useMemo(() => {
+    const option = STATUS_FILTER_OPTIONS.find((item) => item.value === statusFilter);
+    return translate(customerAccessMessages, locale, option?.labelKey ?? 'filters.all');
+  }, [statusFilter, locale]);
+
+  useEffect(() => {
+    if (!statusFiltersOpen) return undefined;
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node | null;
+      if (target && statusFiltersRef.current && !statusFiltersRef.current.contains(target)) {
+        setStatusFiltersOpen(false);
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [statusFiltersOpen]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -294,7 +305,7 @@ export default function AccessPage() {
               <h2 className="text-xl font-bold text-[#0f172a]">{t('section.auditListTitle')}</h2>
               <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                 <label className="relative min-w-0 flex-1 sm:w-56">
-                  <span className="sr-only">{t('filters.searchPlaceholder')}</span>
+                  <span className="sr-only">{t('filters.searchLabel')}</span>
                   <svg
                     viewBox="0 0 24 24"
                     className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]"
@@ -305,6 +316,7 @@ export default function AccessPage() {
                     <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   </svg>
                   <input
+                    type="search"
                     value={search}
                     onChange={(event) => {
                       setSearch(event.target.value);
@@ -314,21 +326,60 @@ export default function AccessPage() {
                     className={workspaceInputClass}
                   />
                 </label>
-                <select
-                  value={statusFilter}
-                  onChange={(event) => {
-                    setStatusFilter(event.target.value as StatusFilter);
-                    setPage(1);
-                  }}
-                  className={workspaceSelectClass}
-                >
-                  <option value="all">{t('filters.all')}</option>
-                  <option value="not_started">{t('filters.notStarted')}</option>
-                  <option value="in_progress">{t('filters.inProgress')}</option>
-                  <option value="submitted">{t('filters.submitted')}</option>
-                  <option value="closed">{t('filters.closed')}</option>
-                  <option value="expired">{t('filters.expired')}</option>
-                </select>
+                <div className="relative" ref={statusFiltersRef}>
+                  <button
+                    type="button"
+                    onClick={() => setStatusFiltersOpen((prev) => !prev)}
+                    className={`${workspaceFilterBtn} min-w-[10.5rem] justify-between`}
+                    aria-expanded={statusFiltersOpen}
+                    aria-haspopup="listbox"
+                    aria-label={t('filters.statusLabel')}
+                  >
+                    <span className="inline-flex min-w-0 items-center gap-2">
+                      <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" aria-hidden="true">
+                        <path d="M4 7h16M7 12h10M10 17h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      </svg>
+                      <span className="truncate">{statusFilterLabel}</span>
+                    </span>
+                    <svg
+                      viewBox="0 0 20 20"
+                      className={`h-4 w-4 shrink-0 text-[#64748b] transition-transform ${statusFiltersOpen ? 'rotate-180' : ''}`}
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path d="m5 8 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  {statusFiltersOpen ? (
+                    <ul
+                      className="absolute right-0 z-20 mt-2 w-52 rounded-xl border border-[#e2e8f0] bg-white py-1 shadow-lg"
+                      role="listbox"
+                      aria-label={t('filters.statusLabel')}
+                    >
+                      {STATUS_FILTER_OPTIONS.map((option) => (
+                        <li key={option.value} role="none">
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected={statusFilter === option.value}
+                            onClick={() => {
+                              setStatusFilter(option.value);
+                              setPage(1);
+                              setStatusFiltersOpen(false);
+                            }}
+                            className={`block w-full px-4 py-2 text-left text-sm ${
+                              statusFilter === option.value
+                                ? 'bg-[#eff6ff] font-semibold text-[#0066ff]'
+                                : 'text-[#334155] hover:bg-[#f8fafc]'
+                            }`}
+                          >
+                            {t(option.labelKey)}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
                 <button type="button" onClick={() => void handleRefreshClick()} className={workspaceGhostBtn}>
                   {t('actions.refresh')}
                 </button>
@@ -345,119 +396,117 @@ export default function AccessPage() {
                 const completion = clampPercent(item.completion_percent);
                 const reportId = item.report_status === 'published' && item.report_id ? item.report_id : null;
                 const canViewPerformance = item.status === 'submitted' || item.status === 'closed';
-                const accessWindowStart = formatDate(item.access_window_started_at, locale);
-                const accessWindowEnd = formatDate(item.access_window_expires_at ?? item.expires_at, locale);
-                const completedOn = formatDate(item.submitted_at, locale);
-                const reportPublishedOn = formatDate(item.report_published_at, locale);
-                const purchasedOn = formatDate(item.purchased_at, locale);
-                const lastChanged = formatLastChanged(item.last_activity, locale);
-                const fallbackLastUpdated = formatDateTime(item.last_activity, locale);
+                const isCompleted = item.status === 'submitted' || item.status === 'closed';
+                const access = accessByChecklist.get(item.checklist_id);
+                const accessEnd =
+                  access?.end_date ?? item.access_window_expires_at ?? item.expires_at ?? null;
+                const accessStart = access?.start_date ?? item.access_window_started_at ?? null;
+                const accessRange =
+                  accessStart && accessEnd
+                    ? `${formatDate(accessStart, locale)} – ${formatDate(accessEnd, locale)}`
+                    : '—';
+                const accessCountdown = formatPreciseAccessCountdown(accessEnd, locale, countdownNowMs);
+                const accessActive = hasAccessTimeRemaining(accessEnd, countdownNowMs);
+                const dateLabel = isCompleted ? t('card.completedOn') : t('card.lastUpdated');
+                const dateValue = formatDate(
+                  item.submitted_at ?? item.last_activity ?? item.purchased_at,
+                  locale,
+                );
 
                 return (
                   <li key={item.id} className={`${workspaceCardClass} overflow-hidden`}>
-                    <div className="grid gap-5 px-5 py-5 lg:grid-cols-[1fr_230px] sm:px-6">
-                    <div className="space-y-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-lg font-bold text-[#0f172a]">{item.checklist_title}</h3>
-                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusBadgeClass(item.status)}`}>
-                          {t(`status.${item.status}`)}
-                        </span>
+                    <div className="px-5 py-5 sm:px-6">
+                      <div className="flex min-w-0 flex-col gap-5 xl:flex-row xl:items-stretch">
+                        <div className="min-w-0 flex-1 space-y-4">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-lg font-bold text-[#0f172a]">{item.checklist_title}</h3>
+                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusBadgeClass(item.status)}`}>
+                              {t(`status.${item.status}`)}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span className={workspaceTagClass}>{item.checklist_type_code}</span>
+                            <span className={workspaceTagClass}>{item.checklist_version}</span>
+                          </div>
+                          <div className="max-w-md">
+                            <div className="mb-1 flex items-center justify-between text-sm">
+                              <span className="font-medium text-[#334155]">{t('labels.progress')}</span>
+                              <span className="font-bold text-[#0f172a]">{completion}%</span>
+                            </div>
+                            <div className="h-2 overflow-hidden rounded-full bg-[#e2e8f0]">
+                              <div
+                                className={`h-full rounded-full transition-all ${progressBarClass(completion)}`}
+                                style={{ width: `${completion}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex min-w-0 shrink-0 flex-col gap-4 border-t border-[#f1f5f9] pt-4 xl:w-[min(240px,100%)] xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0">
+                          <div className="min-w-0 space-y-3 text-sm">
+                            <div className="min-w-0">
+                              <p className="text-xs text-[#64748b]">{dateLabel}</p>
+                              <p className="break-words font-semibold text-[#0f172a]">{dateValue}</p>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs text-[#64748b]">{t('card.accessWindow')}</p>
+                              <p className="break-words font-semibold text-[#0f172a]">{accessRange}</p>
+                              {accessEnd && accessActive ? (
+                                <p className="text-xs font-semibold text-[#16a34a]">
+                                  {accessCountdown ?? t('card.accessExpired')}
+                                </p>
+                              ) : (
+                                <p className="text-xs font-semibold text-[#94a3b8]">{t('card.accessExpired')}</p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-2">
+                            {item.status === 'not_started' ? (
+                              <button
+                                type="button"
+                                onClick={() => void handleStart(item)}
+                                disabled={startingId === item.id}
+                                className={workspacePrimaryBtn}
+                              >
+                                {startingId === item.id ? t('actions.processing') : t('actions.startAudit')}
+                                <ArrowRightIcon />
+                              </button>
+                            ) : (
+                              <Link
+                                href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
+                                className={workspacePrimaryBtn}
+                              >
+                                {t('actions.continueAudit')}
+                                <ArrowRightIcon />
+                              </Link>
+                            )}
+
+                            {canViewPerformance ? (
+                              <Link
+                                href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&view=performance`}
+                                className={workspaceOutlineBtn}
+                              >
+                                {t('actions.viewPerformance')}
+                              </Link>
+                            ) : null}
+
+                            {reportId ? (
+                              <Link href={`/reports/${reportId}` as Route} className={workspacePrimaryBtn}>
+                                {t('actions.viewReport')}
+                                <ArrowRightIcon />
+                              </Link>
+                            ) : null}
+
+                            <Link
+                              href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
+                              className={workspaceOutlineBtn}
+                            >
+                              {t('actions.viewDetails')}
+                            </Link>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        <span className={workspaceTagClass}>{item.checklist_type_code}</span>
-                        <span className={workspaceTagClass}>{item.checklist_version}</span>
-                      </div>
-                      <div className="max-w-md">
-                        <div className="mb-1 flex items-center justify-between text-sm">
-                          <span className="font-medium text-[#334155]">{t('labels.progress')}</span>
-                          <span className="font-bold text-[#0f172a]">{completion}%</span>
-                        </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-[#e2e8f0]">
-                          <div
-                            className={`h-full rounded-full transition-all ${progressBarClass(completion)}`}
-                            style={{ width: `${completion}%` }}
-                          />
-                        </div>
-                      </div>
-                      {item.status === 'in_progress' ? (
-                        <div className="space-y-1 text-xs text-[#64748b]">
-                          <p>
-                            {t('labels.lastChanged')}: {lastChanged ?? fallbackLastUpdated ?? t('labels.na')}
-                          </p>
-                          <p>
-                            {t('labels.accessWindow')}: {accessWindowStart ?? t('labels.na')} - {accessWindowEnd ?? t('labels.na')}
-                          </p>
-                        </div>
-                      ) : null}
-
-                      {(item.status === 'submitted' || item.status === 'closed') ? (
-                        <div className="space-y-1 text-xs text-[#64748b]">
-                          <p>
-                            {t('labels.completedOn')}: {completedOn ?? t('labels.na')}
-                          </p>
-                          {item.report_status === 'published' ? (
-                            <p>
-                              {t('labels.reportPublishedOn')}: {reportPublishedOn ?? t('labels.na')}
-                            </p>
-                          ) : (
-                            <p>{t('labels.reportInProgress')}</p>
-                          )}
-                        </div>
-                      ) : null}
-
-                      {item.status === 'not_started' ? (
-                        <div className="text-xs text-[#64748b]">
-                          {t('labels.purchasedOn')}: {purchasedOn ?? accessWindowStart ?? t('labels.na')}
-                        </div>
-                      ) : null}
-
-                      {item.status === 'expired' ? (
-                        <div className="text-xs text-[#64748b]">
-                          {t('labels.lastUpdated')}: {fallbackLastUpdated ?? t('labels.na')}
-                        </div>
-                      ) : null}
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      {item.status === 'not_started' ? (
-                        <button
-                          type="button"
-                          onClick={() => void handleStart(item)}
-                          disabled={startingId === item.id}
-                          className={workspacePrimaryBtn}
-                        >
-                          {startingId === item.id ? t('actions.processing') : t('actions.startAudit')}
-                        </button>
-                      ) : (
-                        <Link
-                          href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
-                          className={workspacePrimaryBtn}
-                        >
-                          {t('actions.continueAudit')}
-                        </Link>
-                      )}
-
-                      {canViewPerformance ? (
-                        <Link
-                          href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&view=performance`}
-                          className={workspaceOutlineBtn}
-                        >
-                          {t('actions.viewPerformance')}
-                        </Link>
-                      ) : null}
-
-                      {reportId ? (
-                        <Link href={`/reports/${reportId}` as Route} className={workspacePrimaryBtn}>
-                          {t('actions.viewReport')}
-                        </Link>
-                      ) : null}
-
-                      <Link
-                        href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
-                        className={workspaceOutlineBtn}
-                      >
-                        {t('actions.viewDetails')}
-                      </Link>
-                    </div>
                     </div>
                   </li>
                 );

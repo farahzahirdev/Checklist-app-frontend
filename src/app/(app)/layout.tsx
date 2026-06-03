@@ -49,7 +49,10 @@ export default function AppLayout({
   const isPaymentPath = pathname === '/payment' || pathname?.startsWith('/payment/') || false;
   const isPaymentsPath = pathname?.startsWith('/payments') ?? false;
   const dashboardActive = pathname === '/dashboard';
-  const auditActive = (pathname?.startsWith('/assessment') ?? false) || (pathname?.startsWith('/access') ?? false);
+  const auditActive =
+    (pathname?.startsWith('/assessment') ?? false) ||
+    (pathname?.startsWith('/access') ?? false) ||
+    pathname === '/my-audits';
   const isAssessmentPath = pathname?.startsWith('/assessment') ?? false;
   const isFullBleedWorkspacePage =
     pathname === '/profile' ||
@@ -93,16 +96,13 @@ export default function AppLayout({
     if (currentPath.startsWith('/assessment')) {
       return currentRole === 'customer';
     }
-    if (currentPath.startsWith('/my-audits')) {
-      return currentRole === 'customer';
-    }
     if (currentPath.startsWith('/my-drp')) {
       return currentRole === 'customer';
     }
     if (currentPath.startsWith('/my-backup-plans')) {
       return currentRole === 'customer';
     }
-    if (currentPath.startsWith('/access')) {
+    if (currentPath.startsWith('/access') || currentPath.startsWith('/my-audits')) {
       return currentRole === 'customer';
     }
     if (currentPath.startsWith('/profile')) {
