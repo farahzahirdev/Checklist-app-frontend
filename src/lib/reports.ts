@@ -246,11 +246,15 @@ export type CustomerReportFinding = {
   priority: 'low' | 'medium' | 'high';
   recommendation?: string | null;
   report_domain?: string | null;
+  section_code?: string | null;
+  section_title?: string | null;
 };
 
 export type CustomerReportSectionSummary = {
   section_id: string;
   chapter_code: string;
+  section_code?: string | null;
+  section_title?: string | null;
   summary_text: string;
 };
 
@@ -294,6 +298,7 @@ export type CustomerReportDataResponse = {
   company_country?: string | null;
   company_description?: string | null;
   checklist_title: string;
+  checklist_type_name?: string | null;
   assessment_date: string;
   report_status: ReportStatus;
   overall_score: number;
