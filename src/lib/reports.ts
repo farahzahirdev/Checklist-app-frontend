@@ -256,6 +256,7 @@ export type CustomerReportSectionSummary = {
   section_code?: string | null;
   section_title?: string | null;
   summary_text: string;
+  recommendation_text?: string | null;
 };
 
 export type CustomerReportSuggestion = {

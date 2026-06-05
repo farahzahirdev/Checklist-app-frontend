@@ -15,7 +15,6 @@ type PreviewRow = {
   risk: string;
   riskTone: 'high' | 'medium' | 'low';
   impact: string;
-  recommendation: string;
 };
 
 const PRIORITY_ORDER: Record<'high' | 'medium' | 'low', number> = { high: 0, medium: 1, low: 2 };
@@ -124,7 +123,6 @@ export function CustomerReportFindingsPreviewSection({
     const built: PreviewRow[] = sorted.slice(0, 25).map((f, idx) => {
       const tone = f.priority;
       const prefix = tone === 'high' ? 'H' : tone === 'medium' ? 'M' : 'L';
-      const rec = (f.recommendation ?? '').trim();
       return {
         id: `${prefix}-${String(idx + 1).padStart(2, '0')}`,
         idTone: tone,
@@ -133,7 +131,6 @@ export function CustomerReportFindingsPreviewSection({
         risk: priorityLabel(tone),
         riskTone: tone,
         impact: priorityLabel(tone),
-        recommendation: rec.length > 140 ? `${rec.slice(0, 138)}…` : rec || '—',
       };
     });
     return built;
@@ -208,6 +205,32 @@ export function CustomerReportFindingsPreviewSection({
           <h2 className="text-xl font-bold text-[#0f172a] sm:text-2xl">{t('preview.title')}</h2>
           <p className="mt-1 text-sm text-[#64748b] sm:text-base">{t('preview.subtitle')}</p>
 
+          {/* Section-level Recommendations */}
+          {data.section_summaries.filter(s => s.recommendation_text && s.recommendation_text.trim()).length > 0 && (
+            <div className="mt-6 overflow-hidden rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
+              <div className="border-b border-[#e8edf5] bg-[#f8fafc] px-4 py-3">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-[#64748b]">{t('preview.sectionRecommendations.title')}</h3>
+              </div>
+              <div className="divide-y divide-[#eef2fa]">
+                {data.section_summaries
+                  .filter(s => s.recommendation_text && s.recommendation_text.trim())
+                  .map((summary, idx) => (
+                    <div key={idx} className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="shrink-0 rounded-lg bg-[#f1f5f9] px-2 py-1 text-xs font-semibold text-[#475569]">
+                          {summary.section_code || summary.chapter_code || t('preview.domain.general')}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-[#0f172a]">{summary.section_title || t('preview.sectionRecommendations.section')}</p>
+                          <p className="mt-1 text-sm text-[#475569]">{sanitizeRichHtml(summary.recommendation_text)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-4 overflow-hidden rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-left text-sm sm:min-w-[720px]">
@@ -217,8 +240,7 @@ export function CustomerReportFindingsPreviewSection({
                     <th className="whitespace-nowrap px-3 py-3">{t('preview.col.finding')}</th>
                     <th className="whitespace-nowrap px-3 py-3">{t('preview.col.domain')}</th>
                     <th className="whitespace-nowrap px-3 py-3">{t('preview.col.risk')}</th>
-                    <th className="whitespace-nowrap px-3 py-3">{t('preview.col.impact')}</th>
-                    <th className="whitespace-nowrap px-3 py-3 pr-4">{t('preview.col.recommendation')}</th>
+                    <th className="whitespace-nowrap px-3 py-3 pr-4">{t('preview.col.impact')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -229,13 +251,12 @@ export function CustomerReportFindingsPreviewSection({
                         <td className="max-w-[200px] px-3 py-3 align-top font-medium text-[#0f172a]">{row.finding}</td>
                         <td className="whitespace-nowrap px-3 py-3 align-top text-[#475569]">{row.domain}</td>
                         <td className={`whitespace-nowrap px-3 py-3 align-top ${priorityRowToneClass(row.riskTone)}`}>{row.risk}</td>
-                        <td className="whitespace-nowrap px-3 py-3 align-top text-[#334155]">{row.impact}</td>
-                        <td className="px-3 py-3 pr-4 align-top text-[#475569]">{row.recommendation}</td>
+                        <td className="whitespace-nowrap px-3 py-3 pr-4 align-top text-[#334155]">{row.impact}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-[#64748b]">
+                      <td colSpan={5} className="px-4 py-8 text-center text-sm text-[#64748b]">
                         {t('preview.empty')}
                       </td>
                     </tr>

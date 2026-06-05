@@ -18,7 +18,6 @@ export function FindingsTable({ findings }: FindingsTableProps) {
               <th className="border-b border-white/15 p-2">Finding</th>
               <th className="border-b border-white/15 p-2">Domain</th>
               <th className="border-b border-white/15 p-2">Risk Impact</th>
-              <th className="border-b border-white/15 p-2">Recommendation</th>
             </tr>
           </thead>
           <tbody>
@@ -28,7 +27,6 @@ export function FindingsTable({ findings }: FindingsTableProps) {
                 <td className="border-b border-white/10 p-2">{finding.finding}</td>
                 <td className="border-b border-white/10 p-2">{finding.domain}</td>
                 <td className="border-b border-white/10 p-2">{finding.riskImpact}</td>
-                <td className="border-b border-white/10 p-2">{finding.recommendation}</td>
               </tr>
             ))}
           </tbody>

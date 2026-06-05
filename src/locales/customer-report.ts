@@ -81,6 +81,8 @@ export const customerReportMessages: TranslationMessages = {
     'preview.priority.medium': 'Medium',
     'preview.priority.low': 'Low',
     'preview.domain.general': 'General',
+    'preview.sectionRecommendations.title': 'Section recommendations',
+    'preview.sectionRecommendations.section': 'Section',
 
     'dashboard.riskBand.low': 'Low risk',
     'dashboard.riskBand.medium': 'Medium risk',
@@ -274,6 +276,8 @@ export const customerReportMessages: TranslationMessages = {
     'preview.priority.medium': 'Střední',
     'preview.priority.low': 'Nízké',
     'preview.domain.general': 'Obecné',
+    'preview.sectionRecommendations.title': 'Doporučení pro sekce',
+    'preview.sectionRecommendations.section': 'Sekce',
 
     'dashboard.riskBand.low': 'Nízké riziko',
     'dashboard.riskBand.medium': 'Střední riziko',
