@@ -220,6 +220,7 @@ export type CustomerReportSectionScore = {
   /** Legacy / alternate API field */
   section_name?: string;
   section_title?: string | null;
+  section_number?: number | null;
   report_domain?: string | null;
   score: number;
   max_score: number;
