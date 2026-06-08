@@ -30,6 +30,7 @@ export type ReportResponse = {
   checklist_version?: string | null;
   /** Checklist sections (domains) with scores; returned by admin GET report when available */
   section_overviews?: ReportSectionOverview[] | null;
+  management_summary?: string | null;
 };
 
 export type ReportSectionOverview = {
@@ -439,6 +440,13 @@ export function requestReportChanges(reportId: string, note: string) {
 
 export function approveReport(reportId: string, note: string) {
   return apiPost<ReportResponse, ReviewActionRequest>(`/reports/${reportId}/approve`, { note });
+}
+
+export function updateManagementSummary(reportId: string, managementSummary: string) {
+  return apiPut<ReportResponse, { management_summary: string }>(
+    `/reports/${reportId}/management-summary`,
+    { management_summary: managementSummary }
+  );
 }
 
 export function publishReport(reportId: string, finalPdfStorageKey: string, pdfPassword?: string) {

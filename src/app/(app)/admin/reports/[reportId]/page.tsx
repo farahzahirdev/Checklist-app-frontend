@@ -15,6 +15,7 @@ import {
   approveReport,
   publishReport,
   requestReportChanges,
+  updateManagementSummary,
   type ReportResponse,
   type ReportFindingItem,
   type ReportSummaryItem,
@@ -89,7 +90,7 @@ function RichTextEditor({
           ref={editorRef}
           contentEditable
           onInput={(event) => onChange((event.currentTarget as HTMLDivElement).innerHTML)}
-          className="min-h-[12rem] px-4 py-3 text-[0.9375rem] text-[#25375a] outline-none [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5"
+          className="min-h-[12rem] max-h-[24rem] overflow-y-auto px-4 py-3 text-[0.9375rem] text-[#25375a] outline-none [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5 resize-y"
           data-placeholder={placeholder}
           suppressContentEditableWarning
         />
@@ -126,6 +127,7 @@ export default function AdminReportDetailPage() {
   const [requestChangesNote, setRequestChangesNote] = useState('');
   const [approvalOpen, setApprovalOpen] = useState(false);
   const [approvalNote, setApprovalNote] = useState('');
+  const [managementSummary, setManagementSummary] = useState('');
 
   async function loadReportData(reportUuid: string) {
     setLoading(true);
@@ -139,6 +141,7 @@ export default function AdminReportDetailPage() {
       setReport(reportData);
       setFindings(findingsData);
       setSummaries(summariesData);
+      setManagementSummary(reportData.management_summary || '');
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('load.failed');
       setError(msg);
@@ -203,6 +206,26 @@ export default function AdminReportDetailPage() {
       toast.success(t('toast.published'));
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('toast.publishFailed');
+      toast.error(msg);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleUpdateManagementSummary() {
+    if (!apiReportId) return;
+    if (!hasMeaningfulRichText(managementSummary)) {
+      toast.error('Management summary is required');
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      await updateManagementSummary(apiReportId, managementSummary.trim());
+      await loadReportData(apiReportId);
+      toast.success('Management summary updated');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to update management summary';
       toast.error(msg);
     } finally {
       setActionLoading(false);
@@ -314,6 +337,29 @@ export default function AdminReportDetailPage() {
       <AdminReportMaturityDomainSection report={report} />
 
       <AdminReportFindingsDomainsSection report={report} findings={findings} summaries={summaries} />
+
+      {!isReadOnly && (report.status === 'under_review' || report.status === 'approved') && (
+        <div className="rounded-2xl border border-[#dbe4f4] bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-[#243555] mb-3">Executive Summary</h2>
+          <RichTextEditor
+            label="Management Summary"
+            value={managementSummary}
+            onChange={setManagementSummary}
+            placeholder="Enter the executive summary for the report..."
+            richTextBadge="Rich Text"
+          />
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={handleUpdateManagementSummary}
+              disabled={actionLoading}
+              className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
+            >
+              {actionLoading ? 'Saving...' : 'Save Summary'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {!isReadOnly &&
       (report.status === 'draft_generated' ||
