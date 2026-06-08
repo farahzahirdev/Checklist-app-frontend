@@ -97,6 +97,7 @@ export function AdminReportMaturityDomainSection({ report }: { report: ReportRes
                 {sections.map((s, idx) => {
                   const pct = clampSpiderPct(Number(s.percentage) || 0);
                   const title = (s.section_title ?? s.section_code ?? t('maturity.fallbackSection')).trim();
+                  const sectionNumber = s.section_number;
                   const code = (s.section_code ?? s.chapter_code ?? '').trim();
                   return (
                     <tr key={sectionRowKey(s, idx)}>
@@ -104,7 +105,9 @@ export function AdminReportMaturityDomainSection({ report }: { report: ReportRes
                         <div className="flex items-center gap-2">
                           <DomainScoreShield pct={pct} />
                           <div className="min-w-0">
-                            <p className="truncate font-semibold text-[#0f172a]">{title}</p>
+                            <p className="truncate font-semibold text-[#0f172a]">
+                              {sectionNumber !== undefined && sectionNumber !== null ? `§${sectionNumber} - ` : ''}{title}
+                            </p>
                             {code ? <p className="text-xs text-[#64748b]">{code}</p> : null}
                           </div>
                         </div>

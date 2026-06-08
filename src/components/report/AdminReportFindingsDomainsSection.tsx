@@ -368,6 +368,7 @@ export function AdminReportFindingsDomainsSection({
             sections.map((s, i) => {
               const pct = Math.round(Math.min(100, Math.max(0, Number(s.percentage) || 0)));
               const title = (s.section_title ?? s.section_code ?? t('maturity.fallbackSection')).trim();
+              const sectionNumber = s.section_number;
               const strengths = strengthsForSection(pct, t);
               const needs = needsForSection(pct, s, t);
               return (
@@ -378,7 +379,9 @@ export function AdminReportFindingsDomainsSection({
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
                       <DomainIcon name={SUMMARY_ICON_CYCLE[i % SUMMARY_ICON_CYCLE.length]} />
-                      <h3 className="truncate text-base font-semibold text-[#0f172a]">{title}</h3>
+                      <h3 className="truncate text-base font-semibold text-[#0f172a]">
+                        {sectionNumber !== undefined && sectionNumber !== null ? `§${sectionNumber} - ` : ''}{title}
+                      </h3>
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-lg font-bold tabular-nums text-[#0f172a]">{pct}%</p>
@@ -423,18 +426,24 @@ export function AdminReportFindingsDomainsSection({
               );
             })
           ) : summaries.length > 0 ? (
-            summaries.map((s, i) => (
-              <article
-                key={s.id || `${s.chapter_code}-${i}`}
-                className="flex flex-col rounded-2xl border border-[#e8edf5] bg-[#fafbfd] p-4 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.05)] sm:p-5"
-              >
-                <div className="flex min-w-0 items-center gap-2">
-                  <DomainIcon name={SUMMARY_ICON_CYCLE[i % SUMMARY_ICON_CYCLE.length]} />
-                  <h3 className="truncate text-base font-semibold text-[#0f172a]">{s.chapter_code?.trim() || t('findings.fallbackChapter')}</h3>
-                </div>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-[#475569]">{s.summary_text}</p>
-              </article>
-            ))
+            summaries.map((s, i) => {
+              const sectionNumber = s.section_number;
+              const title = s.section_title?.trim() || s.chapter_code?.trim() || t('findings.fallbackChapter');
+              return (
+                <article
+                  key={s.id || `${s.chapter_code}-${i}`}
+                  className="flex flex-col rounded-2xl border border-[#e8edf5] bg-[#fafbfd] p-4 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.05)] sm:p-5"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <DomainIcon name={SUMMARY_ICON_CYCLE[i % SUMMARY_ICON_CYCLE.length]} />
+                    <h3 className="truncate text-base font-semibold text-[#0f172a]">
+                      {sectionNumber !== undefined && sectionNumber !== null ? `§${sectionNumber} - ` : ''}{title}
+                    </h3>
+                  </div>
+                  <p className="mt-3 flex-1 text-sm leading-relaxed text-[#475569]">{s.summary_text}</p>
+                </article>
+              );
+            })
           ) : (
             <article className="flex flex-col rounded-2xl border border-dashed border-[#cbd5e1] bg-[#f8fafc] p-5 sm:col-span-2 xl:col-span-4">
               <h3 className="text-base font-semibold text-[#0f172a]">{t('findings.noOverview.title')}</h3>

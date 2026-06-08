@@ -39,6 +39,7 @@ export type ReportSectionOverview = {
   section_id: string;
   section_code?: string | null;
   section_title?: string | null;
+  section_number?: number | null;
   chapter_code?: string | null;
   summary_text?: string | null;
   score: number;
@@ -181,6 +182,9 @@ export type ReportSummaryItem = {
   id: string | null;
   report_id?: string;
   section_id: string | null;
+  section_code?: string | null;
+  section_title?: string | null;
+  section_number?: number | null;
   chapter_code: string | null;
   summary_text: string;
   created_by?: string;
