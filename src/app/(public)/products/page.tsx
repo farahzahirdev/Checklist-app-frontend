@@ -101,6 +101,22 @@ function normalizeCmsListText(input: any): string {
   return '';
 }
 
+function boldFirstSentence(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) return trimmed;
+  
+  // Find the first sentence ending with ., !, or ?
+  const sentenceEndMatch = trimmed.match(/^([^.!?]+[.!?])(.*)/s);
+  if (sentenceEndMatch) {
+    const firstSentence = sentenceEndMatch[1].trim();
+    const rest = sentenceEndMatch[2].trim();
+    return rest ? `<strong>${firstSentence}</strong> ${rest}` : `<strong>${firstSentence}</strong>`;
+  }
+  
+  // If no sentence ending found, treat the whole text as one sentence
+  return `<strong>${trimmed}</strong>`;
+}
+
 function cmsText(sectionExists: boolean, cmsValue: any, fallbackValue: string): string {
   if (!sectionExists) return fallbackValue;
   return typeof cmsValue === 'string' ? cmsValue : '';
@@ -115,10 +131,13 @@ function mapApiCategoryNameToDocFilter(name: string | null | undefined): Catalog
 function buildDocBulletLines(product: PublicProduct): string[] {
   const text = (product.short_description ?? product.description ?? '').trim();
   if (!text) return [product.name];
-  const lines = text.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+  
+  // Strip HTML tags for bullet points
+  const plainText = text.replace(/<[^>]*>/g, '');
+  const lines = plainText.split(/\n+/).map((s) => s.trim()).filter(Boolean);
   if (lines.length >= 2) return lines.slice(0, 4);
-  const sentences = text.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
-  return (sentences.length ? sentences : [text]).slice(0, 4);
+  const sentences = plainText.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+  return (sentences.length ? sentences : [plainText]).slice(0, 4);
 }
 
 function productStatusSortRank(status: PublicProductStatus): number {
@@ -275,17 +294,13 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
   };
 
   const cmsHero = getCmsSectionData(cmsPage ?? null, 'hero');
-  const cmsHowItWorks = getCmsSectionData(cmsPage ?? null, 'how-it-works');
   const cmsDocumentationGrid = getCmsSectionData(cmsPage ?? null, 'documentation-grid');
   const cmsBundles = getCmsSectionData(cmsPage ?? null, 'bundles');
   const cmsWhyChoose = getCmsSectionData(cmsPage ?? null, 'why-choose');
-  const cmsCta = getCmsSectionData(cmsPage ?? null, 'cta');
   const hasHeroSection = hasCmsSection(cmsPage ?? null, 'hero');
-  const hasHowItWorksSection = hasCmsSection(cmsPage ?? null, 'how-it-works');
   const hasDocumentationGridSection = hasCmsSection(cmsPage ?? null, 'documentation-grid');
   const hasBundlesSection = hasCmsSection(cmsPage ?? null, 'bundles');
   const hasWhyChooseSection = hasCmsSection(cmsPage ?? null, 'why-choose');
-  const hasCtaSection = hasCmsSection(cmsPage ?? null, 'cta');
 
   const heroTitleLine1 = hasHeroSection
     ? cmsText(hasHeroSection, cmsHero.title_line1 || cmsHero.title, '')
@@ -308,17 +323,6 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
   const heroMockupDocuments = Array.isArray(heroMockup.documents) && heroMockup.documents.length
     ? heroMockup.documents
     : null;
-
-  const howTitle = cmsText(hasHowItWorksSection, cmsHowItWorks.title, t('how.title'));
-  const howSubtitle = cmsText(hasHowItWorksSection, cmsHowItWorks.subtitle, t('how.subtitle'));
-  const howSteps = hasHowItWorksSection
-    ? (Array.isArray(cmsHowItWorks.steps) ? cmsHowItWorks.steps : [])
-    : [
-        { title: t('how.step1.title'), body: t('how.step1.body') },
-        { title: t('how.step2.title'), body: t('how.step2.body') },
-        { title: t('how.step3.title'), body: t('how.step3.body') },
-        { title: t('how.step4.title'), body: t('how.step4.body') },
-      ];
 
   const auditsTitle = cmsText(hasDocumentationGridSection, cmsDocumentationGrid.audits_title, t('audits.title'));
   const auditsSubtitle = cmsText(hasDocumentationGridSection, cmsDocumentationGrid.audits_subtitle, t('audits.subtitle'));
@@ -346,14 +350,6 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
   const whyPoints = hasWhyChooseSection
     ? cmsWhyPoints
     : [t('why.0'), t('why.1'), t('why.2'), t('why.3'), t('why.4')];
-  const ctaTitle = cmsText(hasCtaSection, cmsCta.title, t('cta.title'));
-  const ctaSubtitle = cmsText(hasCtaSection, cmsCta.subtitle, t('cta.subtitle'));
-  const ctaButtons = hasCtaSection
-    ? (Array.isArray(cmsCta.buttons) ? cmsCta.buttons : [])
-    : [
-        { text: t('cta.viewDetails'), url: '/products/audit-readiness-checklist' },
-        { text: t('cta.createAccount'), url: '/register' },
-      ];
 
   const heroStyle = {
     backgroundImage: `linear-gradient(rgba(4, 9, 22, 0.56), rgba(4, 9, 22, 0.72)), url(${heroBackground.src})`,
@@ -447,23 +443,6 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
       </section>
 
       <section className="mx-auto max-w-7xl space-y-4 px-4 py-10 sm:px-6 md:px-6 md:py-14 lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[90rem]">
-        <article className="rounded-2xl border border-[#d7deeb] bg-[#f4f7fc] p-5 md:p-6">
-          <div className="grid gap-3 md:grid-cols-[1.1fr_3fr]">
-            <div>
-              <h3 className="text-3xl font-semibold text-[#1a2440]">{howTitle}</h3>
-              <p className="mt-2 text-sm text-[#5e7293]"><span dangerouslySetInnerHTML={{ __html: howSubtitle }} /></p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {howSteps.map((step: any, index: number) => (
-                <div key={`${step.title}-${index}`} className="rounded-xl border border-[#dbe5f4] bg-white p-4">
-                  <p className="text-sm font-semibold text-[#1f355d]">{step.title}</p>
-                  <p className="mt-1 text-xs text-[#5e7293]"><span dangerouslySetInnerHTML={{ __html: step.body }} /></p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </article>
-
         <section id="audits-checklists" className="space-y-4 scroll-mt-24">
           <div>
             <h3 className="text-4xl font-semibold text-[#1a2440]">{auditsTitle}</h3>
@@ -732,47 +711,13 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
                 {whyPoints.map((point: string, index: number) => (
                   <li key={`${point}-${index}`} className="flex items-center gap-2.5">
                     <CheckBadgeIcon />
-                    <span dangerouslySetInnerHTML={{ __html: point }} />
+                    <span dangerouslySetInnerHTML={{ __html: boldFirstSentence(point) }} />
                   </li>
                 ))}
               </ul>
             ) : null}
           </article>
         ) : null}
-
-        <article className="mt-8 rounded-2xl border border-[#264579] bg-[linear-gradient(120deg,#091229,#0b1a39_48%,#0e2348)] px-5 py-6 text-white motion-safe:animate-fade-in-up motion-safe:delay-150 sm:px-8 md:px-10 md:py-7">
-          <div className="flex flex-wrap items-center justify-between gap-6">
-            <div className="flex min-w-0 items-center gap-5">
-              <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[#3a7ce2] bg-[#102a57] text-[#77aefc]">
-                <svg viewBox="0 0 24 24" className="h-9 w-9" fill="none" aria-hidden="true">
-                  <path d="M12 2 4 5v6c0 5.3 3.4 9.6 8 11 4.6-1.4 8-5.7 8-11V5l-8-3Z" stroke="currentColor" strokeWidth="1.8" />
-                </svg>
-              </span>
-              <div className="min-w-0">
-                <h3 className="text-2xl font-semibold md:text-4xl">{ctaTitle}</h3>
-                <p className="mt-1 text-sm text-[#c7d8f8] md:text-base"><span dangerouslySetInnerHTML={{ __html: ctaSubtitle }} /></p>
-              </div>
-            </div>
-            <div className="ml-auto flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              {ctaButtons.map((button: any, index: number) => (
-                <a
-                  key={`${button.text}-${index}`}
-                  href={button.url}
-                  className={`inline-flex min-w-[180px] items-center justify-center gap-2 whitespace-nowrap rounded-xl px-6 py-3 text-base font-semibold transition-colors duration-200 active:scale-[0.98] motion-safe:active:transition-transform md:text-lg ${
-                    index === 0
-                      ? 'border border-[#1f7bff] bg-[#1f7bff] text-white hover:bg-[#2e87ff]'
-                      : 'border border-[#456298] text-[#e5eeff] hover:bg-[#173160]'
-                  }`}
-                >
-                  {button.text}
-                  <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" aria-hidden="true">
-                    <path d="M4 10h10m0 0-4-4m4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </a>
-              ))}
-            </div>
-          </div>
-        </article>
       </section>
 
       <PublicFooter />

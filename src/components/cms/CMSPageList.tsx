@@ -1373,7 +1373,7 @@ export function CMSPageList() {
         {previewVisible && (
           <div
             ref={previewPanelRef}
-            style={previewPanelHeight ? { height: `${previewPanelHeight}px` } : undefined}
+            style={previewPanelHeight ? { height: `${previewPanelHeight}px` , maxHeight: `88vh`} : undefined}
             className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-[#f9fafb] lg:sticky lg:top-4 lg:z-0 lg:w-[400px] lg:max-w-[min(400px,100%)] lg:flex-shrink-0 lg:self-start lg:border-l lg:border-[#e5e7eb]"
           >
             <div className="flex shrink-0 items-center justify-between border-b border-[#e5e7eb] bg-white px-4 py-3">

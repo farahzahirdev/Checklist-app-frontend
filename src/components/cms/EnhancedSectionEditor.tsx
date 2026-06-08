@@ -60,32 +60,32 @@ function SectionDataEditor({
         <div className="space-y-4">
           <div>
             <label className={cmsLabelClass}>{t('sectionEditor.hero.kicker')}</label>
-            <input
-              type="text"
+            <TipTapRichTextEditor
               value={data.kicker || ''}
-              onChange={(e) => updateField('kicker', e.target.value)}
-              className={cmsInputClass}
+              onChange={(value) => updateField('kicker', value)}
               placeholder={t('sectionEditor.hero.kickerPh')}
+              className="min-h-[80px]"
+              t={t}
             />
           </div>
           <div>
             <label className={cmsLabelClass}>{t('sectionEditor.hero.title')}</label>
-            <input
-              type="text"
+            <TipTapRichTextEditor
               value={data.title || ''}
-              onChange={(e) => updateField('title', e.target.value)}
-              className={cmsInputClass}
+              onChange={(value) => updateField('title', value)}
               placeholder={t('sectionEditor.hero.titlePh')}
+              className="min-h-[100px]"
+              t={t}
             />
           </div>
           <div>
             <label className={cmsLabelClass}>{t('sectionEditor.hero.subtitle')}</label>
-            <input
-              type="text"
+            <TipTapRichTextEditor
               value={data.subtitle || ''}
-              onChange={(e) => updateField('subtitle', e.target.value)}
-              className={cmsInputClass}
+              onChange={(value) => updateField('subtitle', value)}
               placeholder={t('sectionEditor.hero.subtitlePh')}
+              className="min-h-[80px]"
+              t={t}
             />
           </div>
           <div>
@@ -151,12 +151,12 @@ function SectionDataEditor({
         <div className="space-y-4">
           <div>
             <label className={cmsLabelClass}>{t('sectionEditor.cards.sectionTitle')}</label>
-            <input
-              type="text"
+            <TipTapRichTextEditor
               value={data.title || ''}
-              onChange={(e) => updateField('title', e.target.value)}
-              className={cmsInputClass}
+              onChange={(value) => updateField('title', value)}
               placeholder={t('sectionEditor.cards.sectionTitlePh')}
+              className="min-h-[80px]"
+              t={t}
             />
           </div>
           <div>
@@ -178,12 +178,12 @@ function SectionDataEditor({
                     </button>
                   </div>
                   <div className="space-y-2">
-                    <input
-                      type="text"
+                    <TipTapRichTextEditor
                       value={card.title || ''}
-                      onChange={(e) => updateNestedArrayField('cards', index, 'title', e.target.value)}
-                      className={cmsInputClass}
+                      onChange={(value) => updateNestedArrayField('cards', index, 'title', value)}
                       placeholder={t('sectionEditor.cards.cardTitlePh')}
+                      className="min-h-[60px] text-sm"
+                      t={t}
                     />
                     <TipTapRichTextEditor
                       value={card.content || ''}
@@ -229,22 +229,22 @@ function SectionDataEditor({
         <div className="space-y-4">
           <div>
             <label className={cmsLabelClass}>{t('sectionEditor.faq.sectionTitle')}</label>
-            <input
-              type="text"
+            <TipTapRichTextEditor
               value={data.title || ''}
-              onChange={(e) => updateField('title', e.target.value)}
-              className={cmsInputClass}
+              onChange={(value) => updateField('title', value)}
               placeholder={t('sectionEditor.faq.sectionTitlePh')}
+              className="min-h-[80px]"
+              t={t}
             />
           </div>
           <div>
             <label className={cmsLabelClass}>{t('sectionEditor.faq.subtitle')}</label>
-            <input
-              type="text"
+            <TipTapRichTextEditor
               value={data.subtitle || ''}
-              onChange={(e) => updateField('subtitle', e.target.value)}
-              className={cmsInputClass}
+              onChange={(value) => updateField('subtitle', value)}
               placeholder={t('sectionEditor.faq.subtitlePh')}
+              className="min-h-[80px]"
+              t={t}
             />
           </div>
           <div>
@@ -266,12 +266,12 @@ function SectionDataEditor({
                     </button>
                   </div>
                   <div className="space-y-2">
-                    <input
-                      type="text"
+                    <TipTapRichTextEditor
                       value={qa.question || ''}
-                      onChange={(e) => updateNestedArrayField('questions', index, 'question', e.target.value)}
-                      className={cmsInputClass}
+                      onChange={(value) => updateNestedArrayField('questions', index, 'question', value)}
                       placeholder={t('sectionEditor.faq.questionPh')}
+                      className="min-h-[60px] text-sm"
+                      t={t}
                     />
                     <TipTapRichTextEditor
                       value={qa.answer || ''}
@@ -299,12 +299,12 @@ function SectionDataEditor({
         <div className="space-y-4">
           <div>
             <label className={cmsLabelClass}>{t('sectionEditor.cta.title')}</label>
-            <input
-              type="text"
+            <TipTapRichTextEditor
               value={data.title || ''}
-              onChange={(e) => updateField('title', e.target.value)}
-              className={cmsInputClass}
+              onChange={(value) => updateField('title', value)}
               placeholder={t('sectionEditor.cta.titlePh')}
+              className="min-h-[80px]"
+              t={t}
             />
           </div>
           <div>
@@ -321,12 +321,12 @@ function SectionDataEditor({
             <div className="space-y-2">
               {(data.buttons || []).map((button: any, index: number) => (
                 <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
+                  <TipTapRichTextEditor
                     value={button.text || ''}
-                    onChange={(e) => updateNestedArrayField('buttons', index, 'text', e.target.value)}
-                    className={`${cmsInputClass} flex-1 min-w-0`}
+                    onChange={(value) => updateNestedArrayField('buttons', index, 'text', value)}
                     placeholder={t('sectionEditor.cta.buttonTextPh')}
+                    className="min-h-[40px] text-xs flex-1 min-w-0"
+                    t={t}
                   />
                   <input
                     type="text"

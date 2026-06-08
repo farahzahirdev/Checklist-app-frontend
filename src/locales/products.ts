@@ -80,6 +80,7 @@ export const productsMessages: TranslationMessages = {
     'detail.buy': 'Buy product',
     'detail.completeProfileFirst': 'Complete your profile to 100% before purchasing this checklist.',
     'detail.brochure': 'View brochure PDF',
+    'detail.documentationFiles': 'Documentation',
     'detail.brochureUnavailable': 'Brochure will be available soon.',
     'detail.contactSales': 'Contact us',
     'detail.comingSoonNotice':
@@ -240,6 +241,7 @@ export const productsMessages: TranslationMessages = {
     'detail.buy': 'Koupit produkt',
     'detail.completeProfileFirst': 'Před nákupem tohoto checklistu dokončete svůj profil na 100 %.',
     'detail.brochure': 'Zobrazit brožuru (PDF)',
+    'detail.documentationFiles': 'Dokumentace',
     'detail.brochureUnavailable': 'Brožura bude brzy k dispozici.',
     'detail.contactSales': 'Kontaktujte nás',
     'detail.comingSoonNotice':

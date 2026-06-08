@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { TipTapRichTextEditor } from '@/components/cms/TipTapRichTextEditor';
 import {
   ADMIN_PAGE_HERO_EYEBROW_CLASS,
   ADMIN_PAGE_HERO_HEADER_CLASS,
@@ -20,11 +21,13 @@ import {
   listAdminProducts,
   syncChecklistProducts,
   uploadProductBrochurePdf,
+  uploadProductDocumentationFile,
   uploadProductHeroImage,
   updateAdminProduct,
   updateAdminProductCategory,
   type AdminProduct,
   type AdminProductCategory,
+  type DocumentationFile,
   type ProductKind,
   type ProductStatus,
 } from '@/lib/admin-products';
@@ -145,6 +148,7 @@ type ProductFormState = {
   product_kind: ProductKind;
   status: ProductStatus;
   brochure_pdf_url: string;
+  documentation_files: DocumentationFile[];
   hero_image_url: string;
   external_url: string;
   cta_label: string;
@@ -173,6 +177,7 @@ function productToForm(product: AdminProduct, categories: AdminProductCategory[]
     product_kind: product.product_kind,
     status: product.status,
     brochure_pdf_url: product.brochure_pdf_url ?? '',
+    documentation_files: product.documentation_files ?? [],
     hero_image_url: product.hero_image_url ?? '',
     external_url: product.external_url ?? '',
     cta_label: product.cta_label ?? '',
@@ -191,6 +196,7 @@ function emptyProductForm(categories: AdminProductCategory[]): ProductFormState 
     product_kind: 'documentation',
     status: 'draft',
     brochure_pdf_url: '',
+    documentation_files: [],
     hero_image_url: '',
     external_url: '',
     cta_label: '',
@@ -222,6 +228,7 @@ export default function AdminProductsPage() {
   const [savingProduct, setSavingProduct] = useState(false);
   const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
   const [uploadingBrochurePdf, setUploadingBrochurePdf] = useState(false);
+  const [uploadingDocumentationFile, setUploadingDocumentationFile] = useState(false);
   const [savingCategory, setSavingCategory] = useState(false);
   const [loadingProductDetail, setLoadingProductDetail] = useState(false);
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
@@ -316,6 +323,7 @@ export default function AdminProductsPage() {
       product_kind: productForm.product_kind,
       status: productForm.status,
       brochure_pdf_url: productForm.brochure_pdf_url.trim() || undefined,
+      documentation_files: productForm.documentation_files.length > 0 ? productForm.documentation_files : undefined,
       hero_image_url: productForm.hero_image_url.trim() || undefined,
       external_url: productForm.external_url.trim() || undefined,
       cta_label: productForm.cta_label.trim() || undefined,
@@ -368,6 +376,43 @@ export default function AdminProductsPage() {
       setUploadingBrochurePdf(false);
       event.target.value = '';
     }
+  }
+
+  async function handleDocumentationFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const isPdf = file.type === 'application/pdf';
+    const isDocx = file.name.endsWith('.docx');
+    
+    if (!isPdf && !isDocx) {
+      toast.error(t('toast.documentationFileTypeInvalid'));
+      event.target.value = '';
+      return;
+    }
+
+    setUploadingDocumentationFile(true);
+    try {
+      const uploadedFile = await uploadProductDocumentationFile(file);
+      setProductForm((previous) => ({ 
+        ...previous, 
+        documentation_files: [...previous.documentation_files, uploadedFile] 
+      }));
+      toast.success(t('toast.documentationFileUploaded'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('toast.documentationFileUploadFailed'));
+    } finally {
+      setUploadingDocumentationFile(false);
+      event.target.value = '';
+    }
+  }
+
+  function handleDeleteDocumentationFile(fileId: string) {
+    setProductForm((previous) => ({
+      ...previous,
+      documentation_files: previous.documentation_files.filter((f) => f.id !== fileId),
+    }));
+    toast.success(t('toast.documentationFileDeleted'));
   }
 
   async function handleConfirmDeleteProduct() {
@@ -852,41 +897,58 @@ export default function AdminProductsPage() {
                 </label>
                 <label className="space-y-1 md:col-span-2">
                   <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.description')}</span>
-                  <textarea
+                  <TipTapRichTextEditor
                     value={productForm.description}
-                    onChange={(event) => setProductForm((previous) => ({ ...previous, description: event.target.value }))}
-                    rows={4}
-                    disabled={loadingProductDetail}
-                    className={INPUT_CLASS}
+                    onChange={(value) => setProductForm((previous) => ({ ...previous, description: value }))}
+                    placeholder={t('form.descriptionPlaceholder')}
+                    t={t}
                   />
                 </label>
                 <label className="space-y-1 md:col-span-2">
-                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.brochurePdfUrl')}</span>
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.documentationFiles')}</span>
                   <div className="flex flex-col gap-2">
-                    <div className="min-h-10 rounded-xl border border-[#d4dced] bg-[#f8fbff] px-3 py-2 text-sm text-[#456087]">
-                      {productForm.brochure_pdf_url || t('state.noBrochurePdf')}
-                    </div>
+                    {productForm.documentation_files.length > 0 ? (
+                      <div className="space-y-2">
+                        {productForm.documentation_files.map((file) => (
+                          <div key={file.id} className="flex items-center justify-between rounded-xl border border-[#d4dced] bg-[#f8fbff] px-3 py-2 text-sm">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[#456087]">{file.filename}</span>
+                              <a
+                                href={file.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs font-semibold text-[#3e69b0] hover:underline"
+                              >
+                                {t('actions.previewDocument')}
+                              </a>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDocumentationFile(file.id)}
+                              disabled={loadingProductDetail}
+                              className="text-xs font-semibold text-[#b63d51] hover:text-[#d64a63] disabled:text-[#d4dced]"
+                            >
+                              {t('actions.delete')}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="min-h-10 rounded-xl border border-[#d4dced] bg-[#f8fbff] px-3 py-2 text-sm text-[#456087]">
+                        {t('state.noDocumentationFiles')}
+                      </div>
+                    )}
                     <div className="flex items-center gap-3">
                       <label className="inline-flex cursor-pointer items-center rounded-xl border border-[#cad5e8] bg-white px-3 py-2 text-xs font-semibold text-[#38506f] hover:bg-[#f7faff]">
                         <input
                           type="file"
-                          accept="application/pdf"
-                          onChange={(event) => void handleBrochurePdfUpload(event)}
-                          disabled={loadingProductDetail || uploadingBrochurePdf}
+                          accept=".pdf,.docx,application/pdf"
+                          onChange={(event) => void handleDocumentationFileUpload(event)}
+                          disabled={loadingProductDetail || uploadingDocumentationFile}
                           className="hidden"
                         />
-                        {uploadingBrochurePdf ? t('actions.uploadingPdf') : t('actions.uploadPdf')}
+                        {uploadingDocumentationFile ? t('actions.uploadingDocument') : t('actions.uploadDocument')}
                       </label>
-                      {productForm.brochure_pdf_url ? (
-                        <a
-                          href={productForm.brochure_pdf_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs font-semibold text-[#3e69b0] hover:underline"
-                        >
-                          {t('actions.previewPdf')}
-                        </a>
-                      ) : null}
                     </div>
                   </div>
                 </label>

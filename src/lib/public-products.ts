@@ -1,5 +1,6 @@
 import { getApiBaseUrl } from '@/lib/api';
 import type { CustomerChecklist } from '@/lib/checklist-api';
+import type { DocumentationFile } from '@/lib/admin-products';
 
 export type PublicProductKind = 'checklist' | 'documentation' | 'module';
 export type PublicProductStatus = 'draft' | 'published' | 'coming_soon' | 'archived';
@@ -46,6 +47,7 @@ export type PublicProduct = {
   display_order: number;
   is_featured: boolean;
   brochure_pdf_url: string | null;
+  documentation_files: DocumentationFile[];
   hero_image_url: string | null;
   external_url: string | null;
   cta_label: string | null;

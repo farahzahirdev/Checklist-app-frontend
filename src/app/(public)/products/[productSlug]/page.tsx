@@ -58,10 +58,13 @@ function pricingForDisplay(detail: PublicProductDetail): CustomerChecklist['pric
 function includeLinesFromApi(description: string | null | undefined, short: string | null | undefined): string[] {
   const text = (description ?? short ?? '').trim();
   if (!text) return [];
-  const lines = text.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+  
+  // Strip HTML tags for bullet points
+  const plainText = text.replace(/<[^>]*>/g, '');
+  const lines = plainText.split(/\n+/).map((s) => s.trim()).filter(Boolean);
   if (lines.length >= 2) return lines.slice(0, 6);
-  const sentences = text.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
-  return (sentences.length ? sentences : [text]).slice(0, 6);
+  const sentences = plainText.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+  return (sentences.length ? sentences : [plainText]).slice(0, 6);
 }
 
 function ProductHeroImage({ src, alt }: { src: string; alt: string }) {
@@ -268,7 +271,18 @@ export default function ProductDetailPage() {
     return null;
   }, [resolved]);
 
+  const documentationFiles = useMemo(() => {
+    if (resolved?.kind === 'api') {
+      return (resolved.detail.documentation_files || []).map((file) => ({
+        ...file,
+        url: absolutePublicAssetUrl(file.url),
+      }));
+    }
+    return [];
+  }, [resolved]);
+
   const hasBrochurePdf = useMemo(() => Boolean(brochureLinkHref), [brochureLinkHref]);
+  const hasDocumentationFiles = useMemo(() => documentationFiles.length > 0, [documentationFiles]);
 
   const heroImageHref = useMemo(() => {
     if (resolved?.kind === 'audit') return absolutePublicAssetUrl(resolved.heroImageUrl);
@@ -508,9 +522,81 @@ export default function ProductDetailPage() {
                 </p>
               ) : null}
               {apiDetail ? (
-                <p className="mt-2 text-sm leading-relaxed text-[#5e7293]">
-                  {(apiDetail.description ?? apiDetail.short_description ?? '').trim() || t('browse.apiSubtitleFallback')}
-                </p>
+                <div className="mt-2 text-sm leading-relaxed text-[#5e7293] max-w-none">
+                  <style jsx global>{`
+                    .product-description h1 {
+                      font-size: 1.5rem;
+                      font-weight: 700;
+                      line-height: 2rem;
+                      margin-bottom: 0.75rem;
+                      margin-top: 1.25rem;
+                      color: #1f2741;
+                    }
+                    .product-description h2 {
+                      font-size: 1.25rem;
+                      font-weight: 600;
+                      line-height: 1.75rem;
+                      margin-bottom: 0.5rem;
+                      margin-top: 1rem;
+                      color: #1f2741;
+                    }
+                    .product-description h3 {
+                      font-size: 1.125rem;
+                      font-weight: 600;
+                      line-height: 1.5rem;
+                      margin-bottom: 0.5rem;
+                      margin-top: 0.75rem;
+                      color: #1f2741;
+                    }
+                    .product-description p {
+                      margin-bottom: 0.75rem;
+                      color: #5e7293;
+                    }
+                    .product-description ul,
+                    .product-description ol {
+                      margin-bottom: 0.75rem;
+                      padding-left: 1.5rem;
+                      color: #5e7293;
+                    }
+                    .product-description ul {
+                      list-style-type: disc;
+                    }
+                    .product-description ol {
+                      list-style-type: decimal;
+                    }
+                    .product-description li {
+                      margin-bottom: 0.25rem;
+                      color: #5e7293;
+                    }
+                    .product-description a {
+                      color: #2563eb;
+                      text-decoration: underline;
+                    }
+                    .product-description a:hover {
+                      color: #1d4ed8;
+                    }
+                    .product-description strong {
+                      font-weight: 700;
+                      color: #1f2741;
+                    }
+                    .product-description em {
+                      font-style: italic;
+                    }
+                    .product-description u {
+                      text-decoration: underline;
+                    }
+                  `}</style>
+                  {(apiDetail.description ?? apiDetail.short_description ?? '').trim() ? (
+                    <div 
+                      className="product-description"
+                      dangerouslySetInnerHTML={{ 
+                        __html: (apiDetail.description ?? apiDetail.short_description ?? '').trim() 
+                      }} 
+                    />
+                  ) : (
+                    <span>{t('browse.apiSubtitleFallback')}</span>
+                  )}
+                </div>
               ) : null}
             </div>
 
@@ -625,6 +711,34 @@ export default function ProductDetailPage() {
                 >
                   {t('detail.brochure')}
                 </a>
+              ) : null}
+
+              {hasDocumentationFiles ? (
+                <div className="mt-2 space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6c83a8]">
+                    {t('detail.documentationFiles')}
+                  </p>
+                  {documentationFiles.map((file) => (
+                    <a
+                      key={file.id}
+                      href={file.url || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex w-full items-center gap-2 rounded-lg border border-[#d7deeb] bg-white px-3 py-2 text-sm text-[#1f355d] transition-colors hover:bg-[#f3f7ff] hover:border-[#1f7bff]"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-[#3e69b0]" fill="none" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <span className="truncate flex-1 min-w-0">{file.filename}</span>
+                      <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-[#3e69b0]" fill="none" aria-hidden="true">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points="15 3 21 3 21 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <line x1="10" y1="14" x2="21" y2="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </a>
+                  ))}
+                </div>
               ) : null}
 
               {!audit || (!canPurchaseAudit && !requiresCompletedProfileForPurchase) ? (

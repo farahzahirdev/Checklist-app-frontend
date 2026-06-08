@@ -1308,7 +1308,7 @@ export default function AssessmentPage() {
         </div>
       </div>
 
-      {initialLoading ? <p className="text-sm text-[#607594]">Loading assessment details...</p> : null}
+      {initialLoading ? <p className="text-sm text-[#607594]">{t('loading.details')}</p> : null}
 
       <section className="grid gap-4 lg:grid-cols-[280px_1fr]">
         {assessmentDetail ? (
@@ -1439,27 +1439,27 @@ export default function AssessmentPage() {
                     href="/access"
                     className="inline-flex items-center rounded-lg border border-[#d4dced] bg-white px-3 py-1.5 text-xs font-semibold text-[#243555] hover:bg-[#f6f9ff]"
                   >
-                    Open access
+                    {t('completed.openAccess')}
                   </Link>
                   <Link
                     href="/reports"
                     className="inline-flex items-center rounded-lg border border-[#d4dced] bg-white px-3 py-1.5 text-xs font-semibold text-[#243555] hover:bg-[#f6f9ff]"
                   >
-                    View reports
+                    {t('completed.viewReports')}
                   </Link>
                   <Link
                     href="/payment"
                     onClick={handlePurchaseNewChecklistClick}
                     className="inline-flex items-center rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
                   >
-                    Purchase new checklist
+                    {t('completed.purchaseNew')}
                   </Link>
                 </div>
               </div>
             ) : null}
             {selectedSectionId && questionsInActiveSection.length === 0 ? (
               <div className="mt-3 rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] px-3 py-3 text-sm text-[#607594]">
-                No questions for this section yet. Select another section from the left panel.
+                {t('completed.noQuestionsInSection')}
               </div>
             ) : activeQuestion ? (
               <>
@@ -1494,7 +1494,7 @@ export default function AssessmentPage() {
                       <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#b8cceb] text-[10px] text-[#5f7fb4]">
                         i
                       </span>
-                      <span className="hidden sm:inline">Why this matters</span>
+                      <span className="hidden sm:inline">{t('questions.whyThisMatters')}</span>
                     </button>
                     {whyThisMattersText && isWhyThisMattersOpen ? (
                       <div className="absolute right-0 top-full z-20 mt-2 w-[351px] max-w-[calc(100vw-2rem)] rounded-lg border border-[#d9e4f5] bg-white p-4 text-sm text-[#3f5677] shadow-lg">
@@ -1567,7 +1567,7 @@ export default function AssessmentPage() {
                         dangerouslySetInnerHTML={{ __html: sanitizedExpectedImplementationHtml }}
                       />
                     ) : (
-                      <p className="mt-2 text-sm text-[#2f5c38]">No expected implementation details provided.</p>
+                      <p className="mt-2 text-sm text-[#2f5c38]">{t('questions.noImplementationDetails')}</p>
                     )}
                   </div>
                   <div className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-3">
@@ -1648,7 +1648,7 @@ export default function AssessmentPage() {
             {activeQuestion && !isSubmittedReadOnly ? (
               <>
                 <div className="mt-4 space-y-3">
-                  <p className="text-sm font-semibold text-[#1f2d45]">Your answer</p>
+                  <p className="text-sm font-semibold text-[#1f2d45]">{t('questions.yourAnswer')}</p>
                   <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4 text-sm">
                     {answerOptionsForActive.map((option) => {
                       const isSelected = activeAnswer?.answer === option.value;
@@ -1695,7 +1695,7 @@ export default function AssessmentPage() {
 
                   {isNoteEnabledForActiveQuestion ? (
                     <>
-                      <p className="text-sm font-semibold text-[#1f2d45]">Add a note <span className="font-normal text-[#7b88a3]">(optional)</span></p>
+                      <p className="text-sm font-semibold text-[#1f2d45]">{t('questions.addNote')} <span className="font-normal text-[#7b88a3]">{t('questions.optional')}</span></p>
                       <textarea
                         value={activeAnswer?.note_text ?? ''}
                         onChange={(event) =>

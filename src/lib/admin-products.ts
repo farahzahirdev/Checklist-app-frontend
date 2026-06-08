@@ -22,6 +22,14 @@ export type AdminProductCategory = {
   product_count: number;
 };
 
+export type DocumentationFile = {
+  id: string;
+  url: string;
+  filename: string;
+  file_type: 'pdf' | 'docx';
+  uploaded_at: string;
+};
+
 export type AdminProduct = {
   id: string;
   category: AdminProductCategory | null;
@@ -35,6 +43,7 @@ export type AdminProduct = {
   display_order: number;
   is_featured: boolean;
   brochure_pdf_url: string | null;
+  documentation_files: DocumentationFile[];
   hero_image_url: string | null;
   external_url: string | null;
   cta_label: string | null;
@@ -91,6 +100,7 @@ export type CreateAdminProductPayload = {
   display_order?: number;
   is_featured?: boolean;
   brochure_pdf_url?: string;
+  documentation_files?: DocumentationFile[];
   hero_image_url?: string;
   external_url?: string;
   cta_label?: string;
@@ -189,4 +199,17 @@ export async function uploadProductHeroImage(file: File): Promise<string> {
 
 export async function uploadProductBrochurePdf(file: File): Promise<string> {
   return uploadProductMedia(file);
+}
+
+export async function uploadProductDocumentationFile(file: File): Promise<DocumentationFile> {
+  const url = await uploadProductMedia(file);
+  const fileType = file.type === 'application/pdf' ? 'pdf' : 
+                   file.name.endsWith('.docx') ? 'docx' : 'pdf';
+  return {
+    id: Date.now().toString(), // Temporary ID, will be replaced by backend
+    url,
+    filename: file.name,
+    file_type: fileType,
+    uploaded_at: new Date().toISOString(),
+  };
 }
