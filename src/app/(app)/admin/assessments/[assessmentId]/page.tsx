@@ -753,17 +753,8 @@ export default function AdminAssessmentReviewDetailPage() {
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        // Get preview URL and open in new window
-                                        fetch(`/api/v1/media/${file.media_id}/preview`)
-                                          .then(response => response.json())
-                                          .then(data => {
-                                            window.open(data.preview_url, '_blank');
-                                          })
-                                          .catch(error => {
-                                            console.error('Error getting preview URL:', error);
-                                            // Fallback to direct preview
-                                            window.open(`/api/v1/media/${file.media_id}/preview`, '_blank');
-                                          });
+                                        // Use evidence-specific endpoint for viewing (handles decryption)
+                                        window.open(`/api/v1/assessment/${assessmentId}/evidence/${file.id}/view`, '_blank');
                                       }}
                                       className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f1f5f9]"
                                     title={t('actions.preview')}
@@ -774,22 +765,14 @@ export default function AdminAssessmentReviewDetailPage() {
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      // Get preview URL for download (it returns the actual file)
-                                      fetch(`/api/v1/media/${file.media_id}/preview`)
-                                        .then(response => response.json())
-                                        .then(data => {
-                                          // Create download link
-                                          const link = document.createElement('a');
-                                          link.href = data.preview_url;
-                                          link.download = file.filename;
-                                          link.target = '_blank';
-                                          document.body.appendChild(link);
-                                          link.click();
-                                          document.body.removeChild(link);
-                                        })
-                                        .catch(error => {
-                                          console.error('Error getting download URL:', error);
-                                        });
+                                      // Use evidence-specific endpoint for download (handles decryption)
+                                      const link = document.createElement('a');
+                                      link.href = `/api/v1/assessment/${assessmentId}/evidence/${file.id}/download`;
+                                      link.download = file.filename;
+                                      link.target = '_blank';
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
                                     }}
                                     className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f1f5f9]"
                                     title={t('actions.download')}
