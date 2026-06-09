@@ -67,16 +67,16 @@ function PreviewSection({ section, viewport }: any) {
           <div className="grid gap-6 lg:grid-cols-2 lg:items-center">
             <div className="space-y-4">
               <div className="text-xs font-semibold uppercase tracking-wider text-[#5ea2ff] opacity-90">
-                {section.data.kicker || 'Hero Section'}
+                <span dangerouslySetInnerHTML={{ __html: section.data.kicker || 'Hero Section' }} />
               </div>
               <h1 className="text-2xl font-bold sm:text-3xl md:text-4xl">
-                {section.data.title}
+                <span dangerouslySetInnerHTML={{ __html: section.data.title }} />
               </h1>
               {section.data.subtitle && (
-                <p className="text-sm sm:text-base text-[#d4e2f6]">{section.data.subtitle}</p>
+                <p className="text-sm sm:text-base text-[#d4e2f6]"><span dangerouslySetInnerHTML={{ __html: section.data.subtitle }} /></p>
               )}
               {section.data.description && (
-                <p className="text-xs sm:text-sm leading-6 text-[#d4e2f6]">{section.data.description}</p>
+                <p className="text-xs sm:text-sm leading-6 text-[#d4e2f6]"><span dangerouslySetInnerHTML={{ __html: section.data.description }} /></p>
               )}
             </div>
 
@@ -169,8 +169,8 @@ function PreviewSection({ section, viewport }: any) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {section.data.items?.map((item: any, idx: number) => (
               <div key={idx} className="border rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900">{item.title}</h3>
-                <p className="text-sm text-gray-600 mt-2">{item.description}</p>
+                <h3 className="font-semibold text-gray-900"><span dangerouslySetInnerHTML={{ __html: item.title }} /></h3>
+                <p className="text-sm text-gray-600 mt-2"><span dangerouslySetInnerHTML={{ __html: item.description }} /></p>
               </div>
             ))}
           </div>
@@ -186,20 +186,20 @@ function PreviewSection({ section, viewport }: any) {
               <div key={idx} className="border rounded-lg p-4 hover:shadow-lg transition">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-semibold text-gray-900">{item.name}</h3>
-                    <p className="text-sm text-gray-600">{item.subtitle}</p>
+                    <h3 className="font-semibold text-gray-900"><span dangerouslySetInnerHTML={{ __html: item.name }} /></h3>
+                    <p className="text-sm text-gray-600"><span dangerouslySetInnerHTML={{ __html: item.subtitle }} /></p>
                   </div>
                   <span className="text-lg font-bold text-blue-600">{item.price}</span>
                 </div>
                 {item.badge && (
                   <span className="inline-block mt-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
-                    {item.badge}
+                    <span dangerouslySetInnerHTML={{ __html: item.badge }} />
                   </span>
                 )}
                 <ul className="mt-3 space-y-1">
                   {item.points?.map((point: string, pidx: number) => (
                     <li key={pidx} className="text-xs text-gray-600 flex items-center gap-2">
-                      <span className="text-green-600">✓</span> {point}
+                      <span className="text-green-600">✓</span> <span dangerouslySetInnerHTML={{ __html: point }} />
                     </li>
                   ))}
                 </ul>
@@ -217,10 +217,10 @@ function PreviewSection({ section, viewport }: any) {
             {section.data.items?.map((item: any, idx: number) => (
               <details key={idx} className="border rounded-lg">
                 <summary className="p-4 font-semibold cursor-pointer hover:bg-gray-50">
-                  {item.question}
+                  <span dangerouslySetInnerHTML={{ __html: item.question }} />
                 </summary>
                 <div className="px-4 py-2 text-sm text-gray-600 border-t bg-gray-50">
-                  {item.answer}
+                  <span dangerouslySetInnerHTML={{ __html: item.answer }} />
                 </div>
               </details>
             ))}
@@ -231,10 +231,10 @@ function PreviewSection({ section, viewport }: any) {
     case 'cta':
       return (
         <div className={`${baseClasses} bg-blue-50 border-l-4 border-blue-600`}>
-          <h2 className="text-2xl font-bold text-gray-900">{section.data.title}</h2>
-          <p className="text-gray-700">{section.data.description}</p>
+          <h2 className="text-2xl font-bold text-gray-900"><span dangerouslySetInnerHTML={{ __html: section.data.title }} /></h2>
+          <p className="text-gray-700"><span dangerouslySetInnerHTML={{ __html: section.data.description }} /></p>
           <button className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-            {section.data.buttonText}
+            <span dangerouslySetInnerHTML={{ __html: section.data.buttonText }} />
           </button>
         </div>
       );
@@ -254,9 +254,9 @@ function PreviewSection({ section, viewport }: any) {
     case 'legal':
       return (
         <div className={baseClasses}>
-          <h1 className="text-3xl font-bold text-gray-900">{section.data.title}</h1>
+          <h1 className="text-3xl font-bold text-gray-900"><span dangerouslySetInnerHTML={{ __html: section.data.title }} /></h1>
           <div className="text-gray-700 space-y-4 whitespace-pre-line text-sm">
-            {section.data.content}
+            <span dangerouslySetInnerHTML={{ __html: section.data.content }} />
           </div>
         </div>
       );
@@ -264,7 +264,7 @@ function PreviewSection({ section, viewport }: any) {
     case 'standard':
       return (
         <div className={baseClasses}>
-          <div className="text-gray-700">{section.data.content}</div>
+          <div className="text-gray-700"><span dangerouslySetInnerHTML={{ __html: section.data.content }} /></div>
         </div>
       );
     

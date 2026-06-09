@@ -686,8 +686,8 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
         <div className="mx-auto grid min-h-[560px] w-full max-w-7xl gap-8 sm:px-2 md:px-6 lg:max-w-6xl lg:grid-cols-[1.05fr_0.95fr] xl:max-w-7xl 2xl:max-w-[90rem]">
           <div className="space-y-6">
             <div className="space-y-3">
-              {data.kicker && <p className="public-eyebrow text-[#4d7fd3]">{data.kicker}</p>}
-              {data.title && <h1 className="public-hero-title text-[#1a2440]">{data.title}</h1>}
+              {data.kicker && <p className="public-eyebrow text-[#4d7fd3]"><span dangerouslySetInnerHTML={{ __html: data.kicker }} /></p>}
+              {data.title && <h1 className="public-hero-title text-[#1a2440]"><span dangerouslySetInnerHTML={{ __html: data.title }} /></h1>}
               {data.subtitle && <p className="public-hero-subtitle max-w-lg text-[#334768]"><span dangerouslySetInnerHTML={{ __html: data.subtitle }} /></p>}
             </div>
 
@@ -732,8 +732,8 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
 
           <div className="flex items-start lg:pt-[86px]">
             <div className="w-full max-w-xl rounded-2xl border border-[#d7deeb] bg-white p-6 shadow-sm sm:p-8">
-              <h2 className="text-2xl font-semibold text-[#1f2741] sm:text-3xl">{data.directContact.title || 'Direct contact'}</h2>
-              {data.directContact.subtitle && <p className="mt-2 text-lg text-[#4c5f80] sm:text-xl">{data.directContact.subtitle}</p>}
+              <h2 className="text-2xl font-semibold text-[#1f2741] sm:text-3xl"><span dangerouslySetInnerHTML={{ __html: data.directContact.title || 'Direct contact' }} /></h2>
+              {data.directContact.subtitle && <p className="mt-2 text-lg text-[#4c5f80] sm:text-xl"><span dangerouslySetInnerHTML={{ __html: data.directContact.subtitle }} /></p>}
               {data.directContact.email ? (
                 <a
                   href={PUBLIC_CONTACT_MAILTO}
@@ -742,7 +742,7 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
                   {resolvePublicContactEmail(data.directContact.email)}
                 </a>
               ) : null}
-              {data.directContact.responseTime && <p className="mt-5 text-lg text-[#4c5f80] sm:text-xl">{data.directContact.responseTime}</p>}
+              {data.directContact.responseTime && <p className="mt-5 text-lg text-[#4c5f80] sm:text-xl"><span dangerouslySetInnerHTML={{ __html: data.directContact.responseTime }} /></p>}
             </div>
           </div>
         </div>
@@ -1092,7 +1092,7 @@ function ContactInfoSectionRenderer({ data }: { data: Record<string, any> }) {
   return (
     <section className="py-12 px-4 bg-white">
       <div className="max-w-2xl mx-auto text-center">
-        {data.title && <h2 className="text-3xl font-bold mb-8">{data.title}</h2>}
+        {data.title && <h2 className="text-3xl font-bold mb-8"><span dangerouslySetInnerHTML={{ __html: data.title }} /></h2>}
         {data.email && (
           <p className="text-lg mb-2">
             <strong>Email:</strong>{' '}
@@ -1103,12 +1103,12 @@ function ContactInfoSectionRenderer({ data }: { data: Record<string, any> }) {
         )}
         {data.phone && (
           <p className="text-lg mb-2">
-            <strong>Phone:</strong> {data.phone}
+            <strong>Phone:</strong> <span dangerouslySetInnerHTML={{ __html: data.phone }} />
           </p>
         )}
         {data.address && (
           <p className="text-lg mb-2">
-            <strong>Address:</strong> {data.address}
+            <strong>Address:</strong> <span dangerouslySetInnerHTML={{ __html: data.address }} />
           </p>
         )}
       </div>
