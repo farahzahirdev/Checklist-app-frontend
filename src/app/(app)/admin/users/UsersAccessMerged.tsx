@@ -1630,16 +1630,34 @@ export default function UsersAccessMerged() {
                                   <p className="text-[12px] text-slate-700">{customerDetail.company.email}</p>
                                 </div>
                               )}
+                              {customerDetail.company.website && (
+                                <div>
+                                  <p className="text-[10px] text-slate-600">Website</p>
+                                  <p className="text-[12px] text-slate-700">{customerDetail.company.website}</p>
+                                </div>
+                              )}
                               {customerDetail.company.industry && (
                                 <div>
                                   <p className="text-[10px] text-slate-600">Industry</p>
                                   <p className="text-[12px] text-slate-700">{customerDetail.company.industry}</p>
                                 </div>
                               )}
+                              {customerDetail.company.size && (
+                                <div>
+                                  <p className="text-[10px] text-slate-600">Size</p>
+                                  <p className="text-[12px] text-slate-700">{customerDetail.company.size}</p>
+                                </div>
+                              )}
                               {customerDetail.company.country && (
                                 <div>
                                   <p className="text-[10px] text-slate-600">Country</p>
                                   <p className="text-[12px] text-slate-700">{customerDetail.company.country}</p>
+                                </div>
+                              )}
+                              {customerDetail.company.description && (
+                                <div>
+                                  <p className="text-[10px] text-slate-600">Description</p>
+                                  <p className="text-[12px] text-slate-700">{customerDetail.company.description}</p>
                                 </div>
                               )}
                               <div>
@@ -1662,6 +1680,50 @@ export default function UsersAccessMerged() {
                           ) : (
                             <p className="text-[12px] text-slate-500">No company assigned</p>
                           )}
+                        {customerDetail.company && (customerDetail.company.billing_contact_name || customerDetail.company.billing_email || customerDetail.company.billing_tax_id) && (
+                          <div className="mb-4">
+                            <p className={`mb-2 text-[11px] font-bold uppercase text-slate-500`}>Billing Details</p>
+                            <div className="space-y-2 rounded-lg border border-purple-200 bg-purple-50 p-3">
+                              {customerDetail.company.billing_contact_name && (
+                                <div>
+                                  <p className="text-[10px] text-slate-600">Contact Name</p>
+                                  <p className="text-[12px] text-slate-700">{customerDetail.company.billing_contact_name}</p>
+                                </div>
+                              )}
+                              {customerDetail.company.billing_email && (
+                                <div>
+                                  <p className="text-[10px] text-slate-600">Billing Email</p>
+                                  <p className="text-[12px] text-slate-700">{customerDetail.company.billing_email}</p>
+                                </div>
+                              )}
+                              {customerDetail.company.billing_phone && (
+                                <div>
+                                  <p className="text-[10px] text-slate-600">Billing Phone</p>
+                                  <p className="text-[12px] text-slate-700">{customerDetail.company.billing_phone}</p>
+                                </div>
+                              )}
+                              {customerDetail.company.billing_tax_id && (
+                                <div>
+                                  <p className="text-[10px] text-slate-600">Tax/VAT ID</p>
+                                  <p className="text-[12px] text-slate-700">{customerDetail.company.billing_tax_id}</p>
+                                </div>
+                              )}
+                              {customerDetail.company.billing_address_line1 && (
+                                <div>
+                                  <p className="text-[10px] text-slate-600">Address</p>
+                                  <p className="text-[12px] text-slate-700">
+                                    {customerDetail.company.billing_address_line1}
+                                    {customerDetail.company.billing_address_line2 && `, ${customerDetail.company.billing_address_line2}`}
+                                    {customerDetail.company.billing_city && `, ${customerDetail.company.billing_city}`}
+                                    {customerDetail.company.billing_state && `, ${customerDetail.company.billing_state}`}
+                                    {customerDetail.company.billing_postal_code && `, ${customerDetail.company.billing_postal_code}`}
+                                    {customerDetail.company.billing_country && `, ${customerDetail.company.billing_country}`}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                         </div>
                         <p className={`mb-2 text-[11px] font-bold uppercase text-slate-500`}>Permissions</p>
                         <div className="flex flex-wrap gap-1">
