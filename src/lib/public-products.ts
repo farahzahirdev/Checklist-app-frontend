@@ -42,6 +42,7 @@ export type PublicProduct = {
   name: string;
   short_description: string | null;
   description: string | null;
+  benefits: string | null;
   product_kind: PublicProductKind;
   status: PublicProductStatus;
   display_order: number;

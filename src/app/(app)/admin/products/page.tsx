@@ -19,7 +19,6 @@ import {
   getAdminProduct,
   listAdminProductCategories,
   listAdminProducts,
-  syncChecklistProducts,
   uploadProductBrochurePdf,
   uploadProductDocumentationFile,
   uploadProductHeroImage,
@@ -144,6 +143,7 @@ type ProductFormState = {
   slug: string;
   short_description: string;
   description: string;
+  benefits: string;
   category_code: string;
   product_kind: ProductKind;
   status: ProductStatus;
@@ -173,6 +173,7 @@ function productToForm(product: AdminProduct, categories: AdminProductCategory[]
     slug: product.slug,
     short_description: product.short_description ?? '',
     description: product.description ?? '',
+    benefits: (product as any).benefits ?? '',
     category_code: product.category?.code ?? categories[0]?.code ?? '',
     product_kind: product.product_kind,
     status: product.status,
@@ -192,6 +193,7 @@ function emptyProductForm(categories: AdminProductCategory[]): ProductFormState 
     slug: '',
     short_description: '',
     description: '',
+    benefits: '',
     category_code: categories[0]?.code ?? '',
     product_kind: 'documentation',
     status: 'draft',
@@ -224,7 +226,6 @@ export default function AdminProductsPage() {
   const t = (key: string, values?: Record<string, string>) => translate(adminProductsMessages, locale, key, values);
 
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
   const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
   const [uploadingBrochurePdf, setUploadingBrochurePdf] = useState(false);
@@ -319,6 +320,7 @@ export default function AdminProductsPage() {
       slug: productForm.slug.trim() || undefined,
       short_description: productForm.short_description.trim() || undefined,
       description: productForm.description.trim() || undefined,
+      benefits: productForm.benefits.trim() || undefined,
       category_code: productForm.category_code,
       product_kind: productForm.product_kind,
       status: productForm.status,
@@ -474,20 +476,6 @@ export default function AdminProductsPage() {
     });
   }, [loadProducts, loading]);
 
-  async function handleSyncChecklists() {
-    setSyncing(true);
-    try {
-      const response = await syncChecklistProducts();
-      setProducts(response.products);
-      toast.success(t('toast.syncSuccess'));
-      await loadCategories();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('toast.syncFailed'));
-    } finally {
-      setSyncing(false);
-    }
-  }
-
   async function handleSaveCategory() {
     const code = categoryForm.code.trim();
     const name = categoryForm.name.trim();
@@ -601,14 +589,6 @@ export default function AdminProductsPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ecf0f8] px-4 py-3">
           <h2 className="text-xl font-semibold text-[#243555]">{t('section.title')}</h2>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleSyncChecklists}
-              disabled={syncing}
-              className="rounded-xl border border-[#2d4f83] bg-white px-4 py-2 text-sm font-semibold text-[#2d4f83] hover:bg-[#f2f7ff] disabled:opacity-70"
-            >
-              {syncing ? t('actions.syncing') : t('actions.sync')}
-            </button>
             <button
               type="button"
               onClick={openCreateProductModal}
@@ -901,6 +881,15 @@ export default function AdminProductsPage() {
                     value={productForm.description}
                     onChange={(value) => setProductForm((previous) => ({ ...previous, description: value }))}
                     placeholder={t('form.descriptionPlaceholder')}
+                    t={t}
+                  />
+                </label>
+                <label className="space-y-1 md:col-span-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.benefits')}</span>
+                  <TipTapRichTextEditor
+                    value={productForm.benefits}
+                    onChange={(value) => setProductForm((previous) => ({ ...previous, benefits: value }))}
+                    placeholder={t('form.benefitsPlaceholder')}
                     t={t}
                   />
                 </label>

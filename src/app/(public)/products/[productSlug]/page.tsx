@@ -602,7 +602,10 @@ export default function ProductDetailPage() {
 
             {audit ? (
               <div>
-                <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.includesTitle')}</h3>
+                <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.aboutTitle')}</h3>
+                <div className="mt-3 text-sm text-[#3f4f6e]">
+                  {apiDetail?.description || audit?.checklist_type?.description || t('detail.audit.about')}
+                </div>
                 <ul className="mt-3 grid gap-2 text-sm text-[#3f4f6e] md:grid-cols-2">
                   {[0, 1, 2, 3].map((idx) => (
                     <li key={idx} className="flex items-start gap-2">
@@ -615,12 +618,24 @@ export default function ProductDetailPage() {
                     </li>
                   ))}
                 </ul>
+                {apiDetail?.benefits ? (
+                  <div className="mt-6">
+                    <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.benefitsTitle')}</h3>
+                    <div 
+                      className="mt-3 text-sm text-[#3f4f6e] prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: apiDetail.benefits }}
+                    />
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
             {docProduct ? (
               <div>
-                <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.includesTitle')}</h3>
+                <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.aboutTitle')}</h3>
+                <div className="mt-3 text-sm text-[#3f4f6e]">
+                  {docProduct.description}
+                </div>
                 <ul className="mt-3 grid gap-2 text-sm text-[#3f4f6e] md:grid-cols-2">
                   {docProduct.points.map((point) => (
                     <li key={point} className="flex items-start gap-2">
@@ -633,12 +648,24 @@ export default function ProductDetailPage() {
                     </li>
                   ))}
                 </ul>
+                {docProduct.benefits ? (
+                  <div className="mt-6">
+                    <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.benefitsTitle')}</h3>
+                    <div 
+                      className="mt-3 text-sm text-[#3f4f6e] prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: docProduct.benefits }}
+                    />
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
             {apiDetail && apiIncludeLines.length ? (
               <div>
-                <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.includesTitle')}</h3>
+                <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.aboutTitle')}</h3>
+                <div className="mt-3 text-sm text-[#3f4f6e]">
+                  {apiDetail.description || apiDetail.short_description}
+                </div>
                 <ul className="mt-3 grid gap-2 text-sm text-[#3f4f6e] md:grid-cols-2">
                   {apiIncludeLines.map((line, idx) => (
                     <li key={`api-line-${idx}`} className="flex items-start gap-2">
@@ -651,6 +678,15 @@ export default function ProductDetailPage() {
                     </li>
                   ))}
                 </ul>
+                {apiDetail.benefits ? (
+                  <div className="mt-6">
+                    <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.benefitsTitle')}</h3>
+                    <div 
+                      className="mt-3 text-sm text-[#3f4f6e] prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: apiDetail.benefits }}
+                    />
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </article>

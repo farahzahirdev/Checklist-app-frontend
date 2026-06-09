@@ -85,8 +85,9 @@ export const productsMessages: TranslationMessages = {
     'detail.contactSales': 'Contact us',
     'detail.comingSoonNotice':
       'This product is not available for purchase yet. Get in touch and we will let you know as soon as it launches.',
-    'detail.includesTitle': 'What you get',
+    'detail.includesTitle': 'Benefits',
     'detail.aboutTitle': 'About this product',
+    'detail.benefitsTitle': 'Benefits',
     'detail.notFoundTitle': 'Product not found',
     'detail.notFoundBody': 'The product you are looking for is unavailable or has been removed.',
     'detail.loading': 'Loading product…',
@@ -246,8 +247,9 @@ export const productsMessages: TranslationMessages = {
     'detail.contactSales': 'Kontaktujte nás',
     'detail.comingSoonNotice':
       'Tento produkt zatím není k zakoupení. Ozvěte se nám a dáme vám vědět, jakmile bude spuštěn.',
-    'detail.includesTitle': 'Co získáte',
+    'detail.includesTitle': 'Výhody',
     'detail.aboutTitle': 'O produktu',
+    'detail.benefitsTitle': 'Výhody',
     'detail.notFoundTitle': 'Produkt nenalezen',
     'detail.notFoundBody': 'Hledaný produkt není dostupný nebo byl odstraněn.',
     'detail.loading': 'Načítání produktu…',

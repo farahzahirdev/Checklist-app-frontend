@@ -38,6 +38,7 @@ export type AdminProduct = {
   name: string;
   short_description: string | null;
   description: string | null;
+  benefits: string | null;
   product_kind: ProductKind;
   status: ProductStatus;
   display_order: number;
@@ -91,6 +92,7 @@ export type CreateAdminProductPayload = {
   slug?: string;
   short_description?: string;
   description?: string;
+  benefits?: string;
   product_kind?: ProductKind;
   status?: ProductStatus;
   checklist_id?: string;
@@ -176,10 +178,6 @@ export async function deleteChecklistProduct(checklistId: string) {
 
 export async function deleteAdminProduct(productId: string) {
   await apiDelete<unknown>(`/admin/products/${encodeURIComponent(productId)}`);
-}
-
-export async function syncChecklistProducts() {
-  return apiPost<AdminProductListResponse, Record<string, never>>('/admin/products/sync-checklists', {});
 }
 
 type MediaUploadResponse = {
