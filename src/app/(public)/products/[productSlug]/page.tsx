@@ -634,7 +634,7 @@ export default function ProductDetailPage() {
               <div>
                 <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.aboutTitle')}</h3>
                 <div className="mt-3 text-sm text-[#3f4f6e]">
-                  {docProduct.description}
+                  {t(`doc.${docProduct.id}.body`)}
                 </div>
                 <ul className="mt-3 grid gap-2 text-sm text-[#3f4f6e] md:grid-cols-2">
                   {docProduct.points.map((point) => (
