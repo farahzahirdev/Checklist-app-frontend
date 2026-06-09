@@ -767,27 +767,27 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
         <div className="space-y-4">
           {data.kicker && (
             <p className="text-sm font-medium uppercase tracking-[0.24em] text-[#5ea2ff]">
-              {data.kicker}
+              <span dangerouslySetInnerHTML={{ __html: data.kicker }} />
             </p>
           )}
           {titleLine1 && (
             <h1 className="max-w-xl text-4xl font-semibold leading-tight md:text-5xl">
-              {titleLine1}
+              <span dangerouslySetInnerHTML={{ __html: titleLine1 }} />
               {titleLine2 ? (
                 <>
                   <br />
-                  {titleLine2}
+                  <span dangerouslySetInnerHTML={{ __html: titleLine2 }} />
                   {data.accent && (
                     <>
                       {' '}
-                      <span className="text-[#2f7dff]">{data.accent}</span>
+                      <span className="text-[#2f7dff]"><span dangerouslySetInnerHTML={{ __html: data.accent }} /></span>
                     </>
                   )}
                 </>
               ) : data.accent ? (
                 <>
                   {' '}
-                  <span className="text-[#2f7dff]">{data.accent}</span>
+                  <span className="text-[#2f7dff]"><span dangerouslySetInnerHTML={{ __html: data.accent }} /></span>
                 </>
               ) : null}
             </h1>
@@ -810,8 +810,8 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
                     {renderQuickLinkIcon(link.icon)}
                   </span>
                   <span className="flex min-w-0 flex-col">
-                    <span className="text-sm font-semibold text-white">{link.title}</span>
-                    {link.subtitle ? <span className="text-xs text-[#a9c0e6]">{link.subtitle}</span> : null}
+                    <span className="text-sm font-semibold text-white"><span dangerouslySetInnerHTML={{ __html: link.title }} /></span>
+                    {link.subtitle ? <span className="text-xs text-[#a9c0e6]"><span dangerouslySetInnerHTML={{ __html: link.subtitle }} /></span> : null}
                   </span>
                 </a>
               ))}
@@ -830,7 +830,7 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
                           : 'border border-white/25 bg-white/10 text-white hover:bg-white/15'
                       }`}
                     >
-                      {button.text}
+                      <span dangerouslySetInnerHTML={{ __html: button.text }} />
                     </a>
                   ))
                 : data.button_text && data.button_link && (
@@ -838,7 +838,7 @@ function HeroSectionRenderer({ data }: { data: Record<string, any> }) {
                       href={data.button_link}
                       className="inline-flex items-center rounded-lg bg-[#2e82ff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#276fd5]"
                     >
-                      {data.button_text}
+                      <span dangerouslySetInnerHTML={{ __html: data.button_text }} />
                     </a>
                   )}
             </div>
@@ -1516,11 +1516,11 @@ function ProductHeroSectionRenderer({ data }: { data: Record<string, any> }) {
           )}
           {data.product_title && (
             <h1 className="mt-4 text-4xl font-bold leading-tight text-[#1f2741] md:text-5xl">
-              {data.product_title}
+              <span dangerouslySetInnerHTML={{ __html: data.product_title }} />
             </h1>
           )}
           {data.tagline && (
-            <p className="mt-4 max-w-2xl text-xl text-[#55627e]">{data.tagline}</p>
+            <p className="mt-4 max-w-2xl text-xl text-[#55627e]"><span dangerouslySetInnerHTML={{ __html: data.tagline }} /></p>
           )}
           {data.short_description && (
             <p className="mt-4 max-w-2xl text-lg text-[#445675]"><span dangerouslySetInnerHTML={{ __html: data.short_description }} /></p>
@@ -1538,7 +1538,7 @@ function ProductHeroSectionRenderer({ data }: { data: Record<string, any> }) {
                       <path d="m4.2 8.1 2.2 2.2 5.2-5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"></path>
                     </svg>
                   </span>
-                  <span className="text-[#445675]">{benefit}</span>
+                  <span className="text-[#445675]"><span dangerouslySetInnerHTML={{ __html: benefit }} /></span>
                 </li>
               ))}
             </ul>
@@ -1551,7 +1551,7 @@ function ProductHeroSectionRenderer({ data }: { data: Record<string, any> }) {
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               {data.features.map((feature: any, index: number) => (
                 <article key={index} className="rounded-lg border border-[#d7deeb] bg-white p-4 md:p-6">
-                  <h3 className="font-semibold text-[#1f2741]">{feature.title}</h3>
+                  <h3 className="font-semibold text-[#1f2741]"><span dangerouslySetInnerHTML={{ __html: feature.title }} /></h3>
                   <p className="mt-2 text-sm text-[#55627e]"><span dangerouslySetInnerHTML={{ __html: feature.description }} /></p>
                 </article>
               ))}
@@ -1569,11 +1569,11 @@ function ProductCTASectionRenderer({ data }: { data: Record<string, any> }) {
       <div className="mx-auto max-w-4xl space-y-6 text-center">
         {data.cta_headline && (
           <h2 className="text-3xl font-bold text-[#1f2741] md:text-4xl">
-            {data.cta_headline}
+            <span dangerouslySetInnerHTML={{ __html: data.cta_headline }} />
           </h2>
         )}
         {data.cta_subheadline && (
-          <p className="text-lg text-[#55627e]">{data.cta_subheadline}</p>
+          <p className="text-lg text-[#55627e]"><span dangerouslySetInnerHTML={{ __html: data.cta_subheadline }} /></p>
         )}
         <div className="flex flex-wrap justify-center gap-4 pt-4">
           {data.primary_cta_text && data.primary_cta_url && (
@@ -1581,7 +1581,7 @@ function ProductCTASectionRenderer({ data }: { data: Record<string, any> }) {
               href={data.primary_cta_url}
               className="inline-flex items-center gap-2 rounded-lg bg-[#1f7bff] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#1d4ed8]"
             >
-              {data.primary_cta_text}
+              <span dangerouslySetInnerHTML={{ __html: data.primary_cta_text }} />
             </a>
           )}
           {data.secondary_cta_text && data.secondary_cta_url && (
@@ -1589,7 +1589,7 @@ function ProductCTASectionRenderer({ data }: { data: Record<string, any> }) {
               href={data.secondary_cta_url}
               className="inline-flex items-center gap-2 rounded-lg border border-[#2563eb] bg-[#eff6ff] px-6 py-3 font-semibold text-[#2563eb] transition-colors hover:bg-[#dbeafe]"
             >
-              {data.secondary_cta_text}
+              <span dangerouslySetInnerHTML={{ __html: data.secondary_cta_text }} />
             </a>
           )}
         </div>
