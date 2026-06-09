@@ -91,13 +91,11 @@ function formatPasswordAgeLabel(updatedAt: string | undefined, t: (key: string) 
 function applyProfileFormState(profile: CustomerProfile, setters: {
   setFullName: (v: string) => void;
   setUsername: (v: string) => void;
-  setJobTitle: (v: string) => void;
   setDepartment: (v: string) => void;
   setPreferredLanguage: (v: 'en' | 'cs') => void;
 }) {
   setters.setFullName(profile.full_name ?? '');
   setters.setUsername(profile.username ?? '');
-  setters.setJobTitle(profile.job_title ?? '');
   setters.setDepartment(profile.department ?? '');
   setters.setPreferredLanguage(profile.preferred_language ?? 'en');
 }
@@ -138,7 +136,6 @@ export default function CustomerProfilePage() {
 
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
-  const [jobTitle, setJobTitle] = useState('');
   const [department, setDepartment] = useState('');
   const [preferredLanguage, setPreferredLanguage] = useState<'en' | 'cs'>('en');
 
@@ -149,7 +146,6 @@ export default function CustomerProfilePage() {
   const [companyCountry, setCompanyCountry] = useState('');
   const [companySize, setCompanySize] = useState('');
   const [companyDescription, setCompanyDescription] = useState('');
-  const [companyRegion, setCompanyRegion] = useState('');
 
   const [billingContactName, setBillingContactName] = useState('');
   const [billingEmail, setBillingEmail] = useState('');
@@ -183,7 +179,6 @@ export default function CustomerProfilePage() {
       setCompanyEmail,
       setCompanyWebsite,
       setCompanyIndustry,
-      setCompanyRegion,
       setCompanyCountry,
       setCompanySize,
       setCompanyDescription,
@@ -211,7 +206,6 @@ export default function CustomerProfilePage() {
     () => ({
       setFullName,
       setUsername,
-      setJobTitle,
       setDepartment,
       setPreferredLanguage,
     }),
@@ -297,14 +291,11 @@ export default function CustomerProfilePage() {
       const updated = await updateCustomerProfile({
         full_name: normalizeOptional(fullName),
         username: normalizeOptional(username),
-        job_title: normalizeOptional(jobTitle),
         department: normalizeOptional(department),
-        preferred_language: preferredLanguage,
       });
 
       setProfile(updated);
       applyProfileFormState(updated, profileFormSetters);
-      setLocale(updated.preferred_language ?? 'en');
       setEditingProfile(false);
 
       const completion = await getCustomerProfileCompletion().catch(() => null);
@@ -328,7 +319,6 @@ export default function CustomerProfilePage() {
         company_email: normalizeOptional(companyEmail) ?? null,
         company_website: normalizeOptional(companyWebsite) ?? null,
         company_industry: normalizeOptional(companyIndustry) ?? null,
-        company_region: normalizeOptional(companyRegion) ?? null,
         company_country: normalizeOptional(companyCountry) ?? null,
         company_size: normalizeOptional(companySize) ?? null,
         company_description: normalizeOptional(companyDescription) ?? null,
@@ -535,8 +525,6 @@ export default function CustomerProfilePage() {
       setFullName={setFullName}
       username={username}
       setUsername={setUsername}
-      jobTitle={jobTitle}
-      setJobTitle={setJobTitle}
       department={department}
       setDepartment={setDepartment}
       preferredLanguage={preferredLanguage}
@@ -551,8 +539,6 @@ export default function CustomerProfilePage() {
       setCompanyIndustry={setCompanyIndustry}
       companyCountry={companyCountry}
       setCompanyCountry={setCompanyCountry}
-      companyRegion={companyRegion}
-      setCompanyRegion={setCompanyRegion}
       companySize={companySize}
       setCompanySize={setCompanySize}
       companyDescription={companyDescription}

@@ -571,6 +571,82 @@ export default function AdminAssessmentReviewDetailPage() {
         </div>
       </header>
 
+      {detail?.company && (
+        <article className="rounded-2xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-[#243555]">Customer & Organization Details</h2>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-[10px] font-bold uppercase text-slate-500">Customer</p>
+              <div className="mt-1 space-y-1">
+                <p className="text-[12px] text-slate-700">
+                  <span className="font-medium">Name:</span> {detail.customer_name || '-'}
+                </p>
+                <p className="text-[12px] text-slate-700">
+                  <span className="font-medium">Email:</span> {detail.customer_email || '-'}
+                </p>
+                {detail.customer_username && (
+                  <p className="text-[12px] text-slate-700">
+                    <span className="font-medium">Username:</span> {detail.customer_username}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase text-slate-500">Organization</p>
+              <div className="mt-1 space-y-1">
+                <p className="text-[12px] text-slate-700">
+                  <span className="font-medium">Company:</span> {detail.company.name}
+                </p>
+                {detail.company.email && (
+                  <p className="text-[12px] text-slate-700">
+                    <span className="font-medium">Email:</span> {detail.company.email}
+                  </p>
+                )}
+                {detail.company.industry && (
+                  <p className="text-[12px] text-slate-700">
+                    <span className="font-medium">Industry:</span> {detail.company.industry}
+                  </p>
+                )}
+                {detail.company.country && (
+                  <p className="text-[12px] text-slate-700">
+                    <span className="font-medium">Country:</span> {detail.company.country}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+          {detail.company.billing_contact_name && (
+            <div className="mt-4 pt-4 border-t border-slate-200">
+              <p className="text-[10px] font-bold uppercase text-slate-500">Billing Contact</p>
+              <div className="mt-1 grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <p className="text-[12px] text-slate-700">
+                    <span className="font-medium">Contact:</span> {detail.company.billing_contact_name}
+                  </p>
+                  {detail.company.billing_email && (
+                    <p className="text-[12px] text-slate-700">
+                      <span className="font-medium">Email:</span> {detail.company.billing_email}
+                    </p>
+                  )}
+                  {detail.company.billing_phone && (
+                    <p className="text-[12px] text-slate-700">
+                      <span className="font-medium">Phone:</span> {detail.company.billing_phone}
+                    </p>
+                  )}
+                </div>
+                {detail.company.billing_tax_id && (
+                  <div className="space-y-1">
+                    <p className="text-[12px] text-slate-700">
+                      <span className="font-medium">Tax/VAT ID:</span> {detail.company.billing_tax_id}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </article>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <article className={ADMIN_KPI_DARK_CARD_CLASS}>
           <KpiLabel label={t('kpi.total')} tooltip={t('kpi.total.tooltip')} />

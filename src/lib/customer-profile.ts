@@ -151,7 +151,6 @@ export function applyProfileCompanyFields(
     setCompanyEmail: (v: string) => void;
     setCompanyWebsite: (v: string) => void;
     setCompanyIndustry: (v: string) => void;
-    setCompanyRegion: (v: string) => void;
     setCompanyCountry: (v: string) => void;
     setCompanySize: (v: string) => void;
     setCompanyDescription: (v: string) => void;
@@ -161,7 +160,6 @@ export function applyProfileCompanyFields(
   setters.setCompanyEmail(profile.company_email ?? '');
   setters.setCompanyWebsite(profile.company_website ?? '');
   setters.setCompanyIndustry(profile.company_industry ?? '');
-  setters.setCompanyRegion(profile.company_region ?? '');
   setters.setCompanyCountry(profile.company_country ?? '');
   setters.setCompanySize(profile.company_size ?? '');
   setters.setCompanyDescription(profile.company_description ?? '');

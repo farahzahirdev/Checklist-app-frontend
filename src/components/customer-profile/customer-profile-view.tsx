@@ -59,8 +59,6 @@ export type CustomerProfileViewProps = {
   setFullName: (value: string) => void;
   username: string;
   setUsername: (value: string) => void;
-  jobTitle: string;
-  setJobTitle: (value: string) => void;
   department: string;
   setDepartment: (value: string) => void;
   preferredLanguage: 'en' | 'cs';
@@ -75,8 +73,6 @@ export type CustomerProfileViewProps = {
   setCompanyIndustry: (value: string) => void;
   companyCountry: string;
   setCompanyCountry: (value: string) => void;
-  companyRegion: string;
-  setCompanyRegion: (value: string) => void;
   companySize: string;
   setCompanySize: (value: string) => void;
   companyDescription: string;
@@ -407,8 +403,6 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
     setFullName,
     username,
     setUsername,
-    jobTitle,
-    setJobTitle,
     department,
     setDepartment,
     preferredLanguage,
@@ -423,8 +417,6 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
     setCompanyIndustry,
     companyCountry,
     setCompanyCountry,
-    companyRegion,
-    setCompanyRegion,
     companySize,
     setCompanySize,
     companyDescription,
@@ -668,7 +660,6 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
                     <InfoField label={t('fields.fullName')} value={fullName} />
                     <InfoField label={t('fields.email')} value={profile?.email ?? ''} />
                     <InfoField label={t('fields.username')} value={username} />
-                    <InfoField label={t('fields.jobTitle')} value={jobTitle} />
                     <InfoField label={t('fields.department')} value={department} />
                   </div>
                 </div>
@@ -688,23 +679,8 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
                       <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className={inputClass} />
                     </label>
                     <label className="block space-y-1.5 text-sm">
-                      <span className="font-medium text-[#475569]">{t('fields.jobTitle')}</span>
-                      <input type="text" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className={inputClass} />
-                    </label>
-                    <label className="block space-y-1.5 text-sm">
                       <span className="font-medium text-[#475569]">{t('fields.department')}</span>
                       <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} className={inputClass} />
-                    </label>
-                    <label className="block space-y-1.5 text-sm sm:col-span-2">
-                      <span className="font-medium text-[#475569]">{t('fields.preferredLanguage')}</span>
-                      <select
-                        value={preferredLanguage}
-                        onChange={(e) => setPreferredLanguage(e.target.value as 'en' | 'cs')}
-                        className={inputClass}
-                      >
-                        <option value="en">{t('language.en')}</option>
-                        <option value="cs">{t('language.cs')}</option>
-                      </select>
                     </label>
                   </div>
                   <button type="submit" disabled={savingProfile} className={primaryBtn}>
@@ -750,7 +726,6 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
                   <InfoField label={t('fields.companyName')} value={companyName} />
                   <InfoField label={t('fields.companySize')} value={companySize} />
                   <InfoField label={t('fields.companyIndustry')} value={companyIndustry} />
-                  <InfoField label={t('fields.companyRegion')} value={companyRegion} />
                   <InfoField label={t('fields.companyCountry')} value={companyCountry} />
                   <InfoField label={t('fields.companyFocus')} value={companyDescription} />
                 </div>
@@ -771,10 +746,6 @@ export function CustomerProfileView(props: CustomerProfileViewProps) {
                   <label className="block space-y-1.5 text-sm">
                     <span className="font-medium text-[#475569]">{t('fields.companyIndustry')}</span>
                     <input type="text" value={companyIndustry} onChange={(e) => setCompanyIndustry(e.target.value)} className={inputClass} />
-                  </label>
-                  <label className="block space-y-1.5 text-sm">
-                    <span className="font-medium text-[#475569]">{t('fields.companyRegion')}</span>
-                    <input type="text" value={companyRegion} onChange={(e) => setCompanyRegion(e.target.value)} className={inputClass} />
                   </label>
                   <label className="block space-y-1.5 text-sm">
                     <span className="font-medium text-[#475569]">{t('fields.companyCountry')}</span>

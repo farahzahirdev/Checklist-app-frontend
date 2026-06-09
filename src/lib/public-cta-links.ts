@@ -32,7 +32,10 @@ export function publicMarketingButtonHref(button: {
     return (raw || '/') as Route;
   }
 
-  if (GET_ACCESS_LABELS.has(label) || VIEW_PRODUCTS_LABELS.has(label)) {
+  if (GET_ACCESS_LABELS.has(label)) {
+    return '/register';
+  }
+  if (VIEW_PRODUCTS_LABELS.has(label)) {
     return '/products';
   }
 

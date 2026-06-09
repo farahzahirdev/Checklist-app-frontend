@@ -53,7 +53,19 @@ export type AdminCustomerDetail = AdminCustomer & {
     website?: string | null;
     industry?: string | null;
     country?: string | null;
+    size?: string | null;
+    description?: string | null;
     is_active: boolean;
+    billing_contact_name?: string | null;
+    billing_email?: string | null;
+    billing_phone?: string | null;
+    billing_address_line1?: string | null;
+    billing_address_line2?: string | null;
+    billing_city?: string | null;
+    billing_state?: string | null;
+    billing_postal_code?: string | null;
+    billing_country?: string | null;
+    billing_tax_id?: string | null;
   };
 };
 
