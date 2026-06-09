@@ -37,6 +37,7 @@ export type DocumentationProduct = {
   category: DocumentationCategory;
   iconKind: AuditIconKind;
   points: Array<'policyDocument' | 'userGuidelines' | 'adminGuidelines' | 'adminGuidelinesAdvanced' | 'responsePlaybooks'>;
+  benefits?: string;
 };
 
 export type BuilderProduct = {
