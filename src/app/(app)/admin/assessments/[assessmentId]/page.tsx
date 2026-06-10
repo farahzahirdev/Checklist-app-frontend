@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { translate, useLocale } from '@/lib/i18n';
+import { API_BASE_URL } from '@/lib/config';
 import {
   createBulkAnswerReviews,
   createAnswerReview,
@@ -828,9 +829,21 @@ export default function AdminAssessmentReviewDetailPage() {
                                   {file.mime_type.startsWith('image/') && (
                                     <button
                                       type="button"
-                                      onClick={() => {
+                                      onClick={async () => {
                                         // Use evidence-specific endpoint for viewing (handles decryption)
-                                        window.open(`/api/v1/assessment/${assessmentId}/evidence/${file.id}/view`, '_blank');
+                                        try {
+                                          const token = typeof window !== 'undefined' ? window.localStorage.getItem('checklist_access_token') || '' : '';
+                                          const response = await fetch(`${API_BASE_URL}/assessment/${assessmentId}/evidence/${file.id}/view`, {
+                                            headers: token ? { Authorization: `Bearer ${token}` } : {},
+                                          });
+                                          if (!response.ok) throw new Error('Failed to fetch evidence');
+                                          const blob = await response.blob();
+                                          const url = URL.createObjectURL(blob);
+                                          window.open(url, '_blank');
+                                        } catch (error) {
+                                          console.error('Error viewing evidence:', error);
+                                          toast.error('Failed to view evidence');
+                                        }
                                       }}
                                       className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f1f5f9]"
                                     title={t('actions.preview')}
@@ -840,15 +853,28 @@ export default function AdminAssessmentReviewDetailPage() {
                                   )}
                                   <button
                                     type="button"
-                                    onClick={() => {
+                                    onClick={async () => {
                                       // Use evidence-specific endpoint for download (handles decryption)
-                                      const link = document.createElement('a');
-                                      link.href = `/api/v1/assessment/${assessmentId}/evidence/${file.id}/download`;
-                                      link.download = file.filename;
-                                      link.target = '_blank';
-                                      document.body.appendChild(link);
-                                      link.click();
-                                      document.body.removeChild(link);
+                                      try {
+                                        const token = typeof window !== 'undefined' ? window.localStorage.getItem('checklist_access_token') || '' : '';
+                                        const response = await fetch(`${API_BASE_URL}/assessment/${assessmentId}/evidence/${file.id}/download`, {
+                                          headers: token ? { Authorization: `Bearer ${token}` } : {},
+                                        });
+                                        if (!response.ok) throw new Error('Failed to download evidence');
+                                        const blob = await response.blob();
+                                        const url = URL.createObjectURL(blob);
+                                        const link = document.createElement('a');
+                                        link.href = url;
+                                        link.download = file.filename;
+                                        link.target = '_blank';
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                        URL.revokeObjectURL(url);
+                                      } catch (error) {
+                                        console.error('Error downloading evidence:', error);
+                                        toast.error('Failed to download evidence');
+                                      }
                                     }}
                                     className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f1f5f9]"
                                     title={t('actions.download')}
