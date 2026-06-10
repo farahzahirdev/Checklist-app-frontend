@@ -12,6 +12,7 @@ const VIEW_PRODUCTS_LABELS = new Set([
 /** Legacy CMS / fallback URLs that should point at the products listing. */
 const LEGACY_PRODUCTS_LIST_PATHS = new Set([
   '/register',
+  '/products',
   '/products/audit-readiness',
   '/products/audit-readiness-checklist',
 ]);
