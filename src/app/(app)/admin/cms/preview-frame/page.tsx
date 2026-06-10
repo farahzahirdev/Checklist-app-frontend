@@ -92,6 +92,18 @@ export default function CmsPreviewFramePage() {
     <div className="cms-preview-shell public-shell min-h-0 bg-slate-950 text-slate-100">
       <style>{`
         .min-h-screen { min-height: 0 !important; }
+        /* Disable all links and buttons in preview */
+        .cms-preview-shell a,
+        .cms-preview-shell button,
+        .cms-preview-shell input[type="submit"],
+        .cms-preview-shell input[type="button"] {
+          pointer-events: none !important;
+          cursor: not-allowed !important;
+          opacity: 0.8 !important;
+        }
+        .cms-preview-shell a:hover {
+          text-decoration: none !important;
+        }
       `}</style>
       <SiteHeader />
       {previewPage ? (

@@ -15,6 +15,23 @@ interface SectionEditorProps {
   onUpdate?: () => void;
 }
 
+// Get section type label and color
+function getSectionTypeInfo(sectionType: string) {
+  const typeMap: Record<string, { label: string; color: string; bgColor: string }> = {
+    hero: { label: 'Hero', color: 'text-purple-700', bgColor: 'bg-purple-100' },
+    cards: { label: 'Cards', color: 'text-green-700', bgColor: 'bg-green-100' },
+    faq: { label: 'FAQ', color: 'text-blue-700', bgColor: 'bg-blue-100' },
+    cta: { label: 'CTA', color: 'text-orange-700', bgColor: 'bg-orange-100' },
+    trust: { label: 'Trust', color: 'text-cyan-700', bgColor: 'bg-cyan-100' },
+    'how-it-works': { label: 'How It Works', color: 'text-indigo-700', bgColor: 'bg-indigo-100' },
+    'documentation-grid': { label: 'Documentation', color: 'text-teal-700', bgColor: 'bg-teal-100' },
+    bundles: { label: 'Bundles', color: 'text-pink-700', bgColor: 'bg-pink-100' },
+    'why-choose': { label: 'Why Choose', color: 'text-amber-700', bgColor: 'bg-amber-100' },
+    legal: { label: 'Legal', color: 'text-gray-700', bgColor: 'bg-gray-100' },
+  };
+  return typeMap[sectionType] || { label: sectionType, color: 'text-gray-700', bgColor: 'bg-gray-100' };
+}
+
 type CmsT = (key: string, values?: Record<string, string>) => string;
 
 
@@ -419,6 +436,8 @@ export function EnhancedSectionEditor({ section, onUpdate }: SectionEditorProps)
     return resolved === key ? section.section_type : resolved;
   }, [locale, section.section_type]);
 
+  const sectionTypeInfo = useMemo(() => getSectionTypeInfo(section.section_type), [section.section_type]);
+
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sectionData, setSectionData] = useState(section.data || {});
@@ -475,11 +494,18 @@ export function EnhancedSectionEditor({ section, onUpdate }: SectionEditorProps)
 
   return (
     <>
-      <div className="overflow-hidden rounded-2xl border border-[#e2e8f5] bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-[#eef2fa] bg-[linear-gradient(160deg,#ffffff_0%,#f7f9fe_100%)] px-4 py-3">
-        <div>
-          <h3 className="font-semibold text-[#243555]">{sectionTypeLabel}</h3>
-          <p className="text-sm text-[#607594]">{t('sectionEditor.order', { order: String(section.order) })}</p>
+      <div className="overflow-hidden rounded-2xl border-2 border-[#e2e8f5] bg-white shadow-sm">
+      <div className={`flex items-center justify-between border-b-2 border-[#e2e8f5] ${sectionTypeInfo.bgColor} px-4 py-3`}>
+        <div className="flex items-center gap-3">
+          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white border-2 border-[#d4dced] text-sm font-bold text-gray-700">
+            {section.order}
+          </span>
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${sectionTypeInfo.color} ${sectionTypeInfo.bgColor}`}>
+            {sectionTypeInfo.label}
+          </span>
+          <span className="text-xs text-gray-500 font-mono">
+            ID: {section.id.slice(0, 8)}...
+          </span>
         </div>
         <div className="flex items-center gap-1">
           <button
