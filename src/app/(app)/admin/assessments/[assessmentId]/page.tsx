@@ -202,6 +202,8 @@ export default function AdminAssessmentReviewDetailPage() {
   const pageSize = 10;
   const answerOptions = ['4 (Yes)', '3 (Mostly Yes)', '2 (Partially)', '1 (No)'];
   const [collapsedParents, setCollapsedParents] = useState<Set<string>>(new Set());
+  const [evidenceViewLoading, setEvidenceViewLoading] = useState<Record<string, boolean>>({});
+  const [evidenceDownloadLoading, setEvidenceDownloadLoading] = useState<Record<string, boolean>>({});
 
   function toggleParentCollapse(parentUuid: string) {
     setCollapsedParents((prev) => {
@@ -832,6 +834,7 @@ export default function AdminAssessmentReviewDetailPage() {
                                       onClick={async () => {
                                         // Use evidence-specific endpoint for viewing (handles decryption)
                                         try {
+                                          setEvidenceViewLoading(prev => ({ ...prev, [file.id]: true }));
                                           const token = typeof window !== 'undefined' ? window.localStorage.getItem('checklist_access_token') || '' : '';
                                           const response = await fetch(`${API_BASE_URL}/assessment/${assessmentId}/evidence/${file.id}/view`, {
                                             headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -843,12 +846,22 @@ export default function AdminAssessmentReviewDetailPage() {
                                         } catch (error) {
                                           console.error('Error viewing evidence:', error);
                                           toast.error('Failed to view evidence');
+                                        } finally {
+                                          setEvidenceViewLoading(prev => ({ ...prev, [file.id]: false }));
                                         }
                                       }}
-                                      className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f1f5f9]"
+                                      disabled={evidenceViewLoading[file.id]}
+                                      className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f1f5f9] disabled:opacity-50 disabled:cursor-not-allowed"
                                     title={t('actions.preview')}
                                     >
-                                      👁
+                                      {evidenceViewLoading[file.id] ? (
+                                        <svg className="animate-spin h-4 w-4 text-[#3f5677]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                      ) : (
+                                        '👁'
+                                      )}
                                     </button>
                                   )}
                                   <button
@@ -856,6 +869,7 @@ export default function AdminAssessmentReviewDetailPage() {
                                     onClick={async () => {
                                       // Use evidence-specific endpoint for download (handles decryption)
                                       try {
+                                        setEvidenceDownloadLoading(prev => ({ ...prev, [file.id]: true }));
                                         const token = typeof window !== 'undefined' ? window.localStorage.getItem('checklist_access_token') || '' : '';
                                         const response = await fetch(`${API_BASE_URL}/assessment/${assessmentId}/evidence/${file.id}/download`, {
                                           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -874,12 +888,22 @@ export default function AdminAssessmentReviewDetailPage() {
                                       } catch (error) {
                                         console.error('Error downloading evidence:', error);
                                         toast.error('Failed to download evidence');
+                                      } finally {
+                                        setEvidenceDownloadLoading(prev => ({ ...prev, [file.id]: false }));
                                       }
                                     }}
-                                    className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f1f5f9]"
+                                    disabled={evidenceDownloadLoading[file.id]}
+                                    className="inline-flex h-6 w-6 items-center justify-center rounded border border-[#d4dced] bg-white text-[#3f5677] hover:bg-[#f1f5f9] disabled:opacity-50 disabled:cursor-not-allowed"
                                     title={t('actions.download')}
                                   >
-                                    ⬇
+                                    {evidenceDownloadLoading[file.id] ? (
+                                      <svg className="animate-spin h-4 w-4 text-[#3f5677]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                      </svg>
+                                    ) : (
+                                      '⬇'
+                                    )}
                                   </button>
                                 </div>
                               </div>
