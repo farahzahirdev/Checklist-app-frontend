@@ -561,7 +561,7 @@ export default function AssessmentPage() {
   function handlePurchaseNewChecklistClick(event: MouseEvent<HTMLAnchorElement>) {
     if (!canPurchaseNewChecklist) {
       event.preventDefault();
-      toast.error(locale === 'cs' ? 'Nejprve prosím dokončete svůj profil.' : 'Please complete your profile first.');
+      toast.error(t('errors.completeProfileFirst'));
       router.push('/profile');
     }
   }
@@ -1066,7 +1066,7 @@ export default function AssessmentPage() {
 
   async function onSaveAnswer() {
     if (!activeQuestion) {
-      setError('No active question found.');
+      setError(t('errors.noActiveQuestion'));
       return;
     }
     setError('');
@@ -1080,7 +1080,7 @@ export default function AssessmentPage() {
       }
       if (!isUuid(activeQuestion.id)) {
         throw new Error(
-          'Question ID is not a backend UUID yet. Connect assessment questions from backend before saving answers.',
+          t('errors.questionIdNotUuid'),
         );
       }
       const result = await saveAssessmentAnswer(currentAssessmentId, {
@@ -1094,7 +1094,7 @@ export default function AssessmentPage() {
         preferredSectionId: activeQuestion.sectionId,
       });
       setMessage(`Answer saved. Completion: ${result.completion_percent}%`);
-      toast.success('Answer saved.');
+      toast.success(t('toasts.answerSaved'));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to save answer.';
       setError(errorMessage);
@@ -1127,7 +1127,7 @@ export default function AssessmentPage() {
 
   async function onUploadEvidence(file?: File) {
     if (!activeQuestion) {
-      setError('No active question found.');
+      setError(t('errors.noActiveQuestion'));
       return;
     }
     if (showUploadProgress === activeQuestion.id) {
@@ -1135,12 +1135,12 @@ export default function AssessmentPage() {
     }
     const selectedFile = file ?? selectedEvidenceFiles[activeQuestion.id];
     if (!selectedFile) {
-      setError('Choose an evidence file before uploading.');
+      setError(t('errors.chooseFileFirst'));
       return;
     }
     setSelectedEvidenceFiles((prev) => ({ ...prev, [activeQuestion.id]: selectedFile }));
     if (!isAllowedEvidenceMimeType(selectedFile.type)) {
-      setError('Unsupported file type. Only PDF, PNG, and JPEG files are supported.');
+      setError(t('errors.unsupportedFileType'));
       return;
     }
     if (!isAllowedEvidenceFileSize(selectedFile.size)) {
@@ -1149,7 +1149,7 @@ export default function AssessmentPage() {
       return;
     }
     if (!isUuid(activeQuestion.id)) {
-      setError('Question ID is not a backend UUID yet. Connect backend question IDs before uploading evidence.');
+      setError(t('errors.questionIdNotUuidEvidence'));
       return;
     }
 
@@ -1159,8 +1159,8 @@ export default function AssessmentPage() {
     try {
       const currentAssessmentId = await ensureCurrentAssessmentId();
       await uploadAssessmentEvidence(currentAssessmentId, activeQuestion.id, selectedFile);
-      setMessage('Evidence uploaded successfully.');
-      toast.success('Evidence uploaded successfully.');
+      setMessage(t('messages.evidenceUploaded'));
+      toast.success(t('toasts.evidenceUploaded'));
       setSelectedEvidenceFiles(prev => ({ ...prev, [activeQuestion.id]: null }));
       
       // Refresh assessment detail to get updated evidence files
@@ -1560,7 +1560,7 @@ export default function AssessmentPage() {
 
                 <div className="mt-3 grid gap-3 md:grid-cols-[2fr_1fr]">
                   <div className="rounded-lg border border-[#d7e7d9] bg-[#eef7ef] p-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#3f7a4b]">Expected Implementation</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#3f7a4b]">{t('questions.expectedImplementation')}</p>
                     {sanitizedExpectedImplementationHtml ? (
                       <div
                         className="mt-2 space-y-1 text-sm text-[#2f5c38] [&_li]:ml-4 [&_ol]:list-decimal [&_p]:leading-6 [&_ul]:list-disc"
@@ -1821,16 +1821,16 @@ export default function AssessmentPage() {
                         className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {loading
-                          ? 'Saving…'
+                          ? t('buttons.saving')
                           : activeQuestion && persistedAnswerByQuestionId[activeQuestion.id]
-                            ? 'Update Answer'
-                            : 'Save Answer'}
+                            ? t('buttons.updateAnswer')
+                            : t('buttons.saveAnswer')}
                       </button>
                     )}
                     {autoSaving[activeQuestion.id] && (
                       <div className="flex items-center gap-2 text-sm text-[#607594]">
                         <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
-                        <span>Auto-saving...</span>
+                        <span>{t('buttons.autoSaving')}</span>
                       </div>
                     )}
                     {isOnLastQuestion ? (
@@ -1841,8 +1841,8 @@ export default function AssessmentPage() {
                         className="rounded-lg border border-[#2f9960] bg-[#e9f8ef] px-3 py-2 text-sm text-[#2f9960] disabled:cursor-not-allowed disabled:opacity-60"
                         title={
                           areAllQuestionsAnswered
-                            ? 'Submit completed assessment'
-                            : 'Answer all questions in all sections before submitting'
+                            ? t('buttons.submitAssessment')
+                            : t('buttons.answerAllBeforeSubmitting')
                         }
                       >
                         {submittingAssessment ? t('actions.submitting') : t('actions.submit')}
@@ -1856,7 +1856,7 @@ export default function AssessmentPage() {
                       onClick={goToNextSection}
                       className="rounded-lg border border-[#2f4f83] bg-[#eef4ff] px-3 py-2 text-sm font-semibold text-[#2f4f83] hover:bg-[#e2ecff]"
                     >
-                      Next Section
+                      {t('buttons.nextSection')}
                     </button>
                   ) : null}
                   <button
@@ -1904,7 +1904,7 @@ export default function AssessmentPage() {
                 fileSize={selectedFile.size}
                 onComplete={(result) => {
                   setShowUploadProgress(null);
-                  toast.success('Evidence uploaded successfully!');
+                  toast.success(t('toasts.evidenceUploaded'));
                   setSelectedEvidenceFiles(prev => ({ ...prev, [currentQuestionId]: null }));
                 }}
                 onError={(error) => {

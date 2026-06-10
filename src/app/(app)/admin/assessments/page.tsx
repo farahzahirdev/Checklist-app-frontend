@@ -89,7 +89,7 @@ export default function AdminAssessmentsPage() {
         const myReviewsResponse = await getMyAssessmentReviews({ skip: 0, limit: 5 });
         setMyReviews(Array.isArray(myReviewsResponse) ? myReviewsResponse : []);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Failed to load assessment review data');
+        toast.error(err instanceof Error ? err.message : t('errors.loadFailed'));
       } finally {
         setLoading(false);
       }

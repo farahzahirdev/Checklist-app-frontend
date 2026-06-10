@@ -42,6 +42,7 @@ export const adminAssessmentsMessages: TranslationMessages = {
     'empty.myReviews': 'No assigned reviews yet.',
     'loading.generic': 'Loading...',
     'labels.unknownCustomer': 'Unknown customer',
+    'errors.loadFailed': 'Failed to load assessment review data',
   },
   cs: {
     'crumbs.dashboard': 'Přehled',
@@ -84,6 +85,7 @@ export const adminAssessmentsMessages: TranslationMessages = {
     'empty.myReviews': 'Zatím nemáte přiřazené žádné revize.',
     'loading.generic': 'Načítám...',
     'labels.unknownCustomer': 'Neznámý zákazník',
+    'errors.loadFailed': 'Nepodařilo se načíst data revize hodnocení',
   },
 };
 
