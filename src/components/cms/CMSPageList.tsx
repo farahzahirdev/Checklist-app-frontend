@@ -629,6 +629,12 @@ export function CMSPageList() {
       ...Object.keys(editCs),
       ...Object.keys(editEn),
     ]);
+
+    // Helper function to extract numeric indices for sorting
+    const getNumericPath = (path: string): number[] => {
+      return path.split('.').map(seg => /^\d+$/.test(seg) ? parseInt(seg, 10) : 999);
+    };
+
     return [...paths].sort((a, b) => {
       // Define field priority pairs (lower priority field should come first)
       const fieldPriority: Record<string, number> = {
@@ -642,51 +648,38 @@ export function CMSPageList() {
         'text': 2,
         'url': 3,
       };
-      
+
       // Extract the field name from the path (last part after the last dot)
       const aField = a.split('.').pop() || '';
       const bField = b.split('.').pop() || '';
-      
+
       const aPriority = fieldPriority[aField] ?? 999;
       const bPriority = fieldPriority[bField] ?? 999;
-      
+
       // If both have defined priorities, sort by priority
       if (aPriority !== 999 && bPriority !== 999) {
         if (aPriority !== bPriority) return aPriority - bPriority;
       }
-      
+
       // If one has a defined priority, it comes first
       if (aPriority !== 999) return -1;
       if (bPriority !== 999) return 1;
-      
-      // Extract the path segments for numeric comparison
-      const aSegments = a.split('.');
-      const bSegments = b.split('.');
-      
-      // Compare segment by segment
-      for (let i = 0; i < Math.min(aSegments.length, bSegments.length); i++) {
-        const aSeg = aSegments[i];
-        const bSeg = bSegments[i];
-        
-        // If both are numeric, compare as numbers
-        const aNum = parseInt(aSeg, 10);
-        const bNum = parseInt(bSeg, 10);
-        
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-          if (aNum !== bNum) return aNum - bNum;
-        } else if (!isNaN(aNum)) {
-          return -1; // numbers come before strings
-        } else if (!isNaN(bNum)) {
-          return 1; // strings come after numbers
-        } else {
-          // Both are strings, compare alphabetically
-          const strCompare = aSeg.localeCompare(bSeg);
-          if (strCompare !== 0) return strCompare;
+
+      // Sort by numeric path to ensure ascending order (main_benefits.0.title before main_benefits.1.title)
+      const aNumPath = getNumericPath(a);
+      const bNumPath = getNumericPath(b);
+
+      for (let i = 0; i < Math.max(aNumPath.length, bNumPath.length); i++) {
+        const aVal = aNumPath[i] ?? 999;
+        const bVal = bNumPath[i] ?? 999;
+
+        if (aVal !== bVal) {
+          return aVal - bVal; // Ascending order: smaller numbers first
         }
       }
-      
-      // If all segments are equal up to the min length, shorter path comes first
-      return aSegments.length - bSegments.length;
+
+      // If numeric paths are equal, compare alphabetically
+      return a.localeCompare(b);
     });
   }, [editCs, editEn]);
 
