@@ -214,7 +214,7 @@ function getFieldLabel(path: string): string {
     'how_it_works_title': 'How It Works Title',
     'how_it_works_description': 'How It Works Description',
     'product_title': 'Product Title',
-    'short_description': 'Short Description',
+    'short_description': 'Basic Information',
     'main_benefits': 'Main Benefits',
     'product_status': 'Product Status',
   };
@@ -327,7 +327,7 @@ function getFieldTypographyLabel(fieldName: string, sectionType: string): { labe
       return { label: 'Product Title', color: 'bg-[#ede9fe] text-[#6d28d9]' };
     }
     if (fieldLower.includes('short_description')) {
-      return { label: 'Short Description', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
+      return { label: 'Basic Information', color: 'bg-[#dbeafe] text-[#1d4ed8]' };
     }
     if (fieldLower.includes('tagline')) {
       return { label: 'Tagline', color: 'bg-[#d1fae5] text-[#065f46]' };

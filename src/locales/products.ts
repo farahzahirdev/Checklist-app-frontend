@@ -87,6 +87,8 @@ export const productsMessages: TranslationMessages = {
       'This product is not available for purchase yet. Get in touch and we will let you know as soon as it launches.',
     'detail.includesTitle': 'Benefits',
     'detail.aboutTitle': 'About this product',
+    'detail.shortDescriptionTitle': 'Basic Information',
+    'detail.descriptionTitle': 'Description',
     'detail.benefitsTitle': 'Benefits',
     'detail.notFoundTitle': 'Product not found',
     'detail.notFoundBody': 'The product you are looking for is unavailable or has been removed.',
@@ -249,6 +251,8 @@ export const productsMessages: TranslationMessages = {
       'Tento produkt zatím není k zakoupení. Ozvěte se nám a dáme vám vědět, jakmile bude spuštěn.',
     'detail.includesTitle': 'Výhody',
     'detail.aboutTitle': 'O produktu',
+    'detail.shortDescriptionTitle': 'Základní informace',
+    'detail.descriptionTitle': 'Popis',
     'detail.benefitsTitle': 'Výhody',
     'detail.notFoundTitle': 'Produkt nenalezen',
     'detail.notFoundBody': 'Hledaný produkt není dostupný nebo byl odstraněn.',
@@ -326,4 +330,3 @@ export const productsMessages: TranslationMessages = {
     'docPoint.pdf.adminGuidelines': 'Pokyny pro administrátory (PDF)',
   },
 };
-

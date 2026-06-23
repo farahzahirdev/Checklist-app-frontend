@@ -173,7 +173,7 @@ function productToForm(product: AdminProduct, categories: AdminProductCategory[]
     slug: product.slug,
     short_description: product.short_description ?? '',
     description: product.description ?? '',
-    benefits: (product as any).benefits ?? '',
+    benefits: product.benefits ?? '',
     category_code: product.category?.code ?? categories[0]?.code ?? '',
     product_kind: product.product_kind,
     status: product.status,
@@ -209,6 +209,11 @@ function emptyProductForm(categories: AdminProductCategory[]): ProductFormState 
 
 function emptyCategoryForm(): CategoryFormState {
   return { code: '', name: '', description: '', display_order: '0', is_active: true };
+}
+
+function optionalNullableText(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
 }
 
 function categoryToForm(category: AdminProductCategory): CategoryFormState {
@@ -318,17 +323,17 @@ export default function AdminProductsPage() {
     return {
       name: productForm.name.trim(),
       slug: productForm.slug.trim() || undefined,
-      short_description: productForm.short_description.trim() || undefined,
-      description: productForm.description.trim() || undefined,
-      benefits: productForm.benefits.trim() || undefined,
+      short_description: optionalNullableText(productForm.short_description),
+      description: optionalNullableText(productForm.description),
+      benefits: optionalNullableText(productForm.benefits),
       category_code: productForm.category_code,
       product_kind: productForm.product_kind,
       status: productForm.status,
-      brochure_pdf_url: productForm.brochure_pdf_url.trim() || undefined,
+      brochure_pdf_url: optionalNullableText(productForm.brochure_pdf_url),
       documentation_files: productForm.documentation_files.length > 0 ? productForm.documentation_files : undefined,
-      hero_image_url: productForm.hero_image_url.trim() || undefined,
-      external_url: productForm.external_url.trim() || undefined,
-      cta_label: productForm.cta_label.trim() || undefined,
+      hero_image_url: optionalNullableText(productForm.hero_image_url),
+      external_url: optionalNullableText(productForm.external_url),
+      cta_label: optionalNullableText(productForm.cta_label),
       display_order: Number.isFinite(displayOrder) ? displayOrder : undefined,
       is_featured: productForm.is_featured,
     };
@@ -841,16 +846,18 @@ export default function AdminProductsPage() {
                     className={INPUT_CLASS}
                   />
                 </label>
-                <label className="flex items-center gap-2 md:col-span-2">
-                  <input
-                    type="checkbox"
-                    checked={productForm.is_featured}
-                    onChange={(event) => setProductForm((previous) => ({ ...previous, is_featured: event.target.checked }))}
-                    disabled={loadingProductDetail}
-                    className="h-4 w-4 rounded border-[#d4dced] text-[#3e69b0]"
-                  />
-                  <span className="text-sm font-medium text-[#25375a]">{t('form.isFeatured')}</span>
-                </label>
+                <div className="flex items-end pb-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={productForm.is_featured}
+                      onChange={(event) => setProductForm((previous) => ({ ...previous, is_featured: event.target.checked }))}
+                      disabled={loadingProductDetail}
+                      className="h-4 w-4 rounded border-[#d4dced] text-[#3e69b0]"
+                    />
+                    <span className="text-sm font-medium text-[#25375a]">{t('form.isFeatured')}</span>
+                  </label>
+                </div>
                 {editingProduct?.checklist?.checklist_id ? (
                   <div className="md:col-span-2 rounded-xl border border-[#dde6f5] bg-[#f4f7fc] px-3 py-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.checklistLinked')}</p>
@@ -875,24 +882,28 @@ export default function AdminProductsPage() {
                     className={INPUT_CLASS}
                   />
                 </label>
-                <label className="space-y-1 md:col-span-2">
-                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.description')}</span>
+                <div className="space-y-1 md:col-span-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">
+                    {t('form.description')}
+                  </span>
                   <TipTapRichTextEditor
                     value={productForm.description}
                     onChange={(value) => setProductForm((previous) => ({ ...previous, description: value }))}
                     placeholder={t('form.descriptionPlaceholder')}
                     t={t}
                   />
-                </label>
-                <label className="space-y-1 md:col-span-2">
-                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.benefits')}</span>
+                </div>
+                <div className="space-y-1 md:col-span-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">
+                    {t('form.benefits')}
+                  </span>
                   <TipTapRichTextEditor
                     value={productForm.benefits}
                     onChange={(value) => setProductForm((previous) => ({ ...previous, benefits: value }))}
                     placeholder={t('form.benefitsPlaceholder')}
                     t={t}
                   />
-                </label>
+                </div>
                 <label className="space-y-1 md:col-span-2">
                   <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.documentationFiles')}</span>
                   <div className="flex flex-col gap-2">
@@ -971,6 +982,36 @@ export default function AdminProductsPage() {
                     </div>
                   </div>
                 </label>
+                <label className="space-y-1 md:col-span-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.brochurePdfUrl')}</span>
+                  <div className="flex flex-col gap-2">
+                    <div className="min-h-10 rounded-xl border border-[#d4dced] bg-[#f8fbff] px-3 py-2 text-sm text-[#456087]">
+                      {productForm.brochure_pdf_url || t('state.noBrochurePdf')}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <label className="inline-flex cursor-pointer items-center rounded-xl border border-[#cad5e8] bg-white px-3 py-2 text-xs font-semibold text-[#38506f] hover:bg-[#f7faff]">
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          onChange={(event) => void handleBrochurePdfUpload(event)}
+                          disabled={loadingProductDetail || uploadingBrochurePdf}
+                          className="hidden"
+                        />
+                        {uploadingBrochurePdf ? t('actions.uploadingPdf') : t('actions.uploadPdf')}
+                      </label>
+                      {productForm.brochure_pdf_url ? (
+                        <a
+                          href={productForm.brochure_pdf_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-semibold text-[#3e69b0] hover:underline"
+                        >
+                          {t('actions.previewPdf')}
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                </label>
                 <label className="space-y-1">
                   <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.externalUrl')}</span>
                   <input
@@ -1005,7 +1046,7 @@ export default function AdminProductsPage() {
               <button
                 type="button"
                 onClick={() => void handleSaveProduct()}
-                disabled={savingProduct || loadingProductDetail || uploadingHeroImage || uploadingBrochurePdf}
+                disabled={savingProduct || loadingProductDetail || uploadingHeroImage || uploadingBrochurePdf || uploadingDocumentationFile}
                 className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-70"
               >
                 {savingProduct ? t('actions.saving') : t('actions.save')}

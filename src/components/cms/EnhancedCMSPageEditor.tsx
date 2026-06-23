@@ -33,9 +33,11 @@ const LANGUAGE_CODES = [
 
 const SECTION_TYPE_IDS = [
   'hero',
+  'product-hero',
   'cards',
   'faq',
   'cta',
+  'product-cta',
   'trust',
   'how-it-works',
   'documentation-grid',
@@ -218,6 +220,23 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
 
   const getDefaultSectionData = (sectionType: string) => {
     switch (sectionType) {
+      case 'product-hero':
+        return {
+          product_title: '',
+          product_status: 'published',
+          short_description: '',
+          tagline: '',
+          main_benefits: [],
+        };
+      case 'product-cta':
+        return {
+          cta_headline: '',
+          cta_subheadline: '',
+          primary_cta_text: '',
+          primary_cta_url: '',
+          secondary_cta_text: '',
+          secondary_cta_url: '',
+        };
       case 'hero':
         return {
           title: '',
@@ -235,6 +254,15 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
           title: '',
           subtitle: '',
           questions: [],
+        };
+      case 'product-cta':
+        return {
+          cta_headline: '',
+          cta_subheadline: '',
+          primary_cta_text: '',
+          primary_cta_url: '',
+          secondary_cta_text: '',
+          secondary_cta_url: '',
         };
       case 'cta':
         return {
@@ -355,6 +383,31 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
         <div className="p-6 bg-white">
           {(() => {
             switch (section.section_type) {
+              case 'product-hero':
+                return (
+                  <div className="space-y-4 p-8 border rounded-lg bg-gradient-to-r from-purple-50 to-indigo-50">
+                    {data.product_title && <h1 className="text-4xl font-bold text-gray-900 mb-4">{data.product_title}</h1>}
+                    {data.short_description && <p className="text-xl text-gray-600 mb-4">{data.short_description}</p>}
+                    {data.tagline && <p className="text-lg text-purple-600 font-semibold mb-4">{data.tagline}</p>}
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-6">
+                      {(data.main_benefits || []).map((benefit: any, index: number) => (
+                        <div key={index} className="border rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                          {benefit.highlight && (
+                            <p className="text-sm text-purple-600 font-semibold mb-2">{benefit.highlight}</p>
+                          )}
+                          <h3 className="font-bold text-lg mb-2">{benefit.title}</h3>
+                          {benefit.content && (
+                            <div
+                              className="prose max-w-none text-gray-600 text-sm"
+                              dangerouslySetInnerHTML={{ __html: benefit.content }}
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+
               case 'hero':
                 return (
                   <div className="space-y-4 p-8 border rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50">
@@ -418,6 +471,33 @@ export function EnhancedCMSPageEditor({ pageId }: EnhancedCMSPageEditorProps) {
                           )}
                         </div>
                       ))}
+                    </div>
+                  </div>
+                );
+
+              case 'product-cta':
+                return (
+                  <div className="space-y-6 p-8 border rounded-xl bg-gradient-to-r from-orange-50 to-purple-50">
+                    {data.cta_headline && <h2 className="text-2xl font-bold mb-4">{data.cta_headline}</h2>}
+                    {data.cta_subheadline && (
+                      <div
+                        className="prose prose-lg max-w-none text-gray-700 mb-6"
+                        dangerouslySetInnerHTML={{ __html: data.cta_subheadline }}
+                      />
+                    )}
+                    <div className="flex gap-4 flex-wrap">
+                      <button
+                        className={`px-6 py-3 rounded-lg font-medium ${
+                          data.primary_cta_text ? 'bg-purple-600 text-white hover:bg-purple-700' : 'border border-gray-300 text-gray-700'
+                        }`}
+                      >
+                        {data.primary_cta_text || 'Primary CTA'}
+                      </button>
+                      <button
+                        className={`px-6 py-3 rounded-lg font-medium border border-gray-300 text-gray-700 hover:bg-gray-50`}
+                      >
+                        {data.secondary_cta_text || 'Secondary CTA'}
+                      </button>
                     </div>
                   </div>
                 );

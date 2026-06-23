@@ -7,7 +7,6 @@ import {
   adminReportDetailPath,
   formatReportCode,
   getReport,
-  getReportFindings,
   getReportSummaries,
   isReportUuid,
   resolveReportUuidFromRoute,
@@ -17,7 +16,6 @@ import {
   requestReportChanges,
   updateManagementSummary,
   type ReportResponse,
-  type ReportFindingItem,
   type ReportSummaryItem,
 } from '@/lib/reports';
 import { formatReportDateTime } from '@/lib/format-report';
@@ -25,7 +23,6 @@ import { translate, useLocale } from '@/lib/i18n';
 import { adminReportDetailMessages } from '@/locales/admin-report-detail';
 import { AdminReportAssessmentHero } from '@/components/report/AdminReportAssessmentHero';
 import { AdminReportMaturityDomainSection } from '@/components/report/AdminReportMaturityDomainSection';
-import { AdminReportFindingsDomainsSection } from '@/components/report/AdminReportFindingsDomainsSection';
 import { useAdminAccess } from '@/lib/admin-access';
 
 function RichTextEditor({
@@ -118,7 +115,6 @@ export default function AdminReportDetailPage() {
 
   const [apiReportId, setApiReportId] = useState<string | null>(null);
   const [report, setReport] = useState<ReportResponse | null>(null);
-  const [findings, setFindings] = useState<ReportFindingItem[]>([]);
   const [summaries, setSummaries] = useState<ReportSummaryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -133,13 +129,11 @@ export default function AdminReportDetailPage() {
     setLoading(true);
     setError('');
     try {
-      const [reportData, findingsData, summariesData] = await Promise.all([
+      const [reportData, summariesData] = await Promise.all([
         getReport(reportUuid),
-        getReportFindings(reportUuid),
         getReportSummaries(reportUuid),
       ]);
       setReport(reportData);
-      setFindings(findingsData);
       setSummaries(summariesData);
       setManagementSummary(reportData.management_summary || '');
     } catch (err) {
@@ -332,11 +326,9 @@ export default function AdminReportDetailPage() {
 
   return (
     <section className="min-w-0 space-y-6">
-      <AdminReportAssessmentHero report={report} findings={findings} summaries={summaries} />
+      <AdminReportAssessmentHero report={report} findings={[]} summaries={summaries} />
 
       <AdminReportMaturityDomainSection report={report} />
-
-      <AdminReportFindingsDomainsSection report={report} findings={findings} summaries={summaries} />
 
       {!isReadOnly && (report.status === 'under_review' || report.status === 'approved') && (
         <div className="rounded-2xl border border-[#dbe4f4] bg-white p-4 shadow-sm">
@@ -433,65 +425,59 @@ export default function AdminReportDetailPage() {
         </article>
       )}
 
-      <div id="admin-report-findings" className="grid min-w-0 gap-6 scroll-mt-24 xl:grid-cols-2">
-        <section className="min-w-0 space-y-3">
-          <h2 className="text-xl font-semibold text-[#243555]">{t('findings.title', { count: String(findings.length) })}</h2>
-          <div className="space-y-3">
-            {findings.map((finding) => (
-              <article key={finding.id} className="rounded-xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`rounded-md px-2 py-1 text-xs font-semibold ${
-                    finding.priority === 'high' ? 'bg-[#fee2e2] text-[#dc2626]' :
-                    finding.priority === 'medium' ? 'bg-[#fef3c7] text-[#d97706]' :
-                    'bg-[#e0e7ff] text-[#3730a3]'
-                  }`}>
-                    {t(`findings.priority.${finding.priority}`)}
-                  </span>
+      <section id="admin-section-summaries-detail" className="min-w-0 scroll-mt-24 space-y-3">
+        <h2 className="text-xl font-semibold text-[#243555]">{t('summaries.title', { count: String(summaries.length) })}</h2>
+        <div className="space-y-3">
+          {summaries.map((summary, idx) => {
+            const summaryKey =
+              (typeof summary.id === 'string' && summary.id.trim() !== '' ? summary.id : null) ??
+              `summary-${[summary.section_id, summary.chapter_code].filter(Boolean).join('-') || 'row'}-${idx}`;
+            return (
+            <article
+              key={summaryKey}
+              className="rounded-xl border border-[#e2e8f5] bg-white p-4 shadow-sm"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-[#243555]">
+                  {summary.chapter_code || t('summaries.generalSection')}
+                </h3>
+                {report?.assessment_id && summary.section_id && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const sectionId = summary.section_id;
+                      window.location.href = `/admin/assessments/${report.assessment_id}?section_id=${sectionId}`;
+                    }}
+                    className="rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-1.5 text-xs font-semibold text-[#2f7dff] hover:bg-[#eef2fb] transition-colors"
+                  >
+                    Review Questions
+                  </button>
+                )}
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <p className="text-xs font-semibold text-[#64748b] mb-1">Summary</p>
+                  <p className="text-sm text-[#2b3e60]">
+                    {summary.summary_text?.trim() ? summary.summary_text : t('summaries.noNarrative')}
+                  </p>
                 </div>
-                <p className="text-sm text-[#2b3e60] mb-2">{finding.finding_text}</p>
-                {finding.recommendation_text && (
-                  <div className="border-t border-[#edf2f9] pt-2">
-                    <p className="text-xs font-semibold text-[#607594] mb-1">{t('findings.recommendation')}</p>
-                    <p className="text-sm text-[#2b3e60]">{finding.recommendation_text}</p>
+                {summary.recommendation_text?.trim() && (
+                  <div>
+                    <p className="text-xs font-semibold text-[#64748b] mb-1">Recommendation</p>
+                    <p className="text-sm text-[#2b3e60]">
+                      {summary.recommendation_text}
+                    </p>
                   </div>
                 )}
-              </article>
-            ))}
-            {!findings.length && (
-              <p className="text-sm text-[#607594]">{t('findings.empty')}</p>
-            )}
-          </div>
-        </section>
-
-        <section id="admin-section-summaries-detail" className="min-w-0 scroll-mt-24 space-y-3">
-          <h2 className="text-xl font-semibold text-[#243555]">{t('summaries.title', { count: String(summaries.length) })}</h2>
-          <div className="space-y-3">
-            {summaries.map((summary, idx) => {
-              const summaryKey =
-                (typeof summary.id === 'string' && summary.id.trim() !== '' ? summary.id : null) ??
-                `summary-${[summary.section_id, summary.chapter_code].filter(Boolean).join('-') || 'row'}-${idx}`;
-              return (
-              <article
-                key={summaryKey}
-                className="rounded-xl border border-[#e2e8f5] bg-white p-4 shadow-sm"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-[#243555]">
-                    {summary.chapter_code || t('summaries.generalSection')}
-                  </h3>
-                </div>
-                <p className="text-sm text-[#2b3e60]">
-                  {summary.summary_text?.trim() ? summary.summary_text : t('summaries.noNarrative')}
-                </p>
-              </article>
-              );
-            })}
-            {!summaries.length && (
-              <p className="text-sm text-[#607594]">{t('summaries.empty')}</p>
-            )}
-          </div>
-        </section>
-      </div>
+              </div>
+            </article>
+            );
+          })}
+          {!summaries.length && (
+            <p className="text-sm text-[#607594]">{t('summaries.empty')}</p>
+          )}
+        </div>
+      </section>
 
       {requestChangesOpen ? (
         <div

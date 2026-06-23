@@ -99,6 +99,20 @@ export default function AccessPage() {
   const [inProgressCount, setInProgressCount] = useState(0);
   const [publishedReportsCount, setPublishedReportsCount] = useState(0);
   const [assessments, setAssessments] = useState<CustomerAssessmentListItem[]>([]);
+  const [availableChecklists, setAvailableChecklists] = useState<Array<{
+    checklist_id: string;
+    title: string;
+    checklist_type_code: string;
+    checklist_type_name: string;
+    version: string;
+    description: string | null;
+    estimated_duration_minutes: number | null;
+    price_cents: number | null;
+    currency: string | null;
+    is_purchased: boolean;
+    can_start: boolean;
+    access_window_id: string | null;
+  }>>([]);
   const [accessByChecklist, setAccessByChecklist] = useState<Map<string, ActiveAccessWindow>>(new Map());
   const countdownNowMs = useAccessCountdownNow(assessments.length > 0);
 
@@ -144,12 +158,14 @@ export default function AccessPage() {
       setReadyToStartCount(readyResponse.total ?? 0);
       setInProgressCount(inProgressResponse.total ?? 0);
       setPublishedReportsCount(reportResponse?.summary?.reports_available ?? 0);
+      setAvailableChecklists(reportResponse?.available_checklists ?? []);
       setAccessByChecklist(new Map(accessWindows.map((item) => [item.checklist_id, item])));
     } catch {
       setActiveCount(0);
       setReadyToStartCount(0);
       setInProgressCount(0);
       setPublishedReportsCount(0);
+      setAvailableChecklists([]);
       setAccessByChecklist(new Map());
     }
   }, []);
@@ -386,12 +402,66 @@ export default function AccessPage() {
               </div>
             </div>
 
-          {loading ? (
-            <p className={`${workspaceCardClass} px-4 py-3 text-sm text-[#64748b]`}>{t('loading')}</p>
-          ) : filtered.length === 0 ? (
-            <p className={`${workspaceCardClass} px-4 py-3 text-sm text-[#64748b]`}>{t('empty')}</p>
-          ) : (
-            <ul className="space-y-4">
+          {/* Available Checklists Section */}
+          {!loading && availableChecklists.length > 0 && (
+            <div className="mb-6">
+              <h3 className="mb-3 text-lg font-semibold text-[#0f172a]">{t('section.availableChecklists')}</h3>
+              <ul className="space-y-3">
+                {availableChecklists.map((item) => (
+                  <li key={item.checklist_id} className={`${workspaceCardClass} overflow-hidden`}>
+                    <div className="px-5 py-4 sm:px-6">
+                      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="text-base font-bold text-[#0f172a]">{item.title}</h4>
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold bg-[#dbeafe] text-[#1d4ed8]`}>
+                              {t('status.ready')}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span className={workspaceTagClass}>{item.checklist_type_code}</span>
+                            <span className={workspaceTagClass}>{item.version}</span>
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setStartingId(item.checklist_id);
+                              setError('');
+                              startAssessment({ checklist_id: item.checklist_id })
+                                .then(() => {
+                                  window.location.href = `/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}`;
+                                })
+                                .catch((err) => {
+                                  setError(err instanceof Error ? err.message : startErrorText);
+                                  setStartingId('');
+                                });
+                            }}
+                            disabled={startingId === item.checklist_id}
+                            className={workspacePrimaryBtn}
+                          >
+                            {startingId === item.checklist_id ? t('actions.processing') : t('actions.startAudit')}
+                            <ArrowRightIcon />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Existing Assessments Section */}
+          <div className="mt-6">
+            <h3 className="mb-3 text-lg font-semibold text-[#0f172a]">{t('section.existingAssessments')}</h3>
+            {loading ? (
+              <p className={`${workspaceCardClass} px-4 py-3 text-sm text-[#64748b]`}>{t('loading')}</p>
+            ) : filtered.length === 0 ? (
+              <p className={`${workspaceCardClass} px-4 py-3 text-sm text-[#64748b]`}>{t('emptyAssessments')}</p>
+            ) : (
+              <ul className="space-y-4">
               {filtered.map((item) => {
                 const completion = clampPercent(item.completion_percent);
                 const reportId = item.report_status === 'published' && item.report_id ? item.report_id : null;
@@ -472,7 +542,31 @@ export default function AccessPage() {
                                 {startingId === item.id ? t('actions.processing') : t('actions.startAudit')}
                                 <ArrowRightIcon />
                               </button>
-                            ) : (
+                            ) : isCompleted && availableChecklists.some(available => available.checklist_id === item.checklist_id) ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setStartingId(item.checklist_id);
+                                  setError('');
+                                  startAssessment({ checklist_id: item.checklist_id })
+                                    .then(() => {
+                                      window.location.href = `/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}`;
+                                    })
+                                    .catch((err) => {
+                                      setError(err instanceof Error ? err.message : startErrorText);
+                                      setStartingId('');
+                                    });
+                                }}
+                                disabled={startingId === item.checklist_id}
+                                className={workspacePrimaryBtn}
+                              >
+                                {startingId === item.checklist_id ? t('actions.processing') : t('actions.startNewAudit')}
+                                <ArrowRightIcon />
+                              </button>
+                            ) : item.status === 'expired' ? (
+                              // Expired assessments - no action buttons, only historical record
+                              null
+                            ) : item.status === 'in_progress' ? (
                               <Link
                                 href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
                                 className={workspacePrimaryBtn}
@@ -480,30 +574,32 @@ export default function AccessPage() {
                                 {t('actions.continueAudit')}
                                 <ArrowRightIcon />
                               </Link>
-                            )}
+                            ) : null}
 
-                            {canViewPerformance ? (
+                            {canViewPerformance && accessActive ? (
                               <Link
-                                href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&view=performance`}
+                                href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&readonly=true`}
                                 className={workspaceOutlineBtn}
                               >
                                 {t('actions.viewPerformance')}
                               </Link>
                             ) : null}
 
-                            {reportId ? (
+                            {reportId && accessActive && item.status !== 'expired' ? (
                               <Link href={`/reports/${reportId}` as Route} className={workspacePrimaryBtn}>
                                 {t('actions.viewReport')}
                                 <ArrowRightIcon />
                               </Link>
                             ) : null}
 
-                            <Link
-                              href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
-                              className={workspaceOutlineBtn}
-                            >
-                              {t('actions.viewDetails')}
-                            </Link>
+                            {item.status !== 'expired' && accessActive ? (
+                              <Link
+                                href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
+                                className={workspaceOutlineBtn}
+                              >
+                                {t('actions.viewDetails')}
+                              </Link>
+                            ) : null}
                           </div>
                         </div>
                       </div>
@@ -512,7 +608,8 @@ export default function AccessPage() {
                 );
               })}
             </ul>
-          )}
+            )}
+          </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-sm text-[#64748b]">
             <span>{t('pagination.showing', { from: String(rangeFrom), to: String(rangeTo), total: String(totalAssessments) })}</span>

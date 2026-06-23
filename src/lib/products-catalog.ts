@@ -169,6 +169,7 @@ export type ResolvedProduct =
       publicProductStatus?: 'published' | 'coming_soon';
       brochurePdfUrl?: string | null;
       heroImageUrl?: string | null;
+      publicProductDetail?: PublicProductDetail;
     }
   | { kind: 'documentation'; status: ProductStatus; documentation: DocumentationProduct }
   | { kind: 'builder'; status: ProductStatus; builder: BuilderProduct }

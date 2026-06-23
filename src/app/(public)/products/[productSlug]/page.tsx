@@ -55,18 +55,6 @@ function pricingForDisplay(detail: PublicProductDetail): CustomerChecklist['pric
   };
 }
 
-function includeLinesFromApi(description: string | null | undefined, short: string | null | undefined): string[] {
-  const text = (description ?? short ?? '').trim();
-  if (!text) return [];
-  
-  // Strip HTML tags for bullet points
-  const plainText = text.replace(/<[^>]*>/g, '');
-  const lines = plainText.split(/\n+/).map((s) => s.trim()).filter(Boolean);
-  if (lines.length >= 2) return lines.slice(0, 6);
-  const sentences = plainText.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
-  return (sentences.length ? sentences : [plainText]).slice(0, 6);
-}
-
 function ProductHeroImage({ src, alt }: { src: string; alt: string }) {
   return (
     <figure className="w-full shrink-0 lg:max-w-[380px] lg:justify-self-end">
@@ -88,6 +76,15 @@ function productDetailHeroGridClass(hasHeroImage: boolean): string {
   return hasHeroImage
     ? 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_min(380px,38%)] lg:items-start'
     : '';
+}
+
+function RichTextBlock({ html, className = '' }: { html: string; className?: string }) {
+  return (
+    <div
+      className={`product-rich-text max-w-none text-sm leading-relaxed text-[#3f4f6e] ${className}`}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
 }
 
 /** Resolve relative brochure paths against the public API origin. */
@@ -137,6 +134,7 @@ export default function ProductDetailPage() {
                 publicProductStatus: apiDetail.status === 'coming_soon' ? 'coming_soon' : 'published',
                 brochurePdfUrl: apiDetail.brochure_pdf_url,
                 heroImageUrl: apiDetail.hero_image_url,
+                publicProductDetail: apiDetail,
               });
               setLoading(false);
               return;
@@ -313,15 +311,15 @@ export default function ProductDetailPage() {
   }, [docProduct, builderProduct, resolved, audit?.pricing]);
 
   const apiDetail = resolved?.kind === 'api' ? resolved.detail : null;
+  const productDetail = resolved?.kind === 'audit' ? resolved.publicProductDetail : apiDetail;
+  const productShortDescription = (productDetail?.short_description ?? '').trim();
+  const productDescription = (productDetail?.description ?? '').trim();
+  const productBenefits = (productDetail?.benefits ?? '').trim();
   const apiIconKind = useMemo(
     () => (apiDetail ? pickAuditIconKind(apiDetail.checklist_type?.checklist_type_code, 0) : 'clipboard'),
     [apiDetail],
   );
   const apiIconTheme = AUDIT_ICON_THEMES[apiIconKind];
-  const apiIncludeLines = useMemo(
-    () => (apiDetail ? includeLinesFromApi(apiDetail.description, apiDetail.short_description) : []),
-    [apiDetail],
-  );
 
   function onBuyAudit() {
     if (!audit || !canPurchaseAudit) return;
@@ -499,195 +497,132 @@ export default function ProductDetailPage() {
       {!loading && !notFound ? (
         <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 md:px-6 lg:max-w-6xl lg:grid-cols-[1.6fr_1fr] xl:max-w-7xl 2xl:max-w-[90rem]">
           <article className="space-y-6 rounded-2xl border border-[#d7deeb] bg-white p-6 shadow-sm">
-            <div>
-              <h2 className="text-xl font-semibold text-[#1f2741]">{t('detail.aboutTitle')}</h2>
-              {audit ? (
-                <>
-                  <p className="mt-2 text-sm leading-relaxed text-[#5e7293]">
-                    {audit.checklist_type?.description?.trim() || t('detail.audit.about')}
+            <style jsx global>{`
+              .product-rich-text h1 {
+                font-size: 1.5rem;
+                font-weight: 700;
+                line-height: 2rem;
+                margin-bottom: 0.75rem;
+                margin-top: 1.25rem;
+                color: #1f2741;
+              }
+              .product-rich-text h2 {
+                font-size: 1.25rem;
+                font-weight: 600;
+                line-height: 1.75rem;
+                margin-bottom: 0.5rem;
+                margin-top: 1rem;
+                color: #1f2741;
+              }
+              .product-rich-text h3 {
+                font-size: 1.125rem;
+                font-weight: 600;
+                line-height: 1.5rem;
+                margin-bottom: 0.5rem;
+                margin-top: 0.75rem;
+                color: #1f2741;
+              }
+              .product-rich-text p {
+                margin-bottom: 0.75rem;
+              }
+              .product-rich-text ul,
+              .product-rich-text ol {
+                margin-bottom: 0.75rem;
+                padding-left: 1.5rem;
+              }
+              .product-rich-text ul {
+                list-style-type: disc;
+              }
+              .product-rich-text ol {
+                list-style-type: decimal;
+              }
+              .product-rich-text li {
+                margin-bottom: 0.25rem;
+              }
+              .product-rich-text a {
+                color: #2563eb;
+                text-decoration: underline;
+              }
+              .product-rich-text a:hover {
+                color: #1d4ed8;
+              }
+              .product-rich-text strong,
+              .product-rich-text b {
+                font-weight: 700;
+                color: #1f2741;
+              }
+              .product-rich-text em,
+              .product-rich-text i {
+                font-style: italic;
+              }
+              .product-rich-text u {
+                text-decoration: underline;
+              }
+            `}</style>
+
+            {productDetail ? (
+              <>
+                {productShortDescription ? (
+                  <section>
+                    <h2 className="text-xl font-semibold text-[#1f2741]">{t('detail.shortDescriptionTitle')}</h2>
+                    <RichTextBlock html={productShortDescription} className="mt-3 text-[#5e7293]" />
+                  </section>
+                ) : null}
+
+                {productDescription ? (
+                  <section>
+                    {/* <h2 className="text-xl font-semibold text-[#1f2741]">{t('detail.descriptionTitle')}</h2> */}
+                    {/* <RichTextBlock html={productDescription} className="mt-3 text-[#5e7293]" /> */}
+                  </section>
+                ) : null}
+
+                {productBenefits ? (
+                  <section>
+                    {/* <h2 className="text-xl font-semibold text-[#1f2741]">{t('detail.benefitsTitle')}</h2> */}
+                    {/* <RichTextBlock html={productBenefits} className="mt-3" /> */}
+                  </section>
+                ) : null}
+
+                {!productShortDescription ? (
+                  <p className="text-sm leading-relaxed text-[#5e7293]">{t('browse.apiSubtitleFallback')}</p>
+                ) : null}
+
+                {audit?.warning ? (
+                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    {audit.warning}
                   </p>
-                  {audit.warning ? (
-                    <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                      {audit.warning}
-                    </p>
-                  ) : null}
-                </>
-              ) : null}
-              {docProduct ? (
-                <p className="mt-2 text-sm leading-relaxed text-[#5e7293]">{t(`doc.${docProduct.id}.body`)}</p>
-              ) : null}
-              {builderProduct ? (
-                <p className="mt-2 text-sm leading-relaxed text-[#5e7293]">
-                  {t(`builders.${builderProduct.id}.description`)}
-                </p>
-              ) : null}
-              {apiDetail ? (
-                <div className="mt-2 text-sm leading-relaxed text-[#5e7293] max-w-none">
-                  <style jsx global>{`
-                    .product-description h1 {
-                      font-size: 1.5rem;
-                      font-weight: 700;
-                      line-height: 2rem;
-                      margin-bottom: 0.75rem;
-                      margin-top: 1.25rem;
-                      color: #1f2741;
-                    }
-                    .product-description h2 {
-                      font-size: 1.25rem;
-                      font-weight: 600;
-                      line-height: 1.75rem;
-                      margin-bottom: 0.5rem;
-                      margin-top: 1rem;
-                      color: #1f2741;
-                    }
-                    .product-description h3 {
-                      font-size: 1.125rem;
-                      font-weight: 600;
-                      line-height: 1.5rem;
-                      margin-bottom: 0.5rem;
-                      margin-top: 0.75rem;
-                      color: #1f2741;
-                    }
-                    .product-description p {
-                      margin-bottom: 0.75rem;
-                      color: #5e7293;
-                    }
-                    .product-description ul,
-                    .product-description ol {
-                      margin-bottom: 0.75rem;
-                      padding-left: 1.5rem;
-                      color: #5e7293;
-                    }
-                    .product-description ul {
-                      list-style-type: disc;
-                    }
-                    .product-description ol {
-                      list-style-type: decimal;
-                    }
-                    .product-description li {
-                      margin-bottom: 0.25rem;
-                      color: #5e7293;
-                    }
-                    .product-description a {
-                      color: #2563eb;
-                      text-decoration: underline;
-                    }
-                    .product-description a:hover {
-                      color: #1d4ed8;
-                    }
-                    .product-description strong {
-                      font-weight: 700;
-                      color: #1f2741;
-                    }
-                    .product-description em {
-                      font-style: italic;
-                    }
-                    .product-description u {
-                      text-decoration: underline;
-                    }
-                  `}</style>
-                  {(apiDetail.description ?? apiDetail.short_description ?? '').trim() ? (
-                    <div 
-                      className="product-description"
-                      dangerouslySetInnerHTML={{ 
-                        __html: (apiDetail.description ?? apiDetail.short_description ?? '').trim() 
-                      }} 
-                    />
-                  ) : (
-                    <span>{t('browse.apiSubtitleFallback')}</span>
-                  )}
-                </div>
-              ) : null}
-            </div>
-
-            {audit ? (
-              <div>
-                <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.aboutTitle')}</h3>
-                <div className="mt-3 text-sm text-[#3f4f6e]">
-                  {apiDetail?.description || audit?.checklist_type?.description || t('detail.audit.about')}
-                </div>
-                <ul className="mt-3 grid gap-2 text-sm text-[#3f4f6e] md:grid-cols-2">
-                  {[0, 1, 2, 3].map((idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#ddf5e8] text-[#2f9c65]" aria-hidden="true">
-                        <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none">
-                          <path d="m4.2 8.1 2.2 2.2 5.2-5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </span>
-                      <span>{t(`detail.audit.includes.${idx}`)}</span>
-                    </li>
-                  ))}
-                </ul>
-                {apiDetail?.benefits ? (
-                  <div className="mt-6">
-                    <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.benefitsTitle')}</h3>
-                    <div 
-                      className="mt-3 text-sm text-[#3f4f6e] prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: apiDetail.benefits }}
-                    />
-                  </div>
                 ) : null}
-              </div>
+              </>
             ) : null}
 
-            {docProduct ? (
-              <div>
-                <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.aboutTitle')}</h3>
-                <div className="mt-3 text-sm text-[#3f4f6e]">
-                  {t(`doc.${docProduct.id}.body`)}
-                </div>
-                <ul className="mt-3 grid gap-2 text-sm text-[#3f4f6e] md:grid-cols-2">
-                  {docProduct.points.map((point) => (
-                    <li key={point} className="flex items-start gap-2">
-                      <span className="mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#ddf5e8] text-[#2f9c65]" aria-hidden="true">
-                        <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none">
-                          <path d="m4.2 8.1 2.2 2.2 5.2-5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </span>
-                      <span>{t(`docPoint.${point}`)}</span>
-                    </li>
-                  ))}
-                </ul>
-                {docProduct.benefits ? (
-                  <div className="mt-6">
-                    <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.benefitsTitle')}</h3>
-                    <div 
-                      className="mt-3 text-sm text-[#3f4f6e] prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: docProduct.benefits }}
-                    />
-                  </div>
+            {!productDetail && audit ? (
+              <section>
+                {/* <h2 className="text-xl font-semibold text-[#1f2741]">{t('detail.descriptionTitle')}</h2> */}
+                {/* <p className="mt-3 text-sm leading-relaxed text-[#5e7293]"> */}
+                {/*   {audit.checklist_type?.description?.trim() || t('detail.audit.about')} */}
+                {/* </p> */}
+                {audit.warning ? (
+                  <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    {audit.warning}
+                  </p>
                 ) : null}
-              </div>
+              </section>
             ) : null}
 
-            {apiDetail && apiIncludeLines.length ? (
-              <div>
-                <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.aboutTitle')}</h3>
-                <div className="mt-3 text-sm text-[#3f4f6e]">
-                  {apiDetail.description || apiDetail.short_description}
-                </div>
-                <ul className="mt-3 grid gap-2 text-sm text-[#3f4f6e] md:grid-cols-2">
-                  {apiIncludeLines.map((line, idx) => (
-                    <li key={`api-line-${idx}`} className="flex items-start gap-2">
-                      <span className="mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#ddf5e8] text-[#2f9c65]" aria-hidden="true">
-                        <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none">
-                          <path d="m4.2 8.1 2.2 2.2 5.2-5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </span>
-                      <span>{line}</span>
-                    </li>
-                  ))}
-                </ul>
-                {apiDetail.benefits ? (
-                  <div className="mt-6">
-                    <h3 className="text-base font-semibold text-[#1f2741]">{t('detail.benefitsTitle')}</h3>
-                    <div 
-                      className="mt-3 text-sm text-[#3f4f6e] prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: apiDetail.benefits }}
-                    />
-                  </div>
-                ) : null}
-              </div>
+            {!productDetail && docProduct ? (
+              <section>
+                {/* <h2 className="text-xl font-semibold text-[#1f2741]">{t('detail.descriptionTitle')}</h2> */}
+                {/* <p className="mt-3 text-sm leading-relaxed text-[#5e7293]">{t(`doc.${docProduct.id}.body`)}</p> */}
+              </section>
+            ) : null}
+
+            {!productDetail && builderProduct ? (
+              <section>
+                {/* <h2 className="text-xl font-semibold text-[#1f2741]">{t('detail.descriptionTitle')}</h2> */}
+                {/* <p className="mt-3 text-sm leading-relaxed text-[#5e7293]"> */}
+                {/*   {t(`builders.${builderProduct.id}.description`)} */}
+                {/* </p> */}
+              </section>
             ) : null}
           </article>
 

@@ -74,11 +74,28 @@ export type AssessmentAnswerForReview = {
   question_text: string | null;
   section_code: string | null;
   section_name: string | null;
+  section_id?: string;
+  explanation?: string | null;
+  why_this_matters?: string | null;
+  legal_requirement_title?: string | null;
+  legal_requirement_description?: string | null;
+  expected_implementation?: string | null;
+  audit_type?: string | null;
   customer_answer: string | null;
   customer_score: number | null;
   weighted_priority: string | null;
   note_text: string | null;
   answered_at: string | null;
+  evidence_files?: Array<{
+    id: string;
+    media_id: string;
+    filename: string;
+    mime_type: string;
+    file_size: number;
+    scan_status: string;
+    encryption_status: string;
+    uploaded_at?: string;
+  }>;
   review: AssessmentAnswerReview | null;
   has_review: boolean;
   is_action_required: boolean;

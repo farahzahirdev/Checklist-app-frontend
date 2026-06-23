@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { translate, useLocale } from '@/lib/i18n';
 import { API_BASE_URL } from '@/lib/config';
@@ -21,7 +21,7 @@ import {
   type AssessmentReviewHistoryEntry,
   type AnswerReviewPayload,
 } from '@/lib/assessment-review';
-import { adminReportDetailPath, generateDraftReport, getReportByAssessment } from '@/lib/reports';
+import { adminReportDetailPath, generateDraftReport, getReportByAssessment, getReportSummaries, upsertReportSummary, type ReportSummaryItem } from '@/lib/reports';
 import { AdminBreadcrumbs } from '@/components/admin-breadcrumbs';
 import {
   ADMIN_KPI_DARK_CARD_CLASS,
@@ -172,6 +172,7 @@ export default function AdminAssessmentReviewDetailPage() {
   const params = useParams<{ assessmentId: string }>();
   const assessmentId = params.assessmentId;
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { locale } = useLocale();
   const t = (key: string) => translate(adminAssessmentReviewDetailMessages, locale, key);
   const statusLabel = (status: string | null | undefined) => {
@@ -188,6 +189,12 @@ export default function AdminAssessmentReviewDetailPage() {
   const [finalizing, setFinalizing] = useState(false);
   const [summaryNotes, setSummaryNotes] = useState('');
   const [recommendations, setRecommendations] = useState('');
+  const [report, setReport] = useState<any | null>(null);
+  const [reportSummaries, setReportSummaries] = useState<ReportSummaryItem[]>([]);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [sectionSummaries, setSectionSummaries] = useState<Record<string, string>>({});
+  const [sectionRecommendations, setSectionRecommendations] = useState<Record<string, string>>({});
+  const [savingSectionId, setSavingSectionId] = useState('');
   const [drafts, setDrafts] = useState<Record<string, ReviewDraft>>({});
   const [suggestionErrors, setSuggestionErrors] = useState<Record<string, string>>({});
   const [reviewStatusLabel, setReviewStatusLabel] = useState('pending');
@@ -198,10 +205,12 @@ export default function AdminAssessmentReviewDetailPage() {
   const [sectionFilter, setSectionFilter] = useState('all');
   const [followUpFilter, setFollowUpFilter] = useState<'all' | 'marked'>('all');
   const [answerStateFilter, setAnswerStateFilter] = useState<'all' | 'not_answered'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const answerOptions = ['4 (Yes)', '3 (Mostly Yes)', '2 (Partially)', '1 (No)'];
   const [collapsedParents, setCollapsedParents] = useState<Set<string>>(new Set());
+  const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
   const [evidenceViewLoading, setEvidenceViewLoading] = useState<Record<string, boolean>>({});
   const [evidenceDownloadLoading, setEvidenceDownloadLoading] = useState<Record<string, boolean>>({});
 
@@ -210,6 +219,15 @@ export default function AdminAssessmentReviewDetailPage() {
       const next = new Set(prev);
       if (next.has(parentUuid)) next.delete(parentUuid);
       else next.add(parentUuid);
+      return next;
+    });
+  }
+
+  function toggleQuestionExpansion(answerId: string) {
+    setExpandedQuestions((prev) => {
+      const next = new Set(prev);
+      if (next.has(answerId)) next.delete(answerId);
+      else next.add(answerId);
       return next;
     });
   }
@@ -227,6 +245,12 @@ export default function AdminAssessmentReviewDetailPage() {
       } else {
         setReviewStatusLabel(response.assessment_status || 'pending');
       }
+      if (statusResponse.summary_notes && typeof statusResponse.summary_notes === 'string') {
+        setSummaryNotes(statusResponse.summary_notes);
+      }
+      if (statusResponse.recommendations && typeof statusResponse.recommendations === 'string') {
+        setRecommendations(statusResponse.recommendations);
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('toasts.loadFailed'));
     } finally {
@@ -234,10 +258,81 @@ export default function AdminAssessmentReviewDetailPage() {
     }
   }
 
+  async function loadReport() {
+    if (!detail?.assessment_id) return;
+    setReportLoading(true);
+    try {
+      const reportData = await getReportByAssessment(detail.assessment_id);
+      setReport(reportData);
+      const summaries = await getReportSummaries(reportData.id);
+      setReportSummaries(summaries);
+      
+      // Populate section-specific summaries and recommendations
+      const summariesMap: Record<string, string> = {};
+      const recommendationsMap: Record<string, string> = {};
+      summaries.forEach((summary) => {
+        const key = summary.section_id || summary.chapter_code || '';
+        if (key) {
+          summariesMap[key] = summary.summary_text || '';
+          recommendationsMap[key] = summary.recommendation_text || '';
+        }
+      });
+      setSectionSummaries(summariesMap);
+      setSectionRecommendations(recommendationsMap);
+    } catch (err) {
+      // Report might not exist yet, that's okay
+      console.info('Report not found or error loading:', err);
+    } finally {
+      setReportLoading(false);
+    }
+  }
+
+  async function saveSectionSummary(sectionId: string, sectionCode: string, summaryText: string, recommendationText: string) {
+    if (!report?.id) return;
+    setSavingSectionId(sectionId);
+    try {
+      // Only save if there's actual content to save
+      const hasContent = summaryText.trim().length > 0 || recommendationText.trim().length > 0;
+      if (!hasContent) {
+        setSavingSectionId('');
+        return;
+      }
+
+      await upsertReportSummary(report.id, {
+        section_id: sectionId,
+        chapter_code: sectionCode,
+        summary_text: summaryText.trim().length > 0 ? summaryText : undefined,
+        recommendation_text: recommendationText.trim().length > 0 ? recommendationText : undefined,
+      });
+      toast.success(t('toasts.saved'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save summary');
+    } finally {
+      setSavingSectionId('');
+    }
+  }
+
   useEffect(() => {
     void loadDetail();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assessmentId]);
+
+  useEffect(() => {
+    if (detail?.assessment_id) {
+      void loadReport();
+    }
+  }, [detail?.assessment_id]);
+
+  useEffect(() => {
+    if (!detail?.answers) return;
+    const targetSectionId = searchParams.get('section_id');
+    if (targetSectionId) {
+      const match = detail.answers.find((a) => a.section_id === targetSectionId);
+      if (match) {
+        setSectionFilter(sectionKey(match));
+      }
+    }
+  }, [detail, searchParams]);
 
   // Order answers so that any sub-questions immediately follow their parent question, and
   // adopt the parent's section so they stay grouped under the same section header.
@@ -290,8 +385,26 @@ export default function AdminAssessmentReviewDetailPage() {
     // NOTE: Changed follow-up filter to NOT hide sections, but rather we'll highlight marked answers in the UI
     // if (followUpFilter === 'marked') items = items.filter((answer) => answer.is_action_required || Boolean(answer.review?.is_action_required));
     if (answerStateFilter === 'not_answered') items = items.filter((answer) => !answer.customer_answer || answer.customer_answer.trim().length === 0);
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      items = items.filter((answer) => {
+        const searchableText = [
+          answer.question_text || '',
+          answer.question_id || '',
+          answer.section_name || '',
+          answer.section_code || '',
+          answer.customer_answer || '',
+          answer.note_text || '',
+          answer.review?.suggestion_text || '',
+        ].join(' ').toLowerCase();
+        return searchableText.includes(query);
+      });
+    }
+    
     return items;
-  }, [answerStateFilter, orderedAnswers, sectionFilter]);
+  }, [answerStateFilter, orderedAnswers, sectionFilter, searchQuery]);
 
   const childCountByParent = useMemo(() => {
     const map = new Map<string, number>();
@@ -324,7 +437,7 @@ export default function AdminAssessmentReviewDetailPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [sectionFilter, followUpFilter, answerStateFilter]);
+  }, [sectionFilter, followUpFilter, answerStateFilter, searchQuery]);
 
   // Clamp current page when collapsing children shrinks the total page count.
   useEffect(() => {
@@ -342,6 +455,12 @@ export default function AdminAssessmentReviewDetailPage() {
       priority_level: answer.review.priority_level ?? 1,
       score_adjustment: answer.review.score_adjustment ?? 0,
     };
+  }
+
+  function highlightText(text: string, query: string): string {
+    if (!query.trim()) return text;
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(regex, '<mark class="bg-yellow-200 text-yellow-900 rounded px-1">$1</mark>');
   }
 
   function setDraft(answerId: string, patch: Partial<ReviewDraft>) {
@@ -490,7 +609,7 @@ export default function AdminAssessmentReviewDetailPage() {
         priority_level: draft.priority_level,
         score_adjustment: draft.score_adjustment,
       }))
-      .filter((item) => item.suggestion_text.length > 0);
+      .filter((item) => item.suggestion_text.length >= 10);
 
     if (!entries.length) {
       toast.error(t('toasts.bulkNone'));
@@ -680,19 +799,49 @@ export default function AdminAssessmentReviewDetailPage() {
       </div>
 
       <article className="rounded-2xl border border-[#e2e8f5] bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-semibold text-[#4e6489]">{t('filters.label')}</p>
-          <select value={sectionFilter} onChange={(event) => setSectionFilter(event.target.value)} className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm font-semibold text-[#2a3d5f]">
-            <option value="all">{t('filters.allQuestions')}</option>
-            {sectionOptions.map((section) => <option key={section} value={section}>{section}</option>)}
-          </select>
-          <button type="button" onClick={() => setFollowUpFilter((prev) => (prev === 'all' ? 'marked' : 'all'))} className={`rounded-xl border px-3 py-2 text-sm font-semibold ${followUpFilter === 'marked' ? 'border-[#f2d49f] bg-[#fff3de] text-[#b6862f]' : 'border-[#d4dced] bg-white text-[#425f8f]'}`}>
-            {followUpFilter === 'marked' ? t('filters.highlightingFollowUps') : t('filters.highlightFollowUps')}
-          </button>
-          <select value={answerStateFilter} onChange={(event) => setAnswerStateFilter(event.target.value as 'all' | 'not_answered')} className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm font-semibold text-[#2a3d5f]">
-            <option value="all">{t('filters.answerStates.all')}</option>
-            <option value="not_answered">{t('filters.answerStates.notAnswered')}</option>
-          </select>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold text-[#4e6489]">{t('filters.label')}</p>
+            <div className="relative flex-1 min-w-[200px] max-w-md">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('filters.searchPlaceholder')}
+                className="w-full rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-4 py-2 pl-10 text-sm font-semibold text-[#2a3d5f] placeholder:text-[#64748b]"
+              />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#64748b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            {searchQuery && (
+              <span className="text-xs text-[#64748b]">
+                {filteredAnswers.length} {filteredAnswers.length === 1 ? 'result' : 'results'} found
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select value={sectionFilter} onChange={(event) => setSectionFilter(event.target.value)} className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm font-semibold text-[#2a3d5f]">
+              <option value="all">{t('filters.allQuestions')}</option>
+              {sectionOptions.map((section) => <option key={section} value={section}>{section}</option>)}
+            </select>
+            <button type="button" onClick={() => setFollowUpFilter((prev) => (prev === 'all' ? 'marked' : 'all'))} className={`rounded-xl border px-3 py-2 text-sm font-semibold ${followUpFilter === 'marked' ? 'border-[#f2d49f] bg-[#fff3de] text-[#b6862f]' : 'border-[#d4dced] bg-white text-[#425f8f]'}`}>
+              {followUpFilter === 'marked' ? t('filters.highlightingFollowUps') : t('filters.highlightFollowUps')}
+            </button>
+            <select value={answerStateFilter} onChange={(event) => setAnswerStateFilter(event.target.value as 'all' | 'not_answered')} className="rounded-xl border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm font-semibold text-[#2a3d5f]">
+              <option value="all">{t('filters.answerStates.all')}</option>
+              <option value="not_answered">{t('filters.answerStates.notAnswered')}</option>
+            </select>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="rounded-xl border border-[#d4dced] bg-white px-3 py-2 text-sm font-semibold text-[#425f8f] hover:bg-[#f1f5f9]"
+              >
+                Clear Search
+              </button>
+            )}
+          </div>
         </div>
       </article>
 
@@ -716,9 +865,45 @@ export default function AdminAssessmentReviewDetailPage() {
 
       {loading ? <p className="rounded-xl border border-[#e2e8f5] bg-white px-4 py-3 text-sm text-[#607594]">{t('loading.answers')}</p> : null}
 
-      {!loading && sectionGroups.map(([key, answers], sectionIndex) => (
+      {!loading && sectionGroups.map(([key, answers], sectionIndex) => {
+        const sectionId = answers[0]?.section_id || '';
+        const sectionCode = answers[0]?.section_code || key;
+        const currentSummary = sectionSummaries[sectionId] || sectionSummaries[sectionCode] || '';
+        const currentRecommendation = sectionRecommendations[sectionId] || sectionRecommendations[sectionCode] || '';
+        const isSavingSection = savingSectionId === sectionId;
+        
+        return (
         <section key={key} className="space-y-2 rounded-2xl border border-[#dbe4f4] bg-white p-4 shadow-sm">
           <h2 className="text-2xl font-semibold text-[#243555]">{sectionIndex + 1}. {answers[0]?.section_name || answers[0]?.section_code || t('section.general')}</h2>
+          {report && !isReadOnly && (
+            <div className="mt-4 space-y-3 rounded-xl border border-[#e8edf5] bg-[#fafbfd] p-4">
+              <div>
+                <label className="block text-sm font-semibold text-[#425f8f]">{t('sectionSummary.label')}</label>
+                <textarea
+                  value={currentSummary}
+                  onChange={(e) => setSectionSummaries(prev => ({ ...prev, [sectionId]: e.target.value }))}
+                  onBlur={() => saveSectionSummary(sectionId, sectionCode, currentSummary, currentRecommendation)}
+                  disabled={isSavingSection || reportLoading}
+                  rows={3}
+                  className="mt-1 w-full rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#334155] disabled:opacity-60"
+                  placeholder={t('sectionSummary.placeholder')}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[#425f8f]">{t('sectionRecommendation.label')}</label>
+                <textarea
+                  value={currentRecommendation}
+                  onChange={(e) => setSectionRecommendations(prev => ({ ...prev, [sectionId]: e.target.value }))}
+                  onBlur={() => saveSectionSummary(sectionId, sectionCode, currentSummary, currentRecommendation)}
+                  disabled={isSavingSection || reportLoading}
+                  rows={3}
+                  className="mt-1 w-full rounded-lg border border-[#d4dced] bg-white px-3 py-2 text-sm text-[#334155] disabled:opacity-60"
+                  placeholder={t('sectionRecommendation.placeholder')}
+                />
+              </div>
+              {isSavingSection && <p className="text-xs text-[#64748b]">{t('actions.saving')}</p>}
+            </div>
+          )}
           {answers.map((answer) => {
             const draft = getDraft(answer);
             const isSaving = savingAnswerId === answer.answer_id;
@@ -738,13 +923,27 @@ export default function AdminAssessmentReviewDetailPage() {
             const isMarkedForFollowUp = answer.is_action_required || Boolean(answer.review?.is_action_required);
             const shouldHighlight = followUpFilter === 'marked' && isMarkedForFollowUp;
             const shouldDim = followUpFilter === 'marked' && !isMarkedForFollowUp;
+            
+            // Check if this answer matches the search query
+            const isSearchMatch = searchQuery.trim() && [
+              answer.question_text || '',
+              answer.question_id || '',
+              answer.section_name || '',
+              answer.section_code || '',
+              answer.customer_answer || '',
+              answer.note_text || '',
+              answer.review?.suggestion_text || '',
+            ].some(text => text.toLowerCase().includes(searchQuery.toLowerCase()));
+            
             return (
               <article key={answer.answer_id} className={`rounded-xl border p-4 transition-all ${
                 shouldHighlight
                   ? 'border-[#f2d49f] bg-[#fff3de] shadow-md scale-[1.02]'
                   : shouldDim
                   ? 'border-[#e2e8f5] bg-[#fbfcff] opacity-50'
-                  : 'border-[#e2e8f5] bg-[#fbfcff]'
+                  : isSearchMatch
+                    ? 'border-[#3b82f6] bg-[#eff6ff] shadow-sm'
+                    : 'border-[#e2e8f5] bg-[#fbfcff]'
               }`}>
                 {isSubQuestion ? (
                   <p className="mb-2 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-[#2f7dff]">
@@ -753,10 +952,116 @@ export default function AdminAssessmentReviewDetailPage() {
                 ) : null}
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-semibold text-[#25375a]">{t('labels.questionId')}: {answer.question_id}</p>
-                  <span className={`rounded-md px-2 py-1 text-xs font-semibold ${badgeClass}`}>{badgeText}</span>
+                  <div className="flex items-center gap-2">
+                    {answer.note_text && (
+                      <span className="flex items-center gap-1 rounded-md bg-[#eff6ff] px-2 py-1 text-xs font-semibold text-[#2f7dff]">
+                        <svg viewBox="0 0 16 16" className="h-3 w-3" fill="currentColor" aria-hidden>
+                          <path d="M3 2h10v12H3V2zm1 1v10h8V4H4zm2 1h4v1H6V5zm0 2h4v1H6V7zm0 2h3v1H6V9z"/>
+                        </svg>
+                        Note
+                      </span>
+                    )}
+                    {answer.evidence_files && answer.evidence_files.length > 0 && (
+                      <span className="flex items-center gap-1 rounded-md bg-[#f0fdf4] px-2 py-1 text-xs font-semibold text-[#16a34a]">
+                        <svg viewBox="0 0 16 16" className="h-3 w-3" fill="currentColor" aria-hidden>
+                          <path d="M4 2h8v12H4V2zm1 1v10h6V4H5zm2 1h2v1H7V5zm0 2h2v1H7V7zm0 2h2v1H7V9z"/>
+                        </svg>
+                        Evidence
+                      </span>
+                    )}
+                    <span className={`rounded-md px-2 py-1 text-xs font-semibold ${badgeClass}`}>{badgeText}</span>
+                    {(answer.why_this_matters || answer.legal_requirement_title || answer.expected_implementation) && (
+                      <div className="relative group">
+                        <button
+                          type="button"
+                          className="flex h-6 w-6 items-center justify-center rounded-full bg-[#f0f4ff] text-[#3b82f6] hover:bg-[#e0e7ff] transition-colors"
+                          title={t('labels.explanation')}
+                        >
+                          <svg viewBox="0 0 16 16" className="h-3 w-3" fill="currentColor">
+                            <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 12.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zM8 4a1 1 0 011 1v3.5a1 1 0 01-2 0V5a1 1 0 011-1z"/>
+                          </svg>
+                        </button>
+                        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-[#e2e8f5] bg-white p-4 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                          <div className="space-y-3 text-sm">
+                            {answer.why_this_matters && (
+                              <div>
+                                <p className="font-semibold text-[#243555]">{t('labels.whyThisMatters')}</p>
+                                <p className="text-[#607594] mt-1">{answer.why_this_matters}</p>
+                              </div>
+                            )}
+                            {answer.legal_requirement_title && (
+                              <div>
+                                <p className="font-semibold text-[#243555]">{t('labels.legalRequirement')}</p>
+                                <p className="text-[#607594] mt-1">{answer.legal_requirement_title}</p>
+                              </div>
+                            )}
+                            {answer.expected_implementation && (
+                              <div>
+                                <p className="font-semibold text-[#243555]">{t('labels.expectedImplementation')}</p>
+                                <p className="text-[#607594] mt-1">{answer.expected_implementation}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 {answer.question_text && (
                   <p className="mt-2 text-sm text-[#607594]">{answer.question_text}</p>
+                )}
+                {(answer.legal_requirement_description || answer.expected_implementation || answer.why_this_matters) && (
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleQuestionExpansion(answer.answer_id)}
+                      className="flex items-center gap-1 text-xs font-semibold text-[#2f7dff] hover:text-[#1e40af]"
+                    >
+                      {expandedQuestions.has(answer.answer_id) ? (
+                        <>
+                          <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6l4 4 4-4" />
+                          </svg>
+                          {t('labels.hideDetails')}
+                        </>
+                      ) : (
+                        <>
+                          <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 10l4-4 4 4" />
+                          </svg>
+                          {t('labels.showDetails')}
+                        </>
+                      )}
+                    </button>
+                    {expandedQuestions.has(answer.answer_id) && (
+                      <div className="mt-3 space-y-3 rounded-lg border border-[#e2e8f5] bg-[#f8fafc] p-3 text-sm">
+                        {answer.why_this_matters && (
+                          <div>
+                            <p className="font-semibold text-[#243555] text-xs uppercase tracking-wide">{t('labels.whyThisMatters')}</p>
+                            <p className="text-[#607594] mt-1">{answer.why_this_matters}</p>
+                          </div>
+                        )}
+                        {answer.legal_requirement_title && (
+                          <div>
+                            <p className="font-semibold text-[#243555] text-xs uppercase tracking-wide">{t('labels.legalRequirement')}</p>
+                            <p className="text-[#607594] mt-1 font-medium">{answer.legal_requirement_title}</p>
+                            {answer.legal_requirement_description && (
+                              <p className="text-[#607594] mt-1">{answer.legal_requirement_description}</p>
+                            )}
+                          </div>
+                        )}
+                        {answer.expected_implementation && (
+                          <div>
+                            <p className="font-semibold text-[#243555] text-xs uppercase tracking-wide">{t('labels.expectedImplementation')}</p>
+                            <p className="text-[#607594] mt-1">{answer.expected_implementation}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {answer.explanation && (
+                  <p className="mt-2 text-xs text-[#64748b] italic">{t('labels.explanation')}: {answer.explanation}</p>
                 )}
                 <div className="mt-3">
                   <div className="grid gap-3 border-b border-[#edf2f9] pb-2 text-sm font-semibold text-[#2b3e60] md:grid-cols-3">
@@ -1067,9 +1372,10 @@ export default function AdminAssessmentReviewDetailPage() {
             );
           })}
         </section>
-      ))}
+      );
+      })}
 
-      {!loading ? (
+      {!loading && visibleAnswers.length > 0 ? (
         <footer className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e2e8f5] bg-white px-4 py-3 shadow-sm">
           <p className="text-sm text-[#607594]">
             {t('footer.showing')

@@ -187,6 +187,7 @@ export type ReportSummaryItem = {
   section_number?: number | null;
   chapter_code: string | null;
   summary_text: string;
+  recommendation_text?: string | null;
   created_by?: string;
   updated_by?: string;
   created_at: string;
@@ -364,7 +365,8 @@ export type ReviewActionRequest = {
 export type UpsertReportSummaryRequest = {
   section_id?: string;
   chapter_code?: string;
-  summary_text: string;
+  summary_text?: string;
+  recommendation_text?: string;
 };
 
 export function generateDraftReport(assessmentId: string) {

@@ -19,9 +19,11 @@ interface SectionEditorProps {
 function getSectionTypeInfo(sectionType: string) {
   const typeMap: Record<string, { label: string; color: string; bgColor: string }> = {
     hero: { label: 'Hero', color: 'text-purple-700', bgColor: 'bg-purple-100' },
+    'product-hero': { label: 'Product Hero', color: 'text-purple-900', bgColor: 'bg-purple-200' },
     cards: { label: 'Cards', color: 'text-green-700', bgColor: 'bg-green-100' },
     faq: { label: 'FAQ', color: 'text-blue-700', bgColor: 'bg-blue-100' },
     cta: { label: 'CTA', color: 'text-orange-700', bgColor: 'bg-orange-100' },
+    'product-cta': { label: 'Product CTA', color: 'text-orange-900', bgColor: 'bg-orange-200' },
     trust: { label: 'Trust', color: 'text-cyan-700', bgColor: 'bg-cyan-100' },
     'how-it-works': { label: 'How It Works', color: 'text-indigo-700', bgColor: 'bg-indigo-100' },
     'documentation-grid': { label: 'Documentation', color: 'text-teal-700', bgColor: 'bg-teal-100' },
@@ -72,6 +74,104 @@ function SectionDataEditor({
   };
 
   switch (sectionType) {
+    case 'product-hero':
+      return (
+        <div className="space-y-4">
+          <div>
+            <label className={cmsLabelClass}>{t('sectionEditor.productHero.productTitle')}</label>
+            <TipTapRichTextEditor
+              value={data.product_title || ''}
+              onChange={(value) => updateField('product_title', value)}
+              placeholder={t('sectionEditor.productHero.productTitlePh')}
+              className="min-h-[80px]"
+              t={t}
+            />
+          </div>
+          <div>
+            <label className={cmsLabelClass}>{t('sectionEditor.productHero.shortDescription')}</label>
+            <TipTapRichTextEditor
+              value={data.short_description || ''}
+              onChange={(value) => updateField('short_description', value)}
+              placeholder={t('sectionEditor.productHero.shortDescriptionPh')}
+              className="min-h-[60px]"
+              t={t}
+            />
+          </div>
+          <div>
+            <label className={cmsLabelClass}>{t('sectionEditor.productHero.tagline')}</label>
+            <TipTapRichTextEditor
+              value={data.tagline || ''}
+              onChange={(value) => updateField('tagline', value)}
+              placeholder={t('sectionEditor.productHero.taglinePh')}
+              className="min-h-[60px]"
+              t={t}
+            />
+          </div>
+          <div>
+            <label className={cmsLabelClass}>{t('sectionEditor.productHero.mainBenefits')}</label>
+            <div className="space-y-2">
+              {(data.main_benefits || []).map((benefit: any, index: number) => (
+                <div key={index} className="rounded-xl border border-[#dbe4f4] bg-[#f9fbff] p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h4 className="font-semibold text-[#243555]">{t('sectionEditor.productHero.benefitN', { n: String(index + 1) })}</h4>
+                    <button
+                      onClick={() => {
+                        const newBenefits = [...(data.main_benefits || [])];
+                        newBenefits.splice(index, 1);
+                        updateField('main_benefits', newBenefits);
+                      }}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    <TipTapRichTextEditor
+                      value={benefit.title || ''}
+                      onChange={(value) => updateNestedArrayField('main_benefits', index, 'title', value)}
+                      placeholder={t('sectionEditor.productHero.benefitTitlePh')}
+                      className="min-h-[60px] text-sm"
+                      t={t}
+                    />
+                    <TipTapRichTextEditor
+                      value={benefit.content || ''}
+                      onChange={(value) => updateNestedArrayField('main_benefits', index, 'content', value)}
+                      placeholder={t('sectionEditor.productHero.benefitContentPh')}
+                      className="text-sm"
+                      t={t}
+                    />
+                    {benefit.highlight && (
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-[#5b6f91]">
+                          {t('sectionEditor.productHero.highlight')}
+                        </label>
+                        <TipTapRichTextEditor
+                          value={benefit.highlight}
+                          onChange={(value) => updateNestedArrayField('main_benefits', index, 'highlight', value)}
+                          placeholder={t('sectionEditor.productHero.highlightPh')}
+                          className="text-sm"
+                          t={t}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  const newBenefits = [...(data.main_benefits || []), { title: '', content: '', highlight: '' }];
+                  updateField('main_benefits', newBenefits);
+                }}
+                className="w-full py-2 px-4 rounded-lg border-2 border-dashed border-[#b5c7e7] text-[#425f8f] hover:border-[#2f7dff] hover:text-[#2f7dff] transition-colors"
+              >
+                + {t('sectionEditor.productHero.addBenefit')}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+
     case 'hero':
       return (
         <div className="space-y-4">
@@ -307,6 +407,72 @@ function SectionDataEditor({
                 {t('sectionEditor.faq.addPair')}
               </button>
             </div>
+          </div>
+        </div>
+      );
+
+    case 'product-cta':
+      return (
+        <div className="space-y-4">
+          <div>
+            <label className={cmsLabelClass}>{t('sectionEditor.productCta.ctaHeadline')}</label>
+            <TipTapRichTextEditor
+              value={data.cta_headline || ''}
+              onChange={(value) => updateField('cta_headline', value)}
+              placeholder={t('sectionEditor.productCta.ctaHeadlinePh')}
+              className="min-h-[60px]"
+              t={t}
+            />
+          </div>
+          <div>
+            <label className={cmsLabelClass}>{t('sectionEditor.productCta.ctaSubheadline')}</label>
+            <TipTapRichTextEditor
+              value={data.cta_subheadline || ''}
+              onChange={(value) => updateField('cta_subheadline', value)}
+              placeholder={t('sectionEditor.productCta.ctaSubheadlinePh')}
+              className="min-h-[60px]"
+              t={t}
+            />
+          </div>
+          <div>
+            <label className={cmsLabelClass}>{t('sectionEditor.productCta.primaryCtaText')}</label>
+            <input
+              type="text"
+              value={data.primary_cta_text || ''}
+              onChange={(e) => updateField('primary_cta_text', e.target.value)}
+              className={cmsInputClass}
+              placeholder={t('sectionEditor.productCta.primaryCtaTextPh')}
+            />
+          </div>
+          <div>
+            <label className={cmsLabelClass}>{t('sectionEditor.productCta.primaryCtaUrl')}</label>
+            <input
+              type="text"
+              value={data.primary_cta_url || ''}
+              onChange={(e) => updateField('primary_cta_url', e.target.value)}
+              className={cmsInputClass}
+              placeholder={t('sectionEditor.productCta.primaryCtaUrlPh')}
+            />
+          </div>
+          <div>
+            <label className={cmsLabelClass}>{t('sectionEditor.productCta.secondaryCtaText')}</label>
+            <input
+              type="text"
+              value={data.secondary_cta_text || ''}
+              onChange={(e) => updateField('secondary_cta_text', e.target.value)}
+              className={cmsInputClass}
+              placeholder={t('sectionEditor.productCta.secondaryCtaTextPh')}
+            />
+          </div>
+          <div>
+            <label className={cmsLabelClass}>{t('sectionEditor.productCta.secondaryCtaUrl')}</label>
+            <input
+              type="text"
+              value={data.secondary_cta_url || ''}
+              onChange={(e) => updateField('secondary_cta_url', e.target.value)}
+              className={cmsInputClass}
+              placeholder={t('sectionEditor.productCta.secondaryCtaUrlPh')}
+            />
           </div>
         </div>
       );

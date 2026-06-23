@@ -99,6 +99,8 @@ export function AdminReportMaturityDomainSection({ report }: { report: ReportRes
                   const title = (s.section_title ?? s.section_code ?? t('maturity.fallbackSection')).trim();
                   const sectionNumber = s.section_number;
                   const code = (s.section_code ?? s.chapter_code ?? '').trim();
+                  // Only show section number prefix if title doesn't already contain legal paragraph symbol (§)
+                  const titleHasParagraphSymbol = title.includes('§');
                   return (
                     <tr key={sectionRowKey(s, idx)}>
                       <td className="px-3 py-3">
@@ -106,7 +108,7 @@ export function AdminReportMaturityDomainSection({ report }: { report: ReportRes
                           <DomainScoreShield pct={pct} />
                           <div className="min-w-0">
                             <p className="truncate font-semibold text-[#0f172a]">
-                              {sectionNumber !== undefined && sectionNumber !== null ? `§${sectionNumber} - ` : ''}{title}
+                              {!titleHasParagraphSymbol && sectionNumber !== undefined && sectionNumber !== null ? `§${sectionNumber} - ` : ''}{title}
                             </p>
                             {code ? <p className="text-xs text-[#64748b]">{code}</p> : null}
                           </div>

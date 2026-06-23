@@ -7,7 +7,7 @@ import type { Route } from 'next';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/lib/auth';
 import { getCustomerProfileCompletion } from '@/lib/customer-profile';
-import { createStripeCheckoutSession } from '@/lib/payments';
+import { createStripeCheckoutSession, checkPurchaseEligibility } from '@/lib/payments';
 import { listPublishedCustomerChecklists, type CustomerChecklist } from '@/lib/checklist-api';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerPaymentMessages } from '@/locales/customer-payment';
@@ -45,6 +45,7 @@ export default function PaymentPage() {
   const [error, setError] = useState('');
   const [checklists, setChecklists] = useState<CustomerChecklist[]>([]);
   const [selectedChecklistId, setSelectedChecklistId] = useState('');
+  const [purchaseEligibility, setPurchaseEligibility] = useState<Record<string, { can_purchase: boolean; reason: string | null }>>({});
   const [showOnboardingSkip, setShowOnboardingSkip] = useState(false);
   const [profileCompletionPercent, setProfileCompletionPercent] = useState<number | null>(null);
   const [profileCompletionLoading, setProfileCompletionLoading] = useState(true);
@@ -97,6 +98,26 @@ export default function PaymentPage() {
         if (!mounted) return;
         setChecklists(catalog);
         setProfileCompletionPercent(completion?.completion_percent ?? null);
+
+        // Check purchase eligibility for each checklist
+        const eligibilityResults: Record<string, { can_purchase: boolean; reason: string | null }> = {};
+        await Promise.all(
+          catalog.map(async (checklist) => {
+            try {
+              const eligibility = await checkPurchaseEligibility(checklist.id);
+              eligibilityResults[checklist.id] = {
+                can_purchase: eligibility.can_purchase,
+                reason: eligibility.reason,
+              };
+            } catch (err) {
+              // If eligibility check fails, assume can purchase
+              eligibilityResults[checklist.id] = { can_purchase: true, reason: null };
+            }
+          })
+        );
+        if (mounted) {
+          setPurchaseEligibility(eligibilityResults);
+        }
 
         // Preselect the checklist the visitor picked on /products, if any.
         // The id can come from the current URL (?checklist_id=...) or, as a
@@ -190,6 +211,8 @@ export default function PaymentPage() {
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {checklists.map((checklist) => {
                     const isSelected = selectedChecklistId === checklist.id;
+                    const eligibility = purchaseEligibility[checklist.id] || { can_purchase: true, reason: null };
+                    const canPurchase = eligibility.can_purchase;
                     const priceLabel = checklist.pricing
                       ? `${(checklist.pricing.amount_cents / 100).toFixed(2)} ${checklist.pricing.currency.toUpperCase()}`
                       : t('labels.priceUnavailable');
@@ -199,20 +222,22 @@ export default function PaymentPage() {
                     return (
                       <div
                         key={checklist.id}
-                        onClick={() => setSelectedChecklistId(checklist.id)}
+                        onClick={() => canPurchase && setSelectedChecklistId(checklist.id)}
                         onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
+                          if (canPurchase && (event.key === 'Enter' || event.key === ' ')) {
                             event.preventDefault();
                             setSelectedChecklistId(checklist.id);
                           }
                         }}
                         role="button"
-                        tabIndex={0}
+                        tabIndex={canPurchase ? 0 : -1}
                         aria-pressed={isSelected}
                         className={`group relative overflow-hidden rounded-2xl border p-0 text-left transition-all duration-300 ${
                           isSelected
                             ? 'border-[#9fc2ff] bg-[linear-gradient(145deg,#143566_0%,#1b4a86_48%,#2a67b0_100%)] text-white ring-2 ring-[#a9c8ff]/70 shadow-[0_18px_32px_rgba(10,30,63,0.55)]'
-                            : 'border-[#2d4f83] bg-[linear-gradient(145deg,#0d2448_0%,#123263_48%,#173e78_100%)] text-[#d8e6ff] hover:-translate-y-0.5 hover:border-[#79a8f6] hover:shadow-[0_14px_28px_rgba(10,30,63,0.45)]'
+                            : canPurchase
+                              ? 'border-[#2d4f83] bg-[linear-gradient(145deg,#0d2448_0%,#123263_48%,#173e78_100%)] text-[#d8e6ff] hover:-translate-y-0.5 hover:border-[#79a8f6] hover:shadow-[0_14px_28px_rgba(10,30,63,0.45)]'
+                              : 'border-[#2d4f83] bg-[linear-gradient(145deg,#0d2448_0%,#123263_48%,#173e78_100%)] text-[#d8e6ff] opacity-60 cursor-not-allowed'
                         }`}
                       >
                         <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
@@ -244,18 +269,24 @@ export default function PaymentPage() {
 
                           {isSelected ? (
                             <div className="mt-4">
-                              <button
-                                type="button"
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  void beginCheckout(undefined, { redirectToProfileOnIncomplete: true });
-                                }}
-                                disabled={loading}
-                                className="w-full rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-white/15 disabled:opacity-60"
-                              >
-                                {loading ? t('actions.redirecting') : t('actions.proceed')}
-                              </button>
+                              {canPurchase ? (
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    void beginCheckout(undefined, { redirectToProfileOnIncomplete: true });
+                                  }}
+                                  disabled={loading}
+                                  className="w-full rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-white/15 disabled:opacity-60"
+                                >
+                                  {loading ? t('actions.redirecting') : t('actions.proceed')}
+                                </button>
+                              ) : (
+                                <div className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-center text-xs font-semibold text-white">
+                                  {eligibility.reason || t('errors.alreadyPurchased')}
+                                </div>
+                              )}
                             </div>
                           ) : null}
 

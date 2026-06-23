@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -39,8 +39,11 @@ export function TipTapRichTextEditor({
   className = '',
   t,
 }: TipTapRichTextEditorProps) {
-  const editor = useEditor({
-    extensions: [
+  const isUserEditing = useRef(false);
+  const lastSyncedValue = useRef(value);
+
+  const editorExtensions = React.useMemo(
+    () => [
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3],
@@ -53,6 +56,8 @@ export function TipTapRichTextEditor({
           keepMarks: true,
           keepAttributes: false,
         },
+        underline: false,
+        link: false,
       }),
       Underline,
       Link.configure({
@@ -65,17 +70,42 @@ export function TipTapRichTextEditor({
         types: ['heading', 'paragraph'],
       }),
     ],
-    content: value,
-    onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+    []
+  );
+
+const editor = useEditor({
+  extensions: editorExtensions,
+  onUpdate: ({ editor }) => {
+    isUserEditing.current = true;
+    const html = editor.getHTML();
+    onChange(html);
+    // Reset the editing flag after a short delay
+    setTimeout(() => {
+      isUserEditing.current = false;
+    }, 100);
+  },
+  onFocus: () => {
+    isUserEditing.current = true;
+  },
+  onBlur: () => {
+    isUserEditing.current = false;
+  },
+  editorProps: {
+    attributes: {
+      class: 'focus:outline-none min-h-[200px] p-4 text-[#1f2d45] leading-relaxed',
     },
-    editorProps: {
-      attributes: {
-        class:
-          'focus:outline-none min-h-[200px] p-4 text-[#1f2d45] leading-relaxed',
-      },
-    },
-  });
+  },
+});
+
+  // Only update editor content from props if value changed externally (not from user editing)
+  useEffect(() => {
+    if (!editor) return;
+    // Only update if the value has changed and isn't currently being edited
+    const currentHTML = editor.getHTML();
+    if (value !== currentHTML && !isUserEditing.current) {
+      editor.commands.setContent(value);
+    }
+  }, [value, editor]);
 
   const setLink = useCallback(() => {
     if (!editor) return;

@@ -418,7 +418,7 @@ export function AdminReportFindingsDomainsSection({
                     </div>
                   </div>
                   <div className="mt-4 border-t border-[#e8edf5] pt-3">
-                    <a href={assessmentHref} className="text-sm font-semibold text-[#2563eb] transition hover:text-[#1d4ed8]">
+                    <a href={`/admin/assessments/${report.assessment_id}?section_id=${s.section_id}`} className="text-sm font-semibold text-[#2563eb] transition hover:text-[#1d4ed8]">
                       {t('findings.openAssessment')}
                     </a>
                   </div>

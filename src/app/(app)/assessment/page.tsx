@@ -341,6 +341,8 @@ export default function AssessmentPage() {
   const checklistIdFromQuery = searchParams.get('checklist_id') ?? '';
   const assessmentIdFromQuery = searchParams.get('assessment_id') ?? '';
   const questionIdFromQuery = searchParams.get('question_id') ?? '';
+  const sectionIdFromQuery = searchParams.get('section_id') ?? '';
+  const readonlyFromQuery = searchParams.get('readonly') === 'true';
   const [availableChecklists, setAvailableChecklists] = useState<CustomerChecklist[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [purchasedChecklistIds, setPurchasedChecklistIds] = useState<string[]>([]);
@@ -377,9 +379,9 @@ export default function AssessmentPage() {
   const [previewUrlsByMediaId, setPreviewUrlsByMediaId] = useState<Record<string, string>>({});
   const [previewErrorsByMediaId, setPreviewErrorsByMediaId] = useState<Record<string, string>>({});
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
-  const [isSubmittedChecklist, setIsSubmittedChecklist] = useState(false);
+  const [isSubmittedChecklist, setIsSubmittedChecklist] = useState(readonlyFromQuery);
   const countdownNowMs = useAccessCountdownNow(Boolean(assessmentDetail?.expires_at));
-  const isSubmittedReadOnly = isSubmittedChecklist;
+  const isSubmittedReadOnly = isSubmittedChecklist || readonlyFromQuery;
   const activeQuestionIdRef = useRef(activeQuestionId);
   const selectedSectionIdRef = useRef(selectedSectionId);
   const skipLocaleRefetchRef = useRef(true);
@@ -789,6 +791,7 @@ export default function AssessmentPage() {
   }) {
     setInitialLoading(true);
     const preferredQuestionId = options?.preferredQuestionId ?? (questionIdFromQuery || undefined);
+    const preferredSectionId = options?.preferredSectionId ?? (sectionIdFromQuery || undefined);
     try {
       let detail: AssessmentCurrentDetailResponse;
       if (assessmentIdFromQuery) {
@@ -1693,7 +1696,7 @@ export default function AssessmentPage() {
                     })}
                   </div>
 
-                  {isNoteEnabledForActiveQuestion ? (
+                  {!isSubmittedReadOnly && isNoteEnabledForActiveQuestion ? (
                     <>
                       <p className="text-sm font-semibold text-[#1f2d45]">{t('questions.addNote')} <span className="font-normal text-[#7b88a3]">{t('questions.optional')}</span></p>
                       <textarea
@@ -1715,32 +1718,12 @@ export default function AssessmentPage() {
                   ) : null}
                 </div>
 
-                {isEvidenceEnabledForActiveQuestion ? (
+                {isEvidenceEnabledForActiveQuestion && existingEvidenceFiles[activeQuestion.id]?.length > 0 ? (
                   <div className="mt-4 rounded-lg border border-[#dbe4f4] bg-[#f9fbff] p-3">
                     <p className="text-sm font-semibold text-[#1f2d45]">
-                      {t('evidence.uploadTitle')}{' '}
+                      {isSubmittedReadOnly ? t('evidence.uploadedTitle') : t('evidence.uploadTitle')}{' '}
                       <span className="font-normal text-[#7b88a3]">{t('evidence.optional')}</span>
                     </p>
-                    <p className="mt-1 text-xs text-[#607594]">
-                      {t('evidence.hint', { maxMb: String(EVIDENCE_MAX_FILE_SIZE_MB) })}
-                    </p>
-                    <div className="mt-2 space-y-1">
-                      <input
-                        type="file"
-                        ref={evidenceInputRef}
-                        accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-                        disabled={showUploadProgress === activeQuestion.id}
-                        onChange={(event) => {
-                          const picked = event.target.files?.[0];
-                          if (!picked) return;
-                          void onUploadEvidence(picked);
-                        }}
-                        className="max-w-full rounded-lg border border-[#d4dced] bg-white px-2 py-1 text-xs text-[#3f5677] disabled:cursor-not-allowed disabled:opacity-60"
-                      />
-                      {showUploadProgress === activeQuestion.id ? (
-                        <p className="text-xs text-[#607594]">{t('evidence.uploading')}</p>
-                      ) : null}
-                    </div>
                     {/* Display existing evidence files from backend */}
                     {existingEvidenceFiles[activeQuestion.id]?.map((evidenceFile) => (
                       <div key={evidenceFile.id} className="mt-2 max-w-[160px] overflow-visible rounded-md border border-[#dbe4f4] bg-white">
@@ -1766,13 +1749,41 @@ export default function AssessmentPage() {
                         </div>
                       </div>
                     ))}
-                    
+                  </div>
+                ) : null}
+
+                {!isSubmittedReadOnly && isEvidenceEnabledForActiveQuestion && (
+                  <div className="mt-4 rounded-lg border border-[#dbe4f4] bg-[#f9fbff] p-3">
+                    <p className="text-sm font-semibold text-[#1f2d45]">
+                      {t('evidence.uploadTitle')}{' '}
+                      <span className="font-normal text-[#7b88a3]">{t('evidence.optional')}</span>
+                    </p>
+                    <p className="mt-1 text-xs text-[#607594]">
+                      {t('evidence.hint', { maxMb: String(EVIDENCE_MAX_FILE_SIZE_MB) })}
+                    </p>
+                    <div className="mt-2 space-y-1">
+                      <input
+                        type="file"
+                        ref={evidenceInputRef}
+                        accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                        disabled={showUploadProgress === activeQuestion.id}
+                        onChange={(event) => {
+                          const picked = event.target.files?.[0];
+                          if (!picked) return;
+                          void onUploadEvidence(picked);
+                        }}
+                        className="max-w-full rounded-lg border border-[#d4dced] bg-white px-2 py-1 text-xs text-[#3f5677] disabled:cursor-not-allowed disabled:opacity-60"
+                      />
+                      {showUploadProgress === activeQuestion.id ? (
+                        <p className="text-xs text-[#607594]">{t('evidence.uploading')}</p>
+                      ) : null}
+                    </div>
                     {/* Display new file preview */}
                     {(() => {
                       const selectedFile = selectedEvidenceFiles[activeQuestion.id];
                       const previewUrl = evidencePreviewUrls[activeQuestion.id];
                       if (!selectedFile || !previewUrl) return null;
-                      
+
                       return (
                         <div className="mt-2 max-w-[160px] overflow-visible rounded-md border border-[#dbe4f4] bg-white">
                           <div className="relative">
@@ -1808,48 +1819,52 @@ export default function AssessmentPage() {
                       );
                     })()}
                   </div>
-                ) : null}
+                )}
 
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap gap-2">
-                    {/* Only show save button if auto-save failed or for manual override */}
-                    {!autoSaving[activeQuestion.id] && (
-                      <button
-                        type="button"
-                        onClick={() => void onSaveAnswer()}
-                        disabled={loading}
-                        className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {loading
-                          ? t('buttons.saving')
-                          : activeQuestion && persistedAnswerByQuestionId[activeQuestion.id]
-                            ? t('buttons.updateAnswer')
-                            : t('buttons.saveAnswer')}
-                      </button>
-                    )}
-                    {autoSaving[activeQuestion.id] && (
-                      <div className="flex items-center gap-2 text-sm text-[#607594]">
-                        <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
-                        <span>{t('buttons.autoSaving')}</span>
-                      </div>
-                    )}
-                    {isOnLastQuestion ? (
-                      <button
-                        type="button"
-                        onClick={() => void onSubmitAssessment()}
-                        disabled={loading || submittingAssessment || !areAllQuestionsAnswered}
-                        className="rounded-lg border border-[#2f9960] bg-[#e9f8ef] px-3 py-2 text-sm text-[#2f9960] disabled:cursor-not-allowed disabled:opacity-60"
-                        title={
-                          areAllQuestionsAnswered
-                            ? t('buttons.submitAssessment')
-                            : t('buttons.answerAllBeforeSubmitting')
-                        }
-                      >
-                        {submittingAssessment ? t('actions.submitting') : t('actions.submit')}
-                      </button>
-                    ) : null}
+                {!isSubmittedReadOnly && (
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {/* Only show save button if auto-save failed or for manual override */}
+                      {!autoSaving[activeQuestion.id] && (
+                        <button
+                          type="button"
+                          onClick={() => void onSaveAnswer()}
+                          disabled={loading}
+                          className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {loading
+                            ? t('buttons.saving')
+                            : activeQuestion && persistedAnswerByQuestionId[activeQuestion.id]
+                              ? t('buttons.updateAnswer')
+                              : t('buttons.saveAnswer')}
+                        </button>
+                      )}
+                      {autoSaving[activeQuestion.id] && (
+                        <div className="flex items-center gap-2 text-sm text-[#607594]">
+                          <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
+                          <span>{t('buttons.autoSaving')}</span>
+                        </div>
+                      )}
+                      {isOnLastQuestion ? (
+                        <button
+                          type="button"
+                          onClick={() => void onSubmitAssessment()}
+                          disabled={loading || submittingAssessment || !areAllQuestionsAnswered}
+                          className="rounded-lg border border-[#2f9960] bg-[#e9f8ef] px-3 py-2 text-sm text-[#2f9960] disabled:cursor-not-allowed disabled:opacity-60"
+                          title={
+                            areAllQuestionsAnswered
+                              ? t('buttons.submitAssessment')
+                              : t('buttons.answerAllBeforeSubmitting')
+                          }
+                        >
+                          {submittingAssessment ? t('actions.submitting') : t('actions.submit')}
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap justify-end gap-2">
+                )}
+
+                <div className="flex flex-wrap justify-end gap-2">
                   {isOnLastQuestionOfSection && nextSectionWithQuestions ? (
                     <button
                       type="button"
@@ -1878,7 +1893,6 @@ export default function AssessmentPage() {
                   >
                     Next
                   </button>
-                  </div>
                 </div>
               </>
             ) : null}

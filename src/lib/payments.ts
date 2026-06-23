@@ -130,3 +130,13 @@ export async function upsertChecklistStripePrice(payload: {
   }
   throw lastError instanceof Error ? lastError : new Error('Failed to update checklist Stripe pricing.');
 }
+
+export type PurchaseEligibilityResponse = {
+  checklist_id: string;
+  can_purchase: boolean;
+  reason: string | null;
+};
+
+export async function checkPurchaseEligibility(checklistId: string) {
+  return apiGetWithAuth<PurchaseEligibilityResponse>(`/payments/purchase-eligibility/${checklistId}`);
+}

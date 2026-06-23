@@ -219,6 +219,15 @@ export default function DashboardPage() {
                     >
                       {t('actions.start')}
                     </Link>
+                  ) : item.status === 'expired' ? (
+                    <span className="shrink-0 text-xs text-[#94a3b8]">{t('status.expired')}</span>
+                  ) : item.status === 'submitted' || item.status === 'closed' ? (
+                    <Link
+                      className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
+                      href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&readonly=true`}
+                    >
+                      {t('actions.viewPerformance')}
+                    </Link>
                   ) : (
                     <Link
                       className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
@@ -247,12 +256,23 @@ export default function DashboardPage() {
                       {formatPreciseAccessCountdown(item.expires_at, locale, countdownNowMs) ?? '—'} • {item.completion_percent}% {t('labels.complete')}
                     </p>
                   </div>
-                  <Link
-                    className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
-                    href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
-                  >
-                    {t('actions.continue')}
-                  </Link>
+                  {item.status === 'submitted' || item.status === 'closed' ? (
+                    <Link
+                      className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
+                      href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&readonly=true`}
+                    >
+                      {t('actions.viewPerformance')}
+                    </Link>
+                  ) : item.status === 'expired' ? (
+                    <span className="shrink-0 text-xs text-[#94a3b8]">{t('status.expired')}</span>
+                  ) : (
+                    <Link
+                      className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
+                      href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
+                    >
+                      {t('actions.continue')}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -303,7 +323,7 @@ export default function DashboardPage() {
                     <div className="flex flex-col items-end gap-1">
                       {canViewPerformance ? (
                         <Link
-                          href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&view=performance`}
+                          href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&readonly=true`}
                           className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
                         >
                           {t('actions.viewPerformance')}

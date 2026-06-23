@@ -90,9 +90,9 @@ export type CreateAdminProductPayload = {
   category_code: string;
   name: string;
   slug?: string;
-  short_description?: string;
-  description?: string;
-  benefits?: string;
+  short_description?: string | null;
+  description?: string | null;
+  benefits?: string | null;
   product_kind?: ProductKind;
   status?: ProductStatus;
   checklist_id?: string;
@@ -101,11 +101,11 @@ export type CreateAdminProductPayload = {
   parent_product_id?: string;
   display_order?: number;
   is_featured?: boolean;
-  brochure_pdf_url?: string;
+  brochure_pdf_url?: string | null;
   documentation_files?: DocumentationFile[];
-  hero_image_url?: string;
-  external_url?: string;
-  cta_label?: string;
+  hero_image_url?: string | null;
+  external_url?: string | null;
+  cta_label?: string | null;
 };
 
 export type UpdateAdminProductPayload = Partial<CreateAdminProductPayload>;
