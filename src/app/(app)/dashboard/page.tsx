@@ -220,14 +220,32 @@ export default function DashboardPage() {
                       {t('actions.start')}
                     </Link>
                   ) : item.status === 'expired' ? (
-                    <span className="shrink-0 text-xs text-[#94a3b8]">{t('status.expired')}</span>
+                    item.report_status === 'published' && item.report_id ? (
+                      <Link
+                        className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
+                        href={`/reports/${item.report_id}`}
+                      >
+                        {t('actions.viewReport')}
+                      </Link>
+                    ) : (
+                      <span className="shrink-0 text-xs text-[#94a3b8]">{t('status.expired')}</span>
+                    )
                   ) : item.status === 'submitted' || item.status === 'closed' ? (
-                    <Link
-                      className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
-                      href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&readonly=true`}
-                    >
-                      {t('actions.viewPerformance')}
-                    </Link>
+                    item.report_status === 'published' && item.report_id ? (
+                      <Link
+                        className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
+                        href={`/reports/${item.report_id}`}
+                      >
+                        {t('actions.viewReport')}
+                      </Link>
+                    ) : (
+                      <Link
+                        className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"
+                        href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&readonly=true`}
+                      >
+                        {t('actions.viewPerformance')}
+                      </Link>
+                    )
                   ) : (
                     <Link
                       className="shrink-0 rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#223657]"

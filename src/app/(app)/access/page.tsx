@@ -142,7 +142,7 @@ export default function AccessPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, debouncedSearch, loadErrorText]);
+  }, [page, statusFilter, debouncedSearch, loadErrorText, locale]);
 
   const loadMeta = useCallback(async () => {
     try {
@@ -168,7 +168,7 @@ export default function AccessPage() {
       setAvailableChecklists([]);
       setAccessByChecklist(new Map());
     }
-  }, []);
+  }, [locale]);
 
   const statusFilterLabel = useMemo(() => {
     const option = STATUS_FILTER_OPTIONS.find((item) => item.value === statusFilter);
@@ -585,7 +585,7 @@ export default function AccessPage() {
                               </Link>
                             ) : null}
 
-                            {reportId && accessActive && item.status !== 'expired' ? (
+                            {reportId ? (
                               <Link href={`/reports/${reportId}` as Route} className={workspacePrimaryBtn}>
                                 {t('actions.viewReport')}
                                 <ArrowRightIcon />

@@ -12,7 +12,7 @@ import {
   getUserDisplayName,
   getUserShortDisplayName,
 } from '@/lib/auth';
-import { translate, useLocale } from '@/lib/i18n';
+import { persistLocaleToProfile, translate, useLocale } from '@/lib/i18n';
 import { siteHeaderMessages } from '@/locales/site-header';
 
 type CustomerSession = {
@@ -98,6 +98,7 @@ export function SiteHeader() {
 
   const selectLocale = (next: 'cs' | 'en') => {
     setLocale(next);
+    persistLocaleToProfile(next);
     setLangOpenDesktop(false);
     setLangOpenMobile(false);
   };

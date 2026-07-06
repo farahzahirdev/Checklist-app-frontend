@@ -88,6 +88,22 @@ export function useLocale() {
   return { locale, setLocale };
 }
 
+/** Keep account preferred_language aligned with the UI language switcher. */
+export function persistLocaleToProfile(locale: Locale) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  const token = window.localStorage.getItem('checklist_access_token');
+  if (!token) {
+    return;
+  }
+  void import('@/lib/customer-profile')
+    .then(({ updateCustomerProfile }) => updateCustomerProfile({ preferred_language: locale }))
+    .catch(() => {
+      // Profile sync is best-effort; API content still follows Accept-Language.
+    });
+}
+
 export function translate(
   messages: TranslationMessages,
   locale: Locale,

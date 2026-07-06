@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { translate, useLocale, type Locale } from '@/lib/i18n';
+import { persistLocaleToProfile, translate, useLocale, type Locale } from '@/lib/i18n';
 import { customerLayoutMessages } from '@/locales/customer-layout';
 
 export function CustomerLanguageSwitcher({ fullWidth = false }: { fullWidth?: boolean }) {
@@ -25,6 +25,7 @@ export function CustomerLanguageSwitcher({ fullWidth = false }: { fullWidth?: bo
 
   function choose(next: Locale) {
     setLocale(next);
+    persistLocaleToProfile(next);
     setOpen(false);
   }
 
