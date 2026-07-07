@@ -19,6 +19,8 @@ export default function DashboardPage() {
   const { locale } = useLocale();
   const t = (key: string) => translate(customerDashboardMessages, locale, key);
   const [summary, setSummary] = useState<CustomerDashboardSummary | null>(null);
+  const [kpiActiveCount, setKpiActiveCount] = useState<number | null>(null);
+  const [kpiCompletedCount, setKpiCompletedCount] = useState<number | null>(null);
   const [enhanced, setEnhanced] = useState<CustomerDashboardEnhanced | null>(null);
   const [assessments, setAssessments] = useState<CustomerAssessmentListItem[]>([]);
   const [pastAssessments, setPastAssessments] = useState<CustomerAssessmentListItem[]>([]);
@@ -35,14 +37,18 @@ export default function DashboardPage() {
     setError('');
     setPermissionBlocked(false);
     try {
-      const [summaryResponse, enhancedResponse, assessmentsResponse, pastAssessmentsResponse, reportsResponse] = await Promise.all([
+      const [summaryResponse, enhancedResponse, assessmentsResponse, pastAssessmentsResponse, reportsResponse, activeTotal, completedTotal] = await Promise.all([
         getCustomerDashboardSummary(),
         getCustomerDashboardEnhanced().catch(() => null),
         listCustomerAssessments({ sort_by: 'updated_at', sort_order: 'desc', limit: 20 }).catch(() => null),
         listCustomerAssessments({ status: ['submitted', 'closed', 'expired'], sort_by: 'updated_at', sort_order: 'desc', limit: 20 }).catch(() => null),
         getCustomerReports().catch(() => []),
+        listCustomerAssessments({ status: ['not_started', 'in_progress'], limit: 1 }).catch(() => ({ total: 0 })),
+        listCustomerAssessments({ status: ['submitted', 'closed'], limit: 1 }).catch(() => ({ total: 0 })),
       ]);
       setSummary(summaryResponse);
+      setKpiActiveCount(activeTotal.total ?? 0);
+      setKpiCompletedCount(completedTotal.total ?? 0);
       setEnhanced(enhancedResponse);
       setAssessments(assessmentsResponse?.assessments ?? []);
       setPastAssessments(pastAssessmentsResponse?.assessments ?? []);
@@ -60,7 +66,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     void loadDashboard();
-  }, []);
+  }, [locale]);
 
   return (
     <section className="space-y-6">
@@ -103,13 +109,13 @@ export default function DashboardPage() {
         <article className="rounded-2xl border border-[#345793] bg-[#0d1d3a] p-5">
           <p className="text-sm text-[#97a5bb]">{t('kpi.activeAssessments')}</p>
           <p className="mt-2 text-3xl font-semibold text-white">
-            {summary?.active_assessments_count ?? (loading ? '...' : 0)}
+            {kpiActiveCount ?? summary?.active_assessments_count ?? (loading ? '...' : 0)}
           </p>
         </article>
         <article className="rounded-2xl border border-[#345793] bg-[#0d1d3a] p-5">
           <p className="text-sm text-[#97a5bb]">{t('kpi.submittedAssessments')}</p>
           <p className="mt-2 text-3xl font-semibold text-white">
-            {summary?.submitted_assessments_count ?? (loading ? '...' : 0)}
+            {kpiCompletedCount ?? summary?.submitted_assessments_count ?? (loading ? '...' : 0)}
           </p>
         </article>
       </div>

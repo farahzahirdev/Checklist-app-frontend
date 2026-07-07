@@ -84,7 +84,7 @@ function formatRelativeTime(value: string | null | undefined, locale: string): s
 
 function resolveCardStatus(row: MyAuditRow): AuditCardStatus {
   if (row.assessment?.has_report) return 'reportReady';
-  if (row.assessment?.status === 'submitted') return 'completed';
+  if (row.assessment?.status === 'submitted' || row.assessment?.status === 'closed') return 'completed';
   if (row.assessment?.status === 'in_progress') return 'inProgress';
   return 'ready';
 }
@@ -108,7 +108,7 @@ function workspaceHref(row: MyAuditRow): Route {
     }
     return `/assessment?checklist_id=${encodeURIComponent(row.checklistId)}` as Route;
   }
-  if (assessment?.status === 'submitted' || assessment?.has_report) {
+  if (assessment?.status === 'submitted' || assessment?.status === 'closed' || assessment?.has_report) {
     return row.assessment?.has_report ? ('/reports' as Route) : (`/assessment?checklist_id=${encodeURIComponent(row.checklistId)}` as Route);
   }
   return `/access?checklist_id=${encodeURIComponent(row.checklistId)}` as Route;
@@ -136,9 +136,9 @@ function progressPercent(row: MyAuditRow): number {
 }
 
 function assessmentPickPriority(assessment: CustomerAssessmentListItem): number {
-  if (assessment.status === 'in_progress') return 4;
+  if (assessment.status === 'in_progress') return 5;
+  if (assessment.status === 'submitted' || assessment.status === 'closed') return 4;
   if (assessment.status === 'not_started') return 3;
-  if (assessment.status === 'submitted') return 2;
   if (assessment.status === 'expired') return 1;
   return 0;
 }
@@ -341,7 +341,7 @@ export function buildRecentActivity(rows: MyAuditRow[], locale: string, t: Trans
     const time = Date.parse(timeRaw ?? '');
     if (Number.isNaN(time)) continue;
 
-    if (assessment.status === 'submitted' || assessment.has_report) {
+    if (assessment.status === 'submitted' || assessment.status === 'closed' || assessment.has_report) {
       items.push({
         id: `${row.checklistId}-done`,
         label: t('activity.completed').replace('{title}', row.title),
@@ -619,12 +619,25 @@ export function CustomerMyAuditsView({
                     row.assessment?.submitted_at ?? row.assessment?.last_activity ?? row.purchased.last_payment_date,
                     locale,
                   );
+                  const isHistorical =
+                    row.assessment?.status === 'expired' ||
+                    row.assessment?.status === 'submitted' ||
+                    row.assessment?.status === 'closed';
+                  const accessStart = isHistorical
+                    ? row.assessment?.access_window_started_at ?? null
+                    : row.access?.start_date ?? row.assessment?.access_window_started_at ?? null;
+                  const accessEnd = isHistorical
+                    ? row.assessment?.access_window_expires_at ?? row.assessment?.expires_at ?? null
+                    : row.access?.end_date ??
+                      row.assessment?.access_window_expires_at ??
+                      row.assessment?.expires_at ??
+                      null;
                   const accessRange =
-                    row.access && row.access.start_date && row.access.end_date
-                      ? `${formatDate(row.access.start_date, locale)} – ${formatDate(row.access.end_date, locale)}`
+                    accessStart && accessEnd
+                      ? `${formatDate(accessStart, locale)} – ${formatDate(accessEnd, locale)}`
                       : '—';
-                  const accessCountdown = formatPreciseAccessCountdown(row.access?.end_date, locale, countdownNowMs);
-                  const accessActive = hasAccessTimeRemaining(row.access?.end_date, countdownNowMs);
+                  const accessCountdown = formatPreciseAccessCountdown(accessEnd, locale, countdownNowMs);
+                  const accessActive = hasAccessTimeRemaining(accessEnd, countdownNowMs);
 
                   return (
                     <li key={row.checklistId} className={`${cardClass} overflow-hidden`}>
@@ -687,7 +700,7 @@ export function CustomerMyAuditsView({
                               <div className="min-w-0">
                                 <p className="text-xs text-[#64748b]">{t('card.accessWindow')}</p>
                                 <p className="break-words font-semibold text-[#0f172a]">{accessRange}</p>
-                                {row.access && accessActive ? (
+                                {accessActive ? (
                                   <p className="text-xs font-semibold text-[#16a34a]">
                                     {accessCountdown ?? t('card.accessExpired')}
                                   </p>

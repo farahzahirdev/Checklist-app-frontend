@@ -218,6 +218,11 @@ export default function AccessPage() {
 
   const filtered = assessments;
 
+  const startableChecklists = useMemo(
+    () => availableChecklists.filter((item) => item.can_start),
+    [availableChecklists],
+  );
+
   const recentActivity = useMemo(
     () =>
       assessments
@@ -403,11 +408,11 @@ export default function AccessPage() {
             </div>
 
           {/* Available Checklists Section */}
-          {!loading && availableChecklists.length > 0 && (
+          {!loading && startableChecklists.length > 0 && (
             <div className="mb-6">
               <h3 className="mb-3 text-lg font-semibold text-[#0f172a]">{t('section.availableChecklists')}</h3>
               <ul className="space-y-3">
-                {availableChecklists.map((item) => (
+                {startableChecklists.map((item) => (
                   <li key={item.checklist_id} className={`${workspaceCardClass} overflow-hidden`}>
                     <div className="px-5 py-4 sm:px-6">
                       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -467,10 +472,20 @@ export default function AccessPage() {
                 const reportId = item.report_status === 'published' && item.report_id ? item.report_id : null;
                 const canViewPerformance = item.status === 'submitted' || item.status === 'closed';
                 const isCompleted = item.status === 'submitted' || item.status === 'closed';
-                const access = accessByChecklist.get(item.checklist_id);
+                // Only overlay the live access window for active audits. Historical rows
+                // (expired/submitted/closed) must keep their own purchase window dates.
+                const isHistorical =
+                  item.status === 'expired' || item.status === 'submitted' || item.status === 'closed';
+                const activeAccess = isHistorical ? undefined : accessByChecklist.get(item.checklist_id);
                 const accessEnd =
-                  access?.end_date ?? item.access_window_expires_at ?? item.expires_at ?? null;
-                const accessStart = access?.start_date ?? item.access_window_started_at ?? null;
+                  (isHistorical ? null : activeAccess?.end_date) ??
+                  item.access_window_expires_at ??
+                  item.expires_at ??
+                  null;
+                const accessStart =
+                  (isHistorical ? null : activeAccess?.start_date) ??
+                  item.access_window_started_at ??
+                  null;
                 const accessRange =
                   accessStart && accessEnd
                     ? `${formatDate(accessStart, locale)} – ${formatDate(accessEnd, locale)}`
@@ -542,7 +557,7 @@ export default function AccessPage() {
                                 {startingId === item.id ? t('actions.processing') : t('actions.startAudit')}
                                 <ArrowRightIcon />
                               </button>
-                            ) : isCompleted && availableChecklists.some(available => available.checklist_id === item.checklist_id) ? (
+                            ) : isCompleted && startableChecklists.some((available) => available.checklist_id === item.checklist_id) ? (
                               <button
                                 type="button"
                                 onClick={() => {
