@@ -1164,7 +1164,7 @@ export default function AssessmentPage() {
     try {
       const currentAssessmentId = await ensureCurrentAssessmentId();
       await uploadAssessmentEvidence(currentAssessmentId, activeQuestion.id, selectedFile);
-      setMessage(t('messages.evidenceUploaded'));
+      // Don't show success text behind the modal yet — wait for progress UI to reach 100%.
       setUploadSucceeded(true);
 
       // Keep the progress modal open so its Scan → Encrypt → Store UI can finish.
@@ -1921,6 +1921,7 @@ export default function AssessmentPage() {
                 onComplete={() => {
                   setShowUploadProgress(null);
                   setUploadSucceeded(null);
+                  setMessage(t('messages.evidenceUploaded'));
                   toast.success(t('toasts.evidenceUploaded'));
                   setSelectedEvidenceFiles(prev => ({ ...prev, [currentQuestionId]: null }));
                 }}
