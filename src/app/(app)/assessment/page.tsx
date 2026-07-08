@@ -375,6 +375,7 @@ export default function AssessmentPage() {
     uploaded_at?: string;
   }>>>({});
   const [showUploadProgress, setShowUploadProgress] = useState<string | null>(null);
+  const [uploadSucceeded, setUploadSucceeded] = useState<boolean | null>(null);
   const [submittingAssessment, setSubmittingAssessment] = useState(false);
   const [previewUrlsByMediaId, setPreviewUrlsByMediaId] = useState<Record<string, string>>({});
   const [previewErrorsByMediaId, setPreviewErrorsByMediaId] = useState<Record<string, string>>({});
@@ -1158,24 +1159,24 @@ export default function AssessmentPage() {
 
     setError('');
     setMessage('');
+    setUploadSucceeded(null);
     setShowUploadProgress(activeQuestion.id);
     try {
       const currentAssessmentId = await ensureCurrentAssessmentId();
       await uploadAssessmentEvidence(currentAssessmentId, activeQuestion.id, selectedFile);
       setMessage(t('messages.evidenceUploaded'));
-      toast.success(t('toasts.evidenceUploaded'));
-      setSelectedEvidenceFiles(prev => ({ ...prev, [activeQuestion.id]: null }));
-      
-      // Refresh assessment detail to get updated evidence files
+      setUploadSucceeded(true);
+
+      // Keep the progress modal open so its Scan → Encrypt → Store UI can finish.
+      // onComplete closes the modal after the animation completes.
       try {
         const updatedDetail = await getCurrentAssessmentDetail(checklistIdFromQuery);
         setAssessmentDetail(updatedDetail);
-        
-        // Update existing evidence files for this question
+
         const currentQuestion = updatedDetail.sections
           .flatMap(s => flattenSectionQuestions(s.id, s.title, s.questions))
           .find(q => q.id === activeQuestion.id);
-          
+
         if (currentQuestion?.evidence_files) {
           setExistingEvidenceFiles(prev => ({
             ...prev,
@@ -1189,7 +1190,7 @@ export default function AssessmentPage() {
       const errorMessage = err instanceof Error ? err.message : 'Failed to upload evidence.';
       setError(errorMessage);
       toast.error(errorMessage);
-    } finally {
+      setUploadSucceeded(false);
       setShowUploadProgress(null);
     }
   }
@@ -1916,13 +1917,16 @@ export default function AssessmentPage() {
               <SecureUploadProgress
                 fileName={selectedFile.name}
                 fileSize={selectedFile.size}
-                onComplete={(result) => {
+                uploadSucceeded={uploadSucceeded}
+                onComplete={() => {
                   setShowUploadProgress(null);
+                  setUploadSucceeded(null);
                   toast.success(t('toasts.evidenceUploaded'));
                   setSelectedEvidenceFiles(prev => ({ ...prev, [currentQuestionId]: null }));
                 }}
                 onError={(error) => {
                   setShowUploadProgress(null);
+                  setUploadSucceeded(null);
                   toast.error(error);
                 }}
               />

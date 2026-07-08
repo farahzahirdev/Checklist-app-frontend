@@ -61,6 +61,8 @@ const KeyIcon = ({ className }: { className?: string }) => (
 interface UploadProgressProps {
   fileName: string;
   fileSize: number;
+  /** When provided, modal waits for real upload before reaching "complete". null = still uploading. */
+  uploadSucceeded?: boolean | null;
   onComplete: (result: any) => void;
   onError: (error: string) => void;
 }
@@ -75,7 +77,13 @@ interface StageConfig {
   progress: number;
 }
 
-export default function SecureUploadProgress({ fileName, fileSize, onComplete, onError }: UploadProgressProps) {
+export default function SecureUploadProgress({
+  fileName,
+  fileSize,
+  uploadSucceeded = null,
+  onComplete,
+  onError,
+}: UploadProgressProps) {
   const [currentStage, setCurrentStage] = useState<UploadStage>('scanning');
   const [progress, setProgress] = useState(0);
   const [scanResult, setScanResult] = useState<'clean' | 'infected' | null>(null);
@@ -126,52 +134,71 @@ export default function SecureUploadProgress({ fileName, fileSize, onComplete, o
   };
 
   useEffect(() => {
-    const stageConfig = stages[currentStage];
-    
-    if (currentStage === 'scanning') {
-      // Simulate malware scan
-      const scanTimer = setTimeout(() => {
-        // 95% chance of clean scan for demo
-        const isClean = Math.random() > 0.05;
-        if (isClean) {
-          setScanResult('clean');
-          setCurrentStage('encrypting');
-          setProgress(20);
-        } else {
-          setScanResult('infected');
-          setCurrentStage('error');
-          onError('Security scan detected potential threats. File upload blocked.');
-        }
-      }, stageConfig.duration);
-      return () => clearTimeout(scanTimer);
-    } else if (currentStage !== 'complete' && currentStage !== 'error') {
-      const progressInterval = setInterval(() => {
-        setProgress((prev) => {
-          const next = prev + 2;
-          if (next >= stageConfig.progress) {
-            clearInterval(progressInterval);
-            
-            // Move to next stage
-            const stageOrder: UploadStage[] = ['scanning', 'encrypting', 'storing', 'decrypting', 'complete'];
-            const currentIndex = stageOrder.indexOf(currentStage);
-            if (currentIndex < stageOrder.length - 1) {
-              setTimeout(() => {
-                setCurrentStage(stageOrder[currentIndex + 1]);
-              }, 300);
-            } else if (currentStage === 'decrypting') {
-              setTimeout(() => {
-                setCurrentStage('complete');
-                // Don't call onComplete automatically - wait for user to click OK
-              }, 300);
-            }
-          }
-          return next;
-        });
-      }, 50);
-      
-      return () => clearInterval(progressInterval);
+    if (currentStage === 'complete') {
+      setProgress(100);
+      return;
     }
-  }, [currentStage, fileName, fileSize, onError]);
+    if (currentStage === 'error') {
+      return;
+    }
+
+    const stageConfig = stages[currentStage];
+    const stageOrder: UploadStage[] = ['scanning', 'encrypting', 'storing', 'decrypting', 'complete'];
+    const startProgress =
+      currentStage === 'scanning' ? 0 :
+      currentStage === 'encrypting' ? 20 :
+      currentStage === 'storing' ? 50 :
+      75;
+
+    // Animate progress during every active stage (including scanning).
+    // Previously scanning left the bar stuck at 0% for the whole scan duration.
+    const steps = Math.max(stageConfig.progress - startProgress, 1);
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= stageConfig.progress) {
+          return stageConfig.progress;
+        }
+        return Math.min(prev + 1, stageConfig.progress);
+      });
+    }, Math.max(30, Math.floor(stageConfig.duration / steps)));
+
+    const stageTimer = setTimeout(() => {
+      if (currentStage === 'scanning') {
+        setScanResult('clean');
+        setProgress(20);
+        setCurrentStage('encrypting');
+        return;
+      }
+
+      // Hold on the last animated stage until the real upload succeeds.
+      if (currentStage === 'decrypting' && uploadSucceeded !== true) {
+        setProgress(stageConfig.progress);
+        return;
+      }
+
+      const currentIndex = stageOrder.indexOf(currentStage);
+      if (currentIndex < stageOrder.length - 1) {
+        setProgress(stageConfig.progress);
+        setCurrentStage(stageOrder[currentIndex + 1]);
+      }
+    }, stageConfig.duration);
+
+    return () => {
+      clearInterval(progressInterval);
+      clearTimeout(stageTimer);
+    };
+  }, [currentStage, fileName, fileSize, onError, uploadSucceeded]);
+
+  // Resume to complete once the real upload finishes and animation has advanced enough.
+  useEffect(() => {
+    if (uploadSucceeded === true && currentStage !== 'complete' && currentStage !== 'error' && currentStage !== 'scanning') {
+      setProgress(100);
+      setCurrentStage('complete');
+    }
+    if (uploadSucceeded === false) {
+      setCurrentStage('error');
+    }
+  }, [uploadSucceeded, currentStage]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
