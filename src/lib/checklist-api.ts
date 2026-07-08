@@ -805,6 +805,22 @@ export async function createChecklistBulkImport(payload: {
   });
 }
 
+export async function replaceChecklistBulkImport(
+  checklistId: string,
+  payload: {
+    file_content: string;
+    file_name: string;
+    column_mapping: BulkImportColumnMapping;
+    checklist_title?: string;
+    checklist_description?: string;
+  },
+): Promise<BulkImportCreateResponse> {
+  return apiPost<BulkImportCreateResponse, typeof payload>(
+    `/admin/checklists/${checklistId}/bulk/replace`,
+    payload,
+  );
+}
+
 export async function getChecklistBulkImportTaskStatus(taskId: string): Promise<BulkImportTaskStatus> {
   return apiGetWithAuth<BulkImportTaskStatus>(`/admin/checklists/bulk/tasks/${taskId}`);
 }

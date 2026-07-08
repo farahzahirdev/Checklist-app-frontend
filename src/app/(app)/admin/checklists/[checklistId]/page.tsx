@@ -36,6 +36,7 @@ import { getMediaPreviewUrl } from '@/lib/assessment';
 import { translate, useLocale } from '@/lib/i18n';
 import { adminChecklistBuilderMessages } from '@/locales/admin-checklist-builder';
 import { AdminLanguageSwitcher } from '@/components/admin-language-switcher';
+import { BulkReplaceChecklistModal } from '@/components/admin/bulk-replace-checklist-modal';
 import { ADMIN_BUILDER_HEADER_TITLE_CLASS } from '@/app/(app)/admin/admin-page-title';
 
 type RiskLevel = 'low' | 'medium' | 'high';
@@ -344,6 +345,7 @@ export default function ChecklistPanelBuilderPage() {
     questionId: string;
     isSubQuestion: boolean;
   } | null>(null);
+  const [isBulkReplaceModalOpen, setIsBulkReplaceModalOpen] = useState(false);
   const [uploadingMediaKey, setUploadingMediaKey] = useState<string | null>(null);
   const [newQuestionImagePreviewUrl, setNewQuestionImagePreviewUrl] = useState('');
   const [editQuestionImagePreview, setEditQuestionImagePreview] = useState<{ questionId: string; url: string } | null>(null);
@@ -1665,14 +1667,28 @@ export default function ChecklistPanelBuilderPage() {
                     />
                   </div>
                   {!isReadOnly ? (
-                    <button
-                      type="button"
-                      onClick={() => void handleSaveChecklist()}
-                      disabled={checklistActionLoading}
-                      className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
-                    >
-                      {checklistActionLoading ? t('checklist.saving') : t('checklist.save')}
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleSaveChecklist()}
+                        disabled={checklistActionLoading}
+                        className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-xs font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
+                      >
+                        {checklistActionLoading ? t('checklist.saving') : t('checklist.save')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsBulkReplaceModalOpen(true)}
+                        disabled={status !== 'draft'}
+                        title={status !== 'draft' ? t('checklist.replacePublishedHint') : undefined}
+                        className="rounded-lg border border-[#2d4f83] bg-white px-3 py-2 text-xs font-semibold text-[#25375a] hover:bg-[#f7f9fe] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {t('checklist.replaceFromExcel')}
+                      </button>
+                    </div>
+                  ) : null}
+                  {!isReadOnly && status !== 'draft' ? (
+                    <p className="text-xs text-[#5f7395]">{t('checklist.replacePublishedHint')}</p>
                   ) : null}
                 </fieldset>
               </div>
@@ -2482,6 +2498,19 @@ export default function ChecklistPanelBuilderPage() {
               </div>
             </div>
           </div>
+        ) : null}
+
+        {!isReadOnly ? (
+          <BulkReplaceChecklistModal
+            checklistId={checklistId}
+            checklistTitle={title}
+            checklistDescription={lawDecree}
+            open={isBulkReplaceModalOpen}
+            onClose={() => setIsBulkReplaceModalOpen(false)}
+            onCompleted={() => {
+              void handleRefreshChecklist();
+            }}
+          />
         ) : null}
       </div>
       {isBuilderLoading ? (
