@@ -314,7 +314,6 @@ export default function ProductDetailPage() {
   const productDetail = resolved?.kind === 'audit' ? resolved.publicProductDetail : apiDetail;
   const productShortDescription = (productDetail?.short_description ?? '').trim();
   const productDescription = (productDetail?.description ?? '').trim();
-  const productBenefits = (productDetail?.benefits ?? '').trim();
   const apiIconKind = useMemo(
     () => (apiDetail ? pickAuditIconKind(apiDetail.checklist_type?.checklist_type_code, 0) : 'clipboard'),
     [apiDetail],
@@ -571,19 +570,12 @@ export default function ProductDetailPage() {
 
                 {productDescription ? (
                   <section>
-                    {/* <h2 className="text-xl font-semibold text-[#1f2741]">{t('detail.descriptionTitle')}</h2> */}
-                    {/* <RichTextBlock html={productDescription} className="mt-3 text-[#5e7293]" /> */}
+                    <h2 className="text-xl font-semibold text-[#1f2741]">{t('detail.descriptionTitle')}</h2>
+                    <RichTextBlock html={productDescription} className="mt-3 text-[#5e7293]" />
                   </section>
                 ) : null}
 
-                {productBenefits ? (
-                  <section>
-                    {/* <h2 className="text-xl font-semibold text-[#1f2741]">{t('detail.benefitsTitle')}</h2> */}
-                    {/* <RichTextBlock html={productBenefits} className="mt-3" /> */}
-                  </section>
-                ) : null}
-
-                {!productShortDescription ? (
+                {!productShortDescription && !productDescription ? (
                   <p className="text-sm leading-relaxed text-[#5e7293]">{t('browse.apiSubtitleFallback')}</p>
                 ) : null}
 
