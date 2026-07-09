@@ -26,10 +26,12 @@ import {
   updateAdminProductCategory,
   type AdminProduct,
   type AdminProductCategory,
+  type CreateAdminProductPayload,
   type DocumentationFile,
   type ProductKind,
   type ProductStatus,
 } from '@/lib/admin-products';
+import { getApiBaseUrl } from '@/lib/api';
 
 const statusClass: Record<string, string> = {
   published: 'bg-[#e9f8ef] text-[#2f9960]',
@@ -216,6 +218,15 @@ function optionalNullableText(value: string): string | null {
   return trimmed ? trimmed : null;
 }
 
+function absoluteMediaUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const base = getApiBaseUrl().replace(/\/$/, '');
+  const path = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return `${base}${path}`;
+}
+
 function categoryToForm(category: AdminProductCategory): CategoryFormState {
   return {
     code: category.code,
@@ -318,7 +329,7 @@ export default function AdminProductsPage() {
     }
   }
 
-  function buildProductPayload() {
+  function buildProductPayload(): CreateAdminProductPayload {
     const displayOrder = Number.parseInt(productForm.display_order, 10);
     return {
       name: productForm.name.trim(),
@@ -330,7 +341,11 @@ export default function AdminProductsPage() {
       product_kind: productForm.product_kind,
       status: productForm.status,
       brochure_pdf_url: optionalNullableText(productForm.brochure_pdf_url),
-      documentation_files: productForm.documentation_files.length > 0 ? productForm.documentation_files : undefined,
+      documentation_files: productForm.documentation_files.map((file) => ({
+        url: file.url,
+        filename: file.filename,
+        file_type: file.file_type,
+      })),
       hero_image_url: optionalNullableText(productForm.hero_image_url),
       external_url: optionalNullableText(productForm.external_url),
       cta_label: optionalNullableText(productForm.cta_label),
@@ -893,17 +908,6 @@ export default function AdminProductsPage() {
                     t={t}
                   />
                 </div>
-                <div className="space-y-1 md:col-span-2">
-                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">
-                    {t('form.benefits')}
-                  </span>
-                  <TipTapRichTextEditor
-                    value={productForm.benefits}
-                    onChange={(value) => setProductForm((previous) => ({ ...previous, benefits: value }))}
-                    placeholder={t('form.benefitsPlaceholder')}
-                    t={t}
-                  />
-                </div>
                 <label className="space-y-1 md:col-span-2">
                   <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.documentationFiles')}</span>
                   <div className="flex flex-col gap-2">
@@ -914,7 +918,7 @@ export default function AdminProductsPage() {
                             <div className="flex items-center gap-2">
                               <span className="text-[#456087]">{file.filename}</span>
                               <a
-                                href={file.url}
+                                href={absoluteMediaUrl(file.url)}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="text-xs font-semibold text-[#3e69b0] hover:underline"
@@ -1018,6 +1022,7 @@ export default function AdminProductsPage() {
                     value={productForm.external_url}
                     onChange={(event) => setProductForm((previous) => ({ ...previous, external_url: event.target.value }))}
                     disabled={loadingProductDetail}
+                    placeholder={t('form.externalUrlPlaceholder')}
                     className={INPUT_CLASS}
                   />
                 </label>
@@ -1027,6 +1032,7 @@ export default function AdminProductsPage() {
                     value={productForm.cta_label}
                     onChange={(event) => setProductForm((previous) => ({ ...previous, cta_label: event.target.value }))}
                     disabled={loadingProductDetail}
+                    placeholder={t('form.ctaLabelPlaceholder')}
                     className={INPUT_CLASS}
                   />
                 </label>

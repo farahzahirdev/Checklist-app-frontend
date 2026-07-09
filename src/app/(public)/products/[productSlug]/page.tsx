@@ -263,6 +263,18 @@ export default function ProductDetailPage() {
   const requiresCompletedProfileForPurchase =
     authState.kind === 'customer' && !profileCompletionLoading && profileCompletionPercent !== 100;
 
+  const externalCtaHref = useMemo(() => {
+    if (resolved?.kind !== 'api') return null;
+    const url = (resolved.detail.external_url ?? '').trim();
+    return url || null;
+  }, [resolved]);
+
+  const externalCtaLabel = useMemo(() => {
+    if (resolved?.kind !== 'api') return t('detail.buy');
+    const label = (resolved.detail.cta_label ?? '').trim();
+    return label || t('detail.buy');
+  }, [resolved, t]);
+
   const brochureLinkHref = useMemo(() => {
     if (resolved?.kind === 'audit') return absolutePublicAssetUrl(resolved.brochurePdfUrl);
     if (resolved?.kind === 'api') return absolutePublicAssetUrl(resolved.detail.brochure_pdf_url);
@@ -654,6 +666,15 @@ export default function ProductDetailPage() {
                 >
                   {t('detail.buy')}
                 </button>
+              ) : externalCtaHref ? (
+                <a
+                  href={externalCtaHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 flex w-full items-center justify-center rounded-lg border border-[#1f7bff] bg-[#1f7bff] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2e87ff]"
+                >
+                  {externalCtaLabel}
+                </a>
               ) : (
                 <button
                   type="button"

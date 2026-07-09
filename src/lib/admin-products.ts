@@ -30,6 +30,14 @@ export type DocumentationFile = {
   uploaded_at: string;
 };
 
+export type DocumentationFileInput = {
+  id?: string;
+  url: string;
+  filename?: string;
+  file_type?: 'pdf' | 'docx';
+  uploaded_at?: string;
+};
+
 export type AdminProduct = {
   id: string;
   category: AdminProductCategory | null;
@@ -102,7 +110,7 @@ export type CreateAdminProductPayload = {
   display_order?: number;
   is_featured?: boolean;
   brochure_pdf_url?: string | null;
-  documentation_files?: DocumentationFile[];
+  documentation_files?: DocumentationFileInput[];
   hero_image_url?: string | null;
   external_url?: string | null;
   cta_label?: string | null;
