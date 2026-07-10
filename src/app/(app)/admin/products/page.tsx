@@ -908,7 +908,7 @@ export default function AdminProductsPage() {
                     t={t}
                   />
                 </div>
-                <label className="space-y-1 md:col-span-2">
+                <label className="hidden space-y-1 md:col-span-2">
                   <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.documentationFiles')}</span>
                   <div className="flex flex-col gap-2">
                     {productForm.documentation_files.length > 0 ? (
@@ -1016,7 +1016,7 @@ export default function AdminProductsPage() {
                     </div>
                   </div>
                 </label>
-                <label className="space-y-1">
+                <label className="hidden space-y-1">
                   <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.externalUrl')}</span>
                   <input
                     value={productForm.external_url}
@@ -1026,7 +1026,7 @@ export default function AdminProductsPage() {
                     className={INPUT_CLASS}
                   />
                 </label>
-                <label className="space-y-1">
+                <label className="hidden space-y-1">
                   <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#6f82a3]">{t('form.ctaLabel')}</span>
                   <input
                     value={productForm.cta_label}
