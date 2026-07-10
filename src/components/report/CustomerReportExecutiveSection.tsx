@@ -652,12 +652,12 @@ export function CustomerReportExecutiveSection({
               </div>
               <div className="min-w-0 xl:pl-6">
                 <h4 className="text-base font-semibold text-[#0f172a]">{t('exec.maturity.domainScores')}</h4>
-                <div className="mt-4 overflow-x-auto rounded-xl border border-[#e8edf5]">
-                  <table className="w-full min-w-[280px] text-left text-sm">
+                <div className="mt-4 overflow-hidden rounded-xl border border-[#e8edf5]">
+                  <table className="w-full table-fixed text-left text-sm">
                     <thead className="border-b border-[#e8edf5] bg-[#f8fafc] text-xs font-semibold uppercase tracking-wide text-[#64748b]">
                       <tr>
                         <th className="px-3 py-2.5">{t('exec.maturity.col.domain')}</th>
-                        <th className="px-3 py-2.5">{t('exec.maturity.col.score')}</th>
+                        <th className="w-[9.5rem] px-3 py-2.5 sm:w-[10.5rem]">{t('exec.maturity.col.score')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#eef2f9]">
@@ -666,10 +666,14 @@ export function CustomerReportExecutiveSection({
                           const pct = clampSpiderPct(row.pct);
                           return (
                             <tr key={`${row.title}-${idx}`}>
-                              <td className="px-3 py-3">
-                                <div className="flex items-center gap-2">
-                                  <DomainScoreShield pct={pct} />
-                                  <p className="min-w-0 truncate font-semibold text-[#0f172a]">{row.title}</p>
+                              <td className="min-w-0 px-3 py-3">
+                                <div className="flex gap-2">
+                                  <span className="inline-flex h-5 shrink-0 items-center">
+                                    <DomainScoreShield pct={pct} />
+                                  </span>
+                                  <p className="min-w-0 break-words text-sm font-semibold leading-5 text-[#0f172a] line-clamp-2">
+                                    {row.title}
+                                  </p>
                                 </div>
                               </td>
                               <td className="px-3 py-3">
