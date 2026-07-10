@@ -234,16 +234,16 @@ function ProductsPageContent({ cmsPage }: { cmsPage?: PageDetail | null } = {}) 
   );
 
   const auditGridItems = useMemo(() => {
-    if (catalogSucceeded) return apiAuditRows;
+    if (apiAuditRows.length > 0) return apiAuditRows;
     return publishedChecklists.map((checklist) => ({
       checklist,
       slug: null as string | null,
       catalogStatus: 'published' as PublicProductStatus,
     }));
-  }, [catalogSucceeded, apiAuditRows, publishedChecklists]);
+  }, [apiAuditRows, publishedChecklists]);
 
-  const auditsLoading = catalogLoading || (!catalogSucceeded && checklistsLoading);
-  const auditsError = !catalogSucceeded ? checklistsError : '';
+  const auditsLoading = catalogLoading || (apiAuditRows.length === 0 && checklistsLoading);
+  const auditsError = apiAuditRows.length === 0 ? checklistsError : '';
 
   const staticDocSections = useMemo(() => {
     return DOCUMENTATION_PRODUCTS.map((doc) => ({
