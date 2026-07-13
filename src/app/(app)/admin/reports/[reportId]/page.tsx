@@ -55,7 +55,7 @@ function RichTextEditor({
   }
 
   return (
-    <label className="mt-4 block">
+    <div className="mt-4 block">
       <div className="mb-1 flex items-center justify-between">
         <span className="block text-xs font-medium text-[#5f7395]">{label}</span>
         <span className="rounded-full bg-[#e6f1fb] px-2 py-0.5 text-[10px] font-semibold text-[#185fa5]">{richTextBadge}</span>
@@ -92,7 +92,7 @@ function RichTextEditor({
           suppressContentEditableWarning
         />
       </div>
-    </label>
+    </div>
   );
 }
 
