@@ -23,6 +23,7 @@ import {
 import {
   applyQuestionTranslationToPanel,
   buildQuestionTranslationPayload,
+  CHECKLIST_PRIMARY_LANGUAGE,
   CHECKLIST_SECONDARY_LANGUAGE,
   getChecklistTranslation,
   getQuestionTranslation,
@@ -31,7 +32,12 @@ import {
   upsertQuestionTranslation,
   upsertSectionTranslation,
 } from '@/lib/checklist-translation-api';
-import { getDefaultAnswerOptions, getPrimaryDefaultAnswerOptions } from '@/lib/checklist-default-answers';
+import {
+  coerceAnswerOptionToCanonical,
+  getDefaultAnswerOptions,
+  getFixedAnswerOption,
+  getPrimaryDefaultAnswerOptions,
+} from '@/lib/checklist-default-answers';
 import { getMediaPreviewUrl } from '@/lib/assessment';
 import { translate, useLocale } from '@/lib/i18n';
 import { adminChecklistBuilderMessages } from '@/locales/admin-checklist-builder';
@@ -294,13 +300,25 @@ function mapApiQuestionToPanelQuestion(question: {
     illustrativeImageId: String(question.illustrativeImageId ?? ''),
     answerOptions:
       question.answerOptions && question.answerOptions.length >= 4
-        ? question.answerOptions.slice(0, 4).map((option, index) => ({
-            label: String(option.label ?? `Answer ${index + 1}`),
-            score: fixedScoreForAnswer(index),
-            choiceCode: String(option.choiceCode ?? option.label ?? `OPTION_${index + 1}`),
-            description: String(option.description ?? ''),
-            illustrativeImageId: String(option.illustrativeImageId ?? ''),
-          }))
+        ? question.answerOptions.slice(0, 4).map((option, index) => {
+            const coerced = coerceAnswerOptionToCanonical(
+              {
+                label: String(option.label ?? ''),
+                score: fixedScoreForAnswer(index),
+                choiceCode: String(option.choiceCode ?? ''),
+                description: String(option.description ?? ''),
+              },
+              index,
+              CHECKLIST_PRIMARY_LANGUAGE,
+            );
+            return {
+              label: coerced.label,
+              score: coerced.score,
+              choiceCode: coerced.choiceCode,
+              description: coerced.description,
+              illustrativeImageId: String(option.illustrativeImageId ?? ''),
+            };
+          })
         : fallbackAnswers,
   };
 }
@@ -580,9 +598,24 @@ export default function ChecklistPanelBuilderPage() {
   }
 
   function getQuestionForDisplay(sectionId: string, question: PanelQuestion): PanelQuestion {
-    if (!isSecondaryContentLanguage) return question;
+    if (!isSecondaryContentLanguage) {
+      return {
+        ...question,
+        answerOptions: buildCanonicalAnswerOptionsForLocale(
+          question.answerOptions,
+          CHECKLIST_PRIMARY_LANGUAGE,
+        ),
+      };
+    }
     const enFields = enQuestionFields[question.id];
-    return enFields ? { ...question, ...enFields } : question;
+    const merged = enFields ? { ...question, ...enFields } : question;
+    return {
+      ...merged,
+      answerOptions: buildCanonicalAnswerOptionsForLocale(
+        merged.answerOptions,
+        CHECKLIST_SECONDARY_LANGUAGE,
+      ),
+    };
   }
 
   function updateQuestionFields(
@@ -705,16 +738,26 @@ export default function ChecklistPanelBuilderPage() {
   }
 
   function buildAnswerOptionsPayload(question: PanelQuestion) {
-    return question.answerOptions.map((option, index) => ({
-      position: index + 1,
-      label: option.label.trim() || `Answer ${index + 1}`,
-      score: Number.parseInt(fixedScoreForAnswer(index), 10),
-      choiceCode: (option.choiceCode.trim() || option.label.trim() || `OPTION_${index + 1}`)
-        .toUpperCase()
-        .replace(/[^A-Z0-9]+/g, '_'),
+    return question.answerOptions.map((option, index) => {
+      const fixed = getFixedAnswerOption(index, CHECKLIST_PRIMARY_LANGUAGE);
+      return {
+        position: index + 1,
+        label: fixed.label,
+        score: Number.parseInt(fixed.score, 10),
+        choiceCode: fixed.choiceCode,
         description: option.description.trim() || null,
-      illustrativeImageId: option.illustrativeImageId.trim() || null,
-    }));
+        illustrativeImageId: option.illustrativeImageId.trim() || null,
+      };
+    });
+  }
+
+  function buildCanonicalAnswerOptionsForLocale(
+    answerOptions: PanelAnswerOption[],
+    language: string,
+  ): PanelAnswerOption[] {
+    return answerOptions.map((option, index) =>
+      coerceAnswerOptionToCanonical(option, index, language),
+    );
   }
 
   function addSection() {
@@ -996,7 +1039,10 @@ export default function ChecklistPanelBuilderPage() {
           buildQuestionTranslationPayload({
             ...draftQuestion,
             questionTitle: draftQuestion.questionTitle || draftQuestion.questionId,
-            answerOptions: draftQuestion.answerOptions,
+            answerOptions: buildCanonicalAnswerOptionsForLocale(
+              draftQuestion.answerOptions,
+              CHECKLIST_SECONDARY_LANGUAGE,
+            ),
           }),
         );
         setEnQuestionFields((previous) => ({
@@ -1080,7 +1126,10 @@ export default function ChecklistPanelBuilderPage() {
           buildQuestionTranslationPayload({
             ...displayQuestion,
             questionTitle: displayQuestion.questionTitle || displayQuestion.questionId,
-            answerOptions: displayQuestion.answerOptions,
+            answerOptions: buildCanonicalAnswerOptionsForLocale(
+              displayQuestion.answerOptions,
+              CHECKLIST_SECONDARY_LANGUAGE,
+            ),
           }),
         );
         await updateQuestionApi(checklistId, sectionId, questionId, primaryUpdatePayload);
@@ -1967,16 +2016,9 @@ export default function ChecklistPanelBuilderPage() {
                           <div className="grid gap-3 md:grid-cols-2">
                           <input
                             value={option.label}
-                            onChange={(event) =>
-                              setNewQuestionDraft((previous) => ({
-                                ...previous,
-                                answerOptions: previous.answerOptions.map((item, itemIndex) =>
-                                  itemIndex === index ? { ...item, label: event.target.value } : item,
-                                ),
-                              }))
-                            }
-                            className={`${inputClass} ${createQuestionMissingFields.includes(`answer_label_${index}`) ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
-                            placeholder={t('answer.labelPlaceholder', { n: String(index + 1) })}
+                            readOnly
+                            className={`${inputClass} cursor-not-allowed bg-[#eef3fb] text-[#607594]`}
+                            aria-label={t('answer.labelPlaceholder', { n: String(index + 1) })}
                           />
                           <input
                             type="number"
@@ -2260,15 +2302,9 @@ export default function ChecklistPanelBuilderPage() {
                         <div className="grid gap-3 md:grid-cols-2">
                         <input
                           value={option.label}
-                          onChange={(event) =>
-                            updateQuestionFields(selectedSection.id, selectedQuestion.id, {
-                              answerOptions: selectedQuestionDisplay.answerOptions.map((item, itemIndex) =>
-                                itemIndex === index ? { ...item, label: event.target.value } : item,
-                              ),
-                            })
-                          }
-                          className={`${inputClass} ${editQuestionMissingFields.includes(`answer_label_${index}`) ? 'border-[#d45f6b] ring-1 ring-[#d45f6b]/30' : ''}`}
-                          placeholder={t('answer.labelPlaceholder', { n: String(index + 1) })}
+                          readOnly
+                          className={`${inputClass} cursor-not-allowed bg-[#eef3fb] text-[#607594]`}
+                          aria-label={t('answer.labelPlaceholder', { n: String(index + 1) })}
                         />
                         <input
                           type="number"
