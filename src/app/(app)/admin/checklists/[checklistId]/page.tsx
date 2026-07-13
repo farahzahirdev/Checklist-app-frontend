@@ -1888,7 +1888,7 @@ export default function ChecklistPanelBuilderPage() {
                       label={t('label.explanation')}
                       value={newQuestionDraft.explanation}
                       onChange={(next) => setNewQuestionDraft((previous) => ({ ...previous, explanation: next }))}
-                      placeholder={t('placeholder.whyMatters')}
+                      placeholder={t('placeholder.explanation')}
                       minHeight={90}
                       hasError={createQuestionMissingFields.includes('explanation')}
                     />
@@ -1903,16 +1903,6 @@ export default function ChecklistPanelBuilderPage() {
                       placeholder={t('placeholder.steps')}
                       minHeight={90}
                       hasError={createQuestionMissingFields.includes('expectedImplementation')}
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className={labelClass}>{t('label.whyMatters')}</label>
-                    <textarea
-                      value={newQuestionDraft.howItWorks}
-                      onChange={(event) =>
-                        setNewQuestionDraft((previous) => ({ ...previous, howItWorks: event.target.value }))
-                      }
-                      className={textAreaClass}
                     />
                   </div>
                   <div className={sectionHeadingClass + ' md:col-span-2'}>{t('heading.options')}</div>
@@ -2182,7 +2172,7 @@ export default function ChecklistPanelBuilderPage() {
                       onChange={(next) =>
                         updateQuestionFields(selectedSection.id, selectedQuestion.id, { explanation: next })
                       }
-                      placeholder={t('placeholder.whyMatters')}
+                      placeholder={t('placeholder.explanation')}
                       minHeight={90}
                       hasError={editQuestionMissingFields.includes('explanation')}
                     />
@@ -2201,17 +2191,6 @@ export default function ChecklistPanelBuilderPage() {
                       hasError={editQuestionMissingFields.includes('expectedImplementation')}
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className={labelClass}>{t('label.whyMatters')}</label>
-                  <textarea
-                    value={selectedQuestionDisplay.howItWorks}
-                    onChange={(event) =>
-                      updateQuestionFields(selectedSection.id, selectedQuestion.id, { howItWorks: event.target.value })
-                    }
-                    className={textAreaClass}
-                  />
                 </div>
 
                 <div className={sectionHeadingClass}>{t('heading.options')}</div>

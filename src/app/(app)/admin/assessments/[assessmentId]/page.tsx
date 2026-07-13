@@ -970,7 +970,7 @@ export default function AdminAssessmentReviewDetailPage() {
                       </span>
                     )}
                     <span className={`rounded-md px-2 py-1 text-xs font-semibold ${badgeClass}`}>{badgeText}</span>
-                    {(answer.why_this_matters || answer.legal_requirement_title || answer.expected_implementation) && (
+                    {(answer.legal_requirement_title || answer.expected_implementation) && (
                       <div className="relative group">
                         <button
                           type="button"
@@ -983,12 +983,6 @@ export default function AdminAssessmentReviewDetailPage() {
                         </button>
                         <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-[#e2e8f5] bg-white p-4 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                           <div className="space-y-3 text-sm">
-                            {answer.why_this_matters && (
-                              <div>
-                                <p className="font-semibold text-[#243555]">{t('labels.whyThisMatters')}</p>
-                                <p className="text-[#607594] mt-1">{answer.why_this_matters}</p>
-                              </div>
-                            )}
                             {answer.legal_requirement_title && (
                               <div>
                                 <p className="font-semibold text-[#243555]">{t('labels.legalRequirement')}</p>
@@ -1010,7 +1004,7 @@ export default function AdminAssessmentReviewDetailPage() {
                 {answer.question_text && (
                   <p className="mt-2 text-sm text-[#607594]">{answer.question_text}</p>
                 )}
-                {(answer.legal_requirement_description || answer.expected_implementation || answer.why_this_matters) && (
+                {(answer.legal_requirement_description || answer.expected_implementation) && (
                   <div className="mt-3">
                     <button
                       type="button"
@@ -1035,12 +1029,6 @@ export default function AdminAssessmentReviewDetailPage() {
                     </button>
                     {expandedQuestions.has(answer.answer_id) && (
                       <div className="mt-3 space-y-3 rounded-lg border border-[#e2e8f5] bg-[#f8fafc] p-3 text-sm">
-                        {answer.why_this_matters && (
-                          <div>
-                            <p className="font-semibold text-[#243555] text-xs uppercase tracking-wide">{t('labels.whyThisMatters')}</p>
-                            <p className="text-[#607594] mt-1">{answer.why_this_matters}</p>
-                          </div>
-                        )}
                         {answer.legal_requirement_title && (
                           <div>
                             <p className="font-semibold text-[#243555] text-xs uppercase tracking-wide">{t('labels.legalRequirement')}</p>

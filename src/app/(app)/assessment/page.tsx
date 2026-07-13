@@ -359,7 +359,6 @@ export default function AssessmentPage() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [isWhyThisMattersOpen, setIsWhyThisMattersOpen] = useState(false);
   const [autoSaving, setAutoSaving] = useState<Record<string, boolean>>({});
   const [evidenceLoading, setEvidenceLoading] = useState<Record<string, boolean>>({});
   const [evidencePreviewUrls, setEvidencePreviewUrls] = useState<Record<string, string>>({});
@@ -738,8 +737,6 @@ export default function AssessmentPage() {
     ];
   }, [activeQuestion?.answer_options]);
 
-  const whyThisMattersText = (activeQuestion?.how_it_works || activeQuestion?.explanation || '').trim();
-
   const answeredQuestionCount = useMemo(() => {
     return allQuestions.filter((question) => Boolean(normalizeAnswerValue(answers[question.id]?.answer))).length;
   }, [allQuestions, answers]);
@@ -761,10 +758,6 @@ export default function AssessmentPage() {
     const info = getAccessCountdownInfo(assessmentDetail?.expires_at, countdownNowMs);
     return info ? info.expired : false;
   }, [assessmentDetail?.expires_at, countdownNowMs]);
-
-  useEffect(() => {
-    setIsWhyThisMattersOpen(false);
-  }, [activeQuestionId]);
 
   async function ensureCurrentAssessmentId() {
     if (assessmentId) {
@@ -1483,28 +1476,6 @@ export default function AssessmentPage() {
                     <p className="text-xs font-semibold text-[#65748f]">
                       Question {activeQuestionIndex + 1 > 0 ? activeQuestionIndex + 1 : 1} of {allQuestions.length || 1}
                     </p>
-                    <div className="relative group">
-                    <button
-                      type="button"
-                      disabled={!whyThisMattersText}
-                      aria-label="Why this matters"
-                      onClick={() => {
-                        if (!whyThisMattersText) return;
-                        setIsWhyThisMattersOpen((open) => !open);
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-[#d9e4f5] bg-[#f4f7fc] px-3 py-1.5 text-xs font-semibold text-[#4d6c98] disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#b8cceb] text-[10px] text-[#5f7fb4]">
-                        i
-                      </span>
-                      <span className="hidden sm:inline">{t('questions.whyThisMatters')}</span>
-                    </button>
-                    {whyThisMattersText && isWhyThisMattersOpen ? (
-                      <div className="absolute right-0 top-full z-20 mt-2 w-[351px] max-w-[calc(100vw-2rem)] rounded-lg border border-[#d9e4f5] bg-white p-4 text-sm text-[#3f5677] shadow-lg">
-                        {whyThisMattersText}
-                      </div>
-                    ) : null}
-                  </div>
                   </div>
                 </div>
 
