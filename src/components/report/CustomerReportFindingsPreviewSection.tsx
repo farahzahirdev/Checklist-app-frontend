@@ -118,6 +118,12 @@ export function CustomerReportFindingsPreviewSection({
     [t]
   );
 
+  const isDownloadExpired = Boolean(
+    data.is_download_expired ||
+      (data.assessment_expires_at && Date.parse(data.assessment_expires_at) <= Date.now())
+  );
+  const canAttemptDownload = canDownloadPdf;
+
   const rows = useMemo(() => {
     const sorted = [...data.findings].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
     const built: PreviewRow[] = sorted.slice(0, 25).map((f, idx) => {
@@ -149,10 +155,11 @@ export function CustomerReportFindingsPreviewSection({
   const [downloading, setDownloading] = useState(false);
   const [pdfPasswordLoading, setPdfPasswordLoading] = useState(false);
   const [pdfPassword, setPdfPassword] = useState<string | null>(null);
+  const [showExpiredModal, setShowExpiredModal] = useState(false);
   const sanitizedAuditorNote = useMemo(() => sanitizeRichHtml(data.auditor_note), [data.auditor_note]);
 
   useEffect(() => {
-    if (!canDownloadPdf) {
+    if (!canAttemptDownload || isDownloadExpired) {
       setPdfPassword(null);
       return;
     }
@@ -176,10 +183,14 @@ export function CustomerReportFindingsPreviewSection({
     return () => {
       active = false;
     };
-  }, [canDownloadPdf, reportId]);
+  }, [canAttemptDownload, isDownloadExpired, reportId]);
 
   const handleExportPdf = useCallback(async () => {
-    if (!canDownloadPdf) return;
+    if (!canAttemptDownload) return;
+    if (isDownloadExpired) {
+      setShowExpiredModal(true);
+      return;
+    }
     setDownloading(true);
     try {
       const blob = await downloadCustomerReportPdf(reportId);
@@ -192,11 +203,15 @@ export function CustomerReportFindingsPreviewSection({
       toast.success(t('preview.pdf.toastStarted'));
     } catch (e) {
       const msg = e instanceof Error ? e.message : t('preview.pdf.downloadFailed');
-      toast.error(msg);
+      if (/expir/i.test(msg)) {
+        setShowExpiredModal(true);
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setDownloading(false);
     }
-  }, [canDownloadPdf, reportId, t]);
+  }, [canAttemptDownload, isDownloadExpired, reportId, t]);
 
   return (
     <div id="detailed-findings" className="scroll-mt-24">
@@ -292,17 +307,27 @@ export function CustomerReportFindingsPreviewSection({
             </div>
             <button
               type="button"
-              disabled={!canDownloadPdf || downloading}
+              disabled={!canAttemptDownload || downloading}
               onClick={() => void handleExportPdf()}
               className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[#0066ff] bg-white py-2.5 text-sm font-semibold text-[#0066ff] shadow-sm transition hover:bg-[#f0f7ff] disabled:cursor-not-allowed disabled:opacity-60"
-              title={canDownloadPdf ? t('preview.pdf.downloadTitle') : t('preview.pdf.waitTitle')}
+              title={
+                !canAttemptDownload
+                  ? t('preview.pdf.waitTitle')
+                  : isDownloadExpired
+                    ? t('preview.pdf.expiredTitle')
+                    : t('preview.pdf.downloadTitle')
+              }
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                 <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              {downloading ? t('preview.pdf.preparing') : canDownloadPdf ? t('preview.pdf.exportOptions') : t('preview.pdf.exportWhenPublished')}
+              {downloading
+                ? t('preview.pdf.preparing')
+                : canAttemptDownload
+                  ? t('preview.pdf.exportOptions')
+                  : t('preview.pdf.exportWhenPublished')}
             </button>
-            {canDownloadPdf ? (
+            {canAttemptDownload && !isDownloadExpired ? (
               <div className="mt-3 rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-sm text-[#334155]">
                 <p className="font-semibold text-[#0f172a]">{t('preview.pdf.passwordLabel')}</p>
                 <p className="mt-1 break-all font-mono text-xs text-[#1e293b]">
@@ -322,6 +347,35 @@ export function CustomerReportFindingsPreviewSection({
           </div>
         </aside>
       </div>
+
+      {showExpiredModal ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4"
+          onClick={() => setShowExpiredModal(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="report-download-expired-title"
+            className="w-full max-w-md rounded-2xl border border-[#dbe4f4] bg-white p-5 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 id="report-download-expired-title" className="text-lg font-semibold text-[#0f172a]">
+              {t('preview.pdf.expiredTitle')}
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-[#475569]">{t('preview.pdf.expiredBody')}</p>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowExpiredModal(false)}
+                className="rounded-xl bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657]"
+              >
+                {t('preview.pdf.expiredClose')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

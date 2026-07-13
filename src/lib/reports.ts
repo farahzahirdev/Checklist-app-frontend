@@ -328,6 +328,8 @@ export type CustomerReportDataResponse = {
   generated_at: string;
   approved_at: string | null;
   published_at: string | null;
+  assessment_expires_at?: string | null;
+  is_download_expired?: boolean | null;
 };
 
 export function sectionScoreDisplayName(s: CustomerReportSectionScore): string {

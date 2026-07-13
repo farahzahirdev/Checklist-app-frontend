@@ -74,6 +74,10 @@ export const customerReportMessages: TranslationMessages = {
     'preview.auditorNote.title': "Auditor's note",
     'preview.pdf.toastStarted': 'Download started',
     'preview.pdf.downloadFailed': 'Download failed',
+    'preview.pdf.expiredTitle': 'Checklist expired',
+    'preview.pdf.expiredBody':
+      'This checklist has expired, so you can no longer download the report.',
+    'preview.pdf.expiredClose': 'Close',
     'preview.cover.kicker': 'AuditReady',
     'preview.cover.line1': 'Security assessment',
     'preview.cover.line2': 'Report',
@@ -269,6 +273,10 @@ export const customerReportMessages: TranslationMessages = {
     'preview.auditorNote.title': 'Poznámka auditora',
     'preview.pdf.toastStarted': 'Stahování zahájeno',
     'preview.pdf.downloadFailed': 'Stažení se nezdařilo',
+    'preview.pdf.expiredTitle': 'Kontrolní seznam vypršel',
+    'preview.pdf.expiredBody':
+      'Platnost tohoto kontrolního seznamu vypršela, proto již nelze report stáhnout.',
+    'preview.pdf.expiredClose': 'Zavřít',
     'preview.cover.kicker': 'AuditReady',
     'preview.cover.line1': 'Bezpečnostní hodnocení',
     'preview.cover.line2': 'Report',
