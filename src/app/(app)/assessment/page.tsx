@@ -330,6 +330,17 @@ function sanitizeRichHtml(input?: string | null) {
   return doc.body.innerHTML.trim();
 }
 
+function plainTextFromHtml(input?: string | null) {
+  const raw = String(input ?? '').trim();
+  if (!raw) return '';
+  if (typeof window === 'undefined') {
+    return raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(raw, 'text/html');
+  return (doc.body.textContent ?? '').replace(/\s+/g, ' ').trim();
+}
+
 export default function AssessmentPage() {
   const { locale } = useLocale();
   const t = (key: string, values?: Record<string, string>) =>
@@ -424,10 +435,22 @@ export default function AssessmentPage() {
     () => sanitizeRichHtml(activeQuestion?.explanation),
     [activeQuestion?.explanation],
   );
+  const sanitizedLegalRequirementHtml = useMemo(
+    () => sanitizeRichHtml(activeQuestion?.legal_requirement),
+    [activeQuestion?.legal_requirement],
+  );
   const sanitizedExpectedImplementationHtml = useMemo(
     () => sanitizeRichHtml(activeQuestion?.expected_implementation),
     [activeQuestion?.expected_implementation],
   );
+  const questionHeading = useMemo(() => {
+    const title = String(activeQuestion?.question_title ?? '').trim();
+    if (!title) return '';
+    const legalPlain = plainTextFromHtml(activeQuestion?.legal_requirement);
+    // Avoid duplicating the Legal Requirement block when title matches it.
+    if (legalPlain && title.toLowerCase() === legalPlain.toLowerCase()) return '';
+    return title;
+  }, [activeQuestion?.question_title, activeQuestion?.legal_requirement]);
   const activeQuestionSeverity = useMemo(() => {
     const raw = activeQuestion?.security_level;
     const display = raw?.trim() ? raw : '-';
@@ -1480,10 +1503,12 @@ export default function AssessmentPage() {
                 </div>
 
                 <div className="rounded-lg border border-[#e2e8f5] bg-white p-2">
-                  <p className="break-words px-2 py-1 text-[28px] leading-[1.15] font-semibold text-[#1f2d45] sm:text-[44px] sm:leading-[1.1]">
-                    {activeQuestion.question_title || activeQuestion.legal_requirement || 'Question'}
-                  </p>
-                  <div className="mt-3 grid gap-2 md:grid-cols-4">
+                  {questionHeading ? (
+                    <p className="break-words px-2 py-1 text-[28px] leading-[1.15] font-semibold text-[#1f2d45] sm:text-[44px] sm:leading-[1.1]">
+                      {questionHeading}
+                    </p>
+                  ) : null}
+                  <div className={`${questionHeading ? 'mt-3 ' : ''}grid gap-2 md:grid-cols-4`}>
                     <div className="rounded-md bg-[#f7f9fe] p-2 text-xs">
                       <p className="text-[#607594]">Audit Type</p>
                       <p className="mt-1 font-semibold text-[#1f2d45]">{activeQuestion.audit_type || '-'}</p>
@@ -1515,9 +1540,14 @@ export default function AssessmentPage() {
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   <div className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#607594]">Legal Requirement</p>
-                    <p className="mt-2 text-sm text-[#2a3d5f]">
-                      {activeQuestion.legal_requirement || '-'}
-                    </p>
+                    {sanitizedLegalRequirementHtml ? (
+                      <div
+                        className="mt-2 space-y-1 text-sm text-[#2a3d5f] [&_li]:ml-4 [&_ol]:list-decimal [&_p]:leading-6 [&_ul]:list-disc"
+                        dangerouslySetInnerHTML={{ __html: sanitizedLegalRequirementHtml }}
+                      />
+                    ) : (
+                      <p className="mt-2 text-sm text-[#2a3d5f]">-</p>
+                    )}
                   </div>
                   <div className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#607594]">Explanation</p>
