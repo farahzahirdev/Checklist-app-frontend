@@ -249,13 +249,34 @@ export type CustomerReportChapterData = {
 
 export type CustomerReportFinding = {
   question_text: string;
+  /** Expected Implementation from the checklist (preferred summary text). */
+  expected_implementation?: string | null;
+  /** Legal / requirement question text when distinct from expected implementation. */
+  legal_requirement?: string | null;
+  /** Selected client answer, e.g. "Level 2 – …". */
   answer?: string;
+  answer_level?: number | null;
+  finding_text?: string | null;
   priority: 'low' | 'medium' | 'high';
   recommendation?: string | null;
   report_domain?: string | null;
   section_code?: string | null;
   section_title?: string | null;
 };
+
+/** Checklist Expected Implementation column — preferred display for finding summaries. */
+export function findingExpectedImplementation(f: CustomerReportFinding): string {
+  const ei = f.expected_implementation?.trim();
+  if (ei) return ei;
+  const rec = f.recommendation?.trim();
+  if (rec) return rec;
+  return f.question_text?.trim() || '';
+}
+
+/** Client-selected answer option, including level and text. */
+export function findingSelectedAnswer(f: CustomerReportFinding): string {
+  return (f.finding_text?.trim() || f.answer?.trim() || '');
+}
 
 export type CustomerReportSectionSummary = {
   section_id: string;
@@ -646,13 +667,23 @@ export function normalizeCustomerReportData(raw: unknown): CustomerReportDataRes
   const findings = Array.isArray(r.findings)
     ? (r.findings as Record<string, unknown>[]).map((f) => ({
         question_text: String(f.question_text ?? ''),
+        expected_implementation:
+          f.expected_implementation != null ? String(f.expected_implementation) : null,
+        legal_requirement: f.legal_requirement != null ? String(f.legal_requirement) : null,
         answer: f.answer != null ? String(f.answer) : undefined,
+        answer_level:
+          f.answer_level != null && Number.isFinite(Number(f.answer_level))
+            ? Number(f.answer_level)
+            : null,
+        finding_text: f.finding_text != null ? String(f.finding_text) : null,
         priority: (['low', 'medium', 'high'].includes(String(f.priority)) ? f.priority : 'medium') as
           | 'low'
           | 'medium'
           | 'high',
         recommendation: f.recommendation != null ? String(f.recommendation) : null,
         report_domain: f.report_domain != null ? String(f.report_domain) : null,
+        section_code: f.section_code != null ? String(f.section_code) : null,
+        section_title: f.section_title != null ? String(f.section_title) : null,
       }))
     : [];
 

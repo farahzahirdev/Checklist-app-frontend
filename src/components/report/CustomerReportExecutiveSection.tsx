@@ -3,7 +3,12 @@
 import type { ReactNode } from 'react';
 import { useCallback, useMemo } from 'react';
 import type { CustomerReportDataResponse, CustomerReportDomainDatum, CustomerReportSummary } from '@/lib/reports';
-import { customerReportOverallPercentage, sectionScoreDisplayName } from '@/lib/reports';
+import {
+  customerReportOverallPercentage,
+  findingExpectedImplementation,
+  findingSelectedAnswer,
+  sectionScoreDisplayName,
+} from '@/lib/reports';
 import { getSeverityColor, riskBandLabel } from '@/components/report/report-dashboard';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerReportMessages } from '@/locales/customer-report';
@@ -236,10 +241,13 @@ export function CustomerReportExecutiveSection({
       data.findings
         .filter((f) => f.priority === p)
         .slice(0, n)
-        .map((f, i) => ({
-          code: `${prefix}-${String(i + 1).padStart(2, '0')}`,
-          title: f.question_text.length > 52 ? `${f.question_text.slice(0, 50)}…` : f.question_text,
-        }));
+        .map((f, i) => {
+          const title = findingExpectedImplementation(f);
+          return {
+            code: `${prefix}-${String(i + 1).padStart(2, '0')}`,
+            title: title.length > 52 ? `${title.slice(0, 50)}…` : title,
+          };
+        });
     return {
       high: pick('high', 'H', 3),
       medium: pick('medium', 'M', 3),
@@ -729,15 +737,25 @@ export function CustomerReportExecutiveSection({
                   {data.findings
                     .filter((f) => f.priority === 'high')
                     .slice(0, 4)
-                    .map((f, i) => (
-                      <li key={`${f.question_text}-${i}`} className="rounded-xl border border-[#fee2e2] bg-[#fffafa] p-3">
+                    .map((f, i) => {
+                      const summary = findingExpectedImplementation(f);
+                      const answer = findingSelectedAnswer(f);
+                      return (
+                      <li key={`${summary}-${i}`} className="rounded-xl border border-[#fee2e2] bg-[#fffafa] p-3">
                         <span className="text-[0.65rem] font-bold uppercase tracking-wide text-[#b91c1c]">{t('exec.topPriorities.badgeHigh')}</span>
-                        <p className="mt-1 text-sm font-semibold text-[#0f172a]">{f.question_text}</p>
+                        <p className="mt-1 text-sm font-semibold text-[#0f172a]">{summary}</p>
+                        {answer ? (
+                          <p className="mt-2 text-xs leading-relaxed text-[#475569]">
+                            <span className="font-semibold text-[#64748b]">{t('exec.topPriorities.answerLabel')}: </span>
+                            {answer}
+                          </p>
+                        ) : null}
                         <p className="mt-1 text-xs text-[#64748b]">
                           H-{String(i + 1).padStart(2, '0')} · {findingDomainLabel(f)}
                         </p>
                       </li>
-                    ))}
+                      );
+                    })}
                   {!data.findings.some((f) => f.priority === 'high') ? (
                     <li className="text-sm text-[#64748b]">{t('exec.topPriorities.noHigh')}</li>
                   ) : null}

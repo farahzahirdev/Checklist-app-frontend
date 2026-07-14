@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import type { CustomerReportDataResponse } from '@/lib/reports';
-import { downloadCustomerReportPdf, getCustomerReportPdfPassword } from '@/lib/reports';
+import {
+  downloadCustomerReportPdf,
+  findingExpectedImplementation,
+  findingSelectedAnswer,
+  getCustomerReportPdfPassword,
+} from '@/lib/reports';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerReportMessages } from '@/locales/customer-report';
 
@@ -11,6 +16,7 @@ type PreviewRow = {
   id: string;
   idTone: 'high' | 'medium' | 'low';
   finding: string;
+  answer: string;
   domain: string;
   risk: string;
   riskTone: 'high' | 'medium' | 'low';
@@ -129,10 +135,13 @@ export function CustomerReportFindingsPreviewSection({
     const built: PreviewRow[] = sorted.slice(0, 25).map((f, idx) => {
       const tone = f.priority;
       const prefix = tone === 'high' ? 'H' : tone === 'medium' ? 'M' : 'L';
+      const summary = findingExpectedImplementation(f);
+      const answer = findingSelectedAnswer(f);
       return {
         id: `${prefix}-${String(idx + 1).padStart(2, '0')}`,
         idTone: tone,
-        finding: f.question_text.length > 80 ? `${f.question_text.slice(0, 78)}…` : f.question_text,
+        finding: summary.length > 120 ? `${summary.slice(0, 118)}…` : summary,
+        answer: answer.length > 120 ? `${answer.slice(0, 118)}…` : answer || '—',
         domain: f.report_domain?.trim() || t('preview.domain.general'),
         risk: priorityLabel(tone),
         riskTone: tone,
@@ -248,11 +257,12 @@ export function CustomerReportFindingsPreviewSection({
 
           <div className="mt-4 overflow-hidden rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-left text-sm sm:min-w-[720px]">
+              <table className="w-full min-w-[720px] text-left text-sm sm:min-w-[860px]">
                 <thead>
                   <tr className="border-b border-[#e8edf5] bg-[#f8fafc] text-[0.65rem] font-semibold uppercase tracking-wide text-[#64748b]">
                     <th className="whitespace-nowrap px-3 py-3 pl-4">{t('preview.col.id')}</th>
-                    <th className="whitespace-nowrap px-3 py-3">{t('preview.col.finding')}</th>
+                    <th className="px-3 py-3">{t('preview.col.finding')}</th>
+                    <th className="px-3 py-3">{t('preview.col.answer')}</th>
                     <th className="whitespace-nowrap px-3 py-3">{t('preview.col.domain')}</th>
                     <th className="whitespace-nowrap px-3 py-3">{t('preview.col.risk')}</th>
                     <th className="whitespace-nowrap px-3 py-3 pr-4">{t('preview.col.impact')}</th>
@@ -263,7 +273,8 @@ export function CustomerReportFindingsPreviewSection({
                     rows.map((row) => (
                       <tr key={row.id} className="border-b border-[#f1f5f9] last:border-0">
                         <td className={`whitespace-nowrap px-3 py-3 pl-4 align-top ${priorityRowToneClass(row.idTone)}`}>{row.id}</td>
-                        <td className="max-w-[200px] px-3 py-3 align-top font-medium text-[#0f172a]">{row.finding}</td>
+                        <td className="max-w-[220px] px-3 py-3 align-top font-medium text-[#0f172a]">{row.finding}</td>
+                        <td className="max-w-[240px] px-3 py-3 align-top text-[#475569]">{row.answer}</td>
                         <td className="whitespace-nowrap px-3 py-3 align-top text-[#475569]">{row.domain}</td>
                         <td className={`whitespace-nowrap px-3 py-3 align-top ${priorityRowToneClass(row.riskTone)}`}>{row.risk}</td>
                         <td className="whitespace-nowrap px-3 py-3 pr-4 align-top text-[#334155]">{row.impact}</td>
@@ -271,7 +282,7 @@ export function CustomerReportFindingsPreviewSection({
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-sm text-[#64748b]">
+                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-[#64748b]">
                         {t('preview.empty')}
                       </td>
                     </tr>

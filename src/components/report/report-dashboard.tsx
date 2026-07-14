@@ -7,6 +7,8 @@ import {
   buildCustomerAssessmentQuestionHref,
   CustomerReportDataResponse,
   customerReportOverallPercentage,
+  findingExpectedImplementation,
+  findingSelectedAnswer,
   sectionScoreDisplayName,
 } from '@/lib/reports';
 import { translate, useLocale, type Locale } from '@/lib/i18n';
@@ -316,14 +318,10 @@ function FindingsSection({
                     <div className={`inline-block rounded-md ${config.badge} px-2 py-1 text-xs font-semibold mb-2`}>
                       {config.label}
                     </div>
-                    <p className="text-sm font-semibold text-[#243555] mt-1">{finding.question_text}</p>
+                    <p className="text-sm font-semibold text-[#243555] mt-1">{findingExpectedImplementation(finding)}</p>
                     <p className="mt-2 text-sm text-[#6a7d9a]">
                       <span className="font-semibold">{t('dashboard.findings.answer')}</span>{' '}
-                      {finding.answer?.trim() ? finding.answer : '—'}
-                    </p>
-                    <p className="mt-2 text-sm text-[#2b3e60]">
-                      <span className="font-semibold">{t('dashboard.findings.recommendation')}</span>{' '}
-                      {finding.recommendation?.trim() ? finding.recommendation : '—'}
+                      {findingSelectedAnswer(finding) || '—'}
                     </p>
                   </div>
                 </div>
