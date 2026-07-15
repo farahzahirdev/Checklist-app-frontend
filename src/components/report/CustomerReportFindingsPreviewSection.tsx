@@ -141,8 +141,8 @@ export function CustomerReportFindingsPreviewSection({
       return {
         id: `${prefix}-${String(idx + 1).padStart(2, '0')}`,
         idTone: tone,
-        finding: summary.length > 120 ? `${summary.slice(0, 118)}…` : summary,
-        // Full selected checklist option: "• Level N – <answer text>" (no truncation)
+        // Wrap in the cell instead of truncating / scrolling
+        finding: summary || '—',
         answer: answer || '—',
         domain: f.report_domain?.trim() || t('preview.domain.general'),
         risk: priorityLabel(tone),
@@ -258,39 +258,45 @@ export function CustomerReportFindingsPreviewSection({
           )}
 
           <div className="mt-4 overflow-hidden rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
-            <table className="w-full table-fixed text-left text-sm">
+            <table className="w-full table-fixed border-collapse text-left text-sm">
               <colgroup>
-                <col className="w-[8%]" />
-                <col className="w-[28%]" />
-                <col className="w-[36%]" />
+                <col className="w-[7%]" />
+                <col className="w-[26%]" />
+                <col className="w-[39%]" />
                 <col className="w-[10%]" />
                 <col className="w-[9%]" />
                 <col className="w-[9%]" />
               </colgroup>
               <thead>
                 <tr className="border-b border-[#e8edf5] bg-[#f8fafc] text-[0.65rem] font-semibold uppercase tracking-wide text-[#64748b]">
-                  <th className="px-3 py-3 pl-4">{t('preview.col.id')}</th>
-                  <th className="px-3 py-3">{t('preview.col.finding')}</th>
-                  <th className="px-3 py-3">{t('preview.col.answer')}</th>
-                  <th className="px-3 py-3">{t('preview.col.domain')}</th>
-                  <th className="px-3 py-3">{t('preview.col.risk')}</th>
-                  <th className="px-3 py-3 pr-4">{t('preview.col.impact')}</th>
+                  <th className="px-2 py-3 pl-3 sm:px-3 sm:pl-4">{t('preview.col.id')}</th>
+                  <th className="px-2 py-3 sm:px-3">{t('preview.col.finding')}</th>
+                  <th className="px-2 py-3 sm:px-3">{t('preview.col.answer')}</th>
+                  <th className="px-2 py-3 sm:px-3">{t('preview.col.domain')}</th>
+                  <th className="px-2 py-3 sm:px-3">{t('preview.col.risk')}</th>
+                  <th className="px-2 py-3 pr-3 sm:px-3 sm:pr-4">{t('preview.col.impact')}</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length ? (
                   rows.map((row) => (
                     <tr key={row.id} className="border-b border-[#f1f5f9] last:border-0">
-                      <td className={`px-3 py-3 pl-4 align-top ${priorityRowToneClass(row.idTone)}`}>{row.id}</td>
-                      <td className="px-3 py-3 align-top font-medium text-[#0f172a]">
-                        <p className="break-words leading-relaxed">{row.finding}</p>
+                      <td className={`px-2 py-3 pl-3 align-top sm:px-3 sm:pl-4 ${priorityRowToneClass(row.idTone)}`}>
+                        {row.id}
                       </td>
-                      <td className="px-3 py-3 align-top text-[#475569]">
-                        <p className="break-words whitespace-pre-wrap leading-relaxed">{row.answer}</p>
+                      <td className="min-w-0 overflow-hidden px-2 py-3 align-top font-medium text-[#0f172a] sm:px-3">
+                        <p className="max-w-full break-words [overflow-wrap:anywhere] leading-relaxed">{row.finding}</p>
                       </td>
-                      <td className="px-3 py-3 align-top break-words text-[#475569]">{row.domain}</td>
-                      <td className={`px-3 py-3 align-top ${priorityRowToneClass(row.riskTone)}`}>{row.risk}</td>
-                      <td className="px-3 py-3 pr-4 align-top text-[#334155]">{row.impact}</td>
+                      <td className="min-w-0 overflow-hidden px-2 py-3 align-top text-[#475569] sm:px-3">
+                        <p className="max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed">
+                          {row.answer}
+                        </p>
+                      </td>
+                      <td className="min-w-0 overflow-hidden px-2 py-3 align-top text-[#475569] sm:px-3">
+                        <p className="max-w-full break-words [overflow-wrap:anywhere]">{row.domain}</p>
+                      </td>
+                      <td className={`px-2 py-3 align-top sm:px-3 ${priorityRowToneClass(row.riskTone)}`}>{row.risk}</td>
+                      <td className="px-2 py-3 pr-3 align-top text-[#334155] sm:px-3 sm:pr-4">{row.impact}</td>
                     </tr>
                   ))
                 ) : (

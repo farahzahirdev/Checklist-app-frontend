@@ -282,8 +282,9 @@ export function findingSelectedAnswer(f: CustomerReportFinding): string {
 export function formatSelectedAnswerBullet(answer: string): string {
   const trimmed = answer.trim();
   if (!trimmed) return '';
-  if (trimmed.startsWith('•')) return trimmed;
-  return `• ${trimmed}`;
+  const withBullet = trimmed.startsWith('•') ? trimmed : `• ${trimmed}`;
+  // Soft-wrap long bodies after "Level N –" so the description drops to the next line.
+  return withBullet.replace(/^(•\s*Level\s+\d+\s*[–-]\s*)(.{48,})$/i, '$1\n$2');
 }
 
 export type CustomerReportSectionSummary = {
