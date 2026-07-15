@@ -9,6 +9,7 @@ import {
   customerReportOverallPercentage,
   findingExpectedImplementation,
   findingSelectedAnswer,
+  formatSelectedAnswerBullet,
   sectionScoreDisplayName,
 } from '@/lib/reports';
 import { translate, useLocale, type Locale } from '@/lib/i18n';
@@ -319,9 +320,9 @@ function FindingsSection({
                       {config.label}
                     </div>
                     <p className="text-sm font-semibold text-[#243555] mt-1">{findingExpectedImplementation(finding)}</p>
-                    <p className="mt-2 text-sm text-[#6a7d9a]">
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-[#6a7d9a]">
                       <span className="font-semibold">{t('dashboard.findings.answer')}</span>{' '}
-                      {findingSelectedAnswer(finding) || '—'}
+                      {formatSelectedAnswerBullet(findingSelectedAnswer(finding)) || '—'}
                     </p>
                   </div>
                 </div>

@@ -278,6 +278,14 @@ export function findingSelectedAnswer(f: CustomerReportFinding): string {
   return (f.finding_text?.trim() || f.answer?.trim() || '');
 }
 
+/** Format selected answer for table/UI display: "• Level N – <answer text>". */
+export function formatSelectedAnswerBullet(answer: string): string {
+  const trimmed = answer.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('•')) return trimmed;
+  return `• ${trimmed}`;
+}
+
 export type CustomerReportSectionSummary = {
   section_id: string;
   chapter_code: string;

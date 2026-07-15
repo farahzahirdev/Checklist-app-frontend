@@ -7,6 +7,7 @@ import {
   customerReportOverallPercentage,
   findingExpectedImplementation,
   findingSelectedAnswer,
+  formatSelectedAnswerBullet,
   sectionScoreDisplayName,
 } from '@/lib/reports';
 import { getSeverityColor, riskBandLabel } from '@/components/report/report-dashboard';
@@ -739,13 +740,13 @@ export function CustomerReportExecutiveSection({
                     .slice(0, 4)
                     .map((f, i) => {
                       const summary = findingExpectedImplementation(f);
-                      const answer = findingSelectedAnswer(f);
+                      const answer = formatSelectedAnswerBullet(findingSelectedAnswer(f));
                       return (
                       <li key={`${summary}-${i}`} className="rounded-xl border border-[#fee2e2] bg-[#fffafa] p-3">
                         <span className="text-[0.65rem] font-bold uppercase tracking-wide text-[#b91c1c]">{t('exec.topPriorities.badgeHigh')}</span>
                         <p className="mt-1 text-sm font-semibold text-[#0f172a]">{summary}</p>
                         {answer ? (
-                          <p className="mt-2 text-xs leading-relaxed text-[#475569]">
+                          <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-[#475569]">
                             <span className="font-semibold text-[#64748b]">{t('exec.topPriorities.answerLabel')}: </span>
                             {answer}
                           </p>
