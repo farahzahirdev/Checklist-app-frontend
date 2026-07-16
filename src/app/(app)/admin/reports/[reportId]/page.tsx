@@ -127,6 +127,8 @@ export default function AdminReportDetailPage() {
   const [pdfStorageKey, setPdfStorageKey] = useState('');
   const [pdfPassword, setPdfPassword] = useState('');
   const [pdfPasswordConfirm, setPdfPasswordConfirm] = useState('');
+  const [showPdfPassword, setShowPdfPassword] = useState(false);
+  const [showPdfPasswordConfirm, setShowPdfPasswordConfirm] = useState(false);
   const [managementSummary, setManagementSummary] = useState('');
 
   function resetPublishForm() {
@@ -134,6 +136,8 @@ export default function AdminReportDetailPage() {
     setPdfStorageKey('');
     setPdfPassword('');
     setPdfPasswordConfirm('');
+    setShowPdfPassword(false);
+    setShowPdfPasswordConfirm(false);
   }
 
   async function loadReportData(reportUuid: string) {
@@ -428,6 +432,8 @@ export default function AdminReportDetailPage() {
               setPdfStorageKey(report.final_pdf_storage_key ?? '');
               setPdfPassword('');
               setPdfPasswordConfirm('');
+              setShowPdfPassword(false);
+              setShowPdfPasswordConfirm(false);
               setPublishOpen(true);
             }}
             disabled={actionLoading}
@@ -651,28 +657,82 @@ export default function AdminReportDetailPage() {
 
             <label className="mt-3 block">
               <span className="mb-1 block text-xs font-medium text-[#5f7395]">{t('modal.publish.passwordLabel')}</span>
-              <input
-                type="password"
-                value={pdfPassword}
-                onChange={(e) => setPdfPassword(e.target.value)}
-                placeholder={t('modal.publish.passwordPlaceholder')}
-                disabled={actionLoading}
-                autoComplete="new-password"
-                className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2.5 text-sm text-[#25375a] outline-none placeholder:text-[#94a3b8] focus:border-[#3e69b0] disabled:opacity-60"
-              />
+              <div className="relative">
+                <input
+                  type={showPdfPassword ? 'text' : 'password'}
+                  value={pdfPassword}
+                  onChange={(e) => setPdfPassword(e.target.value)}
+                  placeholder={t('modal.publish.passwordPlaceholder')}
+                  disabled={actionLoading}
+                  autoComplete="new-password"
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2.5 pr-10 text-sm text-[#25375a] outline-none placeholder:text-[#94a3b8] focus:border-[#3e69b0] disabled:opacity-60"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPdfPassword((prev) => !prev)}
+                  aria-label={showPdfPassword ? t('modal.publish.hidePassword') : t('modal.publish.showPassword')}
+                  disabled={actionLoading}
+                  className="absolute inset-y-0 right-0 inline-flex items-center px-3 text-[#64748b] hover:text-[#334155] disabled:opacity-60"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                    <path
+                      d={
+                        showPdfPassword
+                          ? 'M3 3 21 21M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.3A10 10 0 0 1 12 5c5.5 0 9.5 4.6 10 7-.2 1-1 2.5-2.3 3.9M6.6 6.6C4.3 8.2 2.4 10.4 2 12c.5 2.4 4.5 7 10 7 1.6 0 3-.4 4.2-1'
+                          : 'M2 12c.5-2.4 4.5-7 10-7s9.5 4.6 10 7c-.5 2.4-4.5 7-10 7s-9.5-4.6-10-7Z'
+                      }
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    {showPdfPassword ? null : <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />}
+                  </svg>
+                </button>
+              </div>
             </label>
 
             <label className="mt-3 block">
               <span className="mb-1 block text-xs font-medium text-[#5f7395]">{t('modal.publish.confirmPasswordLabel')}</span>
-              <input
-                type="password"
-                value={pdfPasswordConfirm}
-                onChange={(e) => setPdfPasswordConfirm(e.target.value)}
-                placeholder={t('modal.publish.confirmPasswordPlaceholder')}
-                disabled={actionLoading}
-                autoComplete="new-password"
-                className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2.5 text-sm text-[#25375a] outline-none placeholder:text-[#94a3b8] focus:border-[#3e69b0] disabled:opacity-60"
-              />
+              <div className="relative">
+                <input
+                  type={showPdfPasswordConfirm ? 'text' : 'password'}
+                  value={pdfPasswordConfirm}
+                  onChange={(e) => setPdfPasswordConfirm(e.target.value)}
+                  placeholder={t('modal.publish.confirmPasswordPlaceholder')}
+                  disabled={actionLoading}
+                  autoComplete="new-password"
+                  className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2.5 pr-10 text-sm text-[#25375a] outline-none placeholder:text-[#94a3b8] focus:border-[#3e69b0] disabled:opacity-60"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPdfPasswordConfirm((prev) => !prev)}
+                  aria-label={
+                    showPdfPasswordConfirm
+                      ? t('modal.publish.hideConfirmPassword')
+                      : t('modal.publish.showConfirmPassword')
+                  }
+                  disabled={actionLoading}
+                  className="absolute inset-y-0 right-0 inline-flex items-center px-3 text-[#64748b] hover:text-[#334155] disabled:opacity-60"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+                    <path
+                      d={
+                        showPdfPasswordConfirm
+                          ? 'M3 3 21 21M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.3A10 10 0 0 1 12 5c5.5 0 9.5 4.6 10 7-.2 1-1 2.5-2.3 3.9M6.6 6.6C4.3 8.2 2.4 10.4 2 12c.5 2.4 4.5 7 10 7 1.6 0 3-.4 4.2-1'
+                          : 'M2 12c.5-2.4 4.5-7 10-7s9.5 4.6 10 7c-.5 2.4-4.5 7-10 7s-9.5-4.6-10-7Z'
+                      }
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    {showPdfPasswordConfirm ? null : (
+                      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+                    )}
+                  </svg>
+                </button>
+              </div>
             </label>
 
             <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
