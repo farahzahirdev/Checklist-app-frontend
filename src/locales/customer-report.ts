@@ -202,7 +202,7 @@ export const customerReportMessages: TranslationMessages = {
     'exec.jump.seeAllCount': 'See full summary →',
     'exec.whatsNext.title': "What's next?",
     'exec.whatsNext.cta': 'View recommendations',
-    'exec.topFindings.title': 'Top findings',
+    'exec.topFindings.title': 'Top Findings',
     'exec.topFindings.subtitle': 'Highest-impact gaps and observations from this assessment.',
     'exec.topFindings.noHigh': 'No high-priority findings.',
     'exec.topFindings.noMedium': 'No medium-priority findings.',

@@ -278,6 +278,31 @@ export function findingSelectedAnswer(f: CustomerReportFinding): string {
   return (f.finding_text?.trim() || f.answer?.trim() || '');
 }
 
+/** Resolve answer level 1–4 from API field or "Level N – …" answer text. */
+export function findingAnswerLevel(f: CustomerReportFinding): number | null {
+  if (f.answer_level != null && Number.isFinite(f.answer_level)) {
+    const n = Math.round(Number(f.answer_level));
+    if (n >= 1 && n <= 4) return n;
+  }
+  const text = findingSelectedAnswer(f);
+  const match = text.match(/\bLevel\s*([1-4])\b/i);
+  if (match) return Number(match[1]);
+  return null;
+}
+
+/** Levels 1–3 are gaps/findings; level 4 means compliant / OK. */
+export function isGapFinding(f: CustomerReportFinding): boolean {
+  const level = findingAnswerLevel(f);
+  return level === 1 || level === 2 || level === 3;
+}
+
+/** Client answer narrative without the leading "Level N –" prefix. */
+export function findingGapDisplayText(f: CustomerReportFinding): string {
+  const raw = findingSelectedAnswer(f);
+  const stripped = raw.replace(/^•?\s*Level\s*[1-4]\s*[–-]\s*/i, '').trim();
+  return stripped || raw;
+}
+
 /** Format selected answer for table/UI display: "• Level N – <answer text>". */
 export function formatSelectedAnswerBullet(answer: string): string {
   const trimmed = answer.trim();

@@ -5,7 +5,9 @@ import { useCallback, useMemo } from 'react';
 import type { CustomerReportDataResponse, CustomerReportDomainDatum, CustomerReportSummary } from '@/lib/reports';
 import {
   customerReportOverallPercentage,
-  findingExpectedImplementation,
+  findingAnswerLevel,
+  findingGapDisplayText,
+  isGapFinding,
   sectionScoreDisplayName,
 } from '@/lib/reports';
 import { getSeverityColor, riskBandLabel } from '@/components/report/report-dashboard';
@@ -228,31 +230,33 @@ export function CustomerReportExecutiveSection({
     return { label: t(cfg.labelKey), className: cfg.className };
   }, [report.status, t]);
 
+  const gapFindings = useMemo(() => data.findings.filter(isGapFinding), [data.findings]);
+
   const priorityCounts = useMemo(() => {
-    const high = data.findings.filter((f) => f.priority === 'high').length;
-    const medium = data.findings.filter((f) => f.priority === 'medium').length;
-    const low = data.findings.filter((f) => f.priority === 'low').length;
+    const high = gapFindings.filter((f) => findingAnswerLevel(f) === 1).length;
+    const medium = gapFindings.filter((f) => findingAnswerLevel(f) === 2).length;
+    const low = gapFindings.filter((f) => findingAnswerLevel(f) === 3).length;
     return { high, medium, low };
-  }, [data.findings]);
+  }, [gapFindings]);
 
   const topByPriority = useMemo(() => {
-    const pick = (p: 'high' | 'medium' | 'low', prefix: string, n: number) =>
-      data.findings
-        .filter((f) => f.priority === p)
+    const pick = (level: 1 | 2 | 3, prefix: string, n: number) =>
+      gapFindings
+        .filter((f) => findingAnswerLevel(f) === level)
         .slice(0, n)
         .map((f, i) => {
-          const title = findingExpectedImplementation(f);
+          const title = findingGapDisplayText(f);
           return {
             code: `${prefix}-${String(i + 1).padStart(2, '0')}`,
             title: title.length > 52 ? `${title.slice(0, 50)}…` : title,
           };
         });
     return {
-      high: pick('high', 'H', 3),
-      medium: pick('medium', 'M', 3),
-      low: pick('low', 'L', 3),
+      high: pick(1, 'H', 3),
+      medium: pick(2, 'M', 3),
+      low: pick(3, 'L', 3),
     };
-  }, [data.findings]);
+  }, [gapFindings]);
 
   const maturitySpiderSourceRows = useMemo((): MaturitySpiderSourceRow[] => {
     const fallback = (n: number) => t('exec.domainFallback', { n: String(n) });
@@ -697,7 +701,7 @@ export function CustomerReportExecutiveSection({
                   {highlights.map((h, i) => (
                     <li key={`hl-${i}-${h.text.slice(0, 24)}`} className="flex gap-2">
                       <span className="mt-0.5 text-[#0066ff]" aria-hidden>
-                        {h.tone === 'strong' ? '●' : h.tone === 'attention' ? '▲' : '◆'}
+                        ◆
                       </span>
                       <span>
                         <span className="font-semibold text-[#0f172a]">{h.label}: </span>
