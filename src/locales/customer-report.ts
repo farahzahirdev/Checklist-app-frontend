@@ -136,9 +136,11 @@ export const customerReportMessages: TranslationMessages = {
     'exec.highlight.strong': 'Strong',
     'exec.highlight.attention': 'Needs attention',
     'exec.highlight.progress': 'Good progress',
+    'exec.highlight.sectionSummary': 'Summary of section {n}',
     'exec.highlight.performingWell': '{section} is performing well ({pct}%).',
     'exec.highlight.needsAttention': '{section} may need attention ({pct}%).',
     'exec.highlight.fallback': 'Review section scores and summary below for a full picture of control maturity.',
+
     'exec.whatsNext.withFindings': 'Review prioritized summary items with owners and agree remediation timelines.',
     'exec.whatsNext.share': 'Share this report with stakeholders responsible for the assessed controls.',
     'exec.whatsNext.track': 'Track improvements and plan a follow-up assessment when remediation work is done.',
@@ -337,9 +339,11 @@ export const customerReportMessages: TranslationMessages = {
     'exec.highlight.strong': 'Silné',
     'exec.highlight.attention': 'Vyžaduje pozornost',
     'exec.highlight.progress': 'Dobrý pokrok',
+    'exec.highlight.sectionSummary': 'Shrnutí sekce {n}',
     'exec.highlight.performingWell': '{section} funguje dobře ({pct} %).',
     'exec.highlight.needsAttention': '{section} může vyžadovat pozornost ({pct} %).',
     'exec.highlight.fallback': 'Kompletní obrázek vyspělosti kontrol najdete níže u skóre sekcí a shrnutí.',
+
     'exec.whatsNext.withFindings':
       'Projděte prioritizované položky shrnutí s vlastníky a dohodněte termíny nápravy.',
     'exec.whatsNext.share': 'Sdílejte tento report se zainteresovanými stranami odpovědnými za posuzované kontroly.',

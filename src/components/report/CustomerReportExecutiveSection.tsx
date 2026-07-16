@@ -373,50 +373,31 @@ export function CustomerReportExecutiveSection({
   }, [data.question_score_distribution, data.total_questions, data.answered_questions, data.completion_percentage]);
 
   const highlights = useMemo(() => {
-    const labelFor = (tone: 'strong' | 'attention' | 'progress') => {
-      if (tone === 'strong') return t('exec.highlight.strong');
-      if (tone === 'attention') return t('exec.highlight.attention');
-      return t('exec.highlight.progress');
-    };
-    const fromSummaries = data.section_summaries.slice(0, 3).map((s) => ({
-      tone: 'progress' as const,
-      label: labelFor('progress'),
-      text: s.summary_text.length > 160 ? `${s.summary_text.slice(0, 158)}…` : s.summary_text,
-    }));
+    const fromSummaries = data.section_summaries
+      .map((s) => {
+        const text = s.summary_text.trim();
+        if (!text) return null;
+        return {
+          tone: 'progress' as const,
+          text: text.length > 160 ? `${text.slice(0, 158)}…` : text,
+        };
+      })
+      .filter((item): item is { tone: 'progress'; text: string } => item != null)
+      .map((item, index) => ({
+        ...item,
+        label: t('exec.highlight.sectionSummary', { n: String(index + 1) }),
+      }));
+
     if (fromSummaries.length) return fromSummaries;
 
-    const strong = data.section_scores.filter((s) => s.percentage >= 75).slice(0, 2);
-    const weak = data.section_scores.filter((s) => s.percentage < 60).slice(0, 1);
-    const built: { tone: 'strong' | 'attention' | 'progress'; label: string; text: string }[] = [];
-    for (const s of strong) {
-      built.push({
-        tone: 'strong',
-        label: labelFor('strong'),
-        text: t('exec.highlight.performingWell', {
-          section: sectionScoreDisplayName(s),
-          pct: String(Math.round(s.percentage)),
-        }),
-      });
-    }
-    for (const s of weak) {
-      built.push({
-        tone: 'attention',
-        label: labelFor('attention'),
-        text: t('exec.highlight.needsAttention', {
-          section: sectionScoreDisplayName(s),
-          pct: String(Math.round(s.percentage)),
-        }),
-      });
-    }
-    if (built.length) return built.slice(0, 3);
     return [
       {
         tone: 'progress' as const,
-        label: labelFor('progress'),
+        label: t('exec.highlights.title'),
         text: t('exec.highlight.fallback'),
       },
     ];
-  }, [data.section_summaries, data.section_scores, t]);
+  }, [data.section_summaries, t]);
 
   const whatsNext = useMemo(() => {
     const fromSuggestions = data.public_suggestions
