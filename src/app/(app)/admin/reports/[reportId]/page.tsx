@@ -123,7 +123,18 @@ export default function AdminReportDetailPage() {
   const [requestChangesNote, setRequestChangesNote] = useState('');
   const [approvalOpen, setApprovalOpen] = useState(false);
   const [approvalNote, setApprovalNote] = useState('');
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [pdfStorageKey, setPdfStorageKey] = useState('');
+  const [pdfPassword, setPdfPassword] = useState('');
+  const [pdfPasswordConfirm, setPdfPasswordConfirm] = useState('');
   const [managementSummary, setManagementSummary] = useState('');
+
+  function resetPublishForm() {
+    setPublishOpen(false);
+    setPdfStorageKey('');
+    setPdfPassword('');
+    setPdfPasswordConfirm('');
+  }
 
   async function loadReportData(reportUuid: string) {
     setLoading(true);
@@ -184,18 +195,31 @@ export default function AdminReportDetailPage() {
 
   async function handlePublish() {
     if (!apiReportId) return;
-    const storageKey = window.prompt(t('prompt.pdfKey'), report?.final_pdf_storage_key ?? '');
-    if (!storageKey?.trim()) return;
-    const pdfPassword = window.prompt(t('prompt.pdfPassword'), '');
-    if (pdfPassword === null) return;
-    if (!pdfPassword.trim()) {
+    const storageKey = pdfStorageKey.trim();
+    const password = pdfPassword.trim();
+    const confirmPassword = pdfPasswordConfirm.trim();
+
+    if (!storageKey) {
+      toast.error(t('toast.pdfKeyRequired'));
+      return;
+    }
+    if (!password) {
       toast.error(t('toast.passwordRequired'));
+      return;
+    }
+    if (password.length < 4) {
+      toast.error(t('toast.passwordMinLength'));
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error(t('toast.passwordMismatch'));
       return;
     }
 
     setActionLoading(true);
     try {
-      await publishReport(apiReportId, storageKey.trim(), pdfPassword.trim());
+      await publishReport(apiReportId, storageKey, password);
+      resetPublishForm();
       await loadReportData(apiReportId);
       toast.success(t('toast.published'));
     } catch (err) {
@@ -285,7 +309,7 @@ export default function AdminReportDetailPage() {
   }, [report, routeSlug, router]);
 
   useEffect(() => {
-    if (!requestChangesOpen && !approvalOpen) return;
+    if (!requestChangesOpen && !approvalOpen && !publishOpen) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape' && !actionLoading) {
         if (requestChangesOpen) {
@@ -296,11 +320,14 @@ export default function AdminReportDetailPage() {
           setApprovalOpen(false);
           setApprovalNote('');
         }
+        if (publishOpen) {
+          resetPublishForm();
+        }
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [requestChangesOpen, approvalOpen, actionLoading]);
+  }, [requestChangesOpen, approvalOpen, publishOpen, actionLoading]);
 
   if (loading) {
     return (
@@ -397,7 +424,12 @@ export default function AdminReportDetailPage() {
         {!isReadOnly && report.status === 'approved' ? (
           <button
             type="button"
-            onClick={handlePublish}
+            onClick={() => {
+              setPdfStorageKey(report.final_pdf_storage_key ?? '');
+              setPdfPassword('');
+              setPdfPasswordConfirm('');
+              setPublishOpen(true);
+            }}
             disabled={actionLoading}
             className="rounded-xl border border-[#2d4f83] bg-[#182843] px-4 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
           >
@@ -579,6 +611,91 @@ export default function AdminReportDetailPage() {
                 className="rounded-lg border border-[#2f9960] bg-[#2f9960] px-3 py-2 text-sm font-semibold text-white hover:bg-[#268a53] disabled:opacity-60"
               >
                 {actionLoading ? t('modal.sending') : t('modal.approval.send')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {publishOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1220]/55 px-4 py-8"
+          onClick={() => {
+            if (!actionLoading) resetPublishForm();
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="publish-report-title"
+            className="w-full max-w-lg md:max-w-xl rounded-2xl border border-[#dbe4f4] bg-white p-6 md:p-8 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="publish-report-title" className="text-lg font-semibold text-[#1f2d45] md:text-xl">
+              {t('modal.publish.title')}
+            </h2>
+            <p className="mt-1 text-sm text-[#607594] md:text-[0.9375rem]">{t('modal.publish.body')}</p>
+
+            <label className="mt-4 block">
+              <span className="mb-1 block text-xs font-medium text-[#5f7395]">{t('modal.publish.pdfKeyLabel')}</span>
+              <input
+                type="text"
+                value={pdfStorageKey}
+                onChange={(e) => setPdfStorageKey(e.target.value)}
+                placeholder={t('modal.publish.pdfKeyPlaceholder')}
+                disabled={actionLoading}
+                autoComplete="off"
+                className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2.5 text-sm text-[#25375a] outline-none placeholder:text-[#94a3b8] focus:border-[#3e69b0] disabled:opacity-60"
+              />
+            </label>
+
+            <label className="mt-3 block">
+              <span className="mb-1 block text-xs font-medium text-[#5f7395]">{t('modal.publish.passwordLabel')}</span>
+              <input
+                type="password"
+                value={pdfPassword}
+                onChange={(e) => setPdfPassword(e.target.value)}
+                placeholder={t('modal.publish.passwordPlaceholder')}
+                disabled={actionLoading}
+                autoComplete="new-password"
+                className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2.5 text-sm text-[#25375a] outline-none placeholder:text-[#94a3b8] focus:border-[#3e69b0] disabled:opacity-60"
+              />
+            </label>
+
+            <label className="mt-3 block">
+              <span className="mb-1 block text-xs font-medium text-[#5f7395]">{t('modal.publish.confirmPasswordLabel')}</span>
+              <input
+                type="password"
+                value={pdfPasswordConfirm}
+                onChange={(e) => setPdfPasswordConfirm(e.target.value)}
+                placeholder={t('modal.publish.confirmPasswordPlaceholder')}
+                disabled={actionLoading}
+                autoComplete="new-password"
+                className="w-full rounded-xl border border-[#d4dced] bg-white px-3 py-2.5 text-sm text-[#25375a] outline-none placeholder:text-[#94a3b8] focus:border-[#3e69b0] disabled:opacity-60"
+              />
+            </label>
+
+            <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={resetPublishForm}
+                className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm font-semibold text-[#3e69b0] hover:bg-[#edf4ff] disabled:opacity-60"
+              >
+                {t('modal.cancel')}
+              </button>
+              <button
+                type="button"
+                disabled={
+                  actionLoading ||
+                  !pdfStorageKey.trim() ||
+                  !pdfPassword.trim() ||
+                  !pdfPasswordConfirm.trim()
+                }
+                onClick={() => void handlePublish()}
+                className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm font-semibold text-white hover:bg-[#223657] disabled:opacity-60"
+              >
+                {actionLoading ? t('modal.publishing') : t('modal.publish.send')}
               </button>
             </div>
           </div>
