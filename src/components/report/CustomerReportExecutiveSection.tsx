@@ -6,8 +6,6 @@ import type { CustomerReportDataResponse, CustomerReportDomainDatum, CustomerRep
 import {
   customerReportOverallPercentage,
   findingExpectedImplementation,
-  findingSelectedAnswer,
-  formatSelectedAnswerBullet,
   sectionScoreDisplayName,
 } from '@/lib/reports';
 import { getSeverityColor, riskBandLabel } from '@/components/report/report-dashboard';
@@ -414,8 +412,6 @@ export function CustomerReportExecutiveSection({
     return steps;
   }, [data.public_suggestions, data.findings.length, t]);
 
-  const findingDomainLabel = (f: (typeof data.findings)[0]) => f.report_domain?.trim() || t('exec.domain.general');
-
   const recommendationsHref = data.public_suggestions.length > 0 ? '#report-suggestions' : '#detailed-findings';
 
   return (
@@ -720,21 +716,12 @@ export function CustomerReportExecutiveSection({
                     .filter((f) => f.priority === 'high')
                     .slice(0, 4)
                     .map((f, i) => {
-                      const summary = findingExpectedImplementation(f);
-                      const answer = formatSelectedAnswerBullet(findingSelectedAnswer(f));
+                      const expectedImplementation = f.expected_implementation?.trim() || '';
+                      if (!expectedImplementation) return null;
                       return (
-                      <li key={`${summary}-${i}`} className="rounded-xl border border-[#fee2e2] bg-[#fffafa] p-3">
+                      <li key={`${expectedImplementation}-${i}`} className="rounded-xl border border-[#fee2e2] bg-[#fffafa] p-3">
                         <span className="text-[0.65rem] font-bold uppercase tracking-wide text-[#b91c1c]">{t('exec.topPriorities.badgeHigh')}</span>
-                        <p className="mt-1 text-sm font-semibold text-[#0f172a]">{summary}</p>
-                        {answer ? (
-                          <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-[#475569]">
-                            <span className="font-semibold text-[#64748b]">{t('exec.topPriorities.answerLabel')}: </span>
-                            {answer}
-                          </p>
-                        ) : null}
-                        <p className="mt-1 text-xs text-[#64748b]">
-                          H-{String(i + 1).padStart(2, '0')} · {findingDomainLabel(f)}
-                        </p>
+                        <p className="mt-1 text-sm font-semibold text-[#0f172a]">{expectedImplementation}</p>
                       </li>
                       );
                     })}
