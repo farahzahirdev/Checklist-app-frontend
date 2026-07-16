@@ -7,9 +7,6 @@ import {
   buildCustomerAssessmentQuestionHref,
   CustomerReportDataResponse,
   customerReportOverallPercentage,
-  findingExpectedImplementation,
-  findingSelectedAnswer,
-  formatSelectedAnswerBullet,
   sectionScoreDisplayName,
 } from '@/lib/reports';
 import { translate, useLocale, type Locale } from '@/lib/i18n';
@@ -244,98 +241,6 @@ function ScoreBreakdown({
 }
 
 /**
- * Findings priority filter and display
- */
-function FindingsSection({
-  findings,
-  id,
-  t,
-}: {
-  findings: any[];
-  id?: string;
-  t: (key: string, values?: Record<string, string>) => string;
-}) {
-  const findingsByPriority = useMemo(() => {
-    return {
-      high: findings.filter((f) => f.priority === 'high'),
-      medium: findings.filter((f) => f.priority === 'medium'),
-      low: findings.filter((f) => f.priority === 'low'),
-    };
-  }, [findings]);
-
-  const priorityConfig = useMemo(
-    () => ({
-      high: {
-        bg: 'bg-[#fee2e2]',
-        text: 'text-[#dc2626]',
-        badge: 'bg-red-100 text-red-800',
-        label: t('dashboard.findings.priority.critical'),
-      },
-      medium: {
-        bg: 'bg-[#fff9ea]',
-        text: 'text-[#d97706]',
-        badge: 'bg-amber-100 text-amber-800',
-        label: t('dashboard.findings.priority.warning'),
-      },
-      low: {
-        bg: 'bg-[#eff6ff]',
-        text: 'text-[#0284c7]',
-        badge: 'bg-blue-100 text-blue-800',
-        label: t('dashboard.findings.priority.info'),
-      },
-    }),
-    [t]
-  );
-
-  return (
-    <section id={id} className="space-y-4 scroll-mt-24">
-      <h2 className="text-xl font-semibold text-[#243555]">{t('dashboard.findings.title')}</h2>
-
-      {/* Priority Summary */}
-      <div className="grid gap-3 md:grid-cols-3">
-        {Object.entries(findingsByPriority).map(([priority, items]) => (
-          <div key={priority} className={`rounded-lg border border-[#e2e8f5] ${priorityConfig[priority as 'high' | 'medium' | 'low'].bg} p-3`}>
-            <p className={`text-xs font-semibold uppercase ${priorityConfig[priority as 'high' | 'medium' | 'low'].text}`}>
-              {priorityConfig[priority as 'high' | 'medium' | 'low'].label}
-            </p>
-            <p className={`mt-1 text-2xl font-bold ${priorityConfig[priority as 'high' | 'medium' | 'low'].text}`}>{items.length}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* All Findings */}
-      <div className="space-y-3">
-        {findings.length === 0 ? (
-          <p className="rounded-lg border border-[#e2e8f5] bg-white p-4 text-center text-sm text-[#6a7d9a]">
-            {t('dashboard.findings.empty')}
-          </p>
-        ) : (
-          findings.map((finding, idx) => {
-            const config = priorityConfig[finding.priority as 'high' | 'medium' | 'low'];
-            return (
-              <article key={`${finding.question_text}-${idx}`} className={`rounded-lg border border-[#e2e8f5] ${config.bg} p-4 shadow-sm`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <div className={`inline-block rounded-md ${config.badge} px-2 py-1 text-xs font-semibold mb-2`}>
-                      {config.label}
-                    </div>
-                    <p className="text-sm font-semibold text-[#243555] mt-1">{findingExpectedImplementation(finding)}</p>
-                    <p className="mt-2 whitespace-pre-wrap text-sm text-[#6a7d9a]">
-                      <span className="font-semibold">{t('dashboard.findings.answer')}</span>{' '}
-                      {formatSelectedAnswerBullet(findingSelectedAnswer(finding)) || '—'}
-                    </p>
-                  </div>
-                </div>
-              </article>
-            );
-          })
-        )}
-      </div>
-    </section>
-  );
-}
-
-/**
  * Main Report Dashboard Component
  */
 export function ReportDashboard({ data, reportId: _reportId, checklistId }: ReportDashboardProps) {
@@ -388,9 +293,6 @@ export function ReportDashboard({ data, reportId: _reportId, checklistId }: Repo
 
       {/* Score Breakdown */}
       <ScoreBreakdown sections={data.section_scores} chapters={data.chapter_data} t={t} />
-
-      {/* Findings */}
-      <FindingsSection findings={data.findings} id="report-findings-dashboard" t={t} />
 
       {/* Admin Summaries */}
       {data.section_summaries.length > 0 && (
