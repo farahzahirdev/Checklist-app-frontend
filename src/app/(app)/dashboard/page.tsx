@@ -15,6 +15,18 @@ import { formatStatusLabel } from '@/lib/status-format';
 import { translate, useLocale } from '@/lib/i18n';
 import { customerDashboardMessages } from '@/locales/customer-dashboard';
 
+function translateDashboardStatus(status: string | null | undefined, t: (key: string) => string): string {
+  if (!status) return '-';
+  const normalized = status.trim().toLowerCase();
+  const statusKey = `status.${normalized}`;
+  const statusLabel = t(statusKey);
+  if (statusLabel !== statusKey) return statusLabel;
+  const reportKey = `report.status.${normalized}`;
+  const reportLabel = t(reportKey);
+  if (reportLabel !== reportKey) return reportLabel;
+  return formatStatusLabel(status);
+}
+
 export default function DashboardPage() {
   const { locale } = useLocale();
   const t = (key: string) => translate(customerDashboardMessages, locale, key);
@@ -214,7 +226,7 @@ export default function DashboardPage() {
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-[#1f2d45]">{item.checklist_title}</p>
                     <p className="mt-0.5 truncate text-xs text-[#607594]">
-                      {formatStatusLabel(item.status)} • {item.completion_percent}% • {t('labels.lastActivity')}{' '}
+                      {translateDashboardStatus(item.status, t)} • {item.completion_percent}% • {t('labels.lastActivity')}{' '}
                       {item.last_activity ? new Date(item.last_activity).toLocaleString() : t('labels.na')}
                     </p>
                   </div>
@@ -354,7 +366,7 @@ export default function DashboardPage() {
                         </Link>
                       ) : (
                         <span className="shrink-0 rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-1.5 text-xs font-semibold text-[#607594]">
-                          {isPrivacyExpired ? t('assessment.privacyDeleted') : formatStatusLabel(item.report_status ?? item.status)}
+                          {isPrivacyExpired ? t('assessment.privacyDeleted') : translateDashboardStatus(item.report_status ?? item.status, t)}
                         </span>
                       )}
                       {isPrivacyExpired ? (

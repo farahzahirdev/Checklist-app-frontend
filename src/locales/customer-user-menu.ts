@@ -14,10 +14,10 @@ export const customerUserMenuMessages: TranslationMessages = {
   cs: {
     'menu.toggle': 'Otevřít menu účtu',
     'menu.profile': 'Uživatelský profil',
-    'menu.myAudits': 'Moje audity',
+    'menu.myAudits': 'Moje hodnocení',
     'menu.myBackupPlans': 'Moje zálohovací plány',
     'menu.drp': 'Moje DRP plány',
-    'menu.reports': 'Reporty',
+    'menu.reports': 'Zprávy',
     'menu.logout': 'Odhlásit se',
     'menu.loggingOut': 'Odhlašuji...',
   },
