@@ -557,27 +557,6 @@ export default function AccessPage() {
                                 {startingId === item.id ? t('actions.processing') : t('actions.startAudit')}
                                 <ArrowRightIcon />
                               </button>
-                            ) : isCompleted && startableChecklists.some((available) => available.checklist_id === item.checklist_id) ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setStartingId(item.checklist_id);
-                                  setError('');
-                                  startAssessment({ checklist_id: item.checklist_id })
-                                    .then(() => {
-                                      window.location.href = `/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}`;
-                                    })
-                                    .catch((err) => {
-                                      setError(err instanceof Error ? err.message : startErrorText);
-                                      setStartingId('');
-                                    });
-                                }}
-                                disabled={startingId === item.checklist_id}
-                                className={workspacePrimaryBtn}
-                              >
-                                {startingId === item.checklist_id ? t('actions.processing') : t('actions.startNewAudit')}
-                                <ArrowRightIcon />
-                              </button>
                             ) : item.status === 'expired' ? (
                               // Expired assessments - no action buttons, only historical record
                               null

@@ -278,6 +278,18 @@ function isHttpUrl(value?: string | null) {
   return /^https?:\/\//i.test(value);
 }
 
+const ADMIN_GUIDANCE_EVIDENCE_NOTE_EN =
+  'Upload supporting evidence to strengthen your assessment (PDF, PNG, JPG - max 10MB). You can upload evidence before or after answering the question.';
+const ADMIN_GUIDANCE_EVIDENCE_NOTE_CS =
+  'Nahrajte podpůrný důkaz pro posílení vašeho hodnocení (PDF, PNG, JPG – max. 10 MB). Důkaz můžete nahrát před nebo po zodpovězení otázky.';
+
+function localizeAdminGuidanceNote(note: string | null | undefined, locale: string) {
+  const text = String(note ?? '').trim();
+  if (!text) return '';
+  if (locale !== 'cs') return text;
+  return text.split(ADMIN_GUIDANCE_EVIDENCE_NOTE_EN).join(ADMIN_GUIDANCE_EVIDENCE_NOTE_CS);
+}
+
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
@@ -1497,7 +1509,10 @@ export default function AssessmentPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <p className="text-xs font-semibold text-[#65748f]">
-                      Question {activeQuestionIndex + 1 > 0 ? activeQuestionIndex + 1 : 1} of {allQuestions.length || 1}
+                      {t('questions.progress', {
+                        current: String(activeQuestionIndex + 1 > 0 ? activeQuestionIndex + 1 : 1),
+                        total: String(allQuestions.length || 1),
+                      })}
                     </p>
                   </div>
                 </div>
@@ -1510,19 +1525,19 @@ export default function AssessmentPage() {
                   ) : null}
                   <div className={`${questionHeading ? 'mt-3 ' : ''}grid gap-2 md:grid-cols-4`}>
                     <div className="rounded-md bg-[#f7f9fe] p-2 text-xs">
-                      <p className="text-[#607594]">Audit Type</p>
+                      <p className="text-[#607594]">{t('questions.auditType')}</p>
                       <p className="mt-1 font-semibold text-[#1f2d45]">{activeQuestion.audit_type || '-'}</p>
                     </div>
                     <div className="rounded-md bg-[#f7f9fe] p-2 text-xs">
-                      <p className="text-[#607594]">Section</p>
+                      <p className="text-[#607594]">{t('questions.section')}</p>
                       <p className="mt-1 font-semibold text-[#1f2d45]">{activeQuestion.sectionTitle}</p>
                     </div>
                     <div className="rounded-md bg-[#f7f9fe] p-2 text-xs">
-                      <p className="text-[#607594]">Question ID</p>
+                      <p className="text-[#607594]">{t('questions.questionId')}</p>
                       <p className="mt-1 font-semibold text-[#1f2d45]">{activeQuestion.question_id ?? activeQuestion.id}</p>
                     </div>
                     <div className="rounded-md bg-[#f7f9fe] p-2 text-xs">
-                      <p className="text-[#607594]">Severity</p>
+                      <p className="text-[#607594]">{t('questions.severity')}</p>
                       <p
                         className={`mt-1 inline-flex items-center gap-1.5 font-semibold capitalize ${activeQuestionSeverity.styles.text}`}
                       >
@@ -1539,7 +1554,7 @@ export default function AssessmentPage() {
 
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   <div className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#607594]">Legal Requirement</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#607594]">{t('questions.legalRequirement')}</p>
                     {sanitizedLegalRequirementHtml ? (
                       <div
                         className="mt-2 space-y-1 text-sm text-[#2a3d5f] [&_li]:ml-4 [&_ol]:list-decimal [&_p]:leading-6 [&_ul]:list-disc"
@@ -1550,7 +1565,7 @@ export default function AssessmentPage() {
                     )}
                   </div>
                   <div className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#607594]">Explanation</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#607594]">{t('questions.explanation')}</p>
                     {sanitizedExplanationHtml ? (
                       <div
                         className="mt-2 space-y-1 text-sm text-[#2a3d5f] [&_li]:ml-4 [&_ol]:list-decimal [&_p]:leading-6 [&_ul]:list-disc"
@@ -1575,7 +1590,7 @@ export default function AssessmentPage() {
                     )}
                   </div>
                   <div className="rounded-lg border border-[#e2e8f5] bg-[#f7f9fe] p-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#607594]">Example Evidence</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#607594]">{t('questions.exampleEvidence')}</p>
                     {(isHttpUrl(activeQuestion.illustrative_image_id) ||
                       (activeQuestion.illustrative_image_id && previewUrlsByMediaId[activeQuestion.illustrative_image_id])) ? (
                       <div className="mt-2 w-full max-w-[220px] overflow-hidden rounded-md border border-[#dbe4f4] bg-white">
@@ -1595,7 +1610,7 @@ export default function AssessmentPage() {
                           ? previewErrorsByMediaId[activeQuestion.illustrative_image_id]
                             ? `Preview unavailable for media ${activeQuestion.illustrative_image_id}: ${previewErrorsByMediaId[activeQuestion.illustrative_image_id]}`
                             : 'Image ID received, but no image URL is available yet.'
-                          : 'No example evidence image provided.'}
+                          : t('questions.noExampleEvidence')}
                       </p>
                     )}
                   </div>
@@ -1603,8 +1618,10 @@ export default function AssessmentPage() {
 
                 {activeQuestion.admin_note ? (
                   <div className="mt-3 rounded-lg border border-[#e7e2ba] bg-[#fffbea] p-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#8c6f1e]">Admin Guidance</p>
-                    <p className="mt-2 whitespace-pre-line text-sm text-[#685527]">{activeQuestion.admin_note}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#8c6f1e]">{t('questions.adminGuidance')}</p>
+                    <p className="mt-2 whitespace-pre-line text-sm text-[#685527]">
+                      {localizeAdminGuidanceNote(activeQuestion.admin_note, locale)}
+                    </p>
                   </div>
                 ) : null}
               </>
@@ -1628,14 +1645,21 @@ export default function AssessmentPage() {
                       submittedScore,
                     );
                   const displayDescription = matchedOption?.description?.trim();
+                  const hideShortAnswerLabel = locale === 'cs' && Boolean(displayDescription);
                   return (
                     <div
                       className={`mt-2 inline-block max-w-full rounded-lg border px-3 py-2 text-sm ${answerOptionScoreStyles(submittedScore, true)}`}
                     >
-                      <p className="font-semibold leading-snug">{displayLabel}</p>
-                      {displayDescription ? (
-                        <p className="mt-1.5 text-xs font-normal leading-relaxed text-white/90">{displayDescription}</p>
-                      ) : null}
+                      {hideShortAnswerLabel ? (
+                        <p className="font-semibold leading-snug">{displayDescription}</p>
+                      ) : (
+                        <>
+                          <p className="font-semibold leading-snug">{displayLabel}</p>
+                          {displayDescription ? (
+                            <p className="mt-1.5 text-xs font-normal leading-relaxed text-white/90">{displayDescription}</p>
+                          ) : null}
+                        </>
+                      )}
                     </div>
                   );
                 })()}
@@ -1676,17 +1700,24 @@ export default function AssessmentPage() {
                         className={`${answerOptionScoreStyles(option.score, isSelected)} w-full`}
                         disabled={autoSaving[activeQuestion.id] || false}
                         aria-pressed={isSelected}
+                        aria-label={option.label}
                       >
-                        <p className="text-sm font-semibold leading-snug">{option.label}</p>
-                        {option.description ? (
-                          <p
-                            className={`mt-1.5 text-xs font-normal leading-relaxed ${
-                              isSelected ? 'text-white/90' : 'text-inherit opacity-90'
-                            }`}
-                          >
-                            {option.description}
-                          </p>
-                        ) : null}
+                        {locale === 'cs' && option.description ? (
+                          <p className="text-sm font-semibold leading-snug">{option.description}</p>
+                        ) : (
+                          <>
+                            <p className="text-sm font-semibold leading-snug">{option.label}</p>
+                            {option.description ? (
+                              <p
+                                className={`mt-1.5 text-xs font-normal leading-relaxed ${
+                                  isSelected ? 'text-white/90' : 'text-inherit opacity-90'
+                                }`}
+                              >
+                                {option.description}
+                              </p>
+                            ) : null}
+                          </>
+                        )}
                         {autoSaving[activeQuestion.id] && (
                           <div className="absolute top-1 right-1">
                             <div className="h-2 w-2 rounded-full bg-white/90 animate-pulse"></div>
@@ -1711,7 +1742,7 @@ export default function AssessmentPage() {
                             },
                           }))
                         }
-                        placeholder="Write your note here..."
+                        placeholder={t('questions.notePlaceholder')}
                         className="w-full rounded-lg border border-[#d4dced] bg-[#f7f9fe] px-3 py-2 text-sm text-[#243555] outline-none ring-[#8bb4ff]/50 focus:ring"
                         rows={3}
                       />
@@ -1881,19 +1912,20 @@ export default function AssessmentPage() {
                     disabled={!hasPreviousQuestion}
                     className="rounded-lg border border-[#d4dced] px-3 py-2 text-sm text-[#2a3d5f] hover:bg-[#f6f9ff] disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Previous
+                    {t('buttons.previous')}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      goToQuestionByIndex(activeQuestionIndex + 1);
-                      scrollQuestionPanelToTop();
-                    }}
-                    disabled={!hasNextQuestion}
-                    className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white hover:bg-[#223657] disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Next
-                  </button>
+                  {hasNextQuestion ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        goToQuestionByIndex(activeQuestionIndex + 1);
+                        scrollQuestionPanelToTop();
+                      }}
+                      className="rounded-lg border border-[#2d4f83] bg-[#182843] px-3 py-2 text-sm text-white hover:bg-[#223657]"
+                    >
+                      {t('buttons.next')}
+                    </button>
+                  ) : null}
                 </div>
               </>
             ) : null}
