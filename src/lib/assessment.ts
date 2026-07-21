@@ -3,6 +3,19 @@ import { apiGetWithAuth, apiPatch, apiPost, apiPut, getApiBaseUrl } from '@/lib/
 
 export type AssessmentStatus = 'not_started' | 'in_progress' | 'submitted' | 'closed' | 'expired';
 
+export function isCompletedAssessmentStatus(status: AssessmentStatus | string | null | undefined): boolean {
+  return status === 'submitted' || status === 'closed';
+}
+
+export function isExpiredAssessmentStatus(status: AssessmentStatus | string | null | undefined): boolean {
+  return status === 'expired';
+}
+
+/** Completed or expired audits cannot be restarted without a new purchase. */
+export function isNonStartableAssessmentStatus(status: AssessmentStatus | string | null | undefined): boolean {
+  return isCompletedAssessmentStatus(status) || isExpiredAssessmentStatus(status);
+}
+
 export type AssessmentSessionResponse = {
   assessment_id: string;
   checklist_id: string;

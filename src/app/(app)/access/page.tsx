@@ -547,7 +547,7 @@ export default function AccessPage() {
                           </div>
 
                           <div className="flex flex-col gap-2">
-                            {item.status === 'not_started' ? (
+                            {item.status === 'not_started' && accessActive ? (
                               <button
                                 type="button"
                                 onClick={() => void handleStart(item)}
@@ -557,15 +557,27 @@ export default function AccessPage() {
                                 {startingId === item.id ? t('actions.processing') : t('actions.startAudit')}
                                 <ArrowRightIcon />
                               </button>
+                            ) : item.status === 'not_started' ? (
+                              <Link href="/payment" className={workspacePrimaryBtn}>
+                                {t('actions.purchaseAgain')}
+                                <ArrowRightIcon />
+                              </Link>
                             ) : item.status === 'expired' ? (
-                              // Expired assessments - no action buttons, only historical record
-                              null
-                            ) : item.status === 'in_progress' ? (
+                              <Link href="/payment" className={workspacePrimaryBtn}>
+                                {t('actions.purchaseAgain')}
+                                <ArrowRightIcon />
+                              </Link>
+                            ) : item.status === 'in_progress' && accessActive ? (
                               <Link
                                 href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
                                 className={workspacePrimaryBtn}
                               >
                                 {t('actions.continueAudit')}
+                                <ArrowRightIcon />
+                              </Link>
+                            ) : item.status === 'in_progress' ? (
+                              <Link href="/payment" className={workspacePrimaryBtn}>
+                                {t('actions.purchaseAgain')}
                                 <ArrowRightIcon />
                               </Link>
                             ) : null}
@@ -588,7 +600,18 @@ export default function AccessPage() {
 
                             {item.status !== 'expired' && accessActive ? (
                               <Link
-                                href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`}
+                                href={
+                                  item.status === 'submitted' || item.status === 'closed'
+                                    ? `/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&readonly=true`
+                                    : `/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}`
+                                }
+                                className={workspaceOutlineBtn}
+                              >
+                                {t('actions.viewDetails')}
+                              </Link>
+                            ) : item.status === 'expired' && item.id ? (
+                              <Link
+                                href={`/assessment?checklist_id=${encodeURIComponent(item.checklist_id)}&assessment_id=${encodeURIComponent(item.id)}&readonly=true`}
                                 className={workspaceOutlineBtn}
                               >
                                 {t('actions.viewDetails')}

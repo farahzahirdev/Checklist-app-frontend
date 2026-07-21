@@ -18,6 +18,9 @@ import {
   submitAssessment,
   uploadAssessmentEvidence,
   startAssessment,
+  isCompletedAssessmentStatus,
+  isExpiredAssessmentStatus,
+  isNonStartableAssessmentStatus,
   type AssessmentCurrentDetailResponse,
   type AssessmentDetailQuestion,
 } from '@/lib/assessment';
@@ -402,15 +405,20 @@ export default function AssessmentPage() {
   const [previewErrorsByMediaId, setPreviewErrorsByMediaId] = useState<Record<string, string>>({});
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [isSubmittedChecklist, setIsSubmittedChecklist] = useState(readonlyFromQuery);
+  const [isExpiredAssessment, setIsExpiredAssessment] = useState(false);
   const countdownNowMs = useAccessCountdownNow(Boolean(assessmentDetail?.expires_at));
-  const isSubmittedReadOnly = isSubmittedChecklist || readonlyFromQuery;
+  const isSubmittedReadOnly = isSubmittedChecklist || isExpiredAssessment || readonlyFromQuery;
   const activeQuestionIdRef = useRef(activeQuestionId);
   const selectedSectionIdRef = useRef(selectedSectionId);
   const skipLocaleRefetchRef = useRef(true);
 
-  function isSubmittedWithCurrentPaymentError(message: string): boolean {
+  function isRestartBlockedError(message: string): boolean {
     const lower = message.toLowerCase();
-    return lower.includes('already submitted') && lower.includes('payment');
+    return (
+      (lower.includes('already submitted') && lower.includes('payment')) ||
+      lower.includes('expired') ||
+      lower.includes('payment is required')
+    );
   }
 
   const allQuestions = useMemo(
@@ -798,18 +806,31 @@ export default function AssessmentPage() {
     if (assessmentId) {
       return assessmentId;
     }
+    if (isSubmittedReadOnly || isNonStartableAssessmentStatus(assessmentDetail?.status)) {
+      if (assessmentDetail?.assessment_id) {
+        return assessmentDetail.assessment_id;
+      }
+      throw new Error(t('errors.alreadySubmitted'));
+    }
     try {
-      const current = await getCurrentAssessment(undefined);
+      const current = await getCurrentAssessment(assessmentDetail?.checklist_id || undefined);
       setAssessmentId(current.assessment_id);
       return current.assessment_id;
     } catch {
-      if (!assessmentDetail?.checklist_id) {
-        throw new Error('No active checklist found to start assessment.');
-      }
-      const started = await startAssessment({ checklist_id: assessmentDetail.checklist_id });
-      setAssessmentId(started.assessment_id);
-      return started.assessment_id;
+      throw new Error(t('errors.alreadySubmitted'));
     }
+  }
+
+  async function findBlockingAssessmentForChecklist(checklistId: string) {
+    const list = await listCustomerAssessments({
+      status: ['submitted', 'closed', 'expired'],
+      limit: 200,
+      sort_by: 'updated_at',
+      sort_order: 'desc',
+    });
+    return (list.assessments ?? []).find(
+      (item) => item.checklist_id === checklistId && isNonStartableAssessmentStatus(item.status),
+    );
   }
 
   async function loadAssessmentDetail(options?: {
@@ -831,37 +852,34 @@ export default function AssessmentPage() {
         if (!checklistIdFromQuery) {
           throw initialErr;
         }
-        try {
-          const list = await listCustomerAssessments({
-            status: ['submitted', 'closed', 'expired'],
-            limit: 200,
-            sort_by: 'updated_at',
-            sort_order: 'desc',
-          });
-          const submittedForChecklist = (list.assessments ?? []).find(
-            (item) => item.checklist_id === checklistIdFromQuery && item.status === 'submitted',
-          );
-          if (submittedForChecklist) {
-            if (questionIdFromQuery) {
-              detail = await getAssessmentDetailById(submittedForChecklist.id);
-            } else {
-              setIsSubmittedChecklist(true);
-              throw new Error(t('errors.alreadySubmitted'));
-            }
+        const blockingForChecklist = await findBlockingAssessmentForChecklist(checklistIdFromQuery);
+        if (blockingForChecklist) {
+          if (questionIdFromQuery) {
+            detail = await getAssessmentDetailById(blockingForChecklist.id);
           } else {
+            setIsSubmittedChecklist(isCompletedAssessmentStatus(blockingForChecklist.status));
+            setIsExpiredAssessment(isExpiredAssessmentStatus(blockingForChecklist.status));
+            throw new Error(
+              isExpiredAssessmentStatus(blockingForChecklist.status)
+                ? t('errors.assessmentExpired')
+                : t('errors.alreadySubmitted'),
+            );
+          }
+        } else {
+          try {
             await startAssessment({ checklist_id: checklistIdFromQuery });
-            detail = await getCurrentAssessmentDetail(checklistIdFromQuery);
+          } catch (startErr) {
+            if (startErr instanceof Error && isRestartBlockedError(startErr.message)) {
+              throw startErr;
+            }
+            throw startErr;
           }
-        } catch (lookupErr) {
-          if (lookupErr instanceof Error && isSubmittedWithCurrentPaymentError(lookupErr.message)) {
-            throw lookupErr;
-          }
-          await startAssessment({ checklist_id: checklistIdFromQuery });
           detail = await getCurrentAssessmentDetail(checklistIdFromQuery);
         }
       }
       }
-      setIsSubmittedChecklist(detail.status === 'submitted');
+      setIsSubmittedChecklist(isCompletedAssessmentStatus(detail.status));
+      setIsExpiredAssessment(isExpiredAssessmentStatus(detail.status));
       setAssessmentDetail(detail);
       setAssessmentId(detail.assessment_id);
       const initialAnswers: Record<string, LocalAnswer> = {};
@@ -938,15 +956,21 @@ export default function AssessmentPage() {
       setError('');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load assessment details.';
-      if (isSubmittedWithCurrentPaymentError(errorMessage)) {
-        setIsSubmittedChecklist(true);
+      if (isRestartBlockedError(errorMessage)) {
+        setIsSubmittedChecklist(errorMessage.includes('already submitted'));
+        setIsExpiredAssessment(errorMessage.toLowerCase().includes('expired'));
         setAssessmentDetail(null);
         setMessage('');
-        setError(t('errors.alreadySubmittedPayment'));
+        setError(
+          errorMessage.toLowerCase().includes('expired')
+            ? t('errors.assessmentExpiredPayment')
+            : t('errors.alreadySubmittedPayment'),
+        );
         return;
       }
-      if (errorMessage.includes('already submitted')) {
-        setIsSubmittedChecklist(true);
+      if (errorMessage.includes('already submitted') || errorMessage.includes('expired')) {
+        setIsSubmittedChecklist(errorMessage.includes('already submitted'));
+        setIsExpiredAssessment(errorMessage.toLowerCase().includes('expired'));
         setAssessmentDetail(null);
         setMessage('');
         setError('');
@@ -1257,12 +1281,18 @@ export default function AssessmentPage() {
                 <span className="text-sm font-semibold text-[#1f2d45]">{t('progress.regime')}</span>
                 <span
                   className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                    assessmentDetail.status === 'submitted'
-                      ? 'bg-[#dcfce7] text-[#15803d]'
+                    isNonStartableAssessmentStatus(assessmentDetail.status)
+                      ? isExpiredAssessmentStatus(assessmentDetail.status)
+                        ? 'bg-[#fef3c7] text-[#b45309]'
+                        : 'bg-[#dcfce7] text-[#15803d]'
                       : 'bg-[#dcfce7] text-[#15803d]'
                   }`}
                 >
-                  {assessmentDetail.status === 'submitted' ? t('progress.status.submitted') : t('progress.status.inProgress')}
+                  {isExpiredAssessmentStatus(assessmentDetail.status)
+                    ? t('progress.status.expired')
+                    : isCompletedAssessmentStatus(assessmentDetail.status)
+                      ? t('progress.status.submitted')
+                      : t('progress.status.inProgress')}
                 </span>
               </div>
               <div className="min-w-0 flex-1 lg:max-w-md">
@@ -1462,9 +1492,9 @@ export default function AssessmentPage() {
         <div className="w-full min-w-0">
           <div ref={questionPanelTopRef} />
           <article className="w-full min-w-0 max-w-[calc(100vw-2rem)] rounded-xl border border-[#d9dee8] bg-white p-4 shadow-[0_1px_3px_rgba(18,32,61,0.08)] sm:max-w-none sm:p-5">
-            {isSubmittedChecklist ? (
-              <div className="mb-4 rounded-lg border border-[#d8e7d8] bg-[#f1f8f1] px-3 py-3 text-sm text-[#2f5c38]">
-                <p>{t('messages.cannotSubmitAgain')}</p>
+            {isSubmittedChecklist || isExpiredAssessment ? (
+              <div className={`mb-4 rounded-lg border px-3 py-3 text-sm ${isExpiredAssessment ? 'border-[#fde8c8] bg-[#fffbeb] text-[#92400e]' : 'border-[#d8e7d8] bg-[#f1f8f1] text-[#2f5c38]'}`}>
+                <p>{isExpiredAssessment ? t('messages.cannotRestartExpired') : t('messages.cannotSubmitAgain')}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Link
                     href="/access"

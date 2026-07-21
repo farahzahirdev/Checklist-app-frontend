@@ -18,6 +18,7 @@ import { AuditIcon, AUDIT_ICON_THEMES, pickAuditIconKind } from '@/components/pr
 import type { CustomerAssessmentListItem } from '@/lib/customer-assessments';
 import type { ActiveAccessWindow, PurchasedChecklist } from '@/lib/customer-payments';
 import type { CustomerChecklist } from '@/lib/checklist-api';
+import { isCompletedAssessmentStatus, isExpiredAssessmentStatus, isNonStartableAssessmentStatus } from '@/lib/assessment';
 import { buildAuditProductHref } from '@/lib/products-catalog';
 import { formatPreciseAccessCountdown, hasAccessTimeRemaining } from '@/lib/access-countdown';
 
@@ -54,7 +55,7 @@ export type RecentActivityItem = {
   tone: 'complete' | 'progress' | 'start';
 };
 
-type AuditCardStatus = 'ready' | 'inProgress' | 'completed' | 'reportReady';
+type AuditCardStatus = 'ready' | 'inProgress' | 'completed' | 'reportReady' | 'expired';
 type StatusFilter = 'all' | AuditCardStatus;
 
 function formatDate(value: string | null | undefined, locale: string): string {
@@ -84,38 +85,58 @@ function formatRelativeTime(value: string | null | undefined, locale: string): s
 
 function resolveCardStatus(row: MyAuditRow): AuditCardStatus {
   if (row.assessment?.has_report) return 'reportReady';
-  if (row.assessment?.status === 'submitted' || row.assessment?.status === 'closed') return 'completed';
+  if (row.assessment?.status === 'expired') return 'expired';
+  if (isCompletedAssessmentStatus(row.assessment?.status)) return 'completed';
+  if (row.assessment?.status === 'in_progress' || row.assessment?.status === 'not_started') {
+    const expiresAt = row.assessment?.expires_at ?? row.access?.end_date ?? null;
+    if (expiresAt && !hasAccessTimeRemaining(expiresAt)) return 'expired';
+  }
   if (row.assessment?.status === 'in_progress') return 'inProgress';
   return 'ready';
 }
 
 function statusLabel(status: AuditCardStatus, t: TranslateFn): string {
   if (status === 'inProgress') return t('status.inProgress');
+  if (status === 'expired') return t('status.expired');
   if (status === 'completed' || status === 'reportReady') return t('status.completed');
   return t('status.ready');
 }
 
 function statusBadgeClass(status: AuditCardStatus): string {
   if (status === 'ready') return 'bg-[#dbeafe] text-[#1d4ed8]';
+  if (status === 'expired') return 'bg-[#fef3c7] text-[#b45309]';
   return 'bg-[#dcfce7] text-[#15803d]';
 }
 
 function workspaceHref(row: MyAuditRow): Route {
   const assessment = row.assessment;
+  const cardStatus = resolveCardStatus(row);
+  if (cardStatus === 'expired') {
+    return '/payment' as Route;
+  }
   if (assessment?.status === 'in_progress' || assessment?.status === 'not_started') {
     if (assessment.id) {
       return `/assessment?assessment_id=${encodeURIComponent(assessment.id)}` as Route;
     }
     return `/assessment?checklist_id=${encodeURIComponent(row.checklistId)}` as Route;
   }
-  if (assessment?.status === 'submitted' || assessment?.status === 'closed' || assessment?.has_report) {
-    return row.assessment?.has_report ? ('/reports' as Route) : (`/assessment?checklist_id=${encodeURIComponent(row.checklistId)}` as Route);
+  if (isNonStartableAssessmentStatus(assessment?.status) || assessment?.has_report) {
+    if (assessment?.has_report) {
+      return '/reports' as Route;
+    }
+    if (assessment?.id) {
+      return `/assessment?checklist_id=${encodeURIComponent(row.checklistId)}&assessment_id=${encodeURIComponent(assessment.id)}&readonly=true` as Route;
+    }
+    return `/access?checklist_id=${encodeURIComponent(row.checklistId)}` as Route;
   }
   return `/access?checklist_id=${encodeURIComponent(row.checklistId)}` as Route;
 }
 
 function primaryAction(row: MyAuditRow, t: TranslateFn): { href: Route; label: string } {
   const status = resolveCardStatus(row);
+  if (status === 'expired') {
+    return { href: '/payment' as Route, label: t('actions.purchaseAgain') };
+  }
   if (status === 'ready') {
     return { href: `/access?checklist_id=${encodeURIComponent(row.checklistId)}` as Route, label: t('actions.start') };
   }
