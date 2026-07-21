@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { translate, useLocale } from '@/lib/i18n';
@@ -544,28 +545,39 @@ export default function AdminAssessmentReviewDetailPage() {
       toast.success(t('toasts.finalized'));
       await loadDetail();
 
-      // Try to open the report for this assessment. If it doesn't exist, create a draft then open it.
       try {
-        const report = await getReportByAssessment(detail.assessment_id);
-        router.push(adminReportDetailPath(report) as any);
+        const existingReport = await getReportByAssessment(detail.assessment_id);
+        router.push(adminReportDetailPath(existingReport) as any);
         return;
-      } catch (err) {
-        // If not found, generate draft and redirect
+      } catch {
         try {
           const created = await generateDraftReport(detail.assessment_id);
           router.push(adminReportDetailPath(created) as any);
           return;
         } catch (err2) {
-          // fall through and show success toast already displayed
           toast.error(err2 instanceof Error ? err2.message : 'Failed to open or create report');
         }
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('toasts.finalizeFailed'));
+      const message = err instanceof Error ? err.message : t('toasts.finalizeFailed');
+      if (/locked|already been published/i.test(message)) {
+        try {
+          const existingReport = await getReportByAssessment(detail.assessment_id);
+          router.push(adminReportDetailPath(existingReport) as any);
+          return;
+        } catch {
+          // fall through
+        }
+      }
+      toast.error(message);
     } finally {
       setFinalizing(false);
     }
   }
+
+  const reviewAlreadyCompleted = reviewStatusLabel === 'completed';
+  const reportBlocksFinalize = report?.status === 'published';
+  const canFinalizeReview = !reviewAlreadyCompleted && !reportBlocksFinalize;
 
   async function quickApprove() {
     if (!detail) return;
@@ -681,14 +693,23 @@ export default function AdminAssessmentReviewDetailPage() {
             </p>
           </div>
           {!isReadOnly ? (
-            <button
-              type="button"
-              disabled={finalizing || loading}
-              onClick={() => void finalizeReview()}
-              className="shrink-0 rounded-xl border border-[#5ea2ff] bg-[#2f7dff] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#256ceb] disabled:opacity-60"
-            >
-              {finalizing ? t('actions.saving') : t('actions.finalize')}
-            </button>
+            canFinalizeReview ? (
+              <button
+                type="button"
+                disabled={finalizing || loading}
+                onClick={() => void finalizeReview()}
+                className="shrink-0 rounded-xl border border-[#5ea2ff] bg-[#2f7dff] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#256ceb] disabled:opacity-60"
+              >
+                {finalizing ? t('actions.saving') : t('actions.finalize')}
+              </button>
+            ) : report ? (
+              <Link
+                href={adminReportDetailPath(report) as any}
+                className="shrink-0 rounded-xl border border-[#5ea2ff] bg-[#2f7dff] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#256ceb]"
+              >
+                {t('actions.openReport')}
+              </Link>
+            ) : null
           ) : null}
         </div>
       </header>

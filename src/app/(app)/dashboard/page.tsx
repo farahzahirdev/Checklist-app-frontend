@@ -168,7 +168,10 @@ export default function DashboardPage() {
               <span className="text-right">{t('table.status')}</span>
             </div>
             <ul className="divide-y divide-[#eef2fa]">
-              {reports.filter((report) => report.status === 'published').slice(0, 5).map((report) => (
+              {reports
+                .filter((report) => report.status === 'published' || report.status === 'approved')
+                .slice(0, 5)
+                .map((report) => (
                 <li key={report.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-[#1f2d45]">{report.checklist_title?.trim() || t('report.itemTitle')}</p>
@@ -191,7 +194,7 @@ export default function DashboardPage() {
                   </Link>
                 </li>
               ))}
-              {!reports.filter((report) => report.status === 'published').length ? (
+              {!reports.filter((report) => report.status === 'published' || report.status === 'approved').length ? (
                 <li className="px-4 py-3 text-sm text-[#607594]">{t('empty.publishedReports')}</li>
               ) : null}
             </ul>

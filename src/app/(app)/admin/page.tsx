@@ -112,16 +112,24 @@ export default function AdminDashboardPage() {
         setData(INITIAL_STATE);
         return;
       }
-      const [summary, awaitingReview, activity, reports, distribution, retention, systemHealth] = await Promise.all([
+      const [summary, awaitingReview, activity, reportsResponse, distribution, retention, systemHealth] = await Promise.all([
         getAdminDashboardSummary({ token: accessToken }),
         getAdminAwaitingReview({ token: accessToken }),
         getAdminActivity({ token: accessToken }),
-        getReportsList({ limit: 5 }).then((response) => response.reports),
+        getReportsList({ limit: 8, sort_by: 'created_at', sort_order: 'desc' }).catch(() => ({ reports: [], total: 0 })),
         getAdminDistribution({ token: accessToken }),
         getAdminRetention({ token: accessToken }),
         getAdminSystemHealth({ token: accessToken }),
       ]);
-      setData({ summary, awaitingReview, activity, reports, distribution, retention, systemHealth });
+      setData({
+        summary,
+        awaitingReview,
+        activity,
+        reports: reportsResponse.reports ?? [],
+        distribution,
+        retention,
+        systemHealth,
+      });
       setAuditorSummary(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load admin dashboard');
@@ -305,7 +313,7 @@ export default function AdminDashboardPage() {
         <article className={`${panelCardClass} overflow-hidden`}>
           <div className="flex items-center justify-between border-b border-[#dbe4f4] px-4 py-3">
             <div>
-              <h2 className="text-xl font-semibold text-[#243555]">{t('sections.reports')}</h2>
+              <h2 className="text-xl font-semibold text-[#243555]">{t('sections.latestReports')}</h2>
               <p className="text-sm text-[#6f82a3]">{t('sections.reportsSubtitle')}</p>
             </div>
             <Link href="/admin/reports" className="text-xs font-semibold text-[#3e69b0] hover:text-[#274b84]">
