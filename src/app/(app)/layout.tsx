@@ -22,9 +22,11 @@ import {
   getUserShortDisplayName,
   getRoleKey,
   isRoleSwitchSessionActive,
+  persistAccessToken,
   restoreOriginalAccessToken,
   type UserRoleKey,
 } from '@/lib/auth';
+import { isSessionInvalidError } from '@/lib/api';
 import { endAdminRoleSwitch } from '@/lib/admin-users';
 
 export default function AppLayout({
@@ -37,6 +39,7 @@ export default function AppLayout({
   const { locale } = useLocale();
   const t = (key: string) => translate(customerLayoutMessages, locale, key);
   const [authReady, setAuthReady] = useState(false);
+  const [authError, setAuthError] = useState('');
   const [role, setRole] = useState<UserRoleKey | ''>('');
   const [displayName, setDisplayName] = useState('User');
   const [shortDisplayName, setShortDisplayName] = useState('User');
@@ -137,22 +140,48 @@ export default function AppLayout({
         const response = await getCurrentUser();
         if (cancelled) return;
         const roleSwitchActiveValue = isRoleSwitchSessionActive();
-        console.log('[Layout] checkAuth - roleSwitchActive:', roleSwitchActiveValue, 'role:', response.user.role, 'localStorage:', {
-          token: token.substring(0, 20) + '...',
-          switchActiveFlag: window.localStorage.getItem(ROLE_SWITCH_ACTIVE_STORAGE_KEY),
-          originalToken: window.localStorage.getItem('checklist_original_access_token')?.substring(0, 20) + '...'
-        });
         setRole(getRoleKey(response.user.role));
         setDisplayName(getUserDisplayName(response.user));
         setShortDisplayName(getUserShortDisplayName(response.user));
         setRoleSwitchActive(roleSwitchActiveValue);
         setMfaRequired(Boolean(response.mfa_required));
         setMfaEnabled(Boolean(response.mfa_enabled));
+        setAuthError('');
         setAuthReady(true);
-      } catch {
-        window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
-        if (!cancelled) {
-          router.push('/login');
+      } catch (error) {
+        if (isSessionInvalidError(error)) {
+          window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+          if (!cancelled) {
+            router.push('/login');
+          }
+          return;
+        }
+
+        // Keep the existing session on transient failures (network/backend blips).
+        try {
+          await new Promise((resolve) => setTimeout(resolve, 400));
+          const response = await getCurrentUser();
+          if (cancelled) return;
+          setRole(getRoleKey(response.user.role));
+          setDisplayName(getUserDisplayName(response.user));
+          setShortDisplayName(getUserShortDisplayName(response.user));
+          setRoleSwitchActive(isRoleSwitchSessionActive());
+          setMfaRequired(Boolean(response.mfa_required));
+          setMfaEnabled(Boolean(response.mfa_enabled));
+          setAuthError('');
+          setAuthReady(true);
+        } catch (retryError) {
+          if (isSessionInvalidError(retryError)) {
+            window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+            if (!cancelled) {
+              router.push('/login');
+            }
+            return;
+          }
+          if (!cancelled) {
+            setAuthError(t('errors.sessionValidation'));
+            setAuthReady(true);
+          }
         }
       }
     }
@@ -363,6 +392,11 @@ export default function AppLayout({
                 </div>
               </header>
               <div className={`flex-1 ${isFullBleedWorkspacePage ? 'min-w-0' : 'min-w-0 p-4 md:p-5'}`}>
+                {authError ? (
+                  <p className="mb-4 rounded-lg border border-[#f2dfad] bg-[#fff9ea] px-3 py-2 text-sm text-[#835f12]">
+                    {authError}
+                  </p>
+                ) : null}
                 {children}
               </div>
               <PublicFooter variant="customer" />

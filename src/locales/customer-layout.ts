@@ -24,6 +24,8 @@ export const customerLayoutMessages: TranslationMessages = {
     'profileCompletion.subtitle': 'Finish your profile before purchasing checklists.',
     'profileCompletion.progressLabel': 'Profile progress',
     'profileCompletion.cta': 'Complete profile',
+    'errors.sessionValidation':
+      'We could not verify your session right now. You can keep working, and we will retry automatically on the next action.',
   },
   cs: {
     'brand.name': 'AuditReady',
@@ -48,6 +50,8 @@ export const customerLayoutMessages: TranslationMessages = {
     'profileCompletion.subtitle': 'Před nákupem dokončete svůj profil.',
     'profileCompletion.progressLabel': 'Průběh profilu',
     'profileCompletion.cta': 'Dokončit profil',
+    'errors.sessionValidation':
+      'Relaci se nám teď nepodařilo ověřit. Můžete pokračovat v práci, ověření zkusíme znovu při další akci.',
   },
 };
 

@@ -45,7 +45,7 @@ export function notifyAuthStateChanged(detail?: AuthStateChangedDetail) {
   window.dispatchEvent(new CustomEvent(AUTH_STATE_CHANGED_EVENT, { detail }));
 }
 
-export function persistAccessToken(token: string | null) {
+export function persistAccessToken(token: string | null, options?: { notify?: boolean }) {
   if (typeof window === 'undefined') {
     return;
   }
@@ -54,7 +54,15 @@ export function persistAccessToken(token: string | null) {
   } else {
     window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
   }
-  notifyAuthStateChanged();
+  if (options?.notify !== false) {
+    notifyAuthStateChanged();
+  }
+}
+
+function applySessionFromAuthResponse(response: AuthResponse) {
+  if (response.access_token) {
+    persistAccessToken(response.access_token, { notify: false });
+  }
 }
 
 export function beginRoleSwitchSession(temporaryToken: string) {
@@ -177,7 +185,15 @@ export type MfaSetupDetailsResponse = {
 };
 
 export async function getCurrentUser() {
-  return apiGetWithAuth<AuthResponse>('/auth/me');
+  const response = await apiGetWithAuth<AuthResponse>('/auth/me');
+  applySessionFromAuthResponse(response);
+  return response;
+}
+
+export async function refreshSession() {
+  const response = await apiPostEmptyWithAuth<AuthResponse>('/auth/refresh', undefined, { skipSessionRefresh: true });
+  applySessionFromAuthResponse(response);
+  return response;
 }
 
 export async function startMfaSetup() {
