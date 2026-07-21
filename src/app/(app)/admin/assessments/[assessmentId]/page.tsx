@@ -576,8 +576,7 @@ export default function AdminAssessmentReviewDetailPage() {
   }
 
   const reviewAlreadyCompleted = reviewStatusLabel === 'completed';
-  const reportBlocksFinalize = report?.status === 'published';
-  const canFinalizeReview = !reviewAlreadyCompleted && !reportBlocksFinalize;
+  const canFinalizeReview = !reviewAlreadyCompleted;
 
   async function quickApprove() {
     if (!detail) return;
@@ -693,23 +692,30 @@ export default function AdminAssessmentReviewDetailPage() {
             </p>
           </div>
           {!isReadOnly ? (
-            canFinalizeReview ? (
-              <button
-                type="button"
-                disabled={finalizing || loading}
-                onClick={() => void finalizeReview()}
-                className="shrink-0 rounded-xl border border-[#5ea2ff] bg-[#2f7dff] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#256ceb] disabled:opacity-60"
-              >
-                {finalizing ? t('actions.saving') : t('actions.finalize')}
-              </button>
-            ) : report ? (
-              <Link
-                href={adminReportDetailPath(report) as any}
-                className="shrink-0 rounded-xl border border-[#5ea2ff] bg-[#2f7dff] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#256ceb]"
-              >
-                {t('actions.openReport')}
-              </Link>
-            ) : null
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {canFinalizeReview ? (
+                <button
+                  type="button"
+                  disabled={finalizing || loading}
+                  onClick={() => void finalizeReview()}
+                  className="rounded-xl border border-[#5ea2ff] bg-[#2f7dff] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#256ceb] disabled:opacity-60"
+                >
+                  {finalizing ? t('actions.saving') : t('actions.finalize')}
+                </button>
+              ) : null}
+              {report ? (
+                <Link
+                  href={adminReportDetailPath(report) as any}
+                  className={`rounded-xl border px-4 py-2 text-sm font-semibold shadow-sm ${
+                    canFinalizeReview
+                      ? 'border-[#5ea2ff] bg-[#0f2744] text-white hover:bg-[#182843]'
+                      : 'border-[#5ea2ff] bg-[#2f7dff] text-white hover:bg-[#256ceb]'
+                  }`}
+                >
+                  {t('actions.openReport')}
+                </Link>
+              ) : null}
+            </div>
           ) : null}
         </div>
       </header>
